@@ -18,6 +18,9 @@ const (
 	EventNetworkObjectLinkStateChanged     = events.EventNetworkObjectLinkStateChanged
 	EventNetworkObjectLinkRecovered        = events.EventNetworkObjectLinkRecovered
 	EventNetworkObjectLinkDeleted          = events.EventNetworkObjectLinkDeleted
+	EventCaptureStateChanged               = events.EventCaptureStateChanged
+	EventCaptureCompleted                  = events.EventCaptureCompleted
+	EventTrafficFilterObservation          = events.EventTrafficFilterObservation
 )
 
 type EventHandler struct {

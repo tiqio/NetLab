@@ -3,6 +3,7 @@ package events
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/netlab/netlab/internal/domain"
 )
@@ -14,7 +15,29 @@ const (
 	EventNetworkObjectLinkStateChanged = "network_object_link.state_changed"
 	EventNetworkObjectLinkRecovered    = "network_object_link.recovered"
 	EventNetworkObjectLinkDeleted      = "network_object_link.deleted"
+	EventCaptureStateChanged           = "capture.state_changed"
+	EventCaptureCompleted              = "capture.completed"
+	EventTrafficFilterObservation      = "traffic_filter.observation"
 )
+
+func CaptureEvent(value domain.Capture, taskID domain.ID) domain.OutboxEvent {
+	eventType := EventCaptureStateChanged
+	if value.FinishedAt != nil || value.State == "completed" || value.State == "cancelled" || value.State == "failed" || value.State == "truncated" {
+		eventType = EventCaptureCompleted
+	}
+	return domain.OutboxEvent{
+		Type: eventType, LaboratoryID: value.LaboratoryID, ResourceType: "capture", ResourceID: value.ID, TaskID: taskID,
+		Data:       map[string]any{"capture": value, "source_type": value.SourceType, "source_id": value.SourceID, "completion_reason": value.CompletionReason},
+		OccurredAt: time.Now().UTC(),
+	}
+}
+
+func TrafficObservationEvent(filter domain.TrafficFilter, observation domain.TrafficObservation, taskID domain.ID) domain.OutboxEvent {
+	return domain.OutboxEvent{
+		Type: EventTrafficFilterObservation, LaboratoryID: filter.LaboratoryID, ResourceType: observation.ResourceType, ResourceID: observation.ResourceID, TaskID: taskID,
+		Data: map[string]any{"traffic_filter_id": filter.ID, "observation": observation, "color": filter.Color}, OccurredAt: time.Now().UTC(),
+	}
+}
 
 type Store interface {
 	OutboxAfter(context.Context, int64, int) ([]domain.OutboxEvent, error)
