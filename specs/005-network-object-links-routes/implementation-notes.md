@@ -34,7 +34,7 @@
 | US1 | pending | pending | |
 | US2 | pending | pending | |
 | US3 | pending | pending | |
-| US4 | `go test ./internal/app/command ./internal/store/sqlite ./internal/runtime/linuxnet`; all passed | `bb07b51` | Docker route declarations are validated on create/settings and persisted for runtime reconciliation |
+| US4 | Focused domain, command, store, API, runtime, reconcile, contract, Vitest, build, and changed-file ESLint gates passed | `c18f223` | Canonical route declarations survive create/settings/export/import and expose route-specific readiness; ESLint reports warnings only |
 | Final candidate | pending | pending | |
 
 ## Incremental Worklog
@@ -70,3 +70,15 @@
   ./internal/runtime/linuxnet ./internal/api/http ./internal/api/mcp ./internal/store/sqlite
   ./internal/app/command -count=1`; focused Docker recovery race tests; and Docker route/OpenAPI contract
   tests. All passed locally.
+- `c18f223` (`feat: report Docker route readiness`): canonicalizes Docker interface addresses, route
+  destinations, and gateways before persistence; rejects stable-coded family, metric, gateway,
+  connected-prefix, duplicate-prefix, and cross-interface conflicts; preserves routes through create,
+  stopped settings, export, and import; and reports pending, applying, applied, and route-specific failed
+  readiness in the node operations panel and topology Inspector.
+- Focused gates for `c18f223`: `go test ./internal/domain ./internal/app/command
+  ./internal/store/sqlite ./internal/api/http ./internal/api/mcp ./internal/runtime/linuxnet
+  ./internal/runtime/docker ./internal/app/reconcile -count=1`; focused Docker route contract tests;
+  `npm test -- --run src/features/nodes/NodeOperationsPanel.test.ts
+  src/features/topology/TopologyInspector.test.ts`; `npm run build`; and changed-file ESLint. All passed
+  locally. Vite chunk-size output and 115 pre-existing Inspector lint warnings remain informational;
+  changed-file ESLint reported zero errors.
