@@ -10,8 +10,14 @@ import (
 )
 
 type recoveryTaskStoreFake struct {
-	created []domain.OperationTask
-	updated []domain.OperationTask
+	created   []domain.OperationTask
+	updated   []domain.OperationTask
+	recovered []domain.ID
+}
+
+func (s *recoveryTaskStoreFake) PublishNetworkObjectLinkRecovered(_ context.Context, id, _ domain.ID) error {
+	s.recovered = append(s.recovered, id)
+	return nil
 }
 
 func (s *recoveryTaskStoreFake) CreateTask(_ context.Context, task domain.OperationTask) error {
@@ -38,6 +44,13 @@ func (p *checkpointParticipantFake) ReconcileWithCheckpoints(_ context.Context, 
 		return err
 	}
 	return p.err
+}
+
+type objectLinkCheckpointParticipant struct{ recoveryParticipantFake }
+
+func (p *objectLinkCheckpointParticipant) ReconcileWithCheckpoints(_ context.Context, checkpoint func(RecoveryResourceOutcome) error) error {
+	p.runs++
+	return checkpoint(RecoveryResourceOutcome{ResourceType: "network_object_link", ResourceID: "object-link-1", State: "recovered"})
 }
 
 func (p *recoveryParticipantFake) Name() string { return p.name }
@@ -98,5 +111,16 @@ func TestRecoveryCoordinatorPersistsResourceCheckpoints(t *testing.T) {
 	}
 	if len(store.updated) < 3 {
 		t.Fatalf("checkpoint was not durably updated: %d", len(store.updated))
+	}
+}
+
+func TestRecoveryCoordinatorPublishesRecoveredObjectLinkBeforeTaskCheckpoint(t *testing.T) {
+	store := &recoveryTaskStoreFake{}
+	participant := &objectLinkCheckpointParticipant{recoveryParticipantFake: recoveryParticipantFake{name: "data-plane"}}
+	if _, err := NewRecoveryCoordinator(store, participant).Execute(context.Background(), "service_restart", nil); err != nil {
+		t.Fatal(err)
+	}
+	if len(store.recovered) != 1 || store.recovered[0] != "object-link-1" {
+		t.Fatalf("recovered=%v", store.recovered)
 	}
 }

@@ -14,6 +14,10 @@ type RecoveryTaskStore interface {
 	UpdateTask(context.Context, domain.OperationTask) error
 }
 
+type NetworkObjectLinkRecoveryPublisher interface {
+	PublishNetworkObjectLinkRecovered(context.Context, domain.ID, domain.ID) error
+}
+
 type RecoveryCoordinator struct {
 	store        RecoveryTaskStore
 	participants []Reconciler
@@ -71,6 +75,13 @@ func (c *RecoveryCoordinator) Execute(ctx context.Context, mode string, prepare 
 				task.ProgressTotal++
 				task.ProgressCurrent++
 				task.Result = map[string]any{"mode": mode, "completed_participants": append([]string(nil), completed...), "resource_outcomes": append([]map[string]any(nil), outcomes...)}
+				if outcome.ResourceType == "network_object_link" && outcome.State == "recovered" {
+					if publisher, supported := c.store.(NetworkObjectLinkRecoveryPublisher); supported {
+						if publishErr := publisher.PublishNetworkObjectLinkRecovered(ctx, outcome.ResourceID, task.ID); publishErr != nil {
+							return publishErr
+						}
+					}
+				}
 				return c.store.UpdateTask(ctx, task)
 			})
 		} else {

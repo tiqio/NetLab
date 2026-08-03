@@ -45,3 +45,18 @@ func TestReplayBatchAndExpired(t *testing.T) {
 		t.Fatal("expected reset")
 	}
 }
+
+func TestReplayPreservesOrderedNetworkObjectLinkLifecycle(t *testing.T) {
+	publisher := events.NewPublisher(eventStore{events: []domain.OutboxEvent{
+		{Sequence: 21, Type: EventNetworkObjectLinkCreated, ResourceType: "network_object_link", ResourceID: "link-1", Revision: 1},
+		{Sequence: 22, Type: EventNetworkObjectLinkStateChanged, ResourceType: "network_object_link", ResourceID: "link-1", Revision: 1},
+		{Sequence: 23, Type: EventNetworkObjectLinkRecovered, ResourceType: "network_object_link", ResourceID: "link-1", Revision: 1, TaskID: "recovery-task"},
+	}})
+	batch, err := publisher.Replay(context.Background(), 20, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(batch) != 3 || batch[0].Type != EventNetworkObjectLinkCreated || batch[1].Type != EventNetworkObjectLinkStateChanged || batch[2].Type != EventNetworkObjectLinkRecovered || batch[2].TaskID != "recovery-task" {
+		t.Fatalf("batch=%+v", batch)
+	}
+}

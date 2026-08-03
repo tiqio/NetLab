@@ -93,4 +93,17 @@ func TestNetworkObjectLinkCreatePublishesRevisionedEvent(t *testing.T) {
 	if payload == "" || !strings.Contains(payload, `"observed_state":"failed"`) || !strings.Contains(payload, `"last_error"`) {
 		t.Fatalf("payload=%s", payload)
 	}
+	if err = repositories.SetNetworkObjectLinkState(ctx, link.ID, "connected", nil); err != nil {
+		t.Fatal(err)
+	}
+	if err = repositories.PublishNetworkObjectLinkRecovered(ctx, link.ID, "recovery-task"); err != nil {
+		t.Fatal(err)
+	}
+	var recoveredTaskID string
+	if err = database.DB.QueryRowContext(ctx, `SELECT task_id FROM outbox_events WHERE event_type='network_object_link.recovered' AND resource_id=?`, link.ID).Scan(&recoveredTaskID); err != nil {
+		t.Fatal(err)
+	}
+	if recoveredTaskID != "recovery-task" {
+		t.Fatalf("task_id=%q", recoveredTaskID)
+	}
 }

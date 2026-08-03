@@ -9,6 +9,13 @@ import (
 
 var ErrReplayExpired = errors.New("event replay window expired")
 
+const (
+	EventNetworkObjectLinkCreated      = "network_object_link.created"
+	EventNetworkObjectLinkStateChanged = "network_object_link.state_changed"
+	EventNetworkObjectLinkRecovered    = "network_object_link.recovered"
+	EventNetworkObjectLinkDeleted      = "network_object_link.deleted"
+)
+
 type Store interface {
 	OutboxAfter(context.Context, int64, int) ([]domain.OutboxEvent, error)
 }

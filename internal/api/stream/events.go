@@ -14,6 +14,10 @@ import (
 const (
 	EventNetworkObjectObservedStateChanged = "network_object.observed_state_changed"
 	EventNodeCapabilityChanged             = "node.capability_changed"
+	EventNetworkObjectLinkCreated          = events.EventNetworkObjectLinkCreated
+	EventNetworkObjectLinkStateChanged     = events.EventNetworkObjectLinkStateChanged
+	EventNetworkObjectLinkRecovered        = events.EventNetworkObjectLinkRecovered
+	EventNetworkObjectLinkDeleted          = events.EventNetworkObjectLinkDeleted
 )
 
 type EventHandler struct {

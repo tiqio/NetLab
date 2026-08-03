@@ -14,6 +14,7 @@ type dataPlaneExecutor struct {
 	commands     []string
 	bridgeExists bool
 	failMaster   string
+	existing     map[string]bool
 }
 
 func (e *dataPlaneExecutor) Run(_ context.Context, name string, args ...string) error {
@@ -27,11 +28,32 @@ func (e *dataPlaneExecutor) Run(_ context.Context, name string, args ...string) 
 	}
 	return nil
 }
-func (e *dataPlaneExecutor) Output(_ context.Context, _ string, _ ...string) ([]byte, error) {
+func (e *dataPlaneExecutor) Output(_ context.Context, name string, args ...string) ([]byte, error) {
+	if e.existing != nil && e.existing[strings.Join(append([]string{name}, args...), " ")] {
+		return []byte("exists"), nil
+	}
 	if e.bridgeExists {
 		return []byte("bridge"), nil
 	}
 	return nil, errors.New("missing")
+}
+
+func TestNetworkObjectLinkReplacesPartialNamespacePair(t *testing.T) {
+	objectA := domain.NetworkObject{ID: "a", Kind: domain.NetworkSwitchL2}
+	objectB := domain.NetworkObject{ID: "b", Kind: domain.NetworkSwitchL2}
+	link := domain.NetworkObjectLink{ID: "partial", ObjectAID: objectA.ID, PortAName: "swp1", ObjectBID: objectB.ID, PortBName: "swp2"}
+	executor := &dataPlaneExecutor{existing: map[string]bool{
+		"ip -n " + SwitchL2NamespaceName(objectA.ID) + " link show swp1": true,
+	}}
+	runtime, _ := NewDataPlane(executor)
+	if err := runtime.EnsureNetworkObjectLink(context.Background(), link, objectA, objectB); err != nil {
+		t.Fatal(err)
+	}
+	commands := strings.Join(executor.commands, "\n")
+	deleteCommand := "ip -n " + SwitchL2NamespaceName(objectA.ID) + " link delete swp1"
+	if !strings.Contains(commands, deleteCommand) || !strings.Contains(commands, "type veth peer name") {
+		t.Fatalf("partial pair was not replaced: %s", commands)
+	}
 }
 
 func TestDataPlaneIdempotencyAndRollback(t *testing.T) {

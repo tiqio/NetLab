@@ -77,6 +77,14 @@ func (s *LinuxOwnershipScanner) Discover(ctx context.Context) ([]DiscoveredOwner
 			failures = append(failures, err)
 		} else {
 			values = append(values, namespaces...)
+			for _, namespace := range namespaces {
+				namespaceLinks, namespaceErr := s.discoverNamespaceLinks(ctx, namespace.ObjectName)
+				if namespaceErr != nil {
+					failures = append(failures, namespaceErr)
+					continue
+				}
+				values = append(values, namespaceLinks...)
+			}
 		}
 	}
 	if s.nft != "" {
@@ -113,14 +121,60 @@ func (s *LinuxOwnershipScanner) discoverLinks(ctx context.Context) ([]Discovered
 		if !strings.HasPrefix(link.IfAlias, "netlab:") {
 			continue
 		}
-		ownerID := domain.ID(strings.TrimPrefix(link.IfAlias, "netlab:"))
+		resourceType, ownerID := linuxAliasOwner(link.IfAlias, link.IfName)
 		if ownerID == "" {
 			continue
 		}
-		resourceType := resourceTypeForLinuxName(link.IfName)
 		values = append(values, DiscoveredOwnership{ResourceType: resourceType, ResourceID: ownerID, ObjectKind: "linux_link", ObjectName: link.IfName, Metadata: map[string]string{"alias": link.IfAlias, "link_kind": link.LinkInfo.InfoKind}})
 	}
 	return values, nil
+}
+
+func (s *LinuxOwnershipScanner) discoverNamespaceLinks(ctx context.Context, namespace string) ([]DiscoveredOwnership, error) {
+	body, err := s.output(ctx, s.ip, "-n", namespace, "-j", "-d", "link", "show")
+	if err != nil {
+		return nil, err
+	}
+	var links []struct {
+		IfName  string `json:"ifname"`
+		IfAlias string `json:"ifalias"`
+	}
+	if err = json.Unmarshal(body, &links); err != nil {
+		return nil, err
+	}
+	var values []DiscoveredOwnership
+	for _, link := range links {
+		resourceType, resourceID := linuxAliasOwner(link.IfAlias, link.IfName)
+		if resourceType != "network_object_link" || resourceID == "" {
+			continue
+		}
+		linkName := link.IfName
+		namespaceName := namespace
+		values = append(values, DiscoveredOwnership{
+			ResourceType: resourceType,
+			ResourceID:   resourceID,
+			ObjectKind:   "network_object_link_endpoint",
+			ObjectName:   namespace + ":" + link.IfName,
+			Metadata:     map[string]string{"alias": link.IfAlias, "namespace": namespace, "port": link.IfName},
+			CleanupSafe:  true,
+			Cleanup: func(cleanupCtx context.Context) error {
+				_, cleanupErr := s.output(cleanupCtx, s.ip, "-n", namespaceName, "link", "delete", linkName)
+				return cleanupErr
+			},
+		})
+	}
+	return values, nil
+}
+
+func linuxAliasOwner(alias, interfaceName string) (string, domain.ID) {
+	if !strings.HasPrefix(alias, "netlab:") {
+		return "", ""
+	}
+	owner := strings.TrimPrefix(alias, "netlab:")
+	if strings.HasSuffix(owner, ":a") || strings.HasSuffix(owner, ":b") {
+		return "network_object_link", domain.ID(owner[:len(owner)-2])
+	}
+	return resourceTypeForLinuxName(interfaceName), domain.ID(owner)
 }
 
 func (s *LinuxOwnershipScanner) discoverNamespaces(ctx context.Context) ([]DiscoveredOwnership, error) {

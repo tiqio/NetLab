@@ -70,9 +70,32 @@ func (d *DataPlane) EnsureNetworkObjectLink(ctx context.Context, link domain.Net
 	}
 	endA := ownership.Name("nva", link.ID, 15)
 	endB := ownership.Name("nvb", link.ID, 15)
-	if _, errA := d.executor.Output(ctx, d.ip, "-n", namespaceA, "link", "show", link.PortAName); errA == nil {
-		if _, errB := d.executor.Output(ctx, d.ip, "-n", namespaceB, "link", "show", link.PortBName); errB == nil {
-			return d.configureNetworkObjectLinkPort(ctx, namespaceA, link.PortAName, objectA)
+	_, errA := d.executor.Output(ctx, d.ip, "-n", namespaceA, "link", "show", link.PortAName)
+	_, errB := d.executor.Output(ctx, d.ip, "-n", namespaceB, "link", "show", link.PortBName)
+	if errA == nil && errB == nil {
+		if err := d.configureNetworkObjectLinkPort(ctx, namespaceA, link.PortAName, objectA); err != nil {
+			return err
+		}
+		return d.configureNetworkObjectLinkPort(ctx, namespaceB, link.PortBName, objectB)
+	}
+	if errA == nil {
+		if err := d.executor.Run(ctx, d.ip, "-n", namespaceA, "link", "delete", link.PortAName); err != nil && !missingLinkError(err) {
+			return err
+		}
+	} else if errB == nil {
+		if err := d.executor.Run(ctx, d.ip, "-n", namespaceB, "link", "delete", link.PortBName); err != nil && !missingLinkError(err) {
+			return err
+		}
+	}
+	_, hostAErr := d.executor.Output(ctx, d.ip, "link", "show", endA)
+	_, hostBErr := d.executor.Output(ctx, d.ip, "link", "show", endB)
+	if (hostAErr == nil) != (hostBErr == nil) {
+		stale := endA
+		if hostAErr != nil {
+			stale = endB
+		}
+		if err := d.executor.Run(ctx, d.ip, "link", "delete", stale); err != nil && !missingLinkError(err) {
+			return err
 		}
 	}
 	if err = d.executor.Run(ctx, d.ip, "link", "add", endA, "type", "veth", "peer", "name", endB); err != nil {

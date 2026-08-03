@@ -29,6 +29,17 @@ type Record struct {
 	CleanupState string            `json:"cleanup_state"`
 }
 
+func DirectVethPairManifest(resourceID domain.ID, namespaceA, portA, namespaceB, portB string) Manifest {
+	return Manifest{
+		ResourceType: "network_object_link",
+		ResourceID:   resourceID,
+		Objects: []Object{
+			{Kind: "network_object_link_endpoint", Name: namespaceA + ":" + portA, Metadata: map[string]string{"endpoint": "a", "namespace": namespaceA, "port": portA}},
+			{Kind: "network_object_link_endpoint", Name: namespaceB + ":" + portB, Metadata: map[string]string{"endpoint": "b", "namespace": namespaceB, "port": portB}},
+		},
+	}
+}
+
 func Name(prefix string, id domain.ID, max int) string {
 	sum := sha256.Sum256([]byte(id))
 	suffix := hex.EncodeToString(sum[:6])

@@ -366,6 +366,29 @@ func (r *Repositories) SetNetworkObjectLinkState(ctx context.Context, id domain.
 	})
 }
 
+func (r *Repositories) PublishNetworkObjectLinkRecovered(ctx context.Context, id, taskID domain.ID) error {
+	return r.database.Write(ctx, func(tx *sql.Tx) error {
+		var laboratoryID domain.ID
+		var revision domain.Revision
+		var desiredState, observedState string
+		var lastError []byte
+		if err := tx.QueryRowContext(ctx, `SELECT laboratory_id,revision,desired_state,observed_state,COALESCE(last_error_json,'') FROM network_object_links WHERE id=?`, id).Scan(&laboratoryID, &revision, &desiredState, &observedState, &lastError); err != nil {
+			if err == sql.ErrNoRows {
+				return ErrNotFound
+			}
+			return err
+		}
+		var problem *domain.Problem
+		if len(lastError) > 0 {
+			problem = &domain.Problem{}
+			if err := json.Unmarshal(lastError, problem); err != nil {
+				return err
+			}
+		}
+		return appendEvent(ctx, tx, "network_object_link.recovered", laboratoryID, "network_object_link", id, revision, taskID, map[string]any{"id": id, "desired_state": desiredState, "observed_state": observedState, "last_error": problem, "recovery_action": "adopted_or_recreated"})
+	})
+}
+
 func (r *Repositories) DeleteNetworkObjectLink(ctx context.Context, id domain.ID) error {
 	return r.database.Write(ctx, func(tx *sql.Tx) error {
 		var laboratoryID domain.ID
