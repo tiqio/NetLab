@@ -296,3 +296,31 @@
 - Focused gates for these milestones passed locally on August 3, 2026: contract, integration, and security
   regression selections; the default 100-cycle leak test; export command tests; `go vet` for command,
   contract, integration, and security packages; and repository whitespace validation.
+
+## Final Local Candidate Gate
+
+- Final locally validated implementation SHA: `215198e74ae4450ca3215674bc13e24b636205dd`.
+- Formatting and static analysis passed on August 3, 2026: repository `gofmt` produced no paths,
+  `git diff --check` passed, `go vet ./...` passed, frontend ESLint completed with zero errors, and the
+  complete frontend Prettier check passed.
+- `go test ./... -count=1` passed, including all domain, command, adapter, SQLite, HTTP, MCP, stream,
+  contract, integration, recovery, and security packages. The obsolete six-template assertion was
+  corrected to the authoritative eight built-ins, and the systemd unit now explicitly grants the bounded
+  `/var/lib/netlab`, `/run/netlab`, and `/run/netns` write paths required by its security contract.
+- Frontend Vitest passed all 59 files and 199 tests; the production SPA and embedded Go binary build
+  passed. The stale port-mapping QGA test now opens Advanced Settings, uses the current labels, and expects
+  backend-assigned host port `0`, matching the implemented contract. The Vite large-chunk message remains
+  informational.
+- Privileged validation passed with the pinned public BusyBox digest: real Docker IPv4/IPv6 route
+  application and restart recovery, exact object-link ICMP/TCP/UDP capture and direction attribution,
+  the three-object routed path, service recovery, the 100-cycle leak gate, and focused race tests for
+  reconciliation, SQLite, Linux networking, Docker, and capture. Runtime tests requiring operator QEMU
+  media or `dhclient` were explicitly skipped and remain target-host capability checks rather than local
+  failures.
+- Full local Playwright passed both 1920x1080 desktop and 1024x768 minimum viewport projects: 62 tests
+  passed and 24 target/runtime-capability cases skipped, with no failures. The run covered shared control
+  state, laboratory lifecycle, parallel object-link creation/deletion/observation, topology navigation,
+  selection, visual recognition, keyboard parity, refresh recovery, cleanup, and accessibility.
+- Frontend artifact hygiene passed. The compliance validator still described the previous
+  `workspace-2026-07-29` candidate as not ready; T088 replaces that stale evidence with the immutable
+  candidate built from this clean feature history.

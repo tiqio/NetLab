@@ -213,8 +213,8 @@ candidate, then deploy and test the immutable artifact on `10.72.1.7`.
 - [X] T083 [P] Synchronize implemented MCP tool inputs, outputs, errors, and capture metadata with `specs/005-network-object-links-routes/contracts/mcp-tools.md`
 - [X] T084 [P] Synchronize ordered object-link, route, capture, and Traffic Filter event semantics with `specs/005-network-object-links-routes/contracts/events.md`
 - [X] T085 [P] Document object-link creation, live deletion, capture, Traffic Filter, Docker route configuration, recovery behavior, and limitations in `README.md`
-- [ ] T086 Run formatting, static analysis, Go unit/contract/security tests, frontend Vitest/build/lint/format checks, privileged integration, recovery, Playwright, and leak gates from `specs/005-network-object-links-routes/quickstart.md`
-- [ ] T087 Record the final clean local gate results and focused implementation milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
+- [X] T086 Run formatting, static analysis, Go unit/contract/security tests, frontend Vitest/build/lint/format checks, privileged integration, recovery, Playwright, and leak gates from `specs/005-network-object-links-routes/quickstart.md`
+- [X] T087 Record the final clean local gate results and focused implementation milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
 - [ ] T088 Build the candidate only from the clean commit and record source SHA, artifact SHA-256 digest, SQLite migration state, and rollback artifact in `compliance/evidence/current-candidate.json`
 - [ ] T089 Deploy the immutable candidate without source edits using `deploy/scripts/install.sh` and record UTC deployment time and artifact identity in `compliance/deployment-authority.json`
 - [ ] T090 Validate multi-switch forwarding, parallel links, live deletion, capture, Traffic Filter direction/decay, Docker IPv4/IPv6 routes, service restart, host recovery, and leak cleanup on `10.72.1.7` using `specs/005-network-object-links-routes/quickstart.md`
