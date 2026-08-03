@@ -189,6 +189,36 @@ func TestTrafficFilterScopesParallelObjectLinksAndUsesEndpointARelativeDirection
 	}
 }
 
+func TestTrafficFilterManagedCaptureStreamsRemainParentAndCaptureIsolated(t *testing.T) {
+	manager := NewTrafficFilterManager()
+	first, err := manager.StartScopedAsWithObjectLinks("filter-first", "lab", captureRuntime.Match{Protocol: "udp"}, 100, nil, nil, []domain.ID{"object-link"}, "#f59e0b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := manager.StartScopedAsWithObjectLinks("filter-second", "lab", captureRuntime.Match{Protocol: "udp"}, 100, nil, nil, []domain.ID{"object-link"}, "#22c55e")
+	if err != nil {
+		t.Fatal(err)
+	}
+	pcap := udpDNSPacketCapture()
+	manager.ObserveManagedCapture("capture-first-egress", first.ID, "lab", "", "", "object-link", "egress", "pcap", pcap, time.Now())
+	manager.ObserveManagedCapture("direct-capture", "", "lab", "", "", "object-link", "observed", "pcap", pcap, time.Now())
+
+	firstValue, firstAmbiguous, err := manager.Get(first.ID)
+	if err != nil || firstAmbiguous || len(firstValue.Observations) != 1 || firstValue.Observations[0].Direction != "a_to_b" {
+		t.Fatalf("first=%+v ambiguous=%v err=%v", firstValue, firstAmbiguous, err)
+	}
+	secondValue, secondAmbiguous, err := manager.Get(second.ID)
+	if err != nil || secondAmbiguous || len(secondValue.Observations) != 0 {
+		t.Fatalf("second received another filter's stream: %+v ambiguous=%v err=%v", secondValue, secondAmbiguous, err)
+	}
+
+	manager.ObserveManagedCapture("capture-second-ingress", second.ID, "lab", "", "", "object-link", "ingress", "pcap", pcap, time.Now())
+	secondValue, secondAmbiguous, err = manager.Get(second.ID)
+	if err != nil || secondAmbiguous || len(secondValue.Observations) != 1 || secondValue.Observations[0].Direction != "b_to_a" {
+		t.Fatalf("second=%+v ambiguous=%v err=%v", secondValue, secondAmbiguous, err)
+	}
+}
+
 func udpDNSPacketCapture() []byte {
 	frame := make([]byte, 14+20+8)
 	binary.BigEndian.PutUint16(frame[12:14], 0x0800)

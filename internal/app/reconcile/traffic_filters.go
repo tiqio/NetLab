@@ -35,6 +35,7 @@ type managedFilter struct {
 type TrafficFilterManager struct {
 	mu       sync.RWMutex
 	values   map[domain.ID]*managedFilter
+	pending  map[domain.ID]*managedFilter
 	captures *CaptureManager
 	path     string
 }
@@ -45,7 +46,7 @@ type trafficFilterRecord struct {
 }
 
 func NewTrafficFilterManager(captures ...*CaptureManager) *TrafficFilterManager {
-	manager := &TrafficFilterManager{values: map[domain.ID]*managedFilter{}}
+	manager := &TrafficFilterManager{values: map[domain.ID]*managedFilter{}, pending: map[domain.ID]*managedFilter{}}
 	if len(captures) > 0 && captures[0] != nil {
 		manager.captures = captures[0]
 		manager.path = filepath.Join(filepath.Dir(captures[0].directory), "traffic-filters.json")
@@ -108,6 +109,28 @@ func (m *TrafficFilterManager) StartScopedAsWithObjectLinks(id, labID domain.ID,
 		objectLinks[id] = true
 	}
 	managed := &managedFilter{metadata: value, correlator: captureRuntime.NewCorrelator(2*time.Second, maximum), match: match, interfaces: interfaces, links: links, objectLinks: objectLinks, decoders: map[string]*captureRuntime.PacketDecoder{}}
+	prepared := false
+	prepare := func() {
+		m.mu.Lock()
+		m.pending[value.ID] = managed
+		m.mu.Unlock()
+		prepared = true
+	}
+	commit := func() {
+		m.mu.Lock()
+		delete(m.pending, value.ID)
+		m.values[value.ID] = managed
+		m.persistLocked()
+		m.mu.Unlock()
+	}
+	rollback := func() {
+		for _, captureID := range managed.captureIDs {
+			_, _ = m.captures.Stop(captureID)
+		}
+		m.mu.Lock()
+		delete(m.pending, value.ID)
+		m.mu.Unlock()
+	}
 	if m.captures != nil {
 		required := len(interfaceIDs) + len(linkIDs) + 2*len(objectLinkIDs)
 		available := m.captures.AvailableSlots()
@@ -122,12 +145,11 @@ func (m *TrafficFilterManager) StartScopedAsWithObjectLinks(id, labID domain.ID,
 		if captureMaxBytes < 1<<20 {
 			return domain.TrafficFilter{}, domain.Problem{Code: "resource_exhausted", Message: fmt.Sprintf("traffic filter needs at least %d bytes per capture but only %d bytes are available across %d sources", 1<<20, availableBytes, required), Retryable: true, ResourceType: "traffic_filter", ResourceID: id, Phase: "traffic_filter_admission", Cleanup: "no capture resources created", OperatorHint: "stop active captures or remove retained capture artifacts and retry", RetryAfterSeconds: 2}
 		}
+		prepare()
 		for _, id := range interfaceIDs {
 			captureValue, captureErr := m.captures.Start(context.Background(), CaptureRequest{LaboratoryID: labID, SourceType: "interface", SourceID: id, Interface: linuxnet.HostInterfaceName(id), Purpose: "traffic_filter", ParentID: value.ID, Filter: expression, Format: "pcap", MaxBytes: captureMaxBytes})
 			if captureErr != nil {
-				for _, captureID := range managed.captureIDs {
-					_, _ = m.captures.Stop(captureID)
-				}
+				rollback()
 				return domain.TrafficFilter{}, captureErr
 			}
 			managed.captureIDs = append(managed.captureIDs, captureValue.ID)
@@ -135,9 +157,7 @@ func (m *TrafficFilterManager) StartScopedAsWithObjectLinks(id, labID domain.ID,
 		for _, id := range linkIDs {
 			captureValue, captureErr := m.captures.Start(context.Background(), CaptureRequest{LaboratoryID: labID, SourceType: "link", SourceID: id, Interface: linuxnet.LinkBridgeName(id), Purpose: "traffic_filter", ParentID: value.ID, Filter: expression, Format: "pcap", MaxBytes: captureMaxBytes})
 			if captureErr != nil {
-				for _, captureID := range managed.captureIDs {
-					_, _ = m.captures.Stop(captureID)
-				}
+				rollback()
 				return domain.TrafficFilter{}, captureErr
 			}
 			managed.captureIDs = append(managed.captureIDs, captureValue.ID)
@@ -146,19 +166,17 @@ func (m *TrafficFilterManager) StartScopedAsWithObjectLinks(id, labID domain.ID,
 			for _, direction := range []string{"egress", "ingress"} {
 				captureValue, captureErr := m.captures.Start(context.Background(), CaptureRequest{LaboratoryID: labID, SourceType: "network_object_link", SourceID: id, Purpose: "traffic_filter", ParentID: value.ID, Filter: expression, Format: "pcap", MaxBytes: captureMaxBytes, Direction: direction})
 				if captureErr != nil {
-					for _, captureID := range managed.captureIDs {
-						_, _ = m.captures.Stop(captureID)
-					}
+					rollback()
 					return domain.TrafficFilter{}, captureErr
 				}
 				managed.captureIDs = append(managed.captureIDs, captureValue.ID)
 			}
 		}
 	}
-	m.mu.Lock()
-	m.values[value.ID] = managed
-	m.persistLocked()
-	m.mu.Unlock()
+	if !prepared {
+		prepare()
+	}
+	commit()
 	return value, nil
 }
 
@@ -183,33 +201,53 @@ func (m *TrafficFilterManager) ObserveCapture(laboratoryID, interfaceID, linkID,
 	}
 	m.mu.RUnlock()
 	for _, value := range values {
-		if len(value.interfaces) > 0 || len(value.links) > 0 || len(value.objectLinks) > 0 {
-			matchesInterface := interfaceID != "" && value.interfaces[interfaceID]
-			matchesLink := linkID != "" && value.links[linkID]
-			matchesObjectLink := objectLinkID != "" && value.objectLinks[objectLinkID]
-			if !matchesInterface && !matchesLink && !matchesObjectLink {
-				continue
-			}
+		m.observeCapture(value, "", interfaceID, linkID, objectLinkID, direction, format, chunk, at)
+	}
+}
+
+func (m *TrafficFilterManager) ObserveManagedCapture(captureID, parentID, laboratoryID, interfaceID, linkID, objectLinkID domain.ID, direction, format string, chunk []byte, at time.Time) {
+	if parentID == "" {
+		return
+	}
+	m.mu.RLock()
+	value := m.values[parentID]
+	if value == nil {
+		value = m.pending[parentID]
+	}
+	m.mu.RUnlock()
+	if value == nil || value.metadata.LaboratoryID != laboratoryID || value.metadata.State != "running" {
+		return
+	}
+	m.observeCapture(value, captureID, interfaceID, linkID, objectLinkID, direction, format, chunk, at)
+}
+
+func (m *TrafficFilterManager) observeCapture(value *managedFilter, captureID, interfaceID, linkID, objectLinkID domain.ID, direction, format string, chunk []byte, at time.Time) {
+	if len(value.interfaces) > 0 || len(value.links) > 0 || len(value.objectLinks) > 0 {
+		matchesInterface := interfaceID != "" && value.interfaces[interfaceID]
+		matchesLink := linkID != "" && value.links[linkID]
+		matchesObjectLink := objectLinkID != "" && value.objectLinks[objectLinkID]
+		if !matchesInterface && !matchesLink && !matchesObjectLink {
+			return
 		}
-		value.mu.Lock()
-		decoderKey := string(interfaceID) + ":" + string(linkID) + ":" + string(objectLinkID) + ":" + direction
-		decoder := value.decoders[decoderKey]
-		if decoder == nil {
-			decoder = captureRuntime.NewPacketDecoder(format)
-			value.decoders[decoderKey] = decoder
-		}
-		packets, err := decoder.Add(chunk)
-		value.mu.Unlock()
-		if err != nil {
-			continue
-		}
-		for _, packet := range packets {
-			if captureRuntime.Matches(value.match, packet.Key) {
-				if objectLinkID != "" {
-					value.correlator.ObserveNetworkObjectLinkPacket(captureRuntime.Fingerprint(packet.Key), objectLinkID, networkObjectLinkDirection(direction), packet.Key, at)
-				} else {
-					value.correlator.ObservePacket(captureRuntime.Fingerprint(packet.Key), interfaceID, linkID, direction, packet.Key, at)
-				}
+	}
+	value.mu.Lock()
+	decoderKey := string(captureID) + ":" + string(interfaceID) + ":" + string(linkID) + ":" + string(objectLinkID) + ":" + direction
+	decoder := value.decoders[decoderKey]
+	if decoder == nil {
+		decoder = captureRuntime.NewPacketDecoder(format)
+		value.decoders[decoderKey] = decoder
+	}
+	packets, err := decoder.Add(chunk)
+	value.mu.Unlock()
+	if err != nil {
+		return
+	}
+	for _, packet := range packets {
+		if captureRuntime.Matches(value.match, packet.Key) {
+			if objectLinkID != "" {
+				value.correlator.ObserveNetworkObjectLinkPacket(captureRuntime.Fingerprint(packet.Key), objectLinkID, networkObjectLinkDirection(direction), packet.Key, at)
+			} else {
+				value.correlator.ObservePacket(captureRuntime.Fingerprint(packet.Key), interfaceID, linkID, direction, packet.Key, at)
 			}
 		}
 	}

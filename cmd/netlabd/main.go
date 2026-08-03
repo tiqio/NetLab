@@ -156,7 +156,7 @@ func main() {
 	captureManager.SetNetworkObjectRepository(repositories)
 	trafficFilterManager := reconcile.NewTrafficFilterManager(captureManager)
 	captureTasks := reconcile.NewCaptureTaskService(captureManager, trafficFilterManager, taskRunner)
-	captureManager.SetObserver(trafficFilterManager.ObserveCapture)
+	captureManager.SetObserver(trafficFilterManager.ObserveManagedCapture)
 	httpapi.NewCaptureHandlers(captureManager, trafficFilterManager, captureTasks).Register(server.Engine())
 	pcRuntime, pcRuntimeErr := linuxnet.NewPCRuntime(nil)
 	if pcRuntimeErr != nil {

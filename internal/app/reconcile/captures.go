@@ -48,7 +48,7 @@ type CaptureArtifactService interface {
 	Create(context.Context, string, string, string, domain.ID, []byte, time.Duration) (domain.Artifact, error)
 }
 
-type CaptureObserver func(domain.ID, domain.ID, domain.ID, domain.ID, string, string, []byte, time.Time)
+type CaptureObserver func(domain.ID, domain.ID, domain.ID, domain.ID, domain.ID, domain.ID, string, string, []byte, time.Time)
 
 type CaptureManager struct {
 	directory      string
@@ -206,7 +206,7 @@ func (m *CaptureManager) StartAs(ctx context.Context, id domain.ID, request Capt
 				if direction == "" {
 					direction = "observed"
 				}
-				m.observer(request.LaboratoryID, interfaceID, linkID, objectLinkID, direction, request.Format, chunk, time.Now().UTC())
+				m.observer(id, request.ParentID, request.LaboratoryID, interfaceID, linkID, objectLinkID, direction, request.Format, chunk, time.Now().UTC())
 			}
 		}()
 	}
