@@ -200,4 +200,35 @@ describe("TopologyCanvas", () => {
       objectLinks[1].lineStyle.curveness,
     );
   });
+
+  it("renders selectable named ports on a selected network object", async () => {
+    const wrapper = mount(TopologyCanvas, {
+      props: {
+        nodes: [],
+        interfaces: [],
+        links: [],
+        networkObjects: [
+          {
+            id: "switch-a",
+            laboratory_id: "lab",
+            name: "Switch A",
+            kind: "switch_l2",
+            revision: 1,
+            desired_state: "active",
+            observed_state: "active",
+            config: { ports: [{ name: "swp1" }, { name: "swp2" }] },
+          },
+        ],
+        networkObjectLinks: [],
+        preferences: defaultWorkspacePreferences("lab"),
+        selectedIds: ["switch-a"],
+      },
+    });
+    await nextTick();
+
+    const port = wrapper.get('[data-interface-id="switch-a:swp1"]');
+    expect(port.attributes("aria-label")).toContain("swp1, available");
+    await port.trigger("click");
+    expect(wrapper.emitted("objectPort")?.[0]).toEqual(["switch-a", "swp1"]);
+  });
 });

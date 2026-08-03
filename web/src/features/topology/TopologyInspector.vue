@@ -9,6 +9,7 @@ import {
   type NetworkObjectLink,
   type Node,
   type NodeInterface,
+  type OperationTask,
 } from "@/api";
 import { Button, FormField, Input, Select } from "@/components/ui";
 import EmptyState from "@/components/common/EmptyState.vue";
@@ -37,6 +38,7 @@ const props = withDefaults(
     networkObjects?: NetworkObject[];
     attachments?: NetworkAttachment[];
     networkObjectLinks?: NetworkObjectLink[];
+    tasks?: OperationTask[];
     showLightweight?: boolean;
     diagnosticsRequestKey?: number;
   }>(),
@@ -45,6 +47,7 @@ const props = withDefaults(
     networkObjects: () => [],
     attachments: () => [],
     networkObjectLinks: () => [],
+    tasks: () => [],
   },
 );
 const emit = defineEmits<{
@@ -108,6 +111,15 @@ const objectLinkB = computed(() =>
   props.networkObjects.find(
     (item) => item.id === props.networkObjectLink?.object_b_id,
   ),
+);
+const objectLinkTask = computed(() =>
+  [...props.tasks]
+    .filter(
+      (item) =>
+        item.resource_type === "network_object_link" &&
+        item.resource_id === props.networkObjectLink?.id,
+    )
+    .sort((left, right) => right.created_at.localeCompare(left.created_at))[0],
 );
 const attachedInterfaceIds = computed(
   () => new Set(props.attachments.map((item) => item.interface_id)),
@@ -511,7 +523,20 @@ async function deleteObjectLink() {
           <dd>{{ networkObjectLink.observed_state }}</dd>
           <dt>Revision</dt>
           <dd>{{ networkObjectLink.revision }}</dd>
+          <template v-if="objectLinkTask">
+            <dt>Lifecycle task</dt>
+            <dd>{{ objectLinkTask.id }} · {{ objectLinkTask.state }}</dd>
+            <dt>Task progress</dt>
+            <dd>
+              {{ objectLinkTask.progress_current }} / {{ objectLinkTask.progress_total }}
+            </dd>
+          </template>
         </dl>
+        <StructuredProblem
+          v-if="objectLinkTask?.error"
+          class="mt-3"
+          :problem="objectLinkTask.error"
+        />
         <StructuredProblem
           v-if="networkObjectLink.last_error"
           class="mt-3"

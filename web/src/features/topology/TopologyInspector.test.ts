@@ -58,6 +58,22 @@ describe("TopologyInspector", () => {
             message: "veth endpoint missing",
           },
         },
+        tasks: [
+          {
+            id: "task-object-link-1",
+            kind: "network_object_link.create",
+            resource_type: "network_object_link",
+            resource_id: "object-link-1",
+            state: "failed",
+            progress_current: 1,
+            progress_total: 2,
+            created_at: "2026-08-03T06:00:00Z",
+            error: {
+              code: "runtime_failed",
+              message: "task could not restore the veth pair",
+            },
+          },
+        ],
       },
     });
     expect(wrapper.text()).toContain("Switch A:swp1");
@@ -65,6 +81,8 @@ describe("TopologyInspector", () => {
     expect(wrapper.text()).toContain("期望状态");
     expect(wrapper.text()).toContain("实际状态");
     expect(wrapper.text()).toContain("veth endpoint missing");
+    expect(wrapper.text()).toContain("task-object-link-1 · failed");
+    expect(wrapper.text()).toContain("task could not restore the veth pair");
     expect(wrapper.text()).toContain("直接 veth pair");
     expect(wrapper.text()).not.toContain("独立宿主桥");
   });

@@ -48,6 +48,7 @@ const props = withDefaults(
     editingLinkId?: string;
     panEnabled?: boolean;
     connectionSourceInterfaceId?: string;
+    connectionSourceObjectPortId?: string;
     traffic?: TrafficObservation[];
     trafficActive?: boolean;
     trafficColor?: string;
@@ -73,6 +74,7 @@ const emit = defineEmits<{
     boolean,
   ];
   interface: [string];
+  objectPort: [string, string];
   connector: [string];
   move: [string, number, number];
   viewport: [{ centerX?: number; centerY?: number; zoom?: number }];
@@ -131,6 +133,7 @@ const portOverlays = ref<
     source: boolean;
     emphasized: boolean;
     state: string;
+    kind: "node_interface" | "network_object_port";
   }>
 >([]);
 const connectorOverlay = ref<{ ownerId: string; x: number; y: number }>();
@@ -214,6 +217,39 @@ const selectedConnectorNode = computed(() => {
   if ((props.selectedIds || []).length !== 1) return undefined;
   return props.nodes.find((node) => node.id === props.selectedIds?.[0]);
 });
+function networkObjectPorts(value: NetworkObject) {
+  const rows =
+    value.kind === "switch_l2"
+      ? value.config?.ports
+      : value.kind === "switch_l3" || value.kind === "pc"
+        ? value.config?.interfaces
+        : [];
+  return Array.isArray(rows)
+    ? rows
+        .map((item) => String((item as { name?: string }).name || ""))
+        .filter(Boolean)
+    : [];
+}
+function objectPortId(objectId: string, portName: string) {
+  return `${objectId}:${portName}`;
+}
+const occupiedObjectPorts = computed(() => {
+  const result = new Set<string>();
+  for (const attachment of props.networkAttachments)
+    if (attachment.port_name)
+      result.add(
+        objectPortId(attachment.network_object_id, attachment.port_name),
+      );
+  for (const link of props.networkObjectLinks) {
+    result.add(objectPortId(link.object_a_id, link.port_a_name));
+    result.add(objectPortId(link.object_b_id, link.port_b_name));
+  }
+  return result;
+});
+const connectionSourcePortId = computed(
+  () =>
+    props.connectionSourceInterfaceId || props.connectionSourceObjectPortId || "",
+);
 const availableInterfaceOwners = computed(
   () =>
     new Set(
@@ -245,6 +281,13 @@ function showPortDetails(nodeId: string) {
     selected.value.has(nodeId) ||
     hoveredResourceId.value === nodeId ||
     Boolean(props.connectionSourceInterfaceId)
+  );
+}
+function showObjectPortDetails(objectId: string) {
+  return (
+    selected.value.has(objectId) ||
+    hoveredResourceId.value === objectId ||
+    Boolean(props.connectionSourceObjectPortId)
   );
 }
 function endpointLabel(interfaceId: string) {
@@ -855,6 +898,8 @@ function handleHover(event: unknown) {
   };
   if (value.data?.resourceType === "node")
     hoveredResourceId.value = value.data.id || "";
+  if (value.data?.resourceType === "network_object")
+    hoveredResourceId.value = value.data.id || "";
   if (value.data?.resourceType === "interface")
     hoveredResourceId.value = value.data.ownerId || "";
   scheduleOverlayRefresh();
@@ -879,7 +924,7 @@ function handleRoam(event: unknown) {
       centerY: value.centerY,
       zoom: value.zoom,
     });
-  if (props.connectionSourceInterfaceId) void nextTick(updateConnectionPreview);
+  if (connectionSourcePortId.value) void nextTick(updateConnectionPreview);
 }
 function refreshOverlays() {
   if (draggingResource.value) {
@@ -911,6 +956,35 @@ function refreshOverlays() {
           item.id !== props.connectionSourceInterfaceId,
         ),
         state: item.operational_state,
+        kind: "node_interface",
+      });
+    });
+  }
+  for (const object of props.networkObjects.filter((item) =>
+    showObjectPortDetails(item.id),
+  )) {
+    const ownerPixel = chart.value?.graphItemPixel?.(object.id);
+    if (!ownerPixel) continue;
+    const values = networkObjectPorts(object);
+    values.forEach((name, index) => {
+      const id = objectPortId(object.id, name);
+      const angle = (Math.PI * 2 * index) / Math.max(values.length, 1);
+      const available = !occupiedObjectPorts.value.has(id);
+      nextPorts.push({
+        id,
+        ownerId: object.id,
+        name,
+        x: ownerPixel.x + Math.cos(angle) * 42,
+        y: ownerPixel.y + Math.sin(angle) * 42,
+        available,
+        source: id === props.connectionSourceObjectPortId,
+        emphasized: Boolean(
+          props.connectionSourceObjectPortId &&
+          available &&
+          id !== props.connectionSourceObjectPortId,
+        ),
+        state: object.observed_state,
+        kind: "network_object_port",
       });
     });
   }
@@ -1024,12 +1098,12 @@ function handleChartGeometryChange() {
   scheduleOverlayRefresh();
 }
 function updateConnectionPreview() {
-  if (!props.connectionSourceInterfaceId || !connectionTarget.value) {
+  if (!connectionSourcePortId.value || !connectionTarget.value) {
     connectionPreview.value = undefined;
     return;
   }
   const sourcePixel = portOverlays.value.find(
-    (item) => item.id === props.connectionSourceInterfaceId,
+    (item) => item.id === connectionSourcePortId.value,
   );
   if (!sourcePixel) {
     connectionPreview.value = undefined;
@@ -1043,7 +1117,7 @@ function updateConnectionPreview() {
   };
 }
 function handleConnectionPointer(event: MouseEvent) {
-  if (!props.connectionSourceInterfaceId) {
+  if (!connectionSourcePortId.value) {
     connectionTarget.value = undefined;
     connectionPreview.value = undefined;
     return;
@@ -1276,9 +1350,13 @@ watch(
   () => [
     props.nodes,
     props.interfaces,
+    props.networkObjects,
+    props.networkAttachments,
+    props.networkObjectLinks,
     props.sharedPlacements,
     props.selectedIds,
     props.connectionSourceInterfaceId,
+    props.connectionSourceObjectPortId,
     props.traffic,
     props.trafficActive,
     props.trafficColor,
@@ -1426,9 +1504,21 @@ defineExpose({
         role="button"
         :aria-label="`${port.name}, ${port.available ? 'available' : 'connected'}, ${port.state}`"
         tabindex="0"
-        @click.stop="$emit('interface', port.id)"
-        @keydown.enter.prevent="$emit('interface', port.id)"
-        @keydown.space.prevent="$emit('interface', port.id)"
+        @click.stop="
+          port.kind === 'node_interface'
+            ? $emit('interface', port.id)
+            : $emit('objectPort', port.ownerId, port.name)
+        "
+        @keydown.enter.prevent="
+          port.kind === 'node_interface'
+            ? $emit('interface', port.id)
+            : $emit('objectPort', port.ownerId, port.name)
+        "
+        @keydown.space.prevent="
+          port.kind === 'node_interface'
+            ? $emit('interface', port.id)
+            : $emit('objectPort', port.ownerId, port.name)
+        "
       >
         <title>
           {{ port.name }} · {{ port.available ? "available" : "connected" }}

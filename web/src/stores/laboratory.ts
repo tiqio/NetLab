@@ -5,6 +5,7 @@ import {
   type Laboratory,
   type Link,
   type NetworkObject,
+  type NetworkObjectLink,
   type Node,
   type NodeInterface,
   type OperationTask,
@@ -263,6 +264,23 @@ export const useLaboratoryStore = defineStore("laboratory", {
           event.data as unknown as NetworkObject,
           event.revision,
         );
+        return;
+      }
+      if (event.resource_type === "network_object_link") {
+        this.active.network_object_links ||= [];
+        if (event.type.endsWith(".deleted")) {
+          this.active.network_object_links =
+            this.active.network_object_links.filter(
+              (item) => item.id !== event.resource_id,
+            );
+          return;
+        }
+        this.upsert(
+          this.active.network_object_links,
+          event.resource_id,
+          event.data as unknown as NetworkObjectLink,
+          event.revision,
+        );
       }
     },
     upsert<T extends { id: string; revision?: number }>(
@@ -336,7 +354,6 @@ export const useLaboratoryStore = defineStore("laboratory", {
     },
     async mutate(action: () => Promise<unknown>) {
       if (!this.active) return;
-      const id = this.active.laboratory.id;
       this.error = "";
       try {
         await action();

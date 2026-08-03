@@ -126,6 +126,102 @@ describe("laboratory store", () => {
     expect(store.active!.links[0].observed_state).toBe("connected");
   });
 
+  it("reconciles shared network-object links without a refresh", () => {
+    const store = useLaboratoryStore();
+    store.active = {
+      laboratory: laboratoryFactory({ id: "lab" }),
+      nodes: [],
+      interfaces: [],
+      links: [],
+      network_objects: [],
+      network_object_links: [],
+      placements: [],
+      event_sequence: 30,
+    };
+    store.sequence = 30;
+
+    store.applyEvent({
+      sequence: 31,
+      type: "network_object_link.created",
+      laboratory_id: "lab",
+      resource_type: "network_object_link",
+      resource_id: "object-link-1",
+      revision: 1,
+      data: {
+        id: "object-link-1",
+        laboratory_id: "lab",
+        object_a_id: "switch-a",
+        port_a_name: "swp1",
+        object_b_id: "switch-b",
+        port_b_name: "swp2",
+        desired_state: "connected",
+        observed_state: "pending",
+      },
+    });
+    expect(store.active.network_object_links?.[0]).toMatchObject({
+      id: "object-link-1",
+      observed_state: "pending",
+    });
+
+    store.applyEvent({
+      sequence: 32,
+      type: "network_object_link.state_changed",
+      laboratory_id: "lab",
+      resource_type: "network_object_link",
+      resource_id: "object-link-1",
+      revision: 1,
+      data: { observed_state: "connected" },
+    });
+    expect(store.active.network_object_links?.[0].observed_state).toBe(
+      "connected",
+    );
+
+    store.applyEvent({
+      sequence: 33,
+      type: "network_object_link.deleted",
+      laboratory_id: "lab",
+      resource_type: "network_object_link",
+      resource_id: "object-link-1",
+      revision: 2,
+      data: {},
+    });
+    expect(store.active.network_object_links).toHaveLength(0);
+  });
+
+  it("normalizes object links when reopening a laboratory", async () => {
+    const store = useLaboratoryStore();
+    vi.spyOn(api, "getLab").mockResolvedValueOnce({
+      laboratory: laboratoryFactory({ id: "lab" }),
+      nodes: [],
+      interfaces: [],
+      links: [],
+      network_objects: [],
+      network_object_links: [
+        {
+          id: "object-link-1",
+          laboratory_id: "lab",
+          object_a_id: "switch-a",
+          port_a_name: "swp1",
+          object_b_id: "switch-b",
+          port_b_name: "swp1",
+          revision: 4,
+          desired_state: "connected",
+          observed_state: "connected",
+        },
+      ],
+      placements: [],
+      event_sequence: 40,
+    });
+
+    await store.open("lab");
+
+    expect(store.active?.network_object_links?.[0]).toMatchObject({
+      id: "object-link-1",
+      revision: 4,
+      observed_state: "connected",
+    });
+  });
+
   it("incrementally reconciles topology resources and tasks", () => {
     const store = useLaboratoryStore();
     store.active = {

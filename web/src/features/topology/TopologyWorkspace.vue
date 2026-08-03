@@ -101,6 +101,7 @@ const paletteSelection = ref<PaletteSelection>();
 const commandOpen = ref(false);
 const showLightweight = ref(false);
 const pendingEndpoint = ref("");
+const pendingObjectPort = ref<{ objectId: string; portName: string }>();
 const canvasStatus = ref("");
 const portChooserOpen = ref(false);
 const portChooserMode = ref<"source" | "target" | "reconnect" | "capture">(
@@ -630,11 +631,78 @@ function clearSelection() {
 }
 
 function cancelOrClear() {
-  if (pendingEndpoint.value || portChooserOpen.value) {
+  if (pendingEndpoint.value || pendingObjectPort.value || portChooserOpen.value) {
     cancelConnection();
     return;
   }
   clearSelection();
+}
+
+function objectPortOccupied(objectId: string, portName: string) {
+  const key = `${objectId}:${portName}`;
+  return Boolean(
+    store.active?.network_attachments?.some(
+      (item) =>
+        item.network_object_id === objectId && item.port_name === portName,
+    ) ||
+      store.active?.network_object_links?.some(
+        (item) =>
+          `${item.object_a_id}:${item.port_a_name}` === key ||
+          `${item.object_b_id}:${item.port_b_name}` === key,
+      ),
+  );
+}
+
+async function objectPortClicked(objectId: string, portName: string) {
+  if (!store.active) return;
+  if (objectPortOccupied(objectId, portName)) {
+    canvasStatus.value = `${portName} 已被占用，请选择空闲端口。`;
+    return;
+  }
+  if (pendingEndpoint.value) {
+    canvasStatus.value =
+      "普通节点接口不能直接连接对象端口；请使用 Inspector 的 Attachment 操作。";
+    return;
+  }
+  const source = pendingObjectPort.value;
+  if (!source) {
+    pendingObjectPort.value = { objectId, portName };
+    canvasStatus.value = `已选择 ${portName}；请选择另一个网络对象的空闲端口。`;
+    return;
+  }
+  if (source.objectId === objectId && source.portName === portName) {
+    pendingObjectPort.value = undefined;
+    canvasStatus.value = "对象链路创建已取消。";
+    return;
+  }
+  if (source.objectId === objectId) {
+    canvasStatus.value = "对象间链路必须连接两个不同的网络对象。";
+    return;
+  }
+  try {
+    const envelope = await api.createNetworkObjectLink(
+      store.active.laboratory.id,
+      {
+        object_a_id: source.objectId,
+        port_a_name: source.portName,
+        object_b_id: objectId,
+        port_b_name: portName,
+      },
+    );
+    const index = store.tasks.findIndex((item) => item.id === envelope.task.id);
+    if (index >= 0) store.tasks[index] = envelope.task;
+    else store.tasks.unshift(envelope.task);
+    pendingObjectPort.value = undefined;
+    canvasStatus.value = `对象链路任务 ${envelope.task.id} 已提交。`;
+    await refreshActive();
+  } catch (value) {
+    const message = value instanceof Error ? value.message : String(value);
+    canvasStatus.value = message.includes("port_in_use")
+      ? "端口已被其他客户端占用，拓扑已刷新，请重新选择。"
+      : message;
+    pendingObjectPort.value = undefined;
+    await refreshActive();
+  }
 }
 
 function selectBox(
@@ -840,6 +908,7 @@ async function retryReconnect() {
 function cancelConnection() {
   const captureSelection = portChooserMode.value === "capture";
   pendingEndpoint.value = "";
+  pendingObjectPort.value = undefined;
   portChooserOpen.value = false;
   portChooserMode.value = "source";
   canvasStatus.value = captureSelection
@@ -982,7 +1051,7 @@ function cancelWorkspaceTransient() {
     cancelRouteEdit();
     return true;
   }
-  if (pendingEndpoint.value || portChooserOpen.value) {
+  if (pendingEndpoint.value || pendingObjectPort.value || portChooserOpen.value) {
     cancelConnection();
     return true;
   }
@@ -1010,7 +1079,11 @@ async function topologyKeyboard(event: KeyboardEvent) {
       metaKey: event.metaKey,
     },
     selectedIds.value,
-    { connection: Boolean(pendingEndpoint.value || portChooserOpen.value) },
+    {
+      connection: Boolean(
+        pendingEndpoint.value || pendingObjectPort.value || portChooserOpen.value,
+      ),
+    },
   );
   if (action.type === "none") return;
   event.preventDefault();
@@ -1163,6 +1236,7 @@ onBeforeUnmount(() => {
           :network-objects="store.active.network_objects"
           :network-attachments="store.active.network_attachments || []"
           :network-object-links="store.active.network_object_links || []"
+          :tasks="store.tasks"
           :preferences="preferences"
           :shared-placements="store.active.placements"
           :selected-ids="selectedIds"
@@ -1171,6 +1245,11 @@ onBeforeUnmount(() => {
           :editing-link-id="editingRouteLinkId"
           :pan-enabled="panEnabled"
           :connection-source-interface-id="pendingEndpoint"
+          :connection-source-object-port-id="
+            pendingObjectPort
+              ? `${pendingObjectPort.objectId}:${pendingObjectPort.portName}`
+              : ''
+          "
           :traffic="trafficObservations"
           :traffic-active="trafficOverlayActive"
           :traffic-color="trafficOverlayColor"
@@ -1179,6 +1258,7 @@ onBeforeUnmount(() => {
           @move="moveResource"
           @viewport="setViewport"
           @interface="interfaceClicked"
+          @object-port="objectPortClicked"
           @keyboard="topologyKeyboard"
           @box-select="selectBox"
           @route-point="updateRoutePoint"
