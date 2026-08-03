@@ -165,3 +165,14 @@
 - Focused gates for `462fbcb`: 40 topology/store Vitest cases and the production SPA build passed; the
   browser journey passed against the final embedded SPA in both the 1920x1080 desktop and 1024x768 minimum
   viewport projects locally on August 3, 2026.
+- `c9adc05` (`test: preserve surviving object link path`): corrects the privileged recovery scenario so
+  deleting one parallel link moves the routed path onto the surviving pair and a fresh DataPlane adopts
+  only links that still have connected intent. The root-gated ICMP/TCP/UDP path test then passed against
+  real Linux namespaces and veth pairs in 8.46 seconds. This is the focused US1 milestone SHA.
+- US1 gates completed locally on August 3, 2026: domain/application/runtime/store/API unit packages,
+  object-link HTTP/MCP/event contracts, recovery tests, `go vet`, focused race tests, export/import tests,
+  40 focused frontend tests, production SPA build, both Playwright viewports, and the privileged path test
+  passed. Two repository-wide baseline gates remain unrelated to US1: `TestBuiltInTemplatesLoad` expects a
+  template count other than the current 8, and `PortMappingsPanel.test.ts` cannot find its QGA preset
+  button; repository-wide ESLint/Prettier also report pre-existing errors and unformatted files outside
+  this milestone's change set.

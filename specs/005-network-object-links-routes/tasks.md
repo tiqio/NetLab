@@ -89,7 +89,7 @@ service, and confirm the same path recovers.
 - [X] T028 [US1] Implement object-to-object connector selection, occupied-port feedback, parallel-link rendering, and `object:port ↔ object:port` presentation in `web/src/features/topology/topologyConnectionController.ts`, `web/src/features/topology/TopologyCanvas.vue`, and `web/src/features/topology/linkPresentation.ts`
 - [X] T029 [US1] Display authoritative desired/actual state, revision, lifecycle task, and actionable failures for selected object links in `web/src/features/topology/TopologyInspector.vue` and `web/src/features/topology/TopologyWorkspace.vue`
 - [X] T030 [US1] Complete object-link export/import ID remapping and transactional endpoint reservation integration in `internal/store/sqlite/import_repository.go`, `internal/app/command/export.go`, and `internal/app/command/import.go`
-- [ ] T031 [US1] Run US1 unit, contract, frontend, privileged integration, recovery, and browser tests and record the focused milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
+- [X] T031 [US1] Run US1 unit, contract, frontend, privileged integration, recovery, and browser tests and record the focused milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
 
 **Checkpoint**: User Story 1 is independently usable as the MVP and has a committed local milestone.
 
