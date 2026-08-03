@@ -9,9 +9,21 @@ export interface LaboratoryRecord {
 }
 
 export async function selectLaboratoryByName(page: Page, name: string) {
-  await page.getByTestId("laboratory-switcher").click();
-  await page.getByRole("option", { name: new RegExp(name) }).click();
-  await expect(page.getByTestId("laboratory-switcher")).toContainText(name);
+  const switcher = page.getByTestId("laboratory-switcher");
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    if ((await switcher.getAttribute("aria-expanded")) !== "true")
+      await switcher.click();
+    try {
+      await page
+        .getByRole("option", { name: new RegExp(name) })
+        .click({ timeout: 5_000 });
+      await expect(switcher).toContainText(name);
+      return;
+    } catch {
+      await page.waitForTimeout(250);
+    }
+  }
+  throw new Error(`Unable to select laboratory ${name}`);
 }
 
 export class LaboratoryPage extends BasePage {
@@ -64,17 +76,25 @@ export class LaboratoryPage extends BasePage {
   }
 
   async openCreateDialog() {
-    await this.page.getByTestId("laboratory-switcher").click();
-    await this.activate(this.page.getByTestId("new-laboratory"));
+    const switcher = this.page.getByTestId("laboratory-switcher");
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      if ((await switcher.getAttribute("aria-expanded")) !== "true")
+        await switcher.click();
+      try {
+        await this.activate(this.page.getByTestId("new-laboratory"));
+        return;
+      } catch {
+        await this.page.waitForTimeout(250);
+      }
+    }
+    throw new Error("Unable to open the laboratory creation dialog");
   }
 
   async openActiveActions() {
     await this.page.getByTestId("laboratory-switcher").click();
-    const activeRow = this.page
-      .locator('[data-laboratory-row="true"]')
-      .filter({
-        has: this.page.locator('[role="option"][aria-selected="true"]'),
-      });
+    const activeRow = this.page.locator('[data-laboratory-row="true"]').filter({
+      has: this.page.locator('[role="option"][aria-selected="true"]'),
+    });
     const actions = activeRow.getByRole("button", { name: /^Actions for / });
     await expect(actions).toBeVisible();
     await actions.click();
