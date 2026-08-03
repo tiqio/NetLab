@@ -27,7 +27,9 @@ validation problem and no partial reservation.
 ## `netlab.network_object_links.get`
 
 Input: `{ "link_id": "..." }`
-Output: authoritative `NetworkObjectLink`, including human-readable endpoint label and failure state.
+Output: authoritative `NetworkObjectLink`, including endpoint IDs/names, `desired_state`,
+`observed_state`, revision, and optional structured `last_error`. Human-readable labels are derived by
+clients from the authoritative endpoint objects and names.
 
 ## `netlab.network_object_links.delete`
 
@@ -60,7 +62,8 @@ metadata, stream URL, optional artifact reference, packet/byte counters, state, 
 }
 ```
 
-Observations return `resource_type`, `resource_id`, direction, time window, packet count, and byte count.
+Observations return `resource_type`, `resource_id`, `direction`, `first_seen`, `last_seen`, `count`, and
+`bytes` (plus protocol/address metadata when available).
 Direction may be `ambiguous`; MCP clients must not infer a direction when the server marks ambiguity.
 
 ## Existing Node Create/Settings Tools
@@ -81,5 +84,7 @@ Docker node `network_interfaces` accept ordered `routes`:
 }
 ```
 
-The mutation returns validation problems before start for malformed declarations. Runtime route failures
-are returned through the node lifecycle task and authoritative readiness/error state.
+`netlab.nodes.update_settings` requires `node_id`, `expected_revision`, the complete stopped-node resource
+settings, and the complete ordered `network_interfaces` collection. It returns the authoritative updated
+node. The mutation returns stable validation problems before start for malformed declarations. Runtime
+route failures are returned through the node lifecycle task and authoritative readiness/error state.

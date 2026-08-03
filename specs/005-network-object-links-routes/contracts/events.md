@@ -8,23 +8,22 @@ The state mutation and event append must commit atomically.
 
 | Event type | Required payload |
 |---|---|
-| `network_object_link.created` | Full durable link snapshot and endpoint reservations |
-| `network_object_link.state_changed` | `desired_state`, `actual_state`, `revision`, optional structured error |
-| `network_object_link.deleted` | Link ID, final revision, both endpoint identities, completion task ID |
-| `network_object_link.recovered` | Link ID, adopted/recreated action, resulting actual state |
+| `network_object_link.created` | Full durable link snapshot; reservations commit in the same transaction |
+| `network_object_link.state_changed` | `observed_state` and optional structured `last_error`; desired state and revision remain in the envelope/authoritative resource |
+| `network_object_link.deleted` | Empty payload; link ID, final revision, and completion task ID are carried by the ordered envelope |
+| `network_object_link.recovered` | Link ID, desired/observed state, optional `last_error`, and `recovery_action=adopted_or_recreated` |
 
 Consumers remove a topology line on `network_object_link.deleted` without requiring a full refresh.
 Parallel links are keyed only by link ID, never by unordered object pair.
 
-## Docker Route Events
+## Docker Route State
 
-| Event type | Required payload |
-|---|---|
-| `node.network_configuration_changed` | Node ID, revision, interface summaries, redacted route declarations |
-| `node.routes_reconciled` | Node ID, revision, applied/removed counts, resulting readiness |
-| `node.route_reconciliation_failed` | Node ID, revision, interface ID/name, destination, error code/message |
-
-Route event payloads contain no container namespace PID, host command, credential, or secret.
+The implemented contract does not introduce separate route event types. Stopped-node route edits return
+the updated revisioned node through the shared settings command. Start/restart/recovery route application
+is observable through the existing durable node lifecycle task and authoritative node readiness/error
+state. Clients must refresh the node after relevant task or topology events rather than wait for a
+`node.routes_reconciled` event that the server does not publish. No event or export contains container
+namespace PID, host command, credential, packet payload, or target secret.
 
 ## Capture and Traffic Events
 

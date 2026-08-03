@@ -88,4 +88,49 @@ The full procedure is in `specs/002-constitution-gap-closure/quickstart.md`.
 - Telnet/VNC console streams: `/api/v1/nodes/{nodeId}/consoles/...`
 - Capture stream/Wireshark handoff: `/api/v1/captures/{captureId}/stream`
 
-External contract deltas are maintained in `specs/002-constitution-gap-closure/contracts/`.
+## Network Object Links
+
+Lightweight PC, L2 switch, and L3 switch objects expose named namespace ports. Connect two free object
+ports from the topology canvas to create a first-class direct veth link. Parallel links are independent
+resources: select, inspect, capture, filter, or delete the exact line identified by its link ID and
+human-readable `object:port ↔ object:port` label.
+
+Deleting a connected object link is live and revision checked. The durable task stops dependent capture
+and Traffic Filter workers, removes the owned veth pair, releases both port reservations, publishes the
+ordered delete event, and lets every browser remove the line without a refresh. The released ports can
+be reconnected immediately; deleting a network object cascades through its owned links.
+
+## Capture and Traffic Filter
+
+Capture sources support node interfaces, standard links, and network-object links. For an object link,
+select the exact line and start Capture or use its context menu; the server resolves the namespace and
+port, while clients receive only the durable link ID, bounded metadata, stream URL, counters, retention,
+truncation, and completion reason. Deleting the source completes an active capture with `link_deleted`.
+
+Traffic Filter accepts pcap-style expressions and can scope observations to exact object-link IDs.
+Matching traffic highlights only those lines, reports `a_to_b`, `b_to_a`, or explicit `ambiguous`
+direction, and decays after traffic stops. Parallel idle links must remain unmarked. Observations never
+contain unbounded packet payloads.
+
+## Docker Static Routes
+
+Stopped Docker nodes can configure ordered IPv4 and IPv6 routes per interface in node Settings or the
+REST/MCP settings contract. Each route declares a canonical destination CIDR, optional same-family
+gateway, and optional nonnegative metric. The gateway must be reachable through an address configured on
+that interface. Invalid destinations, family mismatches, duplicate/conflicting prefixes, unreachable
+gateways, and negative metrics fail before node start with structured problems.
+
+On start and recovery, NetLab creates the managed Docker veth endpoints, waits for a usable container
+namespace and IPv6 DAD, applies the exact owned route set before readiness, and removes stale routes that
+NetLab previously owned. Stop/start and service recovery reapply the declaration; unrelated kernel,
+Docker, connected, or operator routes are not removed. Route edits require the node to be fully stopped.
+
+## Recovery Limits
+
+Service restart adopts or recreates owned object links and Docker endpoints from durable intent. Host
+restart follows each laboratory recovery policy. Capture processes cannot survive a host restart, but
+retained metadata remains authoritative. The deployment remains single-host and does not provide Cisco
+images, clustered scheduling, or application-level account/password authentication.
+
+External contract deltas are maintained in `specs/002-constitution-gap-closure/contracts/` and
+`specs/005-network-object-links-routes/contracts/`.

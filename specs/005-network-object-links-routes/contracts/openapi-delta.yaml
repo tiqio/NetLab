@@ -58,6 +58,23 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/NetworkObjectLinkTaskEnvelope' }
         '409': { $ref: '#/components/responses/Conflict' }
+  /api/v1/nodes/{nodeId}/settings:
+    put:
+      operationId: updateNodeSettings
+      description: Update a stopped node, including ordered Docker IPv4 and IPv6 static routes.
+      parameters:
+        - $ref: '#/components/parameters/NodeId'
+        - $ref: '#/components/parameters/ExpectedRevision'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NodeSettings' }
+      responses:
+        '200':
+          description: Authoritative updated node
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/InvalidRequest' }
   /api/v1/captures:
     post:
       operationId: startCapture
@@ -94,6 +111,11 @@ components:
       in: path
       required: true
       schema: { type: string }
+    NodeId:
+      name: nodeId
+      in: path
+      required: true
+      schema: { type: string }
     ExpectedRevision:
       name: If-Match-Revision
       in: header
@@ -124,7 +146,7 @@ components:
     NetworkObjectLink:
       type: object
       additionalProperties: false
-      required: [id, laboratory_id, object_a_id, port_a_name, object_b_id, port_b_name, revision, desired_state, actual_state]
+      required: [id, laboratory_id, object_a_id, port_a_name, object_b_id, port_b_name, revision, desired_state, observed_state]
       properties:
         id: { type: string }
         laboratory_id: { type: string }
@@ -134,8 +156,7 @@ components:
         port_b_name: { type: string }
         revision: { type: integer, minimum: 1 }
         desired_state: { enum: [connected, deleted] }
-        actual_state: { enum: [pending, connecting, connected, disconnecting, failed] }
-        display_label: { type: string }
+        observed_state: { enum: [pending, connecting, connected, disconnecting, failed] }
         last_error: { oneOf: [{ $ref: '#/components/schemas/Problem' }, { type: 'null' }] }
     NetworkObjectLinkTaskEnvelope:
       type: object
@@ -165,6 +186,20 @@ components:
         routes:
           type: array
           items: { $ref: '#/components/schemas/DockerStaticRoute' }
+    NodeSettings:
+      type: object
+      additionalProperties: false
+      required: [name, cpu_count, cpu_quota_micros, memory_mib, interface_limit, process_limit]
+      properties:
+        name: { type: string, minLength: 1 }
+        cpu_count: { type: integer, minimum: 1, maximum: 256 }
+        cpu_quota_micros: { type: integer, minimum: 0 }
+        memory_mib: { type: integer, minimum: 64 }
+        interface_limit: { type: integer, minimum: 1 }
+        process_limit: { type: integer, minimum: 1, maximum: 1048576 }
+        network_interfaces:
+          type: array
+          items: { $ref: '#/components/schemas/NodeNetworkInterfaceSettings' }
     StartCapture:
       type: object
       additionalProperties: false
@@ -192,14 +227,14 @@ components:
         max_observations: { type: integer, minimum: 1 }
     TrafficObservation:
       type: object
-      required: [resource_type, resource_id, direction, first_seen_at, last_seen_at, packets, bytes]
+      required: [resource_type, resource_id, direction, first_seen, last_seen, count, bytes]
       properties:
         resource_type: { enum: [interface, link, network_object_link] }
         resource_id: { type: string }
         direction: { enum: [a_to_b, b_to_a, ingress, egress, ambiguous] }
-        first_seen_at: { type: string, format: date-time }
-        last_seen_at: { type: string, format: date-time }
-        packets: { type: integer, minimum: 0 }
+        first_seen: { type: string, format: date-time }
+        last_seen: { type: string, format: date-time }
+        count: { type: integer, minimum: 0 }
         bytes: { type: integer, minimum: 0 }
     Problem:
       type: object
@@ -214,7 +249,7 @@ components:
       required: [id, state]
       properties:
         id: { type: string }
-        state: { enum: [queued, running, succeeded, failed, cancelled] }
+        state: { enum: [queued, running, cancelling, succeeded, failed, cancelled] }
   responses:
     Conflict:
       description: Revision, endpoint occupancy, or lifecycle conflict
