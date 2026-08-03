@@ -24,7 +24,59 @@ func NewNetworkObjectTaskService(service *NetworkObjectService, runner *task.Run
 	runner.Register("network_object.create", value.handleCreate)
 	runner.Register("network_object.update", value.handleUpdate)
 	runner.Register("network_object.delete", value.handleDelete)
+	runner.Register("network_object_link.create", value.handleObjectLinkCreate)
 	return value
+}
+
+func (s *NetworkObjectTaskService) CreateObjectLink(ctx context.Context, laboratoryID, objectAID domain.ID, portAName string, objectBID domain.ID, portBName, idempotencyKey string) (domain.NetworkObjectLink, domain.OperationTask, error) {
+	portAName, portBName = strings.TrimSpace(portAName), strings.TrimSpace(portBName)
+	if objectAID == "" || objectBID == "" || objectAID == objectBID {
+		return domain.NetworkObjectLink{}, domain.OperationTask{}, domain.Problem{Code: "invalid_topology", Message: "two different network objects are required", ResourceType: "network_object_link"}
+	}
+	if err := domain.ValidateNetworkObjectPortName(portAName); err != nil {
+		return domain.NetworkObjectLink{}, domain.OperationTask{}, err
+	}
+	if err := domain.ValidateNetworkObjectPortName(portBName); err != nil {
+		return domain.NetworkObjectLink{}, domain.OperationTask{}, err
+	}
+	if err := s.service.ValidateObjectLinkAdmission(ctx, laboratoryID, objectAID, portAName, objectBID, portBName); err != nil {
+		return domain.NetworkObjectLink{}, domain.OperationTask{}, err
+	}
+	link := domain.NetworkObjectLink{ID: domain.NewID(), LaboratoryID: laboratoryID, ObjectAID: objectAID, PortAName: portAName, ObjectBID: objectBID, PortBName: portBName, Revision: 1, DesiredState: "connected", ObservedState: "pending"}
+	input := map[string]any{"laboratory_id": laboratoryID, "object_a_id": objectAID, "port_a_name": portAName, "object_b_id": objectBID, "port_b_name": portBName}
+	operation := networkObjectLinkOperation("network_object_link.create", link.ID, idempotencyKey, input)
+	queued, err := s.runner.EnqueueOrGet(ctx, operation)
+	if err != nil {
+		return domain.NetworkObjectLink{}, domain.OperationTask{}, err
+	}
+	if queued.ID != operation.ID {
+		link.ID = queued.ResourceID
+		link.LaboratoryID = domain.ID(networkTaskText(queued.Input["laboratory_id"]))
+		link.ObjectAID = domain.ID(networkTaskText(queued.Input["object_a_id"]))
+		link.PortAName = networkTaskText(queued.Input["port_a_name"])
+		link.ObjectBID = domain.ID(networkTaskText(queued.Input["object_b_id"]))
+		link.PortBName = networkTaskText(queued.Input["port_b_name"])
+	}
+	return link, queued, nil
+}
+
+func networkObjectLinkOperation(kind string, resourceID domain.ID, idempotencyKey string, input map[string]any) domain.OperationTask {
+	body, _ := json.Marshal(input)
+	sum := sha256.Sum256(body)
+	return domain.OperationTask{ID: domain.NewID(), Kind: kind, ResourceType: "network_object_link", ResourceID: resourceID, IdempotencyKey: idempotencyKey, RequestFingerprint: hex.EncodeToString(sum[:]), State: domain.TaskQueued, ProgressTotal: 2, Input: input, CreatedAt: time.Now().UTC()}
+}
+
+func (s *NetworkObjectTaskService) handleObjectLinkCreate(ctx context.Context, value *domain.OperationTask) (map[string]any, error) {
+	value.ProgressCurrent = 1
+	if err := s.runner.Checkpoint(ctx, value); err != nil {
+		return nil, err
+	}
+	link, err := s.service.CreateObjectLinkAs(ctx, value.ResourceID, domain.ID(networkTaskText(value.Input["laboratory_id"])), domain.ID(networkTaskText(value.Input["object_a_id"])), networkTaskText(value.Input["port_a_name"]), domain.ID(networkTaskText(value.Input["object_b_id"])), networkTaskText(value.Input["port_b_name"]))
+	if err != nil {
+		return nil, *command.NormalizeOperationProblem(err, domain.Problem{Code: "network_object_link_create_failed", Message: "network object link creation failed", ResourceType: "network_object_link", ResourceID: value.ResourceID, TaskID: value.ID, Phase: "reservation", Cleanup: "no endpoint reservations retained", OperatorHint: "choose two free ports in the same laboratory and retry"}, false)
+	}
+	value.ProgressCurrent = value.ProgressTotal
+	return map[string]any{"network_object_link": link}, nil
 }
 
 func (s *NetworkObjectTaskService) Update(ctx context.Context, id domain.ID, revision domain.Revision, name string, config map[string]any, idempotencyKey string) (domain.NetworkObject, domain.OperationTask, error) {

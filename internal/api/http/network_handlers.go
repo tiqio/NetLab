@@ -40,6 +40,7 @@ func (h *NetworkHandlers) Register(engine *gin.Engine) {
 	api.POST("/network-objects/:objectId/attachments", h.attach)
 	api.GET("/labs/:labId/network-object-links", h.listObjectLinks)
 	api.POST("/labs/:labId/network-object-links", h.createObjectLink)
+	api.GET("/network-object-links/:linkId", h.getObjectLink)
 	api.DELETE("/network-object-links/:linkId", h.deleteObjectLink)
 	api.GET("/network-objects/:objectId/diagnostics", h.diagnostics)
 }
@@ -64,12 +65,25 @@ func (h *NetworkHandlers) createObjectLink(c *gin.Context) {
 		handleError(c, err)
 		return
 	}
-	value, err := h.service.CreateObjectLink(c, domain.ID(c.Param("labId")), body.ObjectAID, body.PortAName, body.ObjectBID, body.PortBName)
+	if h.operations == nil {
+		handleError(c, domain.Problem{Code: "operation_unavailable", Message: "network object link automation unavailable"})
+		return
+	}
+	value, taskValue, err := h.operations.CreateObjectLink(c, domain.ID(c.Param("labId")), body.ObjectAID, body.PortAName, body.ObjectBID, body.PortBName, c.GetHeader("Idempotency-Key"))
 	if err != nil {
 		handleError(c, err)
 		return
 	}
-	c.JSON(http.StatusCreated, value)
+	c.JSON(http.StatusAccepted, gin.H{"network_object_link": value, "task": taskValue})
+}
+
+func (h *NetworkHandlers) getObjectLink(c *gin.Context) {
+	value, err := h.service.GetObjectLink(c, domain.ID(c.Param("linkId")))
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, value)
 }
 
 func (h *NetworkHandlers) deleteObjectLink(c *gin.Context) {

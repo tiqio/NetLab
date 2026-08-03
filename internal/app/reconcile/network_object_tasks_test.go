@@ -182,3 +182,51 @@ func TestNetworkObjectCreateCancellationCompensatesOwnedObject(t *testing.T) {
 		t.Fatal("cancelled create left network object behind")
 	}
 }
+
+func TestNetworkObjectLinkCreateIsDurableIdempotentAndObservable(t *testing.T) {
+	ctx, database, repositories, operations, runner, lab := newNetworkTaskFixture(t, &networkTaskRuntimeFake{configured: map[domain.ID]bool{}})
+	defer database.Close()
+	defer runner.Close()
+	now := time.Now().UTC()
+	for _, object := range []domain.NetworkObject{{ID: "switch-a", LaboratoryID: lab.ID, Name: "A", Kind: domain.NetworkSwitchL2, Revision: 1, DesiredState: "active", ObservedState: "active", Config: map[string]any{}, CreatedAt: now, UpdatedAt: now}, {ID: "switch-b", LaboratoryID: lab.ID, Name: "B", Kind: domain.NetworkSwitchL2, Revision: 1, DesiredState: "active", ObservedState: "active", Config: map[string]any{}, CreatedAt: now, UpdatedAt: now}} {
+		if err := repositories.CreateNetworkObject(ctx, object); err != nil {
+			t.Fatal(err)
+		}
+	}
+	predicted, queued, err := operations.CreateObjectLink(ctx, lab.ID, "switch-a", "swp1", "switch-b", "swp1", "link-create-key")
+	if err != nil {
+		t.Fatal(err)
+	}
+	replayed, replayedTask, err := operations.CreateObjectLink(ctx, lab.ID, "switch-a", "swp1", "switch-b", "swp1", "link-create-key")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if replayed.ID != predicted.ID || replayedTask.ID != queued.ID {
+		t.Fatalf("predicted=%+v replayed=%+v tasks=%s/%s", predicted, replayed, queued.ID, replayedTask.ID)
+	}
+	completed := waitForNetworkTask(t, repositories, queued.ID, func(value domain.OperationTask) bool { return value.State == domain.TaskSucceeded })
+	if completed.ResourceType != "network_object_link" || completed.ResourceID != predicted.ID {
+		t.Fatalf("task=%+v", completed)
+	}
+	stored, err := operations.service.GetObjectLink(ctx, predicted.ID)
+	if err != nil || stored.Revision != 1 || stored.PortAName != "swp1" {
+		t.Fatalf("stored=%+v err=%v", stored, err)
+	}
+	listed, err := operations.service.ListObjectLinks(ctx, lab.ID)
+	if err != nil || len(listed) != 1 {
+		t.Fatalf("listed=%+v err=%v", listed, err)
+	}
+	var createdSequence, finalTaskSequence int64
+	if err = database.DB.QueryRowContext(ctx, `SELECT sequence FROM outbox_events WHERE event_type='network_object_link.created' AND resource_id=?`, predicted.ID).Scan(&createdSequence); err != nil {
+		t.Fatal(err)
+	}
+	if err = database.DB.QueryRowContext(ctx, `SELECT MAX(sequence) FROM outbox_events WHERE event_type='task.updated' AND resource_id=?`, queued.ID).Scan(&finalTaskSequence); err != nil {
+		t.Fatal(err)
+	}
+	if createdSequence <= 0 || finalTaskSequence <= createdSequence {
+		t.Fatalf("created=%d final_task=%d", createdSequence, finalTaskSequence)
+	}
+	if _, _, err = operations.CreateObjectLink(ctx, lab.ID, "switch-a", "swp1", "switch-b", "swp2", "occupied-key"); err == nil {
+		t.Fatal("expected occupied port conflict")
+	}
+}

@@ -266,6 +266,27 @@ func (r *Repositories) CreateNetworkObjectLink(ctx context.Context, value domain
 	})
 }
 
+func (r *Repositories) ValidateNetworkObjectLinkEndpoint(ctx context.Context, laboratoryID, objectID domain.ID, portName string) error {
+	var objectLaboratoryID domain.ID
+	if err := r.database.DB.QueryRowContext(ctx, `SELECT laboratory_id FROM network_objects WHERE id=?`, objectID).Scan(&objectLaboratoryID); err != nil {
+		if err == sql.ErrNoRows {
+			return domain.Problem{Code: "invalid_topology", Message: "network object endpoint does not exist", ResourceType: "network_object", ResourceID: objectID}
+		}
+		return err
+	}
+	if objectLaboratoryID != laboratoryID {
+		return domain.Problem{Code: "invalid_topology", Message: "network object endpoint belongs to another laboratory", ResourceType: "network_object", ResourceID: objectID}
+	}
+	var occupied int
+	if err := r.database.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM topology_endpoint_reservations WHERE laboratory_id=? AND owner_type='network_object' AND owner_id=? AND port_name=?`, laboratoryID, objectID, portName).Scan(&occupied); err != nil {
+		return err
+	}
+	if occupied > 0 {
+		return domain.Problem{Code: "port_in_use", Message: "network object port is already occupied", ResourceType: "network_object", ResourceID: objectID}
+	}
+	return nil
+}
+
 func (r *Repositories) ListNetworkObjectLinks(ctx context.Context, laboratoryID domain.ID) ([]domain.NetworkObjectLink, error) {
 	query := `SELECT id,laboratory_id,object_a_id,port_a_name,object_b_id,port_b_name,revision,desired_state,observed_state,COALESCE(last_error_json,'') FROM network_object_links`
 	args := []any{}

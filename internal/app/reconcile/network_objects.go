@@ -236,6 +236,10 @@ func (s *NetworkObjectService) ListObjectLinks(ctx context.Context, laboratoryID
 }
 
 func (s *NetworkObjectService) CreateObjectLink(ctx context.Context, laboratoryID, objectAID domain.ID, portAName string, objectBID domain.ID, portBName string) (domain.NetworkObjectLink, error) {
+	return s.CreateObjectLinkAs(ctx, domain.NewID(), laboratoryID, objectAID, portAName, objectBID, portBName)
+}
+
+func (s *NetworkObjectService) CreateObjectLinkAs(ctx context.Context, id, laboratoryID, objectAID domain.ID, portAName string, objectBID domain.ID, portBName string) (domain.NetworkObjectLink, error) {
 	portAName = strings.TrimSpace(portAName)
 	portBName = strings.TrimSpace(portBName)
 	if objectAID == "" || objectBID == "" || objectAID == objectBID {
@@ -244,11 +248,28 @@ func (s *NetworkObjectService) CreateObjectLink(ctx context.Context, laboratoryI
 	if !networkObjectPortNamePattern.MatchString(portAName) || !networkObjectPortNamePattern.MatchString(portBName) {
 		return domain.NetworkObjectLink{}, fmt.Errorf("network object port names must contain only letters, numbers, dots, underscores, or hyphens")
 	}
-	value := domain.NetworkObjectLink{ID: domain.NewID(), LaboratoryID: laboratoryID, ObjectAID: objectAID, PortAName: portAName, ObjectBID: objectBID, PortBName: portBName, Revision: 1, DesiredState: "connected", ObservedState: "pending"}
+	value := domain.NetworkObjectLink{ID: id, LaboratoryID: laboratoryID, ObjectAID: objectAID, PortAName: portAName, ObjectBID: objectBID, PortBName: portBName, Revision: 1, DesiredState: "connected", ObservedState: "pending"}
 	if err := s.repository.CreateNetworkObjectLink(ctx, value); err != nil {
 		return domain.NetworkObjectLink{}, err
 	}
 	return value, nil
+}
+
+func (s *NetworkObjectService) GetObjectLink(ctx context.Context, id domain.ID) (domain.NetworkObjectLink, error) {
+	return s.repository.GetNetworkObjectLink(ctx, id)
+}
+
+func (s *NetworkObjectService) ValidateObjectLinkAdmission(ctx context.Context, laboratoryID, objectAID domain.ID, portAName string, objectBID domain.ID, portBName string) error {
+	validator, ok := s.repository.(interface {
+		ValidateNetworkObjectLinkEndpoint(context.Context, domain.ID, domain.ID, string) error
+	})
+	if !ok {
+		return nil
+	}
+	if err := validator.ValidateNetworkObjectLinkEndpoint(ctx, laboratoryID, objectAID, portAName); err != nil {
+		return err
+	}
+	return validator.ValidateNetworkObjectLinkEndpoint(ctx, laboratoryID, objectBID, portBName)
 }
 
 func (s *NetworkObjectService) DeleteObjectLink(ctx context.Context, id domain.ID) error {
