@@ -87,6 +87,41 @@ func TestCaptureTaskIdempotencyStopAndRecovery(t *testing.T) {
 	_, _ = recoveredManager.Stop(first.ID)
 }
 
+func TestCaptureTaskPreservesNetworkObjectLinkSource(t *testing.T) {
+	installFakeNamespacedDumpcap(t)
+	ctx := context.Background()
+	database, err := storesqlite.Open(ctx, "file:capture-object-link-task?mode=memory&cache=shared")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer database.Close()
+	repositories := storesqlite.NewRepositories(database)
+	runner := task.NewRunner(repositories, 1, 8)
+	defer runner.Close()
+	object := domain.NetworkObject{ID: "object-a", Kind: domain.NetworkSwitchL3}
+	manager := NewCaptureManager(t.TempDir(), 1, 1<<20, time.Hour)
+	manager.SetNetworkObjectRepository(captureNetworkObjectRepository{
+		link:   domain.NetworkObjectLink{ID: "object-link", LaboratoryID: "lab", ObjectAID: object.ID, PortAName: "swp1", ObjectBID: "object-b", PortBName: "swp2"},
+		object: object,
+	})
+	service := NewCaptureTaskService(manager, NewTrafficFilterManager(manager), runner)
+	value, operation, err := service.StartCapture(ctx, CaptureRequest{
+		LaboratoryID: "lab", SourceType: "network_object_link", SourceID: "object-link", Format: "pcap", MaxBytes: 1 << 20, Duration: time.Minute,
+	}, "object-link-capture")
+	if err != nil {
+		t.Fatal(err)
+	}
+	completed := waitForNetworkTask(t, repositories, operation.ID, func(value domain.OperationTask) bool { return value.State == domain.TaskSucceeded })
+	if completed.ResourceType != "capture" || completed.ResourceID != value.ID {
+		t.Fatalf("capture=%+v task=%+v", value, completed)
+	}
+	request, err := manager.Request(value.ID)
+	if err != nil || request.SourceType != "network_object_link" || request.SourceID != "object-link" || request.Interface != "swp1" || request.Namespace == "" {
+		t.Fatalf("request=%+v err=%v", request, err)
+	}
+	_, _ = manager.Stop(value.ID)
+}
+
 func TestTrafficFilterTaskUsesDurableEnvelope(t *testing.T) {
 	ctx := context.Background()
 	database, err := storesqlite.Open(ctx, "file:filter-task-test?mode=memory&cache=shared")

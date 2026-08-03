@@ -11,7 +11,124 @@ import (
 
 	"github.com/netlab/netlab/internal/domain"
 	captureRuntime "github.com/netlab/netlab/internal/runtime/capture"
+	"github.com/netlab/netlab/internal/runtime/linuxnet"
 )
+
+type captureNetworkObjectRepository struct {
+	link   domain.NetworkObjectLink
+	object domain.NetworkObject
+}
+
+func (r captureNetworkObjectRepository) GetNetworkObjectLink(context.Context, domain.ID) (domain.NetworkObjectLink, error) {
+	return r.link, nil
+}
+
+func (r captureNetworkObjectRepository) GetNetworkObject(context.Context, domain.ID) (domain.NetworkObject, error) {
+	return r.object, nil
+}
+
+func TestCaptureManagerResolvesNetworkObjectLinkEndpointA(t *testing.T) {
+	object := domain.NetworkObject{ID: "object-a", Kind: domain.NetworkSwitchL3}
+	manager := NewCaptureManager(t.TempDir(), 1, 1<<20, time.Hour)
+	manager.SetNetworkObjectRepository(captureNetworkObjectRepository{
+		link:   domain.NetworkObjectLink{ID: "object-link", ObjectAID: object.ID, PortAName: "swp1", ObjectBID: "object-b", PortBName: "swp9"},
+		object: object,
+	})
+	interfaceName, namespace, err := manager.captureLocator(context.Background(), "network_object_link", "object-link")
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantNamespace, err := linuxnet.NetworkObjectNamespaceName(object)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if interfaceName != "swp1" || namespace != wantNamespace {
+		t.Fatalf("locator=%s/%s want=swp1/%s", interfaceName, namespace, wantNamespace)
+	}
+}
+
+func TestNetworkObjectLinkCapturePersistsMetadataAndStreamsUntilRestart(t *testing.T) {
+	installFakeNamespacedDumpcap(t)
+	stateDir := t.TempDir()
+	object := domain.NetworkObject{ID: "object-a", Kind: domain.NetworkSwitchL3}
+	repository := captureNetworkObjectRepository{
+		link:   domain.NetworkObjectLink{ID: "object-link", LaboratoryID: "lab", ObjectAID: object.ID, PortAName: "swp1", ObjectBID: "object-b", PortBName: "swp9"},
+		object: object,
+	}
+	manager := NewCaptureManager(stateDir, 1, 1<<20, time.Hour)
+	manager.SetNetworkObjectRepository(repository)
+	value, err := manager.StartAs(context.Background(), "capture-object-link", CaptureRequest{
+		LaboratoryID: "lab", SourceType: "network_object_link", SourceID: "object-link", Format: "pcap", Retain: true, MaxBytes: 1 << 20, Duration: time.Minute,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	stream, cancel, err := manager.Subscribe(value.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cancel()
+	select {
+	case chunk := <-stream:
+		if string(chunk) != "capture-data" {
+			t.Fatalf("stream=%q", chunk)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("object-link capture did not expose a live stream")
+	}
+	request, err := manager.Request(value.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantNamespace, _ := linuxnet.NetworkObjectNamespaceName(object)
+	if request.Interface != "swp1" || request.Namespace != wantNamespace || !value.Retain || value.SourceType != "network_object_link" || value.SourceID != "object-link" {
+		t.Fatalf("capture=%+v request=%+v", value, request)
+	}
+	if _, err = manager.Stop(value.ID); err != nil {
+		t.Fatal(err)
+	}
+	waitForCaptureState(t, manager, value.ID, "cancelled")
+
+	restarted := NewCaptureManager(stateDir, 1, 1<<20, time.Hour)
+	recovered, err := restarted.Get(value.ID)
+	if err != nil || recovered.SourceType != "network_object_link" || recovered.SourceID != "object-link" || !recovered.Retain {
+		t.Fatalf("recovered=%+v err=%v", recovered, err)
+	}
+	request, err = restarted.Request(value.ID)
+	if err != nil || request.Interface != "swp1" || request.Namespace != wantNamespace {
+		t.Fatalf("recovered request=%+v err=%v", request, err)
+	}
+	if _, _, err = restarted.Subscribe(value.ID); err == nil {
+		t.Fatal("restarted completed capture unexpectedly exposed a live stream")
+	}
+}
+
+func installFakeNamespacedDumpcap(t *testing.T) {
+	t.Helper()
+	directory := t.TempDir()
+	if err := os.WriteFile(filepath.Join(directory, "dumpcap"), []byte("#!/bin/sh\nprintf capture-data\nexec sleep 30\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(directory, "ip"), []byte("#!/bin/sh\nif [ \"$1\" = netns ] && [ \"$2\" = exec ]; then shift 3; exec \"$@\"; fi\nexit 2\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", directory+string(os.PathListSeparator)+os.Getenv("PATH"))
+}
+
+func waitForCaptureState(t *testing.T, manager *CaptureManager, id domain.ID, state string) domain.Capture {
+	t.Helper()
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		value, err := manager.Get(id)
+		if err == nil && value.State == state {
+			return value
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	value, err := manager.Get(id)
+	t.Fatalf("capture=%+v err=%v want state=%s", value, err, state)
+	return domain.Capture{}
+}
 
 func TestCaptureStopNetworkObjectLinkUsesLinkDeletedReason(t *testing.T) {
 	manager := NewCaptureManager(t.TempDir(), 1, 1<<20, time.Hour)
