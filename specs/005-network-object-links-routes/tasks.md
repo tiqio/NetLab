@@ -80,15 +80,15 @@ service, and confirm the same path recovers.
 ### Implementation for User Story 1
 
 - [X] T021 [US1] Replace the per-link host bridge and two veth pairs with one owned veth pair moved directly into endpoint A and B namespaces in `internal/runtime/linuxnet/dataplane.go`
-- [ ] T022 [US1] Add deterministic object-link ownership discovery, partial-pair adoption, pending-create reconciliation, and orphan cleanup in `internal/app/reconcile/host_ownership_scanners.go`, `internal/app/reconcile/recovery_coordinator.go`, and `internal/runtime/ownership/manifest.go`
+- [X] T022 [US1] Add deterministic object-link ownership discovery, partial-pair adoption, pending-create reconciliation, and orphan cleanup in `internal/app/reconcile/host_ownership_scanners.go`, `internal/app/reconcile/recovery_coordinator.go`, and `internal/runtime/ownership/manifest.go`
 - [X] T023 [US1] Implement revisioned and idempotent object-link create/list/get commands with durable tasks and ordered outbox events in `internal/app/reconcile/network_object_tasks.go` and `internal/app/reconcile/network_objects.go`
 - [X] T024 [US1] Upgrade object-link HTTP create/list/get routes to the task-envelope and structured-conflict contract in `internal/api/http/network_handlers.go` and `internal/api/http/mutation_middleware.go`
 - [X] T025 [US1] Add `netlab.network_object_links.create` and `netlab.network_object_links.get` with the shared application handlers in `internal/api/mcp/network_tools.go`
-- [ ] T026 [US1] Publish ordered object-link create/state/recovery events through the shared event stream in `internal/api/stream/events.go` and `internal/app/events/outbox.go`
+- [X] T026 [US1] Publish ordered object-link create/state/recovery events through the shared event stream in `internal/api/stream/events.go` and `internal/app/events/outbox.go`
 - [X] T027 [US1] Synchronize object-link task, endpoint, state, and error types and API methods in `web/src/api/generated.ts` and `web/src/api/index.ts`
 - [X] T028 [US1] Implement object-to-object connector selection, occupied-port feedback, parallel-link rendering, and `object:port ↔ object:port` presentation in `web/src/features/topology/topologyConnectionController.ts`, `web/src/features/topology/TopologyCanvas.vue`, and `web/src/features/topology/linkPresentation.ts`
 - [X] T029 [US1] Display authoritative desired/actual state, revision, lifecycle task, and actionable failures for selected object links in `web/src/features/topology/TopologyInspector.vue` and `web/src/features/topology/TopologyWorkspace.vue`
-- [ ] T030 [US1] Complete object-link export/import ID remapping and transactional endpoint reservation integration in `internal/store/sqlite/import_repository.go`, `internal/app/command/export.go`, and `internal/app/command/import.go`
+- [X] T030 [US1] Complete object-link export/import ID remapping and transactional endpoint reservation integration in `internal/store/sqlite/import_repository.go`, `internal/app/command/export.go`, and `internal/app/command/import.go`
 - [ ] T031 [US1] Run US1 unit, contract, frontend, privileged integration, recovery, and browser tests and record the focused milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
 
 **Checkpoint**: User Story 1 is independently usable as the MVP and has a committed local milestone.

@@ -147,3 +147,14 @@
   fresh DataPlane instance. This completes T018.
 - Focused gates for this milestone: the integration package discovered and cleanly skipped the dynamic
   test without `NETLAB_PRIVILEGED=1`, and `go vet ./tests/integration` passed locally on August 3, 2026.
+- `2152d65` (`feat: recover direct object links`): scans every owned network namespace for explicitly
+  aliased direct-veth endpoints, records deterministic two-endpoint manifests, safely removes previously
+  observed orphans, replaces half-created namespace or host pairs, reconfigures adopted complete pairs,
+  and publishes task-correlated `network_object_link.recovered` events after state convergence. The shared
+  event stream preserves create, state, recovery, and delete ordering. This completes T022 and T026.
+- The earlier `61cec9b` export/import milestone already remaps object IDs, preserves named ports, reserves
+  both active endpoints transactionally, avoids reservations for deleted intent, and rolls back conflicts;
+  the focused command/repository tests were rerun in this milestone, completing T030.
+- Focused gates for `2152d65`: full ownership, Linux dataplane, reconciliation, SQLite, event publisher,
+  and stream tests passed; relevant import/export tests passed; `go vet` passed; and focused recovery tests
+  passed under the race detector locally on August 3, 2026.
