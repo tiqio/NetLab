@@ -19,6 +19,7 @@ StateDirectoryMode=0700
 LogsDirectory=netlab
 LogsDirectoryMode=0750
 UMask=0077
+ReadWritePaths=/var/lib/netlab /run/netlab /run/netns
 LimitNOFILE=1048576
 AmbientCapabilities=CAP_CHOWN CAP_KILL CAP_SETGID CAP_SETUID CAP_NET_ADMIN CAP_NET_RAW CAP_SYS_ADMIN CAP_SYS_PTRACE
 CapabilityBoundingSet=CAP_CHOWN CAP_KILL CAP_SETGID CAP_SETUID CAP_NET_ADMIN CAP_NET_RAW CAP_SYS_ADMIN CAP_SYS_PTRACE

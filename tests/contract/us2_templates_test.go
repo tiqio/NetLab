@@ -2,10 +2,11 @@ package contract
 
 import (
 	"context"
-	"github.com/netlab/netlab/internal/app/query"
-	storesqlite "github.com/netlab/netlab/internal/store/sqlite"
 	"path/filepath"
 	"testing"
+
+	"github.com/netlab/netlab/internal/app/query"
+	storesqlite "github.com/netlab/netlab/internal/store/sqlite"
 )
 
 func TestBuiltInTemplatesLoad(t *testing.T) {
@@ -23,7 +24,7 @@ func TestBuiltInTemplatesLoad(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(values) != 6 {
+	if len(values) != 8 {
 		t.Fatalf("templates=%d", len(values))
 	}
 }
