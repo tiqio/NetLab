@@ -67,6 +67,12 @@ func TestPrivilegedDockerStaticRoutePath(t *testing.T) {
 	defer func() {
 		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cleanupCancel()
+		if t.Failed() {
+			for _, node := range []domain.Node{nodeA, nodeB} {
+				body, _ := exec.CommandContext(cleanupCtx, "docker", "inspect", "netlab-"+string(node.ID), "--format", `{{json .State}}`).CombinedOutput()
+				t.Logf("container %s state: %s", node.ID, strings.TrimSpace(string(body)))
+			}
+		}
 		_ = adapter.Delete(cleanupCtx, nodeA)
 		_ = adapter.Delete(cleanupCtx, nodeB)
 		runRouteCleanup(cleanupCtx, "ip", "link", "delete", bridgeA)
@@ -195,6 +201,8 @@ func assertDockerRouteTraffic(t *testing.T, ctx context.Context, source, target 
 	t.Helper()
 	sourceName := "netlab-" + string(source.ID)
 	targetName := "netlab-" + string(target.ID)
+	runRouteCommand(t, ctx, "docker", "exec", sourceName, "ping", "-6", "-c", "1", "-W", "2", "2001:db8:1::1")
+	runRouteCommand(t, ctx, "docker", "exec", targetName, "ping", "-6", "-c", "1", "-W", "2", "2001:db8:3::1")
 	runRouteCommand(t, ctx, "docker", "exec", sourceName, "ping", "-c", "1", "-W", "2", "10.30.0.2")
 	runRouteCommand(t, ctx, "docker", "exec", sourceName, "ping", "-6", "-c", "1", "-W", "2", "2001:db8:3::2")
 

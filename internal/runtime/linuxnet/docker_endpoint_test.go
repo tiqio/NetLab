@@ -8,13 +8,15 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/netlab/netlab/internal/domain"
 )
 
 type recordingExecutor struct {
-	commands []string
-	failOn   string
+	commands       []string
+	failOn         string
+	addressOutputs [][]byte
 }
 
 type memoryManagedRouteStore struct {
@@ -67,7 +69,50 @@ func (e *recordingExecutor) Run(_ context.Context, name string, args ...string) 
 }
 
 func (e *recordingExecutor) Output(ctx context.Context, name string, args ...string) ([]byte, error) {
+	command := strings.Join(append([]string{name}, args...), " ")
+	if strings.Contains(command, "-j address show") {
+		if len(e.addressOutputs) > 0 {
+			body := e.addressOutputs[0]
+			e.addressOutputs = e.addressOutputs[1:]
+			return body, nil
+		}
+		return []byte(`[{"addr_info":[{"family":"inet6","scope":"global","tentative":false}]}]`), nil
+	}
 	return nil, e.Run(ctx, name, args...)
+}
+
+func TestDockerEndpointWaitsForIPv6DADBeforeRoutes(t *testing.T) {
+	node := domain.Node{ID: "node", Config: map[string]any{
+		"interfaces":         []map[string]any{{"id": "if-1", "name": "eth0"}},
+		"network_interfaces": []map[string]any{{"name": "eth0", "addresses": []any{"2001:db8::10/64"}, "routes": []any{map[string]any{"destination": "2001:db8:2::/64", "gateway": "2001:db8::1"}}}},
+	}}
+	executor := &recordingExecutor{addressOutputs: [][]byte{
+		[]byte(`[{"addr_info":[{"family":"inet6","scope":"global","tentative":true}]}]`),
+		[]byte(`[{"addr_info":[{"family":"inet6","scope":"global","tentative":false}]}]`),
+	}}
+	runtime := newTestDockerEndpointRuntime(t, executor, nil)
+	runtime.pollInterval = time.Millisecond
+	if err := runtime.Ensure(context.Background(), node, 42); err != nil {
+		t.Fatal(err)
+	}
+	joined := strings.Join(executor.commands, "\n")
+	if !strings.Contains(joined, "route replace 2001:db8:2::/64") {
+		t.Fatalf("route was not applied after DAD: %s", joined)
+	}
+}
+
+func TestDockerEndpointRejectsIPv6DADFailure(t *testing.T) {
+	node := domain.Node{ID: "node", Config: map[string]any{
+		"interfaces":         []map[string]any{{"id": "if-1", "name": "eth0"}},
+		"network_interfaces": []map[string]any{{"name": "eth0", "addresses": []any{"2001:db8::10/64"}}},
+	}}
+	executor := &recordingExecutor{addressOutputs: [][]byte{
+		[]byte(`[{"addr_info":[{"family":"inet6","scope":"global","dadfailed":true}]}]`),
+	}}
+	runtime := newTestDockerEndpointRuntime(t, executor, nil)
+	if err := runtime.Ensure(context.Background(), node, 42); err == nil || !strings.Contains(err.Error(), "duplicate address detection failed") {
+		t.Fatalf("err=%v", err)
+	}
 }
 
 func TestDockerEndpointEnsureAndRollback(t *testing.T) {

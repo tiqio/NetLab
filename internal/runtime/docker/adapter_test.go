@@ -7,6 +7,7 @@ import (
 	"net"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/moby/moby/api/types/container"
 	dockerclient "github.com/moby/moby/client"
@@ -16,6 +17,7 @@ import (
 type fakeEngine struct {
 	items       []container.Summary
 	inspection  container.InspectResponse
+	inspections []container.InspectResponse
 	created     dockerclient.ContainerCreateOptions
 	startCalls  int
 	stopCalls   int
@@ -41,6 +43,11 @@ func (f *fakeEngine) ContainerRemove(context.Context, string, dockerclient.Conta
 	return dockerclient.ContainerRemoveResult{}, nil
 }
 func (f *fakeEngine) ContainerInspect(context.Context, string, dockerclient.ContainerInspectOptions) (dockerclient.ContainerInspectResult, error) {
+	if len(f.inspections) > 0 {
+		inspection := f.inspections[0]
+		f.inspections = f.inspections[1:]
+		return dockerclient.ContainerInspectResult{Container: inspection}, nil
+	}
 	return dockerclient.ContainerInspectResult{Container: f.inspection}, nil
 }
 func (f *fakeEngine) ContainerList(context.Context, dockerclient.ContainerListOptions) (dockerclient.ContainerListResult, error) {
@@ -58,6 +65,7 @@ type fakeEndpoints struct {
 	ensurePIDs   []int
 	ensureErr    error
 	cleanupCalls int
+	cleanupErr   error
 }
 
 func (f *fakeEndpoints) Ensure(_ context.Context, _ domain.Node, pid int) error {
@@ -66,10 +74,16 @@ func (f *fakeEndpoints) Ensure(_ context.Context, _ domain.Node, pid int) error 
 }
 func (f *fakeEndpoints) Cleanup(context.Context, domain.Node) error {
 	f.cleanupCalls++
-	return nil
+	return f.cleanupErr
 }
 
 func TestQuotaNormalizationAndName(t *testing.T) {
+	if dockerClientTimeout <= 10*time.Second {
+		t.Fatalf("Docker API timeout %s must exceed the graceful stop window", dockerClientTimeout)
+	}
+	if containerNamespaceReadyTimeout <= 10*time.Second {
+		t.Fatalf("container namespace readiness timeout %s must tolerate Docker restart state propagation", containerNamespaceReadyTimeout)
+	}
 	if quotaToNano(100000) != 1000000000 {
 		t.Fatal("quota normalization failed")
 	}
@@ -100,8 +114,11 @@ func TestStartRunningContainerRebuildsEndpointsWithoutReplacingContainer(t *test
 
 func TestStartStoppedContainerStartsThenReconcilesEndpoints(t *testing.T) {
 	engine := &fakeEngine{
-		items:      []container.Summary{{ID: "stopped-container", State: container.StateExited}},
-		inspection: container.InspectResponse{State: &container.State{Running: true, Pid: 4343}},
+		items: []container.Summary{{ID: "stopped-container", State: container.StateExited}},
+		inspections: []container.InspectResponse{
+			{State: &container.State{Running: false, Pid: 0}},
+			{State: &container.State{Running: true, Pid: 4343}},
+		},
 	}
 	endpoints := &fakeEndpoints{}
 	adapter := NewAdapterWithRuntime(engine, endpoints)
@@ -114,6 +131,58 @@ func TestStartStoppedContainerStartsThenReconcilesEndpoints(t *testing.T) {
 	}
 	if !reflect.DeepEqual(endpoints.ensurePIDs, []int{4343}) {
 		t.Fatalf("endpoint PIDs=%#v", endpoints.ensurePIDs)
+	}
+}
+
+func TestStartWaitsForContainerNamespacePID(t *testing.T) {
+	engine := &fakeEngine{
+		items: []container.Summary{{ID: "stopped-container", State: container.StateExited}},
+		inspections: []container.InspectResponse{
+			{State: &container.State{Running: true, Pid: 0}},
+			{State: &container.State{Running: true, Pid: 4545}},
+		},
+	}
+	endpoints := &fakeEndpoints{}
+	adapter := NewAdapterWithRuntime(engine, endpoints)
+	if err := adapter.Start(context.Background(), domain.Node{ID: "node-wait"}); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(endpoints.ensurePIDs, []int{4545}) {
+		t.Fatalf("unexpected endpoint PIDs: %#v", endpoints.ensurePIDs)
+	}
+}
+
+func TestStartUsesInspectInsteadOfStaleContainerListState(t *testing.T) {
+	engine := &fakeEngine{
+		items: []container.Summary{{ID: "stale-running", State: container.StateRunning}},
+		inspections: []container.InspectResponse{
+			{State: &container.State{Running: false, Pid: 0}},
+			{State: &container.State{Running: true, Pid: 4747}},
+		},
+	}
+	endpoints := &fakeEndpoints{}
+	adapter := NewAdapterWithRuntime(engine, endpoints)
+	if err := adapter.Start(context.Background(), domain.Node{ID: "node-stale"}); err != nil {
+		t.Fatal(err)
+	}
+	if engine.startCalls != 1 || !reflect.DeepEqual(endpoints.ensurePIDs, []int{4747}) {
+		t.Fatalf("start=%d endpoint PIDs=%#v", engine.startCalls, endpoints.ensurePIDs)
+	}
+}
+
+func TestStopCleansEndpointsBeforeStoppingContainer(t *testing.T) {
+	engine := &fakeEngine{items: []container.Summary{{ID: "running-container", State: container.StateRunning}}, inspection: container.InspectResponse{State: &container.State{Running: true, Pid: 4646}}}
+	endpoints := &fakeEndpoints{}
+	adapter := NewAdapterWithRuntime(engine, endpoints)
+	if err := adapter.Stop(context.Background(), domain.Node{ID: "node-stop"}); err != nil {
+		t.Fatal(err)
+	}
+	if endpoints.cleanupCalls != 1 || engine.stopCalls != 1 {
+		t.Fatalf("cleanup=%d stop=%d", endpoints.cleanupCalls, engine.stopCalls)
+	}
+	endpoints.cleanupErr = errors.New("cleanup failed")
+	if err := adapter.Stop(context.Background(), domain.Node{ID: "node-stop"}); err == nil || engine.stopCalls != 1 {
+		t.Fatalf("cleanup failure must prevent stop: err=%v stop=%d", err, engine.stopCalls)
 	}
 }
 
@@ -147,7 +216,7 @@ func TestContainerCommandRejectsNonStringArguments(t *testing.T) {
 func TestOpenConsoleCreatesInteractiveShell(t *testing.T) {
 	client, server := net.Pipe()
 	defer server.Close()
-	engine := &fakeEngine{items: []container.Summary{{ID: "container-1", State: container.StateRunning}}, attachConn: client}
+	engine := &fakeEngine{items: []container.Summary{{ID: "container-1", State: container.StateRunning}}, inspection: container.InspectResponse{State: &container.State{Running: true, Pid: 4848}}, attachConn: client}
 	console, err := NewAdapterWithEngine(engine).OpenConsole(context.Background(), domain.Node{ID: "node-1"})
 	if err != nil {
 		t.Fatal(err)

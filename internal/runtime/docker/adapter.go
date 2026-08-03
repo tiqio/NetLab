@@ -57,11 +57,14 @@ type Adapter struct {
 	endpoints EndpointRuntime
 }
 
+const dockerClientTimeout = 30 * time.Second
+const containerNamespaceReadyTimeout = 15 * time.Second
+
 func NewAdapter() (*Adapter, error) {
 	client, err := dockerclient.New(
 		dockerclient.FromEnv,
 		dockerclient.WithAPIVersionNegotiation(),
-		dockerclient.WithTimeout(5*time.Second),
+		dockerclient.WithTimeout(dockerClientTimeout),
 	)
 	if err != nil {
 		return nil, err
@@ -140,7 +143,13 @@ func (a *Adapter) find(ctx context.Context, node domain.Node) (string, bool, err
 	if len(result.Items) == 0 {
 		return "", false, nil
 	}
-	return result.Items[0].ID, result.Items[0].State == "running", nil
+	id := result.Items[0].ID
+	inspection, err := a.engine.ContainerInspect(ctx, id, dockerclient.ContainerInspectOptions{})
+	if err != nil {
+		return "", false, err
+	}
+	running := inspection.Container.State != nil && inspection.Container.State.Running
+	return id, running, nil
 }
 func (a *Adapter) Inspect(ctx context.Context, node domain.Node) (ports.ActualNode, error) {
 	id, running, err := a.find(ctx, node)
@@ -205,14 +214,30 @@ func (a *Adapter) ensureEndpoints(ctx context.Context, node domain.Node, id stri
 	if a.endpoints == nil {
 		return nil
 	}
-	inspection, err := a.engine.ContainerInspect(ctx, id, dockerclient.ContainerInspectOptions{})
-	if err != nil {
-		return err
+	waitCtx, cancel := context.WithTimeout(ctx, containerNamespaceReadyTimeout)
+	defer cancel()
+	ticker := time.NewTicker(50 * time.Millisecond)
+	defer ticker.Stop()
+	lastState := "unavailable"
+	for {
+		inspection, err := a.engine.ContainerInspect(waitCtx, id, dockerclient.ContainerInspectOptions{})
+		if err == nil && inspection.Container.State != nil {
+			lastState = fmt.Sprintf("status=%s running=%t pid=%d error=%s", inspection.Container.State.Status, inspection.Container.State.Running, inspection.Container.State.Pid, inspection.Container.State.Error)
+			if inspection.Container.State.Running && inspection.Container.State.Pid > 0 {
+				return a.endpoints.Ensure(ctx, node, inspection.Container.State.Pid)
+			}
+		} else if err != nil {
+			lastState = err.Error()
+		}
+		select {
+		case <-waitCtx.Done():
+			if err != nil {
+				return fmt.Errorf("inspect running container network namespace: %w", err)
+			}
+			return fmt.Errorf("running container %s has no network namespace PID after %s (%s)", id, containerNamespaceReadyTimeout, lastState)
+		case <-ticker.C:
+		}
 	}
-	if inspection.Container.State == nil || !inspection.Container.State.Running || inspection.Container.State.Pid <= 0 {
-		return fmt.Errorf("running container has no network namespace PID")
-	}
-	return a.endpoints.Ensure(ctx, node, inspection.Container.State.Pid)
 }
 
 func (a *Adapter) compensateStart(node domain.Node, id string, created bool) error {
@@ -263,6 +288,11 @@ func (a *Adapter) Stop(ctx context.Context, node domain.Node) error {
 	id, running, err := a.find(ctx, node)
 	if err != nil || id == "" || !running {
 		return err
+	}
+	if a.endpoints != nil {
+		if err = a.endpoints.Cleanup(ctx, node); err != nil {
+			return fmt.Errorf("cleanup Docker endpoints before stop: %w", err)
+		}
 	}
 	timeout := 10
 	_, err = a.engine.ContainerStop(ctx, id, dockerclient.ContainerStopOptions{Timeout: &timeout})

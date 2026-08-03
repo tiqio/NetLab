@@ -3,6 +3,7 @@ package linuxnet
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/netlab/netlab/internal/domain"
 )
@@ -38,15 +40,17 @@ type procManagedDockerRouteStore struct {
 }
 
 type DockerEndpointRuntime struct {
-	executor CommandExecutor
-	ip       string
-	nsenter  string
-	routes   managedDockerRouteStore
+	executor            CommandExecutor
+	ip                  string
+	nsenter             string
+	routes              managedDockerRouteStore
+	addressReadyTimeout time.Duration
+	pollInterval        time.Duration
 }
 
 func NewDockerEndpointRuntime(executor CommandExecutor) (*DockerEndpointRuntime, error) {
 	if executor != nil {
-		return &DockerEndpointRuntime{executor: executor, ip: "ip", nsenter: "nsenter", routes: &procManagedDockerRouteStore{root: "/proc"}}, nil
+		return &DockerEndpointRuntime{executor: executor, ip: "ip", nsenter: "nsenter", routes: &procManagedDockerRouteStore{root: "/proc"}, addressReadyTimeout: 5 * time.Second, pollInterval: 50 * time.Millisecond}, nil
 	}
 	ip, err := lookup("ip")
 	if err != nil {
@@ -56,7 +60,7 @@ func NewDockerEndpointRuntime(executor CommandExecutor) (*DockerEndpointRuntime,
 	if err != nil {
 		return nil, err
 	}
-	return &DockerEndpointRuntime{executor: SystemExecutor{}, ip: ip, nsenter: nsenter, routes: &procManagedDockerRouteStore{root: "/proc"}}, nil
+	return &DockerEndpointRuntime{executor: SystemExecutor{}, ip: ip, nsenter: nsenter, routes: &procManagedDockerRouteStore{root: "/proc"}, addressReadyTimeout: 5 * time.Second, pollInterval: 50 * time.Millisecond}, nil
 }
 
 func (s *procManagedDockerRouteStore) path(pid int, interfaceName string) (string, error) {
@@ -222,11 +226,19 @@ func anyStrings(value any) []string {
 }
 
 func (r *DockerEndpointRuntime) configureInterface(ctx context.Context, pid int, interfaceName string, config dockerInterfaceConfig) error {
+	hasIPv6 := false
 	for _, address := range config.Addresses {
-		if _, _, err := net.ParseCIDR(address); err != nil {
+		ipAddress, _, err := net.ParseCIDR(address)
+		if err != nil {
 			return fmt.Errorf("invalid address %q for %s", address, interfaceName)
 		}
 		if err := r.executor.Run(ctx, r.nsenter, "-t", strconv.Itoa(pid), "-n", r.ip, "address", "replace", address, "dev", interfaceName); err != nil {
+			return err
+		}
+		hasIPv6 = hasIPv6 || ipAddress.To4() == nil
+	}
+	if hasIPv6 {
+		if err := r.waitForIPv6AddressReady(ctx, pid, interfaceName); err != nil {
 			return err
 		}
 	}
@@ -291,6 +303,61 @@ func (r *DockerEndpointRuntime) configureInterface(ctx context.Context, pid int,
 		}
 	}
 	return nil
+}
+
+func (r *DockerEndpointRuntime) waitForIPv6AddressReady(ctx context.Context, pid int, interfaceName string) error {
+	waitCtx, cancel := context.WithTimeout(ctx, r.addressReadyTimeout)
+	defer cancel()
+	ticker := time.NewTicker(r.pollInterval)
+	defer ticker.Stop()
+	for {
+		body, err := r.executor.Output(waitCtx, r.nsenter, "-t", strconv.Itoa(pid), "-n", r.ip, "-j", "address", "show", "dev", interfaceName)
+		if err == nil {
+			ready, failed := dockerIPv6AddressState(body)
+			if failed {
+				return fmt.Errorf("IPv6 duplicate address detection failed for %s", interfaceName)
+			}
+			if ready {
+				return nil
+			}
+		}
+		select {
+		case <-waitCtx.Done():
+			if errors.Is(waitCtx.Err(), context.DeadlineExceeded) {
+				return fmt.Errorf("IPv6 address readiness timed out after %s for %s", r.addressReadyTimeout, interfaceName)
+			}
+			return fmt.Errorf("IPv6 address readiness cancelled for %s: %w", interfaceName, waitCtx.Err())
+		case <-ticker.C:
+		}
+	}
+}
+
+func dockerIPv6AddressState(body []byte) (ready bool, failed bool) {
+	var links []struct {
+		AddressInfo []struct {
+			Family    string `json:"family"`
+			Scope     string `json:"scope"`
+			Tentative bool   `json:"tentative"`
+			DADFailed bool   `json:"dadfailed"`
+		} `json:"addr_info"`
+	}
+	if json.Unmarshal(body, &links) != nil {
+		return false, false
+	}
+	for _, link := range links {
+		for _, address := range link.AddressInfo {
+			if address.Family != "inet6" || address.Scope == "link" {
+				continue
+			}
+			if address.DADFailed {
+				failed = true
+			}
+			if !address.Tentative && !address.DADFailed {
+				ready = true
+			}
+		}
+	}
+	return ready, failed
 }
 
 func (r *DockerEndpointRuntime) rollbackManagedRoutes(ctx context.Context, pid int, interfaceName string, appliedRoutes, deletedRoutes []dockerRoute) error {
