@@ -220,7 +220,7 @@ func main() {
 			portMappingCommands.SetAutoResolver(topologyRepository, nodeAddressResolver)
 		}
 	}
-	mcpTools := mcp.Tools(mcp.Services{Labs: labCommands, LabQueries: labQueries, Templates: templateQueries, Nodes: nodeCommands, Links: linkCommands, TopologyOps: topologyTasks, LabOps: laboratoryTasks, Interfaces: interfaceCommands, Guest: guestCommands, Mappings: portMappingCommands, Tasks: taskQueries, Exporter: exportService, Importer: importService, Automation: automationTasks, Captures: captureManager, Filters: trafficFilterManager, CaptureOps: captureTasks, Capabilities: capabilityQueries, ConsoleIdle: consoleLimits.IdleTimeout})
+	mcpTools := mcp.Tools(mcp.Services{Labs: labCommands, LabQueries: labQueries, Templates: templateQueries, Nodes: nodeCommands, NodeSettings: topologyRepository, Links: linkCommands, TopologyOps: topologyTasks, LabOps: laboratoryTasks, Interfaces: interfaceCommands, Guest: guestCommands, Mappings: portMappingCommands, Tasks: taskQueries, Exporter: exportService, Importer: importService, Automation: automationTasks, Captures: captureManager, Filters: trafficFilterManager, CaptureOps: captureTasks, Capabilities: capabilityQueries, ConsoleIdle: consoleLimits.IdleTimeout})
 	mcpTools = append(mcpTools, mcp.NetworkTools(networkService, networkTasks)...)
 	mcpTools = append(mcpTools, mcp.TopologyPlacementTools(placementCommands)...)
 	mcpTools = append(mcpTools, mcp.LinkReconnectTools(linkReconnectTasks)...)

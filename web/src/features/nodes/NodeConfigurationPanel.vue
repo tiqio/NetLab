@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from "vue";
-import { CheckCircle2, Copy } from "lucide-vue-next";
+import { CheckCircle2, Copy, Plus, Trash2 } from "lucide-vue-next";
 import {
   api,
   ApiError,
@@ -19,7 +19,30 @@ type InterfaceForm = {
   ipv4Address: string;
   ipv6Mode: "disabled" | "dhcp" | "slaac" | "static";
   ipv6Address: string;
+  routes: RouteForm[];
 };
+
+type RouteForm = {
+  id: string;
+  family: "ipv4" | "ipv6";
+  destination: string;
+  gateway: string;
+  metric: string | number;
+};
+
+let routeSequence = 0;
+function routeForm(value: Partial<Omit<RouteForm, "id">> = {}): RouteForm {
+  const family = value.family || "ipv4";
+  routeSequence += 1;
+  return {
+    id: `route-${routeSequence}`,
+    family,
+    destination:
+      value.destination || (family === "ipv6" ? "::/0" : "0.0.0.0/0"),
+    gateway: value.gateway || "",
+    metric: value.metric || "",
+  };
+}
 
 const props = defineProps<{ node: Node; interfaces: NodeInterface[] }>();
 const emit = defineEmits<{ changed: [] }>();
@@ -51,6 +74,11 @@ const dirty = computed(
     name.value.trim() !== props.node.name ||
     JSON.stringify(interfaceForms.value) !== initialValue.value,
 );
+const routeErrors = computed(() =>
+  interfaceForms.value.flatMap((item) =>
+    item.routes.map((route) => routeValidationMessage(route)).filter(Boolean),
+  ),
+);
 
 function configuredNetwork() {
   const values = Array.isArray(props.node.config?.network_interfaces)
@@ -70,10 +98,16 @@ function reset() {
     const addresses = Array.isArray(value.addresses)
       ? value.addresses.map(String)
       : [];
+    const routes = Array.isArray(value.routes)
+      ? (value.routes as Array<Record<string, unknown>>)
+      : [];
     return {
       id: item.id,
       name: item.name,
-      driver: item.driver || "virtio-net-pci",
+      driver:
+        props.node.kind === "qemu"
+          ? item.driver || "virtio-net-pci"
+          : item.driver || "",
       ipv4Mode: modes.includes("dhcpv4")
         ? "dhcp"
         : addresses.some((address) => !address.includes(":"))
@@ -88,11 +122,49 @@ function reset() {
             ? "static"
             : "disabled",
       ipv6Address: addresses.find((address) => address.includes(":")) || "",
+      routes: routes.map((route) =>
+        routeForm({
+          family: String(route.destination || "").includes(":")
+            ? "ipv6"
+            : "ipv4",
+          destination: String(route.destination || ""),
+          gateway: String(route.gateway || ""),
+          metric:
+            route.metric === undefined || route.metric === null
+              ? ""
+              : String(route.metric),
+        }),
+      ),
     } as InterfaceForm;
   });
   initialValue.value = JSON.stringify(interfaceForms.value);
   status.value = "";
   problem.value = undefined;
+}
+
+function addRoute(item: InterfaceForm, family: "ipv4" | "ipv6") {
+  item.routes.push(routeForm({ family }));
+}
+
+function removeRoute(item: InterfaceForm, routeId: string) {
+  item.routes = item.routes.filter((route) => route.id !== routeId);
+}
+
+function routeValidationMessage(route: RouteForm) {
+  const destination = route.destination.trim();
+  const gateway = route.gateway.trim();
+  if (!destination.includes("/")) return "目标必须使用 CIDR，例如 0.0.0.0/0。";
+  if ((route.family === "ipv6") !== destination.includes(":"))
+    return `目标地址必须是 ${route.family === "ipv6" ? "IPv6" : "IPv4"}。`;
+  if (gateway && (route.family === "ipv6") !== gateway.includes(":"))
+    return "网关与目标地址族必须一致。";
+  const metricText = String(route.metric).trim();
+  if (metricText) {
+    const metric = Number(route.metric);
+    if (!Number.isInteger(metric) || metric < 0)
+      return "Metric 必须是大于或等于 0 的整数。";
+  }
+  return "";
 }
 
 async function loadCredentials() {
@@ -150,7 +222,8 @@ async function copyCredential(field: "username" | "password", value: string) {
 }
 
 async function save() {
-  if (!stopped.value || busy.value || !dirty.value) return;
+  if (!stopped.value || busy.value || !dirty.value || routeErrors.value.length)
+    return;
   busy.value = true;
   problem.value = undefined;
   try {
@@ -162,7 +235,7 @@ async function save() {
       interface_limit: props.node.interface_limit,
       process_limit: props.node.process_limit,
       network_interfaces:
-        props.node.kind === "qemu"
+        props.node.kind === "qemu" || props.node.kind === "docker"
           ? interfaceForms.value.map((item) => ({
               id: item.id,
               name: item.name,
@@ -182,6 +255,13 @@ async function save() {
                   ? [item.ipv6Address.trim()]
                   : []),
               ],
+              routes: item.routes.map((route) => ({
+                destination: route.destination.trim(),
+                gateway: route.gateway.trim() || undefined,
+                metric: String(route.metric).trim()
+                  ? Number(route.metric)
+                  : undefined,
+              })),
             }))
           : undefined,
     });
@@ -238,13 +318,20 @@ onBeforeUnmount(() => clearTimeout(copiedTimer));
     </FormField>
 
     <div
-      v-if="node.kind === 'qemu' && interfaceForms.length"
+      v-if="
+        (node.kind === 'qemu' || node.kind === 'docker') &&
+        interfaceForms.length
+      "
       class="grid gap-3"
     >
       <div>
         <h3>启动网络</h3>
         <p class="text-xs text-muted-foreground">
-          用于 cloud-init 初始化；修改后在下次启动时应用。
+          {{
+            node.kind === "qemu"
+              ? "用于 cloud-init 初始化"
+              : "在容器网络命名空间内应用"
+          }}；修改后在下次启动时生效。
         </p>
       </div>
       <div
@@ -253,7 +340,7 @@ onBeforeUnmount(() => clearTimeout(copiedTimer));
         class="grid gap-3 rounded-md border border-border/70 bg-background/30 p-3"
       >
         <strong class="text-sm">{{ item.name }}</strong>
-        <FormField label="网卡驱动">
+        <FormField v-if="node.kind === 'qemu'" label="网卡驱动">
           <Select
             v-model="item.driver"
             :aria-label="`${item.name} 网卡驱动`"
@@ -310,6 +397,87 @@ onBeforeUnmount(() => clearTimeout(copiedTimer));
               required
             />
           </FormField>
+        </div>
+        <div class="grid gap-2 rounded-md border border-border/60 p-2">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p class="text-xs font-medium">静态路由</p>
+              <p class="text-[11px] text-muted-foreground">
+                网关必须能从本接口配置的同地址族静态地址到达。
+              </p>
+            </div>
+            <div class="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                :disabled="!stopped || busy"
+                @click="addRoute(item, 'ipv4')"
+              >
+                <Plus :size="13" /> IPv4 路由
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                :disabled="!stopped || busy"
+                @click="addRoute(item, 'ipv6')"
+              >
+                <Plus :size="13" /> IPv6 路由
+              </Button>
+            </div>
+          </div>
+          <div
+            v-for="(route, routeIndex) in item.routes"
+            :key="route.id"
+            class="grid gap-2 rounded-md bg-muted/20 p-2 md:grid-cols-[1.4fr_1fr_7rem_auto]"
+          >
+            <FormField
+              label="目标 CIDR"
+              :error="routeValidationMessage(route) || undefined"
+            >
+              <Input
+                v-model="route.destination"
+                :aria-label="`${item.name} 路由 ${routeIndex + 1} 目标`"
+                :placeholder="route.family === 'ipv6' ? '::/0' : '0.0.0.0/0'"
+                :disabled="!stopped || busy"
+              />
+            </FormField>
+            <FormField label="网关（可选）">
+              <Input
+                v-model="route.gateway"
+                :aria-label="`${item.name} 路由 ${routeIndex + 1} 网关`"
+                :placeholder="
+                  route.family === 'ipv6' ? '2001:db8::1' : '192.0.2.1'
+                "
+                :disabled="!stopped || busy"
+              />
+            </FormField>
+            <FormField label="Metric">
+              <Input
+                v-model="route.metric"
+                :aria-label="`${item.name} 路由 ${routeIndex + 1} Metric`"
+                type="number"
+                min="0"
+                step="1"
+                placeholder="默认"
+                :disabled="!stopped || busy"
+              />
+            </FormField>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              :aria-label="`删除 ${item.name} 路由 ${routeIndex + 1}`"
+              :disabled="!stopped || busy"
+              @click="removeRoute(item, route.id)"
+            >
+              <Trash2 :size="14" />
+            </Button>
+          </div>
+          <p v-if="!item.routes.length" class="text-xs text-muted-foreground">
+            未配置自定义静态路由。
+          </p>
         </div>
       </div>
     </div>
@@ -380,7 +548,11 @@ onBeforeUnmount(() => clearTimeout(copiedTimer));
     </div>
 
     <div class="flex items-center gap-2">
-      <Button size="sm" :disabled="!stopped || busy || !dirty" @click="save">
+      <Button
+        size="sm"
+        :disabled="!stopped || busy || !dirty || routeErrors.length > 0"
+        @click="save"
+      >
         {{ busy ? "保存中…" : "保存配置" }}
       </Button>
       <Button

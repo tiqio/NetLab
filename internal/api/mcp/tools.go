@@ -18,6 +18,10 @@ type Services struct {
 	LabQueries   *query.LaboratoryService
 	Templates    *query.TemplateService
 	Nodes        *command.NodeService
+	NodeSettings interface {
+		GetNode(context.Context, domain.ID) (domain.Node, error)
+		UpdateNodeSettings(context.Context, domain.ID, domain.Revision, domain.NodeSettings) (domain.Node, error)
+	}
 	Links        *command.LinkService
 	TopologyOps  *command.TopologyTaskService
 	LabOps       *command.LaboratoryTaskService
@@ -130,7 +134,7 @@ func Tools(services Services) []Tool {
 			}
 			return map[string]any{"task": taskValue}, nil
 		}},
-		{Name: "netlab.nodes.create", Description: "Create a template-pinned QEMU/Docker or lightweight node.", InputSchema: mutationSchema(map[string]any{"lab_id": stringProperty("Laboratory ID"), "name": stringProperty("Node name"), "kind": stringProperty("Runtime kind"), "template_version_id": stringProperty("Template version ID"), "image_version_id": stringProperty("Image version ID"), "cpu_count": integerProperty(0), "cpu_quota_micros": integerProperty(0), "memory_mib": integerProperty(0), "interface_count": integerProperty(0), "config": map[string]any{"type": "object"}, "bootstrap": map[string]any{"type": "object"}}, "lab_id", "name"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
+		{Name: "netlab.nodes.create", Description: "Create a template-pinned QEMU/Docker or lightweight node.", InputSchema: mutationSchema(map[string]any{"lab_id": stringProperty("Laboratory ID"), "name": stringProperty("Node name"), "kind": stringProperty("Runtime kind"), "template_version_id": stringProperty("Template version ID"), "image_version_id": stringProperty("Image version ID"), "cpu_count": integerProperty(0), "cpu_quota_micros": integerProperty(0), "memory_mib": integerProperty(0), "interface_count": integerProperty(0), "config": nodeConfigProperty(), "bootstrap": map[string]any{"type": "object"}}, "lab_id", "name"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
 			labID, err := argumentString(args, "lab_id")
 			if err != nil {
 				return nil, err
@@ -149,6 +153,27 @@ func Tools(services Services) []Tool {
 				return nil, err
 			}
 			return map[string]any{"node": node, "interfaces": interfaces}, nil
+		}},
+		{Name: "netlab.nodes.update_settings", Description: "Update a stopped Docker node, including typed IPv4 and IPv6 static routes.", InputSchema: mutationSchema(map[string]any{"node_id": stringProperty("Node ID"), "name": stringProperty("Node name"), "cpu_count": integerProperty(1), "cpu_quota_micros": integerProperty(0), "memory_mib": integerProperty(64), "interface_limit": integerProperty(1), "process_limit": integerProperty(1), "network_interfaces": nodeNetworkInterfacesProperty()}, "node_id", "name", "cpu_count", "memory_mib", "interface_limit", "process_limit", "network_interfaces", "expected_revision"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
+			if services.NodeSettings == nil {
+				return unavailable("node settings")
+			}
+			id, err := argumentString(args, "node_id")
+			if err != nil {
+				return nil, err
+			}
+			current, err := services.NodeSettings.GetNode(c, domain.ID(id))
+			if err != nil {
+				return nil, err
+			}
+			if current.Kind != string(domain.RuntimeDocker) {
+				return nil, domain.Problem{Code: "capability_unsupported", Message: "MCP network settings currently support Docker nodes", ResourceType: "node", ResourceID: current.ID}
+			}
+			var settings domain.NodeSettings
+			if err = decodeArgument(args, &settings); err != nil {
+				return nil, err
+			}
+			return services.NodeSettings.UpdateNodeSettings(c, current.ID, revisionArgument(args), settings)
 		}},
 		{Name: "netlab.nodes.set_state", Description: "Set desired running or stopped state.", InputSchema: mutationSchema(map[string]any{"node_id": stringProperty("Node ID"), "desired_state": enumProperty("running", "stopped")}, "node_id", "desired_state", "expected_revision"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
 			id, err := argumentString(args, "node_id")
@@ -441,6 +466,38 @@ func mutationSchema(properties map[string]any, required ...string) map[string]an
 	properties["idempotency_key"] = stringProperty("Replay-safe idempotency key")
 	properties["expected_revision"] = integerProperty(1)
 	return requiredObject(properties, required...)
+}
+
+func dockerStaticRouteProperty() map[string]any {
+	return requiredObject(map[string]any{
+		"destination": stringProperty("Canonical IPv4 or IPv6 destination CIDR"),
+		"gateway":     stringProperty("Optional same-family gateway"),
+		"metric":      integerProperty(0),
+	}, "destination")
+}
+
+func nodeNetworkInterfacesProperty() map[string]any {
+	return map[string]any{
+		"type": "array",
+		"items": requiredObject(map[string]any{
+			"id":        stringProperty("Interface ID; omit only during node creation"),
+			"name":      stringProperty("Interface name"),
+			"driver":    stringProperty("Current interface driver"),
+			"modes":     stringArrayProperty(),
+			"addresses": stringArrayProperty(),
+			"routes":    map[string]any{"type": "array", "items": dockerStaticRouteProperty()},
+		}, "name", "modes", "addresses", "routes"),
+	}
+}
+
+func nodeConfigProperty() map[string]any {
+	return map[string]any{
+		"type":                 "object",
+		"additionalProperties": true,
+		"properties": map[string]any{
+			"network_interfaces": nodeNetworkInterfacesProperty(),
+		},
+	}
 }
 func optionalString(args map[string]any, key string) string {
 	value, _ := args[key].(string)

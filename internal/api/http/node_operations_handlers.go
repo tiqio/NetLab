@@ -145,27 +145,36 @@ func (h *NodeOperationsHandlers) updateSettings(c *gin.Context) {
 	}
 	var prepared *qemuRuntime.PreparedSeedUpdate
 	if len(body.NetworkInterfaces) > 0 {
-		if current.Kind != string(domain.RuntimeQEMU) || h.credentials == nil {
-			writeProblem(c, http.StatusConflict, domain.Problem{Code: "capability_unsupported", Message: "interface network settings require a cloud-init capable QEMU node", ResourceType: "node", ResourceID: current.ID})
-			return
-		}
 		interfaces, rawNetwork, validationErr := validateNetworkSettings(current, body.NetworkInterfaces)
 		if validationErr != nil {
 			handleError(c, validationErr)
 			return
 		}
-		networkConfig, buildErr := command.BuildCloudInitNetworkConfig(interfaces, rawNetwork)
-		if buildErr != nil {
-			handleError(c, buildErr)
+		switch current.Kind {
+		case string(domain.RuntimeQEMU):
+			if h.credentials == nil {
+				writeProblem(c, http.StatusConflict, domain.Problem{Code: "capability_unsupported", Message: "QEMU interface network settings require cloud-init seed support", ResourceType: "node", ResourceID: current.ID})
+				return
+			}
+			networkConfig, buildErr := command.BuildCloudInitNetworkConfig(interfaces, rawNetwork)
+			if buildErr != nil {
+				handleError(c, buildErr)
+				return
+			}
+			seedPath, _ := current.Config["seed_iso"].(string)
+			prepared, err = h.credentials.PrepareNetworkConfig(c, seedPath, networkConfig)
+			if err != nil {
+				handleError(c, err)
+				return
+			}
+		case string(domain.RuntimeDocker):
+		default:
+			writeProblem(c, http.StatusConflict, domain.Problem{Code: "capability_unsupported", Message: "interface network settings are supported only for QEMU and Docker nodes", ResourceType: "node", ResourceID: current.ID})
 			return
 		}
-		seedPath, _ := current.Config["seed_iso"].(string)
-		prepared, err = h.credentials.PrepareNetworkConfig(c, seedPath, networkConfig)
-		if err != nil {
-			handleError(c, err)
-			return
+		if prepared != nil {
+			defer prepared.Cleanup()
 		}
-		defer prepared.Cleanup()
 	}
 	updated, err := h.nodes.UpdateNodeSettings(c, current.ID, revision, body)
 	if err != nil {
@@ -182,6 +191,9 @@ func (h *NodeOperationsHandlers) updateSettings(c *gin.Context) {
 }
 
 func validateNetworkSettings(node domain.Node, values []domain.NodeNetworkInterfaceSettings) ([]domain.Interface, []map[string]any, error) {
+	if err := domain.ValidateNodeNetworkInterfaces(values); err != nil {
+		return nil, nil, domain.Problem{Code: "invalid_node_network", Message: err.Error(), ResourceType: "node", ResourceID: node.ID}
+	}
 	descriptors, _ := node.Config["interfaces"].([]any)
 	if direct, ok := node.Config["interfaces"].([]map[string]any); ok {
 		descriptors = make([]any, len(direct))
@@ -196,7 +208,7 @@ func validateNetworkSettings(node domain.Node, values []domain.NodeNetworkInterf
 	allowedDrivers := map[string]bool{"virtio-net-pci": true, "e1000": true, "e1000e": true, "vmxnet3": true}
 	allowedModes := map[string]bool{"dhcpv4": true, "dhcpv6": true, "slaac": true, "static": true}
 	for _, value := range values {
-		if requested[value.ID].ID != "" || !allowedDrivers[value.Driver] {
+		if requested[value.ID].ID != "" || (node.Kind == string(domain.RuntimeQEMU) && !allowedDrivers[value.Driver]) {
 			return nil, nil, domain.Problem{Code: "invalid_node_settings", Message: "interface ID or driver is invalid", ResourceType: "interface", ResourceID: value.ID}
 		}
 		for _, mode := range value.Modes {
@@ -217,13 +229,14 @@ func validateNetworkSettings(node domain.Node, values []domain.NodeNetworkInterf
 		descriptor, _ := raw.(map[string]any)
 		id, _ := descriptor["id"].(string)
 		name, _ := descriptor["name"].(string)
+		driver, _ := descriptor["driver"].(string)
 		mac, _ := descriptor["mac_address"].(string)
 		value, ok := requested[domain.ID(id)]
-		if !ok || value.Name != name {
+		if !ok || value.Name != name || (node.Kind == string(domain.RuntimeDocker) && value.Driver != driver) {
 			return nil, nil, domain.Problem{Code: "invalid_node_settings", Message: "interface identity does not match the node", ResourceType: "interface", ResourceID: domain.ID(id)}
 		}
 		interfaces = append(interfaces, domain.Interface{ID: domain.ID(id), NodeID: node.ID, Slot: index, Name: name, Driver: value.Driver, MACAddress: mac})
-		rawNetwork = append(rawNetwork, map[string]any{"name": name, "modes": value.Modes, "addresses": value.Addresses})
+		rawNetwork = append(rawNetwork, map[string]any{"name": name, "modes": value.Modes, "addresses": value.Addresses, "routes": value.Routes})
 	}
 	return interfaces, rawNetwork, nil
 }

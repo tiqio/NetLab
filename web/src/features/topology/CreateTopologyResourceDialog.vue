@@ -47,6 +47,28 @@ const ipv4Mode = ref<"none" | "static" | "dhcpv4">("none");
 const ipv4Address = ref("");
 const ipv6Mode = ref<"none" | "static" | "slaac" | "dhcpv6">("none");
 const ipv6Address = ref("");
+type RouteDraft = {
+  id: string;
+  family: "ipv4" | "ipv6";
+  destination: string;
+  gateway: string;
+  metric: string | number;
+};
+let routeSequence = 0;
+const routes = ref<RouteDraft[]>([]);
+function addRoute(family: "ipv4" | "ipv6") {
+  routeSequence += 1;
+  routes.value.push({
+    id: `route-${routeSequence}`,
+    family,
+    destination: family === "ipv6" ? "::/0" : "0.0.0.0/0",
+    gateway: "",
+    metric: "",
+  });
+}
+function removeRoute(id: string) {
+  routes.value = routes.value.filter((route) => route.id !== id);
+}
 const cloudUsername = ref("ubuntu");
 const cloudPassword = ref("");
 const busy = ref(false);
@@ -166,7 +188,8 @@ const dirty = computed(() =>
     versionId.value ||
     imageVersionId.value ||
     interfaceCount.value !== 2 ||
-    cloudPassword.value,
+    cloudPassword.value ||
+    routes.value.length > 0,
   ),
 );
 function validate() {
@@ -196,6 +219,24 @@ function validate() {
       next.ipv4Address = "Enter an IPv4 CIDR such as 192.0.2.10/24.";
     if (ipv6Mode.value === "static" && !ipv6Address.value.includes("/"))
       next.ipv6Address = "Enter an IPv6 CIDR such as 2001:db8::10/64.";
+    for (const route of routes.value) {
+      if (!route.destination.includes("/"))
+        next[`route.${route.id}`] = "Enter a destination CIDR.";
+      else if ((route.family === "ipv6") !== route.destination.includes(":"))
+        next[`route.${route.id}`] =
+          `Use an ${route.family === "ipv6" ? "IPv6" : "IPv4"} destination.`;
+      else if (
+        route.gateway &&
+        (route.family === "ipv6") !== route.gateway.includes(":")
+      )
+        next[`route.${route.id}`] =
+          "Gateway and destination must use the same address family.";
+      else if (
+        String(route.metric).trim() &&
+        (!Number.isInteger(Number(route.metric)) || Number(route.metric) < 0)
+      )
+        next[`route.${route.id}`] = "Metric must be a non-negative integer.";
+    }
     if (ubuntuPasswordBootstrap.value) {
       if (!/^[a-z_][a-z0-9_-]{0,31}$/.test(cloudUsername.value))
         next.cloudUsername =
@@ -268,6 +309,7 @@ watch(
       networkKind === "switch_l2" || networkKind === "switch_l3"
         ? defaultLightweightSwitchConfig(networkKind)
         : {};
+    routes.value = [];
   },
   { immediate: true },
 );
@@ -350,6 +392,13 @@ async function submit() {
                     ipv4Mode.value === "static" ? ipv4Address.value : "",
                     ipv6Mode.value === "static" ? ipv6Address.value : "",
                   ].filter(Boolean),
+                  routes: routes.value.map((route) => ({
+                    destination: route.destination.trim(),
+                    gateway: route.gateway.trim() || undefined,
+                    metric: String(route.metric).trim()
+                      ? Number(route.metric)
+                      : undefined,
+                  })),
                 },
               ],
             }
@@ -405,8 +454,7 @@ async function submit() {
         <LightweightSwitchConfigEditor
           v-model="lightweightSwitchConfig"
           :kind="selection.networkObjectKind as LightweightSwitchKind"
-        />
-      </FormField
+        /> </FormField
       ><FormField
         v-if="!selection?.networkObjectKind"
         label="Device template"
@@ -497,6 +545,82 @@ async function submit() {
             placeholder="192.0.2.10/24"
           />
         </FormField>
+        <div
+          class="grid gap-2 rounded-md border border-border/60 p-2"
+          data-testid="docker-route-editor"
+        >
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p class="text-xs font-medium">Static routes</p>
+              <p class="text-[11px] text-muted-foreground">
+                The gateway must be reachable through the static address on this
+                interface.
+              </p>
+            </div>
+            <div class="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                @click="addRoute('ipv4')"
+                >Add IPv4 route</Button
+              >
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                @click="addRoute('ipv6')"
+                >Add IPv6 route</Button
+              >
+            </div>
+          </div>
+          <div
+            v-for="(route, routeIndex) in routes"
+            :key="route.id"
+            class="grid gap-2 rounded-md bg-muted/20 p-2 md:grid-cols-[1.4fr_1fr_7rem_auto]"
+          >
+            <FormField
+              label="Destination CIDR"
+              :error="fieldErrors[`route.${route.id}`]"
+            >
+              <Input
+                v-model="route.destination"
+                :data-testid="`docker-route-${routeIndex}-destination`"
+                :placeholder="route.family === 'ipv6' ? '::/0' : '0.0.0.0/0'"
+              />
+            </FormField>
+            <FormField label="Gateway (optional)">
+              <Input
+                v-model="route.gateway"
+                :data-testid="`docker-route-${routeIndex}-gateway`"
+                :placeholder="
+                  route.family === 'ipv6' ? '2001:db8::1' : '192.0.2.1'
+                "
+              />
+            </FormField>
+            <FormField label="Metric">
+              <Input
+                v-model="route.metric"
+                :data-testid="`docker-route-${routeIndex}-metric`"
+                type="number"
+                min="0"
+                step="1"
+                placeholder="Default"
+              />
+            </FormField>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              :aria-label="`Remove route ${routeIndex + 1}`"
+              @click="removeRoute(route.id)"
+              >Remove</Button
+            >
+          </div>
+          <p v-if="!routes.length" class="text-xs text-muted-foreground">
+            No custom static routes.
+          </p>
+        </div>
         <FormField label="IPv6 mode">
           <Select v-model="ipv6Mode" data-testid="docker-ipv6-mode">
             <option value="none">Link-local only</option>

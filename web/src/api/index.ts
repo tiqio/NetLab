@@ -23,6 +23,7 @@ import type {
   TopologyPlacementResult,
   TopologyPlacementUpdate,
   TrafficFilter,
+  UpdateNodeSettingsRequest,
 } from "./generated";
 import { randomUUID } from "@/lib/uuid";
 
@@ -39,11 +40,7 @@ export class ApiError extends Error {
 
 export interface RuijieConfigRequest {
   operation:
-    | "create_vlan"
-    | "l2_access"
-    | "l2_trunk"
-    | "l3_address"
-    | "admin_state";
+    "create_vlan" | "l2_access" | "l2_trunk" | "l3_address" | "admin_state";
   interface?: string;
   vlan_id?: number;
   vlan_name?: string;
@@ -294,23 +291,7 @@ export const generatedApi = {
     }),
   updateNodeSettings: (
     node: Pick<Node, "id" | "revision">,
-    body: Pick<
-      Node,
-      | "name"
-      | "cpu_count"
-      | "cpu_quota_micros"
-      | "memory_mib"
-      | "interface_limit"
-      | "process_limit"
-    > & {
-      network_interfaces?: Array<{
-        id: string;
-        name: string;
-        driver: string;
-        modes: string[];
-        addresses: string[];
-      }>;
-    },
+    body: UpdateNodeSettingsRequest,
   ) =>
     request<Node>(`/nodes/${node.id}/settings`, "PUT", {
       body,
@@ -352,6 +333,8 @@ export const generatedApi = {
     request<void>(`/network-objects/${objectId}/attachments`, "POST", {
       body,
     }),
+  listNetworkObjectLinks: (labId: string) =>
+    request<NetworkObjectLink[]>(`/labs/${labId}/network-object-links`),
   createNetworkObjectLink: (
     labId: string,
     body: {
@@ -360,7 +343,10 @@ export const generatedApi = {
       object_b_id: string;
       port_b_name: string;
     },
-  ) => request<NetworkObjectLink>(`/labs/${labId}/network-object-links`, "POST", { body }),
+  ) =>
+    request<NetworkObjectLink>(`/labs/${labId}/network-object-links`, "POST", {
+      body,
+    }),
   deleteNetworkObjectLink: (linkId: string) =>
     request<void>(`/network-object-links/${linkId}`, "DELETE"),
   getNetworkObjectDiagnostics: (objectId: string) =>

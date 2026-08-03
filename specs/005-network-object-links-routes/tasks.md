@@ -180,9 +180,9 @@ and confirm exact-set convergence and actionable failures.
 - [ ] T063 [P] [US4] Add failing node create/settings/export/import tests proving Docker `network_interfaces.routes` survive every control path in `internal/app/command/node_template_test.go`, `internal/app/command/export_test.go`, and `internal/app/command/import_test.go`
 - [X] T064 [P] [US4] Add failing Docker endpoint tests for exact managed-route replacement, stale managed-route removal, unmanaged-route preservation, idempotent ensure, dual-stack support, and route-specific rollback in `internal/runtime/linuxnet/docker_endpoint_test.go`
 - [ ] T065 [P] [US4] Add failing Docker adapter tests proving route reconciliation runs for new, already-running, restarted, and recovered containers before readiness in `internal/runtime/docker/adapter_test.go`
-- [ ] T066 [P] [US4] Add failing HTTP/MCP/generated-client contract tests for Docker route declarations and actionable validation errors in `tests/contract/docker_static_route_contract_test.go`
+- [X] T066 [P] [US4] Add failing HTTP/MCP/generated-client contract tests for Docker route declarations and actionable validation errors in `tests/contract/docker_static_route_contract_test.go`
 - [ ] T067 [P] [US4] Add a failing privileged multi-object L3 test for automatic IPv4/IPv6 routes, ICMP/TCP/UDP, stop/start, service recovery, and no manual `nsenter` setup in `tests/integration/docker_static_route_path_test.go`
-- [ ] T068 [P] [US4] Add failing frontend tests for Docker route creation/editing, readback, stopped-node update, validation feedback, and immutable unrelated credentials in `web/src/features/nodes/NodeConfigurationPanel.test.ts` and `web/src/features/topology/CreateTopologyResourceDialog.test.ts`
+- [X] T068 [P] [US4] Add failing frontend tests for Docker route creation/editing, readback, stopped-node update, validation feedback, and immutable unrelated credentials in `web/src/features/nodes/NodeConfigurationPanel.test.ts` and `web/src/features/topology/CreateTopologyResourceDialog.test.ts`
 - [ ] T069 [P] [US4] Add a failing Playwright journey that configures and verifies Docker routes entirely through the frontend in `tests/e2e/journeys/dockerStaticRoutes.spec.ts`
 
 ### Implementation for User Story 4
@@ -191,9 +191,9 @@ and confirm exact-set convergence and actionable failures.
 - [X] T071 [US4] Preserve Docker network interface and route declarations through create, stopped-node settings, export, import, and generated task inputs in `internal/app/command/node.go`, `internal/app/command/export.go`, `internal/app/command/import.go`, and `internal/store/sqlite/node_operations_repository.go`
 - [X] T072 [US4] Reconcile the exact owned route set inside the container namespace using argument vectors, remove only stale NetLab-managed routes, and return route-specific errors in `internal/runtime/linuxnet/docker_endpoint.go`
 - [ ] T073 [US4] Run endpoint and route reconciliation for created, already-running, restarted, recreated, service-recovered, and host-recovered containers before ready state in `internal/runtime/docker/adapter.go` and `internal/app/reconcile/recovery_coordinator.go`
-- [ ] T074 [US4] Expose typed Docker routes and validation problems through HTTP and MCP node create/settings operations in `internal/api/http/node_operations_handlers.go` and `internal/api/mcp/tools.go`
-- [ ] T075 [US4] Synchronize Docker route request/response types and API serialization in `web/src/api/generated.ts` and `web/src/api/nodeOperations.ts`
-- [ ] T076 [US4] Add family-aware Docker route editors, defaults, stopped-node settings support, and backend problem presentation in `web/src/features/nodes/NodeConfigurationPanel.vue` and `web/src/features/topology/CreateTopologyResourceDialog.vue`
+- [X] T074 [US4] Expose typed Docker routes and validation problems through HTTP and MCP node create/settings operations in `internal/api/http/node_operations_handlers.go` and `internal/api/mcp/tools.go`
+- [X] T075 [US4] Synchronize Docker route request/response types and API serialization in `web/src/api/generated.ts` and `web/src/api/nodeOperations.ts`
+- [X] T076 [US4] Add family-aware Docker route editors, defaults, stopped-node settings support, and backend problem presentation in `web/src/features/nodes/NodeConfigurationPanel.vue` and `web/src/features/topology/CreateTopologyResourceDialog.vue`
 - [ ] T077 [US4] Surface route application progress and route-specific readiness failures in `web/src/features/nodes/NodeOperationsPanel.vue` and `web/src/features/topology/TopologyInspector.vue`
 - [ ] T078 [US4] Run US4 domain, command, adapter, contract, frontend, privileged L3, recovery, and browser tests and record the focused milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
 

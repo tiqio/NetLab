@@ -63,7 +63,7 @@ describe("NodeConfigurationPanel", () => {
 
     await wrapper.get('input[aria-label="节点名称"]').setValue("新名称");
     await wrapper.get('select[aria-label="ens0 IPv4 配置"]').setValue("dhcp");
-    await wrapper.get("button").trigger("click");
+    await wrapper.get("button:not([type='button'])").trigger("click");
     await flushPromises();
 
     expect(update).toHaveBeenCalledWith(node, {
@@ -80,6 +80,7 @@ describe("NodeConfigurationPanel", () => {
           driver: "virtio-net-pci",
           modes: ["dhcpv4"],
           addresses: [],
+          routes: [],
         },
         {
           id: "if-1",
@@ -87,10 +88,81 @@ describe("NodeConfigurationPanel", () => {
           driver: "e1000",
           modes: ["slaac"],
           addresses: [],
+          routes: [],
         },
       ],
     });
     expect(wrapper.emitted("changed")).toHaveLength(1);
+  });
+
+  it("reads and saves Docker static routes while stopped", async () => {
+    const node = nodeFactory({
+      kind: "docker",
+      config: {
+        template_key: "ubuntu-docker",
+        interfaces: [
+          {
+            id: "if-0",
+            name: "eth0",
+            driver: "",
+            mac_address: "02:00:00:00:00:01",
+          },
+        ],
+        network_interfaces: [
+          {
+            name: "eth0",
+            modes: ["static"],
+            addresses: ["192.0.2.10/24"],
+            routes: [
+              {
+                destination: "0.0.0.0/0",
+                gateway: "192.0.2.1",
+                metric: 10,
+              },
+            ],
+          },
+        ],
+      },
+    });
+    const interfaces = [
+      interfaceFactory({ id: "if-0", name: "eth0", driver: "" }),
+    ];
+    const update = vi.spyOn(api, "updateNodeSettings").mockResolvedValue({
+      ...node,
+      revision: 2,
+    });
+    const wrapper = mount(NodeConfigurationPanel, {
+      props: { node, interfaces },
+    });
+
+    expect(
+      wrapper.get<HTMLInputElement>('input[aria-label="eth0 路由 1 目标"]')
+        .element.value,
+    ).toBe("0.0.0.0/0");
+    await wrapper.get('input[aria-label="eth0 路由 1 Metric"]').setValue("20");
+    await wrapper.get("button:not([type='button'])").trigger("click");
+    await flushPromises();
+
+    expect(update).toHaveBeenCalledWith(
+      node,
+      expect.objectContaining({
+        network_interfaces: [
+          expect.objectContaining({
+            id: "if-0",
+            name: "eth0",
+            driver: "",
+            addresses: ["192.0.2.10/24"],
+            routes: [
+              {
+                destination: "0.0.0.0/0",
+                gateway: "192.0.2.1",
+                metric: 20,
+              },
+            ],
+          }),
+        ],
+      }),
+    );
   });
 
   it("shows read-only Ubuntu credentials and copies them", async () => {

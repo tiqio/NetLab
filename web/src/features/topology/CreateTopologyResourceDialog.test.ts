@@ -272,6 +272,33 @@ describe("CreateTopologyResourceDialog", () => {
     )!;
     ipv6Mode.value = "slaac";
     ipv6Mode.dispatchEvent(new Event("change", { bubbles: true }));
+    const addRoute = Array.from(document.body.querySelectorAll("button")).find(
+      (button) => button.textContent?.includes("Add IPv4 route"),
+    )!;
+    addRoute.click();
+    await wrapper.vm.$nextTick();
+    const routeGateway = document.body.querySelector<HTMLInputElement>(
+      '[data-testid="docker-route-0-gateway"]',
+    )!;
+    routeGateway.value = "2001:db8::1";
+    routeGateway.dispatchEvent(new Event("input", { bubbles: true }));
+    const routeMetric = document.body.querySelector<HTMLInputElement>(
+      '[data-testid="docker-route-0-metric"]',
+    )!;
+    routeMetric.value = "10";
+    routeMetric.dispatchEvent(new Event("input", { bubbles: true }));
+    vi.mocked(api.createNode).mockClear();
+    document.body
+      .querySelector("form")!
+      .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await flushPromises();
+    expect(api.createNode).not.toHaveBeenCalled();
+    expect(document.body.textContent).toContain(
+      "Gateway and destination must use the same address family.",
+    );
+
+    routeGateway.value = "192.0.2.1";
+    routeGateway.dispatchEvent(new Event("input", { bubbles: true }));
     document.body
       .querySelector("form")!
       .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
@@ -287,6 +314,13 @@ describe("CreateTopologyResourceDialog", () => {
               name: "eth0",
               modes: ["static", "slaac"],
               addresses: ["192.0.2.10/24"],
+              routes: [
+                {
+                  destination: "0.0.0.0/0",
+                  gateway: "192.0.2.1",
+                  metric: 10,
+                },
+              ],
             },
           ],
         },
@@ -395,6 +429,7 @@ describe("CreateTopologyResourceDialog", () => {
               name: "ens0",
               modes: ["static"],
               addresses: ["192.0.2.10/24"],
+              routes: [],
             },
           ],
         },

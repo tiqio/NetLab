@@ -399,6 +399,31 @@ export interface CreateNodeRequest {
   };
 }
 
+export interface DockerStaticRoute {
+  destination: string;
+  gateway?: string;
+  metric?: number;
+}
+
+export interface NodeNetworkInterfaceSettings {
+  id: string;
+  name: string;
+  driver: string;
+  modes: string[];
+  addresses: string[];
+  routes: DockerStaticRoute[];
+}
+
+export interface UpdateNodeSettingsRequest {
+  name: string;
+  cpu_count: number;
+  cpu_quota_micros: number;
+  memory_mib: number;
+  interface_limit: number;
+  process_limit: number;
+  network_interfaces?: NodeNetworkInterfaceSettings[];
+}
+
 export interface StartCaptureRequest {
   laboratory_id?: string;
   source_type: "interface" | "link" | "network_object_link";
