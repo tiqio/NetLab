@@ -2,8 +2,11 @@ package linuxnet
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -20,20 +23,30 @@ type dockerInterfaceConfig struct {
 }
 
 type dockerRoute struct {
-	Destination string
-	Gateway     string
-	Metric      int
+	Destination string `json:"destination"`
+	Gateway     string `json:"gateway,omitempty"`
+	Metric      int    `json:"metric,omitempty"`
+}
+
+type managedDockerRouteStore interface {
+	Load(int, string) ([]dockerRoute, error)
+	Save(int, string, []dockerRoute) error
+}
+
+type procManagedDockerRouteStore struct {
+	root string
 }
 
 type DockerEndpointRuntime struct {
 	executor CommandExecutor
 	ip       string
 	nsenter  string
+	routes   managedDockerRouteStore
 }
 
 func NewDockerEndpointRuntime(executor CommandExecutor) (*DockerEndpointRuntime, error) {
 	if executor != nil {
-		return &DockerEndpointRuntime{executor: executor, ip: "ip", nsenter: "nsenter"}, nil
+		return &DockerEndpointRuntime{executor: executor, ip: "ip", nsenter: "nsenter", routes: &procManagedDockerRouteStore{root: "/proc"}}, nil
 	}
 	ip, err := lookup("ip")
 	if err != nil {
@@ -43,7 +56,52 @@ func NewDockerEndpointRuntime(executor CommandExecutor) (*DockerEndpointRuntime,
 	if err != nil {
 		return nil, err
 	}
-	return &DockerEndpointRuntime{executor: SystemExecutor{}, ip: ip, nsenter: nsenter}, nil
+	return &DockerEndpointRuntime{executor: SystemExecutor{}, ip: ip, nsenter: nsenter, routes: &procManagedDockerRouteStore{root: "/proc"}}, nil
+}
+
+func (s *procManagedDockerRouteStore) path(pid int, interfaceName string) (string, error) {
+	if pid <= 0 || !dockerInterfaceNamePattern.MatchString(interfaceName) {
+		return "", fmt.Errorf("invalid managed route owner")
+	}
+	return filepath.Join(s.root, strconv.Itoa(pid), "root", "run", "netlab", "managed-routes", interfaceName+".json"), nil
+}
+
+func (s *procManagedDockerRouteStore) Load(pid int, interfaceName string) ([]dockerRoute, error) {
+	path, err := s.path(pid, interfaceName)
+	if err != nil {
+		return nil, err
+	}
+	body, err := os.ReadFile(path)
+	if os.IsNotExist(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var routes []dockerRoute
+	if err = json.Unmarshal(body, &routes); err != nil {
+		return nil, fmt.Errorf("decode managed route ownership for %s: %w", interfaceName, err)
+	}
+	return routes, nil
+}
+
+func (s *procManagedDockerRouteStore) Save(pid int, interfaceName string, routes []dockerRoute) error {
+	path, err := s.path(pid, interfaceName)
+	if err != nil {
+		return err
+	}
+	if err = os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return err
+	}
+	body, err := json.Marshal(routes)
+	if err != nil {
+		return err
+	}
+	temporary := path + ".tmp"
+	if err = os.WriteFile(temporary, body, 0o600); err != nil {
+		return err
+	}
+	return os.Rename(temporary, path)
 }
 
 func (r *DockerEndpointRuntime) Ensure(ctx context.Context, node domain.Node, pid int) error {
@@ -173,23 +231,49 @@ func (r *DockerEndpointRuntime) configureInterface(ctx context.Context, pid int,
 		}
 	}
 	for _, route := range config.Routes {
-		if _, _, err := net.ParseCIDR(route.Destination); err != nil {
-			return fmt.Errorf("invalid route destination %q for %s", route.Destination, interfaceName)
-		}
-		if route.Gateway != "" && net.ParseIP(route.Gateway) == nil {
-			return fmt.Errorf("invalid route gateway %q for %s", route.Gateway, interfaceName)
-		}
-		args := []string{"route", "replace", route.Destination}
-		if route.Gateway != "" {
-			args = append(args, "via", route.Gateway)
-		}
-		args = append(args, "dev", interfaceName)
-		if route.Metric > 0 {
-			args = append(args, "metric", strconv.Itoa(route.Metric))
-		}
-		if err := r.executor.Run(ctx, r.nsenter, append([]string{"-t", strconv.Itoa(pid), "-n", r.ip}, args...)...); err != nil {
+		if err := validateDockerRoute(interfaceName, route); err != nil {
 			return err
 		}
+	}
+	previousRoutes, err := r.routes.Load(pid, interfaceName)
+	if err != nil {
+		return fmt.Errorf("load managed routes for %s: %w", interfaceName, err)
+	}
+	desiredRoutes := make(map[string]bool, len(config.Routes))
+	for _, route := range config.Routes {
+		desiredRoutes[dockerRouteKey(route)] = true
+	}
+	deletedRoutes := make([]dockerRoute, 0)
+	for _, route := range previousRoutes {
+		if desiredRoutes[dockerRouteKey(route)] {
+			continue
+		}
+		if err := r.deleteManagedRoute(ctx, pid, interfaceName, route); err != nil {
+			return err
+		}
+		deletedRoutes = append(deletedRoutes, route)
+	}
+	previousRouteKeys := make(map[string]bool, len(previousRoutes))
+	for _, route := range previousRoutes {
+		previousRouteKeys[dockerRouteKey(route)] = true
+	}
+	appliedRoutes := make([]dockerRoute, 0)
+	for _, route := range config.Routes {
+		if err := r.replaceManagedRoute(ctx, pid, interfaceName, route); err != nil {
+			if rollbackErr := r.rollbackManagedRoutes(ctx, pid, interfaceName, appliedRoutes, deletedRoutes); rollbackErr != nil {
+				return fmt.Errorf("%w; rollback managed routes: %v", err, rollbackErr)
+			}
+			return err
+		}
+		if !previousRouteKeys[dockerRouteKey(route)] {
+			appliedRoutes = append(appliedRoutes, route)
+		}
+	}
+	if err := r.routes.Save(pid, interfaceName, config.Routes); err != nil {
+		if rollbackErr := r.rollbackManagedRoutes(ctx, pid, interfaceName, appliedRoutes, deletedRoutes); rollbackErr != nil {
+			return fmt.Errorf("persist managed routes for %s: %w; rollback managed routes: %v", interfaceName, err, rollbackErr)
+		}
+		return fmt.Errorf("persist managed routes for %s: %w", interfaceName, err)
 	}
 	if config.Modes["slaac"] {
 		if err := r.executor.Run(ctx, r.nsenter, "-t", strconv.Itoa(pid), "-n", "sysctl", "-w", "net.ipv6.conf."+interfaceName+".accept_ra=2"); err != nil {
@@ -207,6 +291,75 @@ func (r *DockerEndpointRuntime) configureInterface(ctx context.Context, pid int,
 		}
 	}
 	return nil
+}
+
+func (r *DockerEndpointRuntime) rollbackManagedRoutes(ctx context.Context, pid int, interfaceName string, appliedRoutes, deletedRoutes []dockerRoute) error {
+	var failures []string
+	for _, route := range appliedRoutes {
+		if err := r.deleteManagedRoute(ctx, pid, interfaceName, route); err != nil {
+			failures = append(failures, err.Error())
+		}
+	}
+	for _, route := range deletedRoutes {
+		if err := r.replaceManagedRoute(ctx, pid, interfaceName, route); err != nil {
+			failures = append(failures, err.Error())
+		}
+	}
+	if len(failures) > 0 {
+		return fmt.Errorf("%s", strings.Join(failures, "; "))
+	}
+	return nil
+}
+
+func validateDockerRoute(interfaceName string, route dockerRoute) error {
+	if _, _, err := net.ParseCIDR(route.Destination); err != nil {
+		return fmt.Errorf("invalid route destination %q for %s", route.Destination, interfaceName)
+	}
+	if route.Gateway != "" && net.ParseIP(route.Gateway) == nil {
+		return fmt.Errorf("invalid route gateway %q for %s", route.Gateway, interfaceName)
+	}
+	return nil
+}
+
+func dockerRouteKey(route dockerRoute) string {
+	return route.Destination + "\x00" + route.Gateway + "\x00" + strconv.Itoa(route.Metric)
+}
+
+func (r *DockerEndpointRuntime) replaceManagedRoute(ctx context.Context, pid int, interfaceName string, route dockerRoute) error {
+	args := dockerRouteArgs("replace", interfaceName, route)
+	if err := r.executor.Run(ctx, r.nsenter, append([]string{"-t", strconv.Itoa(pid), "-n", r.ip}, args...)...); err != nil {
+		return fmt.Errorf("apply managed route %s on %s: %w", route.Destination, interfaceName, err)
+	}
+	return nil
+}
+
+func (r *DockerEndpointRuntime) deleteManagedRoute(ctx context.Context, pid int, interfaceName string, route dockerRoute) error {
+	args := dockerRouteArgs("delete", interfaceName, route)
+	if err := r.executor.Run(ctx, r.nsenter, append([]string{"-t", strconv.Itoa(pid), "-n", r.ip}, args...)...); err != nil && !isMissingManagedRouteError(err) {
+		return fmt.Errorf("remove stale managed route %s on %s: %w", route.Destination, interfaceName, err)
+	}
+	return nil
+}
+
+func dockerRouteArgs(operation, interfaceName string, route dockerRoute) []string {
+	family := "-4"
+	if strings.Contains(route.Destination, ":") {
+		family = "-6"
+	}
+	args := []string{family, "route", operation, route.Destination}
+	if route.Gateway != "" {
+		args = append(args, "via", route.Gateway)
+	}
+	args = append(args, "dev", interfaceName)
+	if route.Metric > 0 {
+		args = append(args, "metric", strconv.Itoa(route.Metric))
+	}
+	return args
+}
+
+func isMissingManagedRouteError(err error) bool {
+	message := strings.ToLower(err.Error())
+	return strings.Contains(message, "no such process") || strings.Contains(message, "not found")
 }
 
 func (r *DockerEndpointRuntime) startDHCP(ctx context.Context, pid int, interfaceName, family string) error {
