@@ -1,12 +1,12 @@
 {
   "schema_version": "1.0",
-  "id": "acceptance-object-links-routes-0cd5ea2-20260803",
-  "candidate_id": "object-links-routes-0cd5ea2-20260803",
+  "id": "acceptance-object-links-routes-6fec815-20260803",
+  "candidate_id": "object-links-routes-6fec815-20260803",
   "status": "blocked",
   "gate_results": {
     "format": {
       "status": "passed",
-      "details": "gofmt, git diff --check, and complete frontend Prettier passed on source 0cd5ea220bde45b1c5fd3c1def364e55469832cf"
+      "details": "gofmt, git diff --check, and complete frontend Prettier passed on source 6fec81522f4e74ce4a7aa872195068034d349fd7"
     },
     "static_analysis": {
       "status": "passed",
@@ -46,7 +46,7 @@
     },
     "candidate_artifact": {
       "status": "passed",
-      "details": "source=0cd5ea220bde45b1c5fd3c1def364e55469832cf; archive=sha256:3e4f6797a323fd24ff5a09067cd6dd10c496f1b46f47533810d486a103acf179; binary=sha256:41372d9b84ecaf8f3ad0654ede0f7e8876b738a63309c04f3b1d7ec925179d75; built_at=2026-08-03T10:33:28Z"
+      "details": "source=6fec81522f4e74ce4a7aa872195068034d349fd7; archive=sha256:496567e1a01a184b880fc59e73a4bacb0519af9c18bcc1ef2a7e14fd986528a0; binary=sha256:296aeae2e509820f7a9299ad218977e6413a128d87358953ba8509d97a7d193b; built_at=2026-08-03T11:11:00Z"
     },
     "migration_and_rollback": {
       "status": "passed",
@@ -88,6 +88,6 @@
     "prohibited_content_count": 0
   },
   "conclusion": "blocked",
-  "started_at": "2026-08-03T10:33:28Z",
-  "finished_at": "2026-08-03T11:06:00Z"
+  "started_at": "2026-08-03T11:11:00Z",
+  "finished_at": "2026-08-03T11:13:37Z"
 }

@@ -327,12 +327,12 @@
 
 ## Immutable Candidate
 
-- Candidate ID: `object-links-routes-0cd5ea2-20260803`; source SHA:
-  `0cd5ea220bde45b1c5fd3c1def364e55469832cf`; build time: August 3, 2026 at 10:33:28 UTC.
+- Candidate ID: `object-links-routes-6fec815-20260803`; source SHA:
+  `6fec81522f4e74ce4a7aa872195068034d349fd7`; build time: August 3, 2026 at 11:11:00 UTC.
 - The immutable source/deployment archive is
-  `sha256:3e4f6797a323fd24ff5a09067cd6dd10c496f1b46f47533810d486a103acf179`;
+  `sha256:496567e1a01a184b880fc59e73a4bacb0519af9c18bcc1ef2a7e14fd986528a0`;
   the embedded prebuilt Linux binary is
-  `sha256:41372d9b84ecaf8f3ad0654ede0f7e8876b738a63309c04f3b1d7ec925179d75`;
+  `sha256:296aeae2e509820f7a9299ad218977e6413a128d87358953ba8509d97a7d193b`;
   and the combined contract digest is
   `sha256:3eaffde190cf88ab4db67a6d273d1fc336383865898d0fc9630277f3710adbc0`.
 - The target database currently records migrations 1 through 6. The candidate contains migrations 1
