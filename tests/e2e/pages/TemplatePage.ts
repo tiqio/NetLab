@@ -37,10 +37,20 @@ export class TemplatePage extends BasePage {
   }
 
   async chooseLightweight(name: string) {
+    const paletteName =
+      name === "Layer-2 switch"
+        ? "Lightweight L2 Switch"
+        : name === "Layer-3 switch"
+          ? "Lightweight L3 Switch"
+          : name;
     await this.openPalette();
-    await this.page.getByRole("button", { name, exact: true }).click();
+    await this.page
+      .getByRole("button")
+      .filter({ hasText: paletteName })
+      .first()
+      .click();
     return this.page.getByRole("dialog", {
-      name: new RegExp(`Add ${name}`, "i"),
+      name: new RegExp(`Add ${paletteName}`, "i"),
     });
   }
 
@@ -137,6 +147,15 @@ export class TemplatePage extends BasePage {
       network_objects: Array<
         Record<string, unknown> & { id: string; name: string; revision: number }
       >;
+      network_object_links: Array<
+        Record<string, unknown> & {
+          id: string;
+          object_a_id: string;
+          port_a_name: string;
+          object_b_id: string;
+          port_b_name: string;
+        }
+      >;
     };
     return {
       ...snapshot,
@@ -144,6 +163,7 @@ export class TemplatePage extends BasePage {
       interfaces: snapshot.interfaces || [],
       links: snapshot.links || [],
       network_objects: snapshot.network_objects || [],
+      network_object_links: snapshot.network_object_links || [],
     };
   }
 }

@@ -248,7 +248,9 @@ const occupiedObjectPorts = computed(() => {
 });
 const connectionSourcePortId = computed(
   () =>
-    props.connectionSourceInterfaceId || props.connectionSourceObjectPortId || "",
+    props.connectionSourceInterfaceId ||
+    props.connectionSourceObjectPortId ||
+    "",
 );
 const availableInterfaceOwners = computed(
   () =>
@@ -1615,6 +1617,11 @@ defineExpose({
             item.desired_state,
           ).label
         }}{{ selectedIds?.includes(item.id) ? ", selected" : "" }}
+      </li>
+      <li v-for="link in networkObjectLinks" :key="`a11y:${link.id}`">
+        {{ networkObjectLinkDisplayName(link, networkObjects) }}:
+        {{ link.observed_state
+        }}{{ selectedIds?.includes(link.id) ? ", selected" : "" }}
       </li>
     </ul>
     <div

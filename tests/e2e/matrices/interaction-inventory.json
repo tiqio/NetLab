@@ -345,6 +345,19 @@
       "sensitive_evidence": []
     },
     {
+      "id": "network-object-links.shared-browser-path",
+      "area": "topology",
+      "label": "Connect lightweight object ports across clients",
+      "locator": { "role": "region", "name": "Topology canvas keyboard area*" },
+      "applicable_states": ["three-network-objects", "free-object-ports"],
+      "activation": ["keyboard"],
+      "outcome_class": "task",
+      "operation": "network_object_link.create",
+      "required_capabilities": ["namespace"],
+      "cleanup_effect": "laboratory-cascade",
+      "sensitive_evidence": []
+    },
+    {
       "id": "topology.selection.escape",
       "area": "topology",
       "label": "Cancel transient topology interaction",

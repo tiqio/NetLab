@@ -90,7 +90,11 @@ const {
 } = useWorkspacePreferences(activeId);
 const selectedIds = ref<string[]>([]);
 const selectedType = ref<
-  "node" | "link" | "network_object" | "network_attachment" | "network_object_link"
+  | "node"
+  | "link"
+  | "network_object"
+  | "network_attachment"
+  | "network_object_link"
 >();
 const selectionAnchor = ref("");
 const focusedResourceId = ref("");
@@ -139,7 +143,9 @@ const selectedAttachment = computed<NetworkAttachment | undefined>(() =>
 );
 const selectedObjectLink = computed<NetworkObjectLink | undefined>(() =>
   selectedType.value === "network_object_link"
-    ? store.active?.network_object_links?.find((item) => item.id === selectedIds.value[0])
+    ? store.active?.network_object_links?.find(
+        (item) => item.id === selectedIds.value[0],
+      )
     : undefined,
 );
 const contextNode = computed(() =>
@@ -284,18 +290,18 @@ const selectedInterface = computed(() =>
         (item) => item.id === selectedAttachment.value?.interface_id,
       )
     : selectedNode.value
-    ? store.active?.interfaces.find(
-        (item) =>
-          item.node_id === selectedNode.value!.id &&
-          !item.name.startsWith("internal") &&
-          item.id === selectedInterfaceId.value,
-      ) ||
-      store.active?.interfaces.find(
-        (item) =>
-          item.node_id === selectedNode.value!.id &&
-          !item.name.startsWith("internal"),
-      )
-    : undefined,
+      ? store.active?.interfaces.find(
+          (item) =>
+            item.node_id === selectedNode.value!.id &&
+            !item.name.startsWith("internal") &&
+            item.id === selectedInterfaceId.value,
+        ) ||
+        store.active?.interfaces.find(
+          (item) =>
+            item.node_id === selectedNode.value!.id &&
+            !item.name.startsWith("internal"),
+        )
+      : undefined,
 );
 const interfaceOwners = computed(() =>
   Object.fromEntries(
@@ -366,19 +372,46 @@ const keyboardResources = computed(() => [
   ...(store.active?.network_object_links || []).map((item) => {
     const a = coordinates.value[item.object_a_id] || { x: 0, y: 0 };
     const b = coordinates.value[item.object_b_id] || { x: 0, y: 0 };
-    return { id: item.id, type: "network_object_link" as const, x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    return {
+      id: item.id,
+      type: "network_object_link" as const,
+      x: (a.x + b.x) / 2,
+      y: (a.y + b.y) / 2,
+    };
   }),
 ]);
-const keyboardPorts = computed(() =>
-  (store.active?.interfaces || [])
+function networkObjectPortNames(object: NetworkObject) {
+  const rows =
+    object.kind === "switch_l2"
+      ? object.config?.ports
+      : object.kind === "switch_l3" || object.kind === "pc"
+        ? object.config?.interfaces
+        : [];
+  return Array.isArray(rows)
+    ? rows
+        .map((item) => String((item as { name?: string }).name || ""))
+        .filter(Boolean)
+    : [];
+}
+
+const keyboardPorts = computed(() => [
+  ...(store.active?.interfaces || [])
     .filter((item) => !item.name.startsWith("internal"))
     .map((item) => ({
-    id: item.id,
-    ownerId: item.node_id,
-    name: item.name,
-    available: !item.desired_link_id,
+      id: item.id,
+      ownerId: item.node_id,
+      name: item.name,
+      available: !item.desired_link_id,
     })),
-);
+  ...(store.active?.network_objects || []).flatMap((object) =>
+    networkObjectPortNames(object).map((portName) => ({
+      id: `${object.id}:${portName}`,
+      ownerId: object.id,
+      name: portName,
+      available: !objectPortOccupied(object.id, portName),
+    })),
+  ),
+]);
 
 watch(
   () => keyboardResources.value.map((item) => item.id),
@@ -589,7 +622,12 @@ async function lightweightCreated(id: string) {
 
 async function selectResource(
   id: string,
-  type: "node" | "link" | "network_object" | "network_attachment" | "network_object_link",
+  type:
+    | "node"
+    | "link"
+    | "network_object"
+    | "network_attachment"
+    | "network_object_link",
   additive: boolean,
 ) {
   if (pendingEndpoint.value && type === "node") {
@@ -611,7 +649,8 @@ async function selectResource(
       "Network attachment selected. Open Capture or Traffic Filter to observe this segment.";
   } else if (type === "network_object_link") {
     selectedInterfaceId.value = "";
-    canvasStatus.value = "对象间链路已选中，可在 Capture 或 Traffic Filter 中直接监控。";
+    canvasStatus.value =
+      "对象间链路已选中，可在 Capture 或 Traffic Filter 中直接监控。";
   } else if (type !== "node") selectedInterfaceId.value = "";
   else if (
     !store.active?.interfaces.some(
@@ -631,7 +670,11 @@ function clearSelection() {
 }
 
 function cancelOrClear() {
-  if (pendingEndpoint.value || pendingObjectPort.value || portChooserOpen.value) {
+  if (
+    pendingEndpoint.value ||
+    pendingObjectPort.value ||
+    portChooserOpen.value
+  ) {
     cancelConnection();
     return;
   }
@@ -645,11 +688,11 @@ function objectPortOccupied(objectId: string, portName: string) {
       (item) =>
         item.network_object_id === objectId && item.port_name === portName,
     ) ||
-      store.active?.network_object_links?.some(
-        (item) =>
-          `${item.object_a_id}:${item.port_a_name}` === key ||
-          `${item.object_b_id}:${item.port_b_name}` === key,
-      ),
+    store.active?.network_object_links?.some(
+      (item) =>
+        `${item.object_a_id}:${item.port_a_name}` === key ||
+        `${item.object_b_id}:${item.port_b_name}` === key,
+    ),
   );
 }
 
@@ -1051,7 +1094,11 @@ function cancelWorkspaceTransient() {
     cancelRouteEdit();
     return true;
   }
-  if (pendingEndpoint.value || pendingObjectPort.value || portChooserOpen.value) {
+  if (
+    pendingEndpoint.value ||
+    pendingObjectPort.value ||
+    portChooserOpen.value
+  ) {
     cancelConnection();
     return true;
   }
@@ -1081,7 +1128,9 @@ async function topologyKeyboard(event: KeyboardEvent) {
     selectedIds.value,
     {
       connection: Boolean(
-        pendingEndpoint.value || pendingObjectPort.value || portChooserOpen.value,
+        pendingEndpoint.value ||
+        pendingObjectPort.value ||
+        portChooserOpen.value,
       ),
     },
   );
@@ -1108,7 +1157,22 @@ async function topologyKeyboard(event: KeyboardEvent) {
   }
   if (action.type === "focus_port")
     keyboardAnnouncement.value = action.announcement;
-  if (action.type === "choose_port") await interfaceClicked(action.interfaceId);
+  if (action.type === "choose_port") {
+    const nodeInterface = store.active?.interfaces.find(
+      (item) => item.id === action.interfaceId,
+    );
+    if (nodeInterface) await interfaceClicked(nodeInterface.id);
+    else {
+      const object = store.active?.network_objects.find((item) =>
+        action.interfaceId.startsWith(`${item.id}:`),
+      );
+      if (object)
+        await objectPortClicked(
+          object.id,
+          action.interfaceId.slice(object.id.length + 1),
+        );
+    }
+  }
   if (action.type === "begin_connection") startConnection(action.resourceId);
   if (action.type === "choose_connection_target") {
     const target = keyboardResources.value.find(

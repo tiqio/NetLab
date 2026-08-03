@@ -45,6 +45,39 @@ describe("TopologyKeyboardController", () => {
     });
   });
 
+  it("focuses the first available object port and returns to resources", () => {
+    const controller = new TopologyKeyboardController(
+      [{ id: "switch-a", type: "network_object", x: 0, y: 0 }],
+      [
+        {
+          id: "switch-a:eth0",
+          ownerId: "switch-a",
+          name: "eth0",
+          available: false,
+        },
+        {
+          id: "switch-a:eth1",
+          ownerId: "switch-a",
+          name: "eth1",
+          available: true,
+        },
+      ],
+    );
+    controller.focusResource("switch-a");
+    expect(controller.handle({ key: "p" }, ["switch-a"])).toMatchObject({
+      type: "focus_port",
+      interfaceId: "switch-a:eth1",
+    });
+    controller.focusResource("switch-a");
+    expect(controller.handle({ key: "Enter" }, ["switch-a"])).toEqual({
+      type: "choose_port",
+      interfaceId: "switch-a:eth1",
+    });
+    expect(
+      controller.handle({ key: "ArrowRight" }, ["switch-a"]),
+    ).toMatchObject({ type: "focus_resource", resourceId: "switch-a" });
+  });
+
   it("prioritizes cancellation and supports movement and inspector activation", () => {
     const controller = new TopologyKeyboardController(resources, ports);
     controller.focusResource("b");

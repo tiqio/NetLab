@@ -14,7 +14,10 @@ vi.mock("@/components/charts/EChart.vue", () => ({
       "nodeDrag",
       "graphRoam",
     ],
-    setup(props: { option: unknown }, { expose }: { expose: (value: object) => void }) {
+    setup(
+      props: { option: unknown },
+      { expose }: { expose: (value: object) => void },
+    ) {
       watchEffect(() => {
         captured = props.option;
       });
@@ -126,7 +129,7 @@ describe("TopologyCanvas", () => {
   });
 
   it("renders parallel object links with distinct readable routes", () => {
-    mount(TopologyCanvas, {
+    const wrapper = mount(TopologyCanvas, {
       props: {
         nodes: [],
         interfaces: [],
@@ -199,6 +202,9 @@ describe("TopologyCanvas", () => {
     expect(objectLinks[0].lineStyle.curveness).not.toBe(
       objectLinks[1].lineStyle.curveness,
     );
+    expect(
+      wrapper.get('[data-testid="topology-a11y-summary"]').text(),
+    ).toContain("Switch A:swp1 ↔ Switch B:swp1");
   });
 
   it("renders selectable named ports on a selected network object", async () => {

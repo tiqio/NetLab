@@ -69,6 +69,7 @@ export class TopologyKeyboardController {
   }
 
   focusResource(id: string) {
+    if (this.focusedResourceId === id) return;
     this.focusedResourceId = id;
     this.focusedPortId = "";
   }
@@ -128,7 +129,7 @@ export class TopologyKeyboardController {
     }
     if (input.key.toLowerCase() === "p" && this.focusedResourceId) {
       const port = this.ports.find(
-        (item) => item.ownerId === this.focusedResourceId,
+        (item) => item.ownerId === this.focusedResourceId && item.available,
       );
       if (port) {
         this.focusedPortId = port.id;
@@ -188,8 +189,11 @@ export class TopologyKeyboardController {
         announcement: `Port ${next.name}`,
       };
     }
-    if (key === "Enter")
-      return { type: "choose_port", interfaceId: this.focusedPortId };
+    if (key === "Enter") {
+      const interfaceId = this.focusedPortId;
+      this.focusedPortId = "";
+      return { type: "choose_port", interfaceId };
+    }
     if (key === "Escape") {
       this.focusedPortId = "";
       return { type: "clear_selection" };
