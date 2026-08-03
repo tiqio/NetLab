@@ -181,7 +181,7 @@ and confirm exact-set convergence and actionable failures.
 - [X] T064 [P] [US4] Add failing Docker endpoint tests for exact managed-route replacement, stale managed-route removal, unmanaged-route preservation, idempotent ensure, dual-stack support, and route-specific rollback in `internal/runtime/linuxnet/docker_endpoint_test.go`
 - [X] T065 [P] [US4] Add failing Docker adapter tests proving route reconciliation runs for new, already-running, restarted, and recovered containers before readiness in `internal/runtime/docker/adapter_test.go`
 - [X] T066 [P] [US4] Add failing HTTP/MCP/generated-client contract tests for Docker route declarations and actionable validation errors in `tests/contract/docker_static_route_contract_test.go`
-- [ ] T067 [P] [US4] Add a failing privileged multi-object L3 test for automatic IPv4/IPv6 routes, ICMP/TCP/UDP, stop/start, service recovery, and no manual `nsenter` setup in `tests/integration/docker_static_route_path_test.go`
+- [X] T067 [P] [US4] Add a failing privileged multi-object L3 test for automatic IPv4/IPv6 routes, ICMP/TCP/UDP, stop/start, service recovery, and no manual `nsenter` setup in `tests/integration/docker_static_route_path_test.go`
 - [X] T068 [P] [US4] Add failing frontend tests for Docker route creation/editing, readback, stopped-node update, validation feedback, and immutable unrelated credentials in `web/src/features/nodes/NodeConfigurationPanel.test.ts` and `web/src/features/topology/CreateTopologyResourceDialog.test.ts`
 - [ ] T069 [P] [US4] Add a failing Playwright journey that configures and verifies Docker routes entirely through the frontend in `tests/e2e/journeys/dockerStaticRoutes.spec.ts`
 

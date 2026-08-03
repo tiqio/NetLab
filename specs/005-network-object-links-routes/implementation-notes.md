@@ -82,3 +82,12 @@
   src/features/topology/TopologyInspector.test.ts`; `npm run build`; and changed-file ESLint. All passed
   locally. Vite chunk-size output and 115 pre-existing Inspector lint warnings remain informational;
   changed-file ESLint reported zero errors.
+- `3a36938` (`test: cover Docker routed traffic recovery`): adds a root-gated, digest-pinned Docker
+  acceptance test with two isolated container endpoints, two bridge segments, an isolated forwarding
+  namespace, exact IPv4/IPv6 route assertions, ICMP/TCP/UDP traffic, container stop/start, and a fresh
+  adapter recovery pass. The test configures container routes only through the runtime adapter and never
+  uses manual `nsenter` route setup.
+- Focused gates for `3a36938`: `go test ./tests/integration ./tests/testsupport -run
+  TestPrivilegedDockerStaticRoutePath -count=1` and `go vet ./tests/integration ./tests/testsupport` passed
+  locally. Dynamic execution is intentionally gated by `NETLAB_PRIVILEGED=1` and an approved
+  `NETLAB_DOCKER_ROUTE_IMAGE` pinned with `@sha256:`.
