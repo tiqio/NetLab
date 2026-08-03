@@ -63,7 +63,9 @@ func TestPrivilegedNetworkObjectLinkThreeObjectPath(t *testing.T) {
 	}()
 
 	namespaceA, _ := linuxnet.NetworkObjectNamespaceName(objectA)
+	namespaceB, _ := linuxnet.NetworkObjectNamespaceName(objectB)
 	namespaceC, _ := linuxnet.NetworkObjectNamespaceName(objectC)
+	runObjectLinkCommand(t, ctx, "ip", "netns", "exec", namespaceB, "sysctl", "-qw", "net.ipv4.ip_forward=1")
 	primary := domain.NetworkObjectLink{ID: domain.ID("path-primary-" + suffix), ObjectAID: objectA.ID, PortAName: "a0", ObjectBID: objectB.ID, PortBName: "b0"}
 	parallel := domain.NetworkObjectLink{ID: domain.ID("path-parallel-" + suffix), ObjectAID: objectA.ID, PortAName: "a1", ObjectBID: objectB.ID, PortBName: "b1"}
 	downstream := domain.NetworkObjectLink{ID: domain.ID("path-downstream-" + suffix), ObjectAID: objectB.ID, PortAName: "b2", ObjectBID: objectC.ID, PortBName: "c0"}
