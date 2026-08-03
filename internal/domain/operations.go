@@ -54,34 +54,38 @@ type Capture struct {
 }
 
 type TrafficObservation struct {
-	Fingerprint        string    `json:"fingerprint"`
-	InterfaceID        ID        `json:"interface_id"`
-	LinkID             ID        `json:"link_id,omitempty"`
-	Direction          string    `json:"direction"`
-	SourceAddress      string    `json:"source_address,omitempty"`
-	DestinationAddress string    `json:"destination_address,omitempty"`
-	SourceMAC          string    `json:"source_mac,omitempty"`
-	DestinationMAC     string    `json:"destination_mac,omitempty"`
-	PacketRole         string    `json:"packet_role,omitempty"`
-	FirstSeen          time.Time `json:"first_seen"`
-	LastSeen           time.Time `json:"last_seen"`
-	Count              int64     `json:"count"`
-	Bytes              int64     `json:"bytes"`
+	Fingerprint         string    `json:"fingerprint"`
+	ResourceType        string    `json:"resource_type,omitempty"`
+	ResourceID          ID        `json:"resource_id,omitempty"`
+	InterfaceID         ID        `json:"interface_id"`
+	LinkID              ID        `json:"link_id,omitempty"`
+	NetworkObjectLinkID ID        `json:"network_object_link_id,omitempty"`
+	Direction           string    `json:"direction"`
+	SourceAddress       string    `json:"source_address,omitempty"`
+	DestinationAddress  string    `json:"destination_address,omitempty"`
+	SourceMAC           string    `json:"source_mac,omitempty"`
+	DestinationMAC      string    `json:"destination_mac,omitempty"`
+	PacketRole          string    `json:"packet_role,omitempty"`
+	FirstSeen           time.Time `json:"first_seen"`
+	LastSeen            time.Time `json:"last_seen"`
+	Count               int64     `json:"count"`
+	Bytes               int64     `json:"bytes"`
 }
 
 type TrafficFilter struct {
-	ID              ID                   `json:"id"`
-	LaboratoryID    ID                   `json:"laboratory_id"`
-	Expression      string               `json:"expression"`
-	Color           string               `json:"color"`
-	State           string               `json:"state"`
-	MaxObservations int                  `json:"max_observations"`
-	InterfaceIDs    []ID                 `json:"interface_ids,omitempty"`
-	LinkIDs         []ID                 `json:"link_ids,omitempty"`
-	Observations    []TrafficObservation `json:"observations"`
-	CreatedAt       time.Time            `json:"created_at"`
-	FinishedAt      *time.Time           `json:"finished_at,omitempty"`
-	LastError       *Problem             `json:"last_error,omitempty"`
+	ID                   ID                   `json:"id"`
+	LaboratoryID         ID                   `json:"laboratory_id"`
+	Expression           string               `json:"expression"`
+	Color                string               `json:"color"`
+	State                string               `json:"state"`
+	MaxObservations      int                  `json:"max_observations"`
+	InterfaceIDs         []ID                 `json:"interface_ids,omitempty"`
+	LinkIDs              []ID                 `json:"link_ids,omitempty"`
+	NetworkObjectLinkIDs []ID                 `json:"network_object_link_ids,omitempty"`
+	Observations         []TrafficObservation `json:"observations"`
+	CreatedAt            time.Time            `json:"created_at"`
+	FinishedAt           *time.Time           `json:"finished_at,omitempty"`
+	LastError            *Problem             `json:"last_error,omitempty"`
 }
 
 type NetworkObject struct {

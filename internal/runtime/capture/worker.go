@@ -16,10 +16,12 @@ import (
 )
 
 var interfaceNamePattern = regexp.MustCompile(`^[a-zA-Z0-9_.:-]{1,64}$`)
+var namespaceNamePattern = regexp.MustCompile(`^[a-zA-Z0-9_.:-]{1,64}$`)
 
 type WorkerConfig struct {
 	OwnershipID domain.ID
 	Interface   string
+	Namespace   string
 	Filter      string
 	Format      string
 	MaxBytes    int64
@@ -47,6 +49,9 @@ type Worker struct {
 func NewWorker(config WorkerConfig) (*Worker, error) {
 	if !interfaceNamePattern.MatchString(config.Interface) {
 		return nil, fmt.Errorf("invalid capture interface")
+	}
+	if config.Namespace != "" && !namespaceNamePattern.MatchString(config.Namespace) {
+		return nil, fmt.Errorf("invalid capture namespace")
 	}
 	if config.MaxBytes <= 0 {
 		config.MaxBytes = 256 << 20
@@ -122,7 +127,7 @@ func captureCommand(ctx context.Context, config WorkerConfig) (*exec.Cmd, error)
 		if config.Filter != "" {
 			args = append(args, "-f", config.Filter)
 		}
-		return exec.CommandContext(ctx, path, args...), nil
+		return namespacedCommand(ctx, config.Namespace, path, args...), nil
 	}
 	path, err := exec.LookPath("tcpdump")
 	if err != nil {
@@ -138,7 +143,15 @@ func captureCommand(ctx context.Context, config WorkerConfig) (*exec.Cmd, error)
 	if config.Filter != "" {
 		args = append(args, config.Filter)
 	}
-	return exec.CommandContext(ctx, path, args...), nil
+	return namespacedCommand(ctx, config.Namespace, path, args...), nil
+}
+
+func namespacedCommand(ctx context.Context, namespace, command string, args ...string) *exec.Cmd {
+	if namespace == "" {
+		return exec.CommandContext(ctx, command, args...)
+	}
+	values := append([]string{"netns", "exec", namespace, command}, args...)
+	return exec.CommandContext(ctx, "ip", values...)
 }
 
 func (w *Worker) consume(ctx context.Context, reader io.Reader) {

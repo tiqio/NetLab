@@ -23,7 +23,7 @@ type DataPlaneRuntime interface {
 	DeleteLink(context.Context, domain.ID) error
 	Attach(context.Context, domain.Interface, domain.NetworkObject) error
 	EnsureNetworkObjectLink(context.Context, domain.NetworkObjectLink, domain.NetworkObject, domain.NetworkObject) error
-	DeleteNetworkObjectLink(context.Context, domain.ID) error
+	DeleteNetworkObjectLink(context.Context, domain.NetworkObjectLink, domain.NetworkObject, domain.NetworkObject) error
 }
 
 type DataPlaneReconciler struct {
@@ -117,7 +117,11 @@ func (r *DataPlaneReconciler) Reconcile(ctx context.Context) (err error) {
 		}
 		for _, link := range snapshot.NetworkObjectLinks {
 			if link.DesiredState == "disconnected" {
-				_ = r.runtime.DeleteNetworkObjectLink(ctx, link.ID)
+				objectA, aExists := objects[link.ObjectAID]
+				objectB, bExists := objects[link.ObjectBID]
+				if aExists && bExists {
+					_ = r.runtime.DeleteNetworkObjectLink(ctx, link, objectA, objectB)
+				}
 				if err = r.store.DeleteNetworkObjectLink(ctx, link.ID); err != nil {
 					return err
 				}

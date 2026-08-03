@@ -143,6 +143,61 @@ func ValidatePCConfig(config PCConfig) error {
 	return nil
 }
 
+func ValidateNodeNetworkInterfaces(interfaces []NodeNetworkInterfaceSettings) error {
+	seenNames := map[string]bool{}
+	for _, iface := range interfaces {
+		if !networkInterfaceNamePattern.MatchString(iface.Name) {
+			return fmt.Errorf("invalid network interface name %q", iface.Name)
+		}
+		if seenNames[iface.Name] {
+			return fmt.Errorf("duplicate network interface %q", iface.Name)
+		}
+		seenNames[iface.Name] = true
+		prefixes := make([]netip.Prefix, 0, len(iface.Addresses))
+		for _, raw := range iface.Addresses {
+			prefix, err := netip.ParsePrefix(raw)
+			if err != nil {
+				return fmt.Errorf("invalid address %q on %s", raw, iface.Name)
+			}
+			prefixes = append(prefixes, prefix.Masked())
+		}
+		seenRoutes := map[string]bool{}
+		for _, route := range iface.Routes {
+			destination, err := netip.ParsePrefix(route.Destination)
+			if err != nil {
+				return fmt.Errorf("invalid route destination %q on %s", route.Destination, iface.Name)
+			}
+			destination = destination.Masked()
+			if route.Metric < 0 {
+				return fmt.Errorf("invalid route metric %d on %s", route.Metric, iface.Name)
+			}
+			gateway := netip.Addr{}
+			if route.Gateway != "" {
+				gateway, err = netip.ParseAddr(route.Gateway)
+				if err != nil || gateway.Is4() != destination.Addr().Is4() {
+					return fmt.Errorf("route gateway %q does not match destination family on %s", route.Gateway, iface.Name)
+				}
+				reachable := false
+				for _, prefix := range prefixes {
+					if prefix.Addr().Is4() == gateway.Is4() && prefix.Contains(gateway) {
+						reachable = true
+						break
+					}
+				}
+				if !reachable {
+					return fmt.Errorf("route gateway %q is unreachable through %s", route.Gateway, iface.Name)
+				}
+			}
+			key := destination.String()
+			if seenRoutes[key] {
+				return fmt.Errorf("duplicate or conflicting route %q on %s", key, iface.Name)
+			}
+			seenRoutes[key] = true
+		}
+	}
+	return nil
+}
+
 func ValidateNATConfig(config NATConfig) error {
 	ipv4Prefix, err := netip.ParsePrefix(config.IPv4Prefix)
 	if err != nil || !ipv4Prefix.Addr().Is4() || ipv4Prefix.Bits() > 30 {

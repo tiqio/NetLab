@@ -23,6 +23,7 @@ type NetworkObjectRepository interface {
 	CreateNetworkAttachment(context.Context, domain.ID, domain.ID, string, map[string]any) error
 	ListNetworkObjectAttachments(context.Context, domain.ID) ([]domain.NetworkAttachment, error)
 	CreateNetworkObjectLink(context.Context, domain.NetworkObjectLink) error
+	GetNetworkObjectLink(context.Context, domain.ID) (domain.NetworkObjectLink, error)
 	ListNetworkObjectLinks(context.Context, domain.ID) ([]domain.NetworkObjectLink, error)
 	DeleteNetworkObjectLink(context.Context, domain.ID) error
 }
@@ -55,7 +56,7 @@ type NetworkObjectService struct {
 		DeleteAttachment(context.Context, domain.NetworkAttachment) error
 	}
 	objectLinks interface {
-		DeleteNetworkObjectLink(context.Context, domain.ID) error
+		DeleteNetworkObjectLink(context.Context, domain.NetworkObjectLink, domain.NetworkObject, domain.NetworkObject) error
 	}
 }
 
@@ -66,7 +67,7 @@ func (s *NetworkObjectService) SetAttachmentRuntime(runtime interface {
 }
 
 func (s *NetworkObjectService) SetObjectLinkRuntime(runtime interface {
-	DeleteNetworkObjectLink(context.Context, domain.ID) error
+	DeleteNetworkObjectLink(context.Context, domain.NetworkObjectLink, domain.NetworkObject, domain.NetworkObject) error
 }) {
 	s.objectLinks = runtime
 }
@@ -246,8 +247,20 @@ func (s *NetworkObjectService) CreateObjectLink(ctx context.Context, laboratoryI
 }
 
 func (s *NetworkObjectService) DeleteObjectLink(ctx context.Context, id domain.ID) error {
+	link, err := s.repository.GetNetworkObjectLink(ctx, id)
+	if err != nil {
+		return err
+	}
 	if s.objectLinks != nil {
-		if err := s.objectLinks.DeleteNetworkObjectLink(ctx, id); err != nil {
+		objectA, err := s.repository.GetNetworkObject(ctx, link.ObjectAID)
+		if err != nil {
+			return err
+		}
+		objectB, err := s.repository.GetNetworkObject(ctx, link.ObjectBID)
+		if err != nil {
+			return err
+		}
+		if err := s.objectLinks.DeleteNetworkObjectLink(ctx, link, objectA, objectB); err != nil {
 			return err
 		}
 	}

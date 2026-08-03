@@ -114,7 +114,7 @@ func TestNamespaceAttachmentAppliesPCAndL3AddressesAfterPortArrival(t *testing.T
 	}
 }
 
-func TestNetworkObjectLinkCreatesCaptureBridgeAndNamespacePeers(t *testing.T) {
+func TestNetworkObjectLinkCreatesDirectNamespaceVethPair(t *testing.T) {
 	executor := &dataPlaneExecutor{}
 	runtime, _ := NewDataPlane(executor)
 	link := domain.NetworkObjectLink{ID: "object-link", ObjectAID: "l2-a", PortAName: "uplink0", ObjectBID: "l3-b", PortBName: "eth9"}
@@ -124,28 +124,27 @@ func TestNetworkObjectLinkCreatesCaptureBridgeAndNamespacePeers(t *testing.T) {
 		t.Fatal(err)
 	}
 	commands := strings.Join(executor.commands, "\n")
-	for _, expected := range []string{LinkBridgeName(link.ID) + " type bridge", "netns " + SwitchL2NamespaceName(l2.ID), "uplink0 master br0", "vid 10 pvid untagged", "vid 20", "netns " + SwitchL3NamespaceName(l3.ID), "192.0.2.1/24 dev eth9"} {
+	for _, expected := range []string{"type veth peer name", "netns " + SwitchL2NamespaceName(l2.ID), "uplink0 master br0", "vid 10 pvid untagged", "vid 20", "netns " + SwitchL3NamespaceName(l3.ID), "192.0.2.1/24 dev eth9"} {
 		if !strings.Contains(commands, expected) {
 			t.Fatalf("missing %q in %s", expected, commands)
 		}
 	}
+	if strings.Contains(commands, LinkBridgeName(link.ID)+" type bridge") {
+		t.Fatalf("object link unexpectedly created a host bridge: %s", commands)
+	}
 }
 
-func TestDeleteNetworkObjectLinkDeletesBothVethPairsBeforeCaptureBridge(t *testing.T) {
+func TestDeleteNetworkObjectLinkDeletesNamespaceEndpoint(t *testing.T) {
 	executor := &dataPlaneExecutor{}
 	runtime, _ := NewDataPlane(executor)
-	linkID := domain.ID("object-link")
-	if err := runtime.DeleteNetworkObjectLink(context.Background(), linkID); err != nil {
+	link := domain.NetworkObjectLink{ID: "object-link", PortAName: "swp1", PortBName: "swp2"}
+	objectA := domain.NetworkObject{ID: "a", Kind: domain.NetworkSwitchL2}
+	objectB := domain.NetworkObject{ID: "b", Kind: domain.NetworkSwitchL2}
+	if err := runtime.DeleteNetworkObjectLink(context.Background(), link, objectA, objectB); err != nil {
 		t.Fatal(err)
 	}
 	commands := strings.Join(executor.commands, "\n")
-	for _, side := range []string{"a", "b"} {
-		host := ownership.Name("nlh", domain.ID(string(linkID)+"-"+side), 15)
-		if !strings.Contains(commands, "link delete "+host) {
-			t.Fatalf("missing endpoint cleanup for %s in %s", side, commands)
-		}
-	}
-	if !strings.Contains(commands, "link delete "+LinkBridgeName(linkID)) {
-		t.Fatalf("missing bridge cleanup in %s", commands)
+	if !strings.Contains(commands, "-n "+SwitchL2NamespaceName(objectA.ID)+" link delete swp1") {
+		t.Fatalf("missing direct pair cleanup in %s", commands)
 	}
 }

@@ -24,9 +24,9 @@ commits. Source changes must be completed locally before any deployment to `10.7
 **Purpose**: Establish compatibility notes and reusable test support before modifying established runtime
 and persistence behavior.
 
-- [ ] T001 Inspect `git log` and `git blame` for the existing object-link, capture, Traffic Filter, Docker endpoint, and topology UI implementations and record compatibility constraints in `specs/005-network-object-links-routes/implementation-notes.md`
-- [ ] T002 [P] Add reusable three-network-object, parallel-link, traffic-generator, and namespace cleanup fixtures in `tests/testsupport/network_object_link_fixtures.go`
-- [ ] T003 [P] Add reusable Docker dual-stack route fixtures and exact-route assertions in `tests/testsupport/docker_route_fixtures.go`
+- [X] T001 Inspect `git log` and `git blame` for the existing object-link, capture, Traffic Filter, Docker endpoint, and topology UI implementations and record compatibility constraints in `specs/005-network-object-links-routes/implementation-notes.md`
+- [X] T002 [P] Add reusable three-network-object, parallel-link, traffic-generator, and namespace cleanup fixtures in `tests/testsupport/network_object_link_fixtures.go`
+- [X] T003 [P] Add reusable Docker dual-stack route fixtures and exact-route assertions in `tests/testsupport/docker_route_fixtures.go`
 
 ---
 
@@ -39,16 +39,16 @@ all four user stories.
 
 ### Tests for Shared Foundations
 
-- [ ] T004 [P] Add failing domain tests for canonical object-link endpoint orientation, observation resource identity, and Docker IPv4/IPv6 route declarations in `internal/domain/operations_test.go` and `internal/domain/models_test.go`
-- [ ] T005 [P] Add failing migration and repository tests for cross-side endpoint collisions, attachment collisions, backfill conflicts, reservation release, and transaction rollback in `internal/store/sqlite/interface_reservation_test.go` and `internal/store/sqlite/network_state_repository_test.go`
+- [X] T004 [P] Add failing domain tests for canonical object-link endpoint orientation, observation resource identity, and Docker IPv4/IPv6 route declarations in `internal/domain/operations_test.go` and `internal/domain/models_test.go`
+- [X] T005 [P] Add failing migration and repository tests for cross-side endpoint collisions, attachment collisions, backfill conflicts, reservation release, and transaction rollback in `internal/store/sqlite/interface_reservation_test.go` and `internal/store/sqlite/network_state_repository_test.go`
 - [ ] T006 [P] Add failing schema tests for object-link task envelopes, capture source types, Traffic Filter object-link scopes, directional observations, and Docker routes in `tests/contract/network_object_link_route_schema_test.go`
 
 ### Shared Implementation
 
-- [ ] T007 Add typed `DockerStaticRoute`, observation resource type/direction, and object-link endpoint helpers in `internal/domain/models.go` and `internal/domain/operations.go`
-- [ ] T008 Add canonical route and endpoint validation with stable problem codes in `internal/domain/network_object.go` and `internal/domain/models.go`
-- [ ] T009 Add the endpoint-reservation, object-link lifecycle, Traffic Filter scope, observation attribution, and managed-route migration in `internal/store/sqlite/migrations/0011_network_object_link_endpoints_routes.sql`
-- [ ] T010 Implement transactional endpoint reservation, collision detection across endpoint sides and attachment types, object-link revision updates, and safe reservation release in `internal/store/sqlite/network_repository.go`
+- [X] T007 Add typed `DockerStaticRoute`, observation resource type/direction, and object-link endpoint helpers in `internal/domain/models.go` and `internal/domain/operations.go`
+- [X] T008 Add canonical route and endpoint validation with stable problem codes in `internal/domain/network_object.go` and `internal/domain/models.go`
+- [X] T009 Add the endpoint-reservation, object-link lifecycle, Traffic Filter scope, observation attribution, and managed-route migration in `internal/store/sqlite/migrations/0011_network_object_link_endpoints_routes.sql`
+- [X] T010 Implement transactional endpoint reservation, collision detection across endpoint sides and attachment types, object-link revision updates, and safe reservation release in `internal/store/sqlite/network_repository.go`
 - [ ] T011 Create durable capture/filter observation persistence for object-link attribution and extend task, audit, and outbox storage for `link_deleted` completion in `internal/store/sqlite/runtime_observation_repository.go` and `internal/store/sqlite/automation_repository.go`
 - [ ] T012 Define namespace-aware observation locator and exact managed-route runtime interfaces in `internal/app/ports/topology.go`
 - [ ] T013 Update topology export/import DTOs to preserve object-link endpoint intent and Docker route declarations while excluding runtime locators and packet payloads in `internal/app/command/export.go` and `internal/app/command/import.go`
@@ -70,7 +70,7 @@ service, and confirm the same path recovers.
 
 ### Tests for User Story 1
 
-- [ ] T015 [P] [US1] Replace bridge-plus-two-veth expectations with failing direct-one-veth-pair, deterministic naming, idempotent ensure, and exact cleanup tests in `internal/runtime/linuxnet/dataplane_test.go`
+- [X] T015 [P] [US1] Replace bridge-plus-two-veth expectations with failing direct-one-veth-pair, deterministic naming, idempotent ensure, and exact cleanup tests in `internal/runtime/linuxnet/dataplane_test.go`
 - [ ] T016 [P] [US1] Add failing create/list/revision/idempotency/task/outbox tests for durable object links in `internal/app/reconcile/network_object_tasks_test.go` and `internal/store/sqlite/network_state_repository_test.go`
 - [ ] T017 [P] [US1] Add failing HTTP and MCP parity tests for create/list/get object-link task envelopes and occupied-port errors in `tests/contract/network_object_link_control_parity_test.go`
 - [ ] T018 [P] [US1] Add a failing privileged three-object path, parallel-link isolation, bidirectional ICMP/TCP/UDP, and service-restart recovery test in `tests/integration/network_object_link_path_test.go`
@@ -79,7 +79,7 @@ service, and confirm the same path recovers.
 
 ### Implementation for User Story 1
 
-- [ ] T021 [US1] Replace the per-link host bridge and two veth pairs with one owned veth pair moved directly into endpoint A and B namespaces in `internal/runtime/linuxnet/dataplane.go`
+- [X] T021 [US1] Replace the per-link host bridge and two veth pairs with one owned veth pair moved directly into endpoint A and B namespaces in `internal/runtime/linuxnet/dataplane.go`
 - [ ] T022 [US1] Add deterministic object-link ownership discovery, partial-pair adoption, pending-create reconciliation, and orphan cleanup in `internal/app/reconcile/host_ownership_scanners.go`, `internal/app/reconcile/recovery_coordinator.go`, and `internal/runtime/ownership/manifest.go`
 - [ ] T023 [US1] Implement revisioned and idempotent object-link create/list/get commands with durable tasks and ordered outbox events in `internal/app/reconcile/network_object_tasks.go` and `internal/app/reconcile/network_objects.go`
 - [ ] T024 [US1] Upgrade object-link HTTP create/list/get routes to the task-envelope and structured-conflict contract in `internal/api/http/network_handlers.go` and `internal/api/http/mutation_middleware.go`
@@ -116,9 +116,9 @@ metadata, direction, isolation, and activity decay.
 
 ### Implementation for User Story 2
 
-- [ ] T039 [US2] Change the capture worker to accept a structured host-or-namespace locator and execute packet capture without shell interpolation in `internal/runtime/capture/worker.go`
-- [ ] T040 [US2] Resolve object-link captures to endpoint A's namespace interface and preserve stable source identity through start, recovery, stream, stop, and retention in `internal/app/reconcile/captures.go` and `internal/app/reconcile/capture_tasks.go`
-- [ ] T041 [US2] Extend capture HTTP and MCP inputs with `source_type=network_object_link` while keeping namespace and interface resolution server-side in `internal/api/http/capture_handlers.go` and `internal/api/mcp/tools.go`
+- [X] T039 [US2] Change the capture worker to accept a structured host-or-namespace locator and execute packet capture without shell interpolation in `internal/runtime/capture/worker.go`
+- [X] T040 [US2] Resolve object-link captures to endpoint A's namespace interface and preserve stable source identity through start, recovery, stream, stop, and retention in `internal/app/reconcile/captures.go` and `internal/app/reconcile/capture_tasks.go`
+- [X] T041 [US2] Extend capture HTTP and MCP inputs with `source_type=network_object_link` while keeping namespace and interface resolution server-side in `internal/api/http/capture_handlers.go` and `internal/api/mcp/tools.go`
 - [ ] T042 [US2] Add `network_object_link_ids`, resource-type/resource-ID attribution, endpoint-A-relative direction, and explicit ambiguity to Traffic Filter processing in `internal/app/reconcile/traffic_filters.go` and `internal/runtime/capture/path.go`
 - [ ] T043 [US2] Publish ordered capture/filter observations for object links without duplicating standard-link events in `internal/api/stream/events.go` and `internal/app/events/outbox.go`
 - [ ] T044 [US2] Extend frontend capture/filter API types and source selectors with object-link identities in `web/src/api/generated.ts`, `web/src/api/index.ts`, `web/src/features/diagnostics/CapturePanel.vue`, and `web/src/features/diagnostics/TrafficFilterPanel.vue`

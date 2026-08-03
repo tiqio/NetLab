@@ -153,6 +153,7 @@ func main() {
 	}
 	consoleHandlers.Register(server.Engine())
 	captureManager := reconcile.NewCaptureManager(cfg.StateDir, cfg.Captures.Concurrent, cfg.Captures.GlobalMaxBytes, cfg.Captures.Retention, artifactService)
+	captureManager.SetNetworkObjectRepository(repositories)
 	trafficFilterManager := reconcile.NewTrafficFilterManager(captureManager)
 	captureTasks := reconcile.NewCaptureTaskService(captureManager, trafficFilterManager, taskRunner)
 	captureManager.SetObserver(trafficFilterManager.ObserveCapture)

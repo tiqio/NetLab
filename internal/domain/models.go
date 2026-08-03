@@ -54,11 +54,12 @@ type Interface struct {
 }
 
 type NodeNetworkInterfaceSettings struct {
-	ID        ID       `json:"id"`
-	Name      string   `json:"name"`
-	Driver    string   `json:"driver"`
-	Modes     []string `json:"modes"`
-	Addresses []string `json:"addresses"`
+	ID        ID            `json:"id"`
+	Name      string        `json:"name"`
+	Driver    string        `json:"driver"`
+	Modes     []string      `json:"modes"`
+	Addresses []string      `json:"addresses"`
+	Routes    []RouteConfig `json:"routes,omitempty"`
 }
 
 type NodeSettings struct {

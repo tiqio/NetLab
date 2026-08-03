@@ -76,7 +76,7 @@ func (r *dataPlaneRuntimeFake) EnsureNetworkObjectLink(context.Context, domain.N
 	r.objectLinkEnsureCalls++
 	return nil
 }
-func (r *dataPlaneRuntimeFake) DeleteNetworkObjectLink(context.Context, domain.ID) error {
+func (r *dataPlaneRuntimeFake) DeleteNetworkObjectLink(context.Context, domain.NetworkObjectLink, domain.NetworkObject, domain.NetworkObject) error {
 	r.objectLinkDeleted = true
 	return nil
 }

@@ -21,6 +21,7 @@ type CaptureRequest struct {
 	Purpose      string
 	ParentID     domain.ID
 	Interface    string
+	Namespace    string
 	Filter       string
 	Format       string
 	Retain       bool
@@ -57,6 +58,10 @@ type CaptureManager struct {
 	values         map[domain.ID]*managedCapture
 	artifacts      CaptureArtifactService
 	observer       CaptureObserver
+	networkObjects interface {
+		GetNetworkObjectLink(context.Context, domain.ID) (domain.NetworkObjectLink, error)
+		GetNetworkObject(context.Context, domain.ID) (domain.NetworkObject, error)
+	}
 }
 
 func NewCaptureManager(stateDir string, concurrent int, globalMaxBytes int64, retention time.Duration, artifacts ...CaptureArtifactService) *CaptureManager {
@@ -78,6 +83,13 @@ func NewCaptureManager(stateDir string, concurrent int, globalMaxBytes int64, re
 }
 
 func (m *CaptureManager) SetObserver(observer CaptureObserver) { m.observer = observer }
+
+func (m *CaptureManager) SetNetworkObjectRepository(repository interface {
+	GetNetworkObjectLink(context.Context, domain.ID) (domain.NetworkObjectLink, error)
+	GetNetworkObject(context.Context, domain.ID) (domain.NetworkObject, error)
+}) {
+	m.networkObjects = repository
+}
 
 func (m *CaptureManager) AvailableBytes() int64 {
 	m.mu.RLock()
@@ -114,7 +126,7 @@ func (m *CaptureManager) Start(ctx context.Context, request CaptureRequest) (dom
 
 func (m *CaptureManager) StartAs(ctx context.Context, id domain.ID, request CaptureRequest) (domain.Capture, error) {
 	var err error
-	if request.Interface, err = captureInterface(request.SourceType, request.SourceID); err != nil {
+	if request.Interface, request.Namespace, err = m.captureLocator(ctx, request.SourceType, request.SourceID); err != nil {
 		return domain.Capture{}, *structuredProblem(err, domain.Problem{Code: "invalid_capture_source", ResourceType: request.SourceType, ResourceID: request.SourceID, Phase: "capture_admission", Cleanup: "no capture resources created", OperatorHint: "select an existing interface or link"})
 	}
 	m.mu.Lock()
@@ -154,7 +166,7 @@ func (m *CaptureManager) StartAs(ctx context.Context, id domain.ID, request Capt
 	if request.Retain {
 		path = filepath.Join(m.directory, string(id)+"."+request.Format)
 	}
-	worker, err := captureRuntime.NewWorker(captureRuntime.WorkerConfig{OwnershipID: id, Interface: request.Interface, Filter: request.Filter, Format: request.Format, MaxBytes: request.MaxBytes, Duration: request.Duration, RetainPath: path, Direction: request.Direction})
+	worker, err := captureRuntime.NewWorker(captureRuntime.WorkerConfig{OwnershipID: id, Interface: request.Interface, Namespace: request.Namespace, Filter: request.Filter, Format: request.Format, MaxBytes: request.MaxBytes, Duration: request.Duration, RetainPath: path, Direction: request.Direction})
 	if err != nil {
 		m.mu.Unlock()
 		return domain.Capture{}, *structuredProblem(err, domain.Problem{Code: "capture_prepare_failed", Retryable: true, ResourceType: "capture", ResourceID: id, Phase: "capture_prepare", Cleanup: "capture worker was not started", OperatorHint: "verify tcpdump and the selected source interface", RetryAfterSeconds: 2})
@@ -198,9 +210,42 @@ func (m *CaptureManager) StartAs(ctx context.Context, id domain.ID, request Capt
 	return metadata, nil
 }
 
+func (m *CaptureManager) captureLocator(ctx context.Context, sourceType string, sourceID domain.ID) (string, string, error) {
+	if sourceID == "" {
+		return "", "", domain.Problem{Code: "invalid_capture_source", Message: "source_id is required", Phase: "capture_admission", Cleanup: "no capture resources created", OperatorHint: "provide an interface or link source_id"}
+	}
+	switch sourceType {
+	case "interface":
+		value, err := captureInterface(sourceType, sourceID)
+		return value, "", err
+	case "link":
+		value, err := captureInterface(sourceType, sourceID)
+		return value, "", err
+	case "network_object_link":
+		if m.networkObjects == nil {
+			return "", "", domain.Problem{Code: "capture_source_unavailable", Message: "network object link resolver is unavailable"}
+		}
+		link, err := m.networkObjects.GetNetworkObjectLink(ctx, sourceID)
+		if err != nil {
+			return "", "", err
+		}
+		object, err := m.networkObjects.GetNetworkObject(ctx, link.ObjectAID)
+		if err != nil {
+			return "", "", err
+		}
+		namespace, err := linuxnet.NetworkObjectNamespaceName(object)
+		if err != nil {
+			return "", "", err
+		}
+		return link.PortAName, namespace, nil
+	default:
+		return "", "", domain.Problem{Code: "invalid_capture_source", Message: "source_type must be interface, link, or network_object_link", ResourceType: sourceType, ResourceID: sourceID, Phase: "capture_admission", Cleanup: "no capture resources created"}
+	}
+}
+
 func captureInterface(sourceType string, sourceID domain.ID) (string, error) {
 	if sourceID == "" {
-		return "", domain.Problem{Code: "invalid_capture_source", Message: "source_id is required", Phase: "capture_admission", Cleanup: "no capture resources created", OperatorHint: "provide an interface or link source_id"}
+		return "", domain.Problem{Code: "invalid_capture_source", Message: "source_id is required"}
 	}
 	switch sourceType {
 	case "interface":
@@ -208,7 +253,7 @@ func captureInterface(sourceType string, sourceID domain.ID) (string, error) {
 	case "link":
 		return linuxnet.LinkBridgeName(sourceID), nil
 	default:
-		return "", domain.Problem{Code: "invalid_capture_source", Message: "source_type must be interface or link", ResourceType: sourceType, ResourceID: sourceID, Phase: "capture_admission", Cleanup: "no capture resources created", OperatorHint: "use source_type interface or link"}
+		return "", domain.Problem{Code: "invalid_capture_source", Message: "source_type must be interface or link"}
 	}
 }
 

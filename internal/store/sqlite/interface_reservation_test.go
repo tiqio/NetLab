@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/netlab/netlab/internal/app/command"
 	"github.com/netlab/netlab/internal/domain"
@@ -110,5 +111,29 @@ func TestReserveInterfaceSerializesConcurrentRequests(t *testing.T) {
 	}
 	if succeeded != 1 || exhausted != 1 {
 		t.Fatalf("succeeded=%d exhausted=%d", succeeded, exhausted)
+	}
+}
+
+func TestNetworkObjectEndpointReservationRejectsAttachmentLinkCollision(t *testing.T) {
+	database, _, node, interfaces := newInterfaceReservationNode(t, 1, 4)
+	defer database.Close()
+	ctx := context.Background()
+	now := time.Now().UTC()
+	objects := []domain.NetworkObject{
+		{ID: "switch-a", LaboratoryID: node.LaboratoryID, Name: "switch-a", Kind: domain.NetworkSwitchL2, Revision: 1, DesiredState: "running", ObservedState: "active", Config: map[string]any{}, CreatedAt: now, UpdatedAt: now},
+		{ID: "switch-b", LaboratoryID: node.LaboratoryID, Name: "switch-b", Kind: domain.NetworkSwitchL2, Revision: 1, DesiredState: "running", ObservedState: "active", Config: map[string]any{}, CreatedAt: now, UpdatedAt: now},
+	}
+	repositories := NewRepositories(database)
+	for _, object := range objects {
+		if err := repositories.CreateNetworkObject(ctx, object); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := repositories.CreateNetworkAttachment(ctx, objects[0].ID, interfaces[0].ID, "swp1", nil); err != nil {
+		t.Fatal(err)
+	}
+	err := repositories.CreateNetworkObjectLink(ctx, domain.NetworkObjectLink{ID: "link", LaboratoryID: node.LaboratoryID, ObjectAID: objects[0].ID, PortAName: "swp1", ObjectBID: objects[1].ID, PortBName: "swp1", Revision: 1, DesiredState: "connected", ObservedState: "pending"})
+	if problem, ok := domain.ProblemFromError(err); !ok || problem.Code != "port_in_use" {
+		t.Fatalf("err=%v", err)
 	}
 }

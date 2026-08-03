@@ -325,7 +325,7 @@ func Tools(services Services) []Tool {
 			}
 			return []map[string]any{descriptor("telnet"), descriptor("vnc")}, nil
 		}},
-		{Name: "netlab.captures.start", Description: "Start a live or retained packet capture.", InputSchema: mutationSchema(map[string]any{"laboratory_id": stringProperty("Laboratory ID"), "source_type": enumProperty("interface", "link"), "source_id": stringProperty("Source ID"), "interface": stringProperty("Host interface"), "filter": stringProperty("BPF filter"), "format": enumProperty("pcap", "pcapng"), "retain": map[string]any{"type": "boolean"}, "max_bytes": integerProperty(1), "duration_seconds": integerProperty(0)}, "laboratory_id", "source_type", "source_id", "interface"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
+		{Name: "netlab.captures.start", Description: "Start a live or retained packet capture.", InputSchema: mutationSchema(map[string]any{"laboratory_id": stringProperty("Laboratory ID"), "source_type": enumProperty("interface", "link", "network_object_link"), "source_id": stringProperty("Source ID"), "filter": stringProperty("BPF filter"), "format": enumProperty("pcap", "pcapng"), "retain": map[string]any{"type": "boolean"}, "max_bytes": integerProperty(1), "duration_seconds": integerProperty(0)}, "laboratory_id", "source_type", "source_id"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
 			if services.CaptureOps == nil {
 				return unavailable("packet capture")
 			}

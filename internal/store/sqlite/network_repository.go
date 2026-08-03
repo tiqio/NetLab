@@ -163,8 +163,20 @@ func (r *Repositories) CreateNetworkAttachment(ctx context.Context, objectID, in
 		return err
 	}
 	body, _ := json.Marshal(config)
-	_, err = r.database.DB.ExecContext(ctx, `INSERT INTO network_attachments(id,network_object_id,interface_id,port_name,config_json,observed_state) VALUES(?,?,?,?,?,'pending')`, domain.NewID(), objectID, nullable(string(interfaceID)), portName, body)
-	return err
+	attachmentID := domain.NewID()
+	return r.database.Write(ctx, func(tx *sql.Tx) error {
+		var laboratoryID domain.ID
+		if err := tx.QueryRowContext(ctx, `SELECT laboratory_id FROM network_objects WHERE id=?`, objectID).Scan(&laboratoryID); err != nil {
+			return err
+		}
+		if portName != "" {
+			if _, err := tx.ExecContext(ctx, `INSERT INTO topology_endpoint_reservations(laboratory_id,owner_type,owner_id,port_name,resource_type,resource_id) VALUES(?,'network_object',?,?,'network_attachment',?)`, laboratoryID, objectID, portName, attachmentID); err != nil {
+				return domain.Problem{Code: "port_in_use", Message: "network object port is already occupied", ResourceType: "network_attachment", ResourceID: attachmentID}
+			}
+		}
+		_, err := tx.ExecContext(ctx, `INSERT INTO network_attachments(id,network_object_id,interface_id,port_name,config_json,observed_state) VALUES(?,?,?,?,?,'pending')`, attachmentID, objectID, nullable(string(interfaceID)), portName, body)
+		return err
+	})
 }
 
 func (r *Repositories) ListNetworkAttachments(ctx context.Context, laboratoryID domain.ID) ([]domain.NetworkAttachment, error) {
@@ -231,6 +243,14 @@ func (r *Repositories) CreateNetworkObjectLink(ctx context.Context, value domain
 		if labA != value.LaboratoryID || labB != value.LaboratoryID {
 			return domain.Problem{Code: "invalid_topology", Message: "network objects must belong to the same laboratory", ResourceType: "network_object_link", ResourceID: value.ID}
 		}
+		for _, endpoint := range []struct {
+			objectID domain.ID
+			port     string
+		}{{value.ObjectAID, value.PortAName}, {value.ObjectBID, value.PortBName}} {
+			if _, err := tx.ExecContext(ctx, `INSERT INTO topology_endpoint_reservations(laboratory_id,owner_type,owner_id,port_name,resource_type,resource_id) VALUES(?,'network_object',?,?,'network_object_link',?)`, value.LaboratoryID, endpoint.objectID, endpoint.port, value.ID); err != nil {
+				return domain.Problem{Code: "port_in_use", Message: "one or more network object ports are already occupied", ResourceType: "network_object_link", ResourceID: value.ID}
+			}
+		}
 		var occupied int
 		if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM network_object_links WHERE (object_a_id=? AND port_a_name=?) OR (object_b_id=? AND port_b_name=?) OR (object_a_id=? AND port_a_name=?) OR (object_b_id=? AND port_b_name=?)`, value.ObjectAID, value.PortAName, value.ObjectAID, value.PortAName, value.ObjectBID, value.PortBName, value.ObjectBID, value.PortBName).Scan(&occupied); err != nil {
 			return err
@@ -247,7 +267,14 @@ func (r *Repositories) CreateNetworkObjectLink(ctx context.Context, value domain
 }
 
 func (r *Repositories) ListNetworkObjectLinks(ctx context.Context, laboratoryID domain.ID) ([]domain.NetworkObjectLink, error) {
-	rows, err := r.database.DB.QueryContext(ctx, `SELECT id,laboratory_id,object_a_id,port_a_name,object_b_id,port_b_name,revision,desired_state,observed_state,COALESCE(last_error_json,'') FROM network_object_links WHERE laboratory_id=? ORDER BY id`, laboratoryID)
+	query := `SELECT id,laboratory_id,object_a_id,port_a_name,object_b_id,port_b_name,revision,desired_state,observed_state,COALESCE(last_error_json,'') FROM network_object_links`
+	args := []any{}
+	if laboratoryID != "" {
+		query += ` WHERE laboratory_id=?`
+		args = append(args, laboratoryID)
+	}
+	query += ` ORDER BY id`
+	rows, err := r.database.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -266,6 +293,20 @@ func (r *Repositories) ListNetworkObjectLinks(ctx context.Context, laboratoryID 
 		values = append(values, value)
 	}
 	return values, rows.Err()
+}
+
+func (r *Repositories) GetNetworkObjectLink(ctx context.Context, id domain.ID) (domain.NetworkObjectLink, error) {
+	var value domain.NetworkObjectLink
+	var problem []byte
+	err := r.database.DB.QueryRowContext(ctx, `SELECT id,laboratory_id,object_a_id,port_a_name,object_b_id,port_b_name,revision,desired_state,observed_state,COALESCE(last_error_json,'') FROM network_object_links WHERE id=?`, id).Scan(&value.ID, &value.LaboratoryID, &value.ObjectAID, &value.PortAName, &value.ObjectBID, &value.PortBName, &value.Revision, &value.DesiredState, &value.ObservedState, &problem)
+	if err == sql.ErrNoRows {
+		return value, ErrNotFound
+	}
+	if len(problem) > 0 {
+		value.LastError = &domain.Problem{}
+		_ = json.Unmarshal(problem, value.LastError)
+	}
+	return value, err
 }
 
 func (r *Repositories) ListNetworkObjectLinksByObject(ctx context.Context, objectID domain.ID) ([]domain.NetworkObjectLink, error) {
@@ -303,6 +344,9 @@ func (r *Repositories) DeleteNetworkObjectLink(ctx context.Context, id domain.ID
 			return err
 		}
 		if _, err := tx.ExecContext(ctx, `DELETE FROM network_object_links WHERE id=?`, id); err != nil {
+			return err
+		}
+		if _, err := tx.ExecContext(ctx, `DELETE FROM topology_endpoint_reservations WHERE resource_type='network_object_link' AND resource_id=?`, id); err != nil {
 			return err
 		}
 		return appendEvent(ctx, tx, "network_object_link.deleted", laboratoryID, "network_object_link", id, revision.Next(), "", nil)
