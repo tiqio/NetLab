@@ -810,6 +810,18 @@
       "outcome_class": "presentation",
       "cleanup_effect": "discard-preview",
       "sensitive_evidence": []
+    },
+    {
+      "id": "network-object-links.live-delete",
+      "area": "topology",
+      "label": "Delete object link",
+      "locator": { "role": "button", "name": "Delete link" },
+      "applicable_states": ["network-object-link-selected"],
+      "activation": ["pointer"],
+      "outcome_class": "mutation",
+      "operation": "network_object_link.delete",
+      "cleanup_effect": "link-and-observers-removed",
+      "sensitive_evidence": []
     }
   ]
 }
