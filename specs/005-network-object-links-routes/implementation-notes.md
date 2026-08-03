@@ -228,3 +228,13 @@
   Playwright isolation journey with acceptance coverage and cleanup gates. The repository-wide contract
   baseline still includes the previously recorded built-in template count mismatch; a broad shared-memory
   contract run can also expose test-state reuse, so US2 uses isolated focused contract gates.
+- `21cb1ed` (`feat: delete object links through durable tasks`): replaces synchronous object-link HTTP
+  deletion with a revisioned, idempotent durable task shared by REST and MCP; publishes disconnecting
+  before terminal deletion; stops dependent observation workers before runtime cleanup; atomically checks
+  revision, releases both endpoint reservations, and publishes the task-correlated delete event; allows
+  completed requests to replay after the link is gone; cascades network-object deletion through owned
+  links; and cleans a surviving veth endpoint when the first endpoint is already absent. This completes
+  T048, T050, T051, and T054 through T058.
+- Focused gates for `21cb1ed`: task/repository/runtime/HTTP/MCP/contract tests, object-link create/delete
+  parity, stale-observation suppression, focused race tests, and `go vet` passed locally on August 3,
+  2026.

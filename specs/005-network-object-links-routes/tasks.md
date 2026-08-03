@@ -142,20 +142,20 @@ successful retry after an injected partial cleanup failure.
 
 ### Tests for User Story 3
 
-- [ ] T048 [P] [US3] Add failing service/repository tests for expected revision, idempotent delete, capture-stop ordering, endpoint release, object cascade, and ordered deletion events in `internal/app/reconcile/network_object_tasks_test.go` and `internal/store/sqlite/network_state_repository_test.go`
+- [X] T048 [P] [US3] Add failing service/repository tests for expected revision, idempotent delete, capture-stop ordering, endpoint release, object cascade, and ordered deletion events in `internal/app/reconcile/network_object_tasks_test.go` and `internal/store/sqlite/network_state_repository_test.go`
 - [ ] T049 [P] [US3] Add failing dataplane and recovery tests for live pair deletion, missing-end tolerance, partial cleanup retry, and protection of unrelated host resources in `internal/runtime/linuxnet/dataplane_test.go` and `tests/recovery/network_object_link_recovery_test.go`
-- [ ] T050 [P] [US3] Add failing capture tests for `link_deleted` completion, retained packet metadata, worker cancellation timeout, and stale observation suppression in `internal/app/reconcile/captures_test.go` and `internal/app/reconcile/traffic_filters_test.go`
-- [ ] T051 [P] [US3] Add failing HTTP/MCP parity tests for revisioned delete task envelopes and retries in `tests/contract/network_object_link_delete_parity_test.go`
+- [X] T050 [P] [US3] Add failing capture tests for `link_deleted` completion, retained packet metadata, worker cancellation timeout, and stale observation suppression in `internal/app/reconcile/captures_test.go` and `internal/app/reconcile/traffic_filters_test.go`
+- [X] T051 [P] [US3] Add failing HTTP/MCP parity tests for revisioned delete task envelopes and retries in `tests/contract/network_object_link_delete_parity_test.go`
 - [ ] T052 [P] [US3] Add failing frontend tests for object-link context deletion, pending/failed state, immediate shared removal, selection clearing, and no ghost restoration in `web/src/features/topology/LinkContextMenu.test.ts`, `web/src/features/topology/TopologyWorkspace.test.ts`, and `web/src/features/topology/TopologyCanvas.test.ts`
 - [ ] T053 [P] [US3] Add a failing two-browser Playwright journey for live deletion, active capture completion, port reuse, object cascade, and refresh consistency in `tests/e2e/journeys/networkObjectLinkDeletion.spec.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T054 [US3] Implement revisioned/idempotent object-link deletion tasks that mark disconnecting, stop dependent capture/filter workers, delete runtime resources, release reservations, and commit the final event in `internal/app/reconcile/network_object_tasks.go` and `internal/app/reconcile/network_objects.go`
-- [ ] T055 [US3] Make direct-veth deletion idempotent and recovery-safe for absent, half-moved, or partially deleted endpoints in `internal/runtime/linuxnet/dataplane.go`
-- [ ] T056 [US3] Complete active object-link captures with `link_deleted`, preserve retained metadata/artifacts, and suppress post-delete filter observations in `internal/app/reconcile/captures.go`, `internal/app/reconcile/capture_tasks.go`, and `internal/app/reconcile/traffic_filters.go`
-- [ ] T057 [US3] Cascade network-object deletion through object-link tasks and endpoint reservations without stale resources in `internal/app/reconcile/network_objects.go` and `internal/store/sqlite/network_repository.go`
-- [ ] T058 [US3] Expose revisioned delete task envelopes and structured failures through HTTP and MCP in `internal/api/http/network_handlers.go` and `internal/api/mcp/network_tools.go`
+- [X] T054 [US3] Implement revisioned/idempotent object-link deletion tasks that mark disconnecting, stop dependent capture/filter workers, delete runtime resources, release reservations, and commit the final event in `internal/app/reconcile/network_object_tasks.go` and `internal/app/reconcile/network_objects.go`
+- [X] T055 [US3] Make direct-veth deletion idempotent and recovery-safe for absent, half-moved, or partially deleted endpoints in `internal/runtime/linuxnet/dataplane.go`
+- [X] T056 [US3] Complete active object-link captures with `link_deleted`, preserve retained metadata/artifacts, and suppress post-delete filter observations in `internal/app/reconcile/captures.go`, `internal/app/reconcile/capture_tasks.go`, and `internal/app/reconcile/traffic_filters.go`
+- [X] T057 [US3] Cascade network-object deletion through object-link tasks and endpoint reservations without stale resources in `internal/app/reconcile/network_objects.go` and `internal/store/sqlite/network_repository.go`
+- [X] T058 [US3] Expose revisioned delete task envelopes and structured failures through HTTP and MCP in `internal/api/http/network_handlers.go` and `internal/api/mcp/network_tools.go`
 - [ ] T059 [US3] Publish deletion and capture-completion events in non-resurrecting order and reconcile interrupted deletion on startup in `internal/api/stream/events.go`, `internal/app/events/outbox.go`, and `internal/app/reconcile/recovery_coordinator.go`
 - [ ] T060 [US3] Add object-link right-click delete, task progress, retryable failure, selection clearing, and shared event removal in `web/src/features/topology/LinkContextMenu.vue`, `web/src/features/topology/TopologyWorkspace.vue`, and `web/src/features/topology/TopologyCanvas.vue`
 - [ ] T061 [US3] Run US3 unit, contract, frontend, privileged deletion, recovery, leak, and multi-client tests and record the focused milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
