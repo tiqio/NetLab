@@ -36,6 +36,25 @@ type recoveryParticipantFake struct {
 	runs int
 }
 
+type durableTaskRecovererFake struct{ calls int }
+
+func (r *durableTaskRecovererFake) Recover(context.Context) error {
+	r.calls++
+	return nil
+}
+
+func TestDurableTaskRecoveryParticipantRunsInsideStartupRecovery(t *testing.T) {
+	store := &recoveryTaskStoreFake{}
+	recoverer := &durableTaskRecovererFake{}
+	participant := NewDurableTaskRecoveryReconciler(recoverer)
+	if _, err := NewRecoveryCoordinator(store, participant).Execute(context.Background(), "service_restart", nil); err != nil {
+		t.Fatal(err)
+	}
+	if recoverer.calls != 1 {
+		t.Fatalf("recover calls=%d", recoverer.calls)
+	}
+}
+
 type checkpointParticipantFake struct{ recoveryParticipantFake }
 
 func (p *checkpointParticipantFake) ReconcileWithCheckpoints(_ context.Context, checkpoint func(RecoveryResourceOutcome) error) error {

@@ -204,3 +204,21 @@ func TestDeleteNetworkObjectLinkFallsBackToSurvivingEndpoint(t *testing.T) {
 		t.Fatalf("missing fallback cleanup: %s", commands)
 	}
 }
+
+func TestDeleteNetworkObjectLinkDoesNotTouchUnrelatedInterfaces(t *testing.T) {
+	objectA := domain.NetworkObject{ID: "a", Kind: domain.NetworkSwitchL2}
+	objectB := domain.NetworkObject{ID: "b", Kind: domain.NetworkSwitchL2}
+	link := domain.NetworkObjectLink{ID: "owned-link", ObjectAID: objectA.ID, PortAName: "swp1", ObjectBID: objectB.ID, PortBName: "swp2"}
+	executor := &dataPlaneExecutor{}
+	runtime, _ := NewDataPlane(executor)
+	if err := runtime.DeleteNetworkObjectLink(context.Background(), link, objectA, objectB); err != nil {
+		t.Fatal(err)
+	}
+	commands := strings.Join(executor.commands, "\n")
+	if strings.Contains(commands, "unrelated0") || strings.Contains(commands, "link delete swp") && !strings.Contains(commands, "link delete swp1") {
+		t.Fatalf("cleanup escaped owned endpoint identity: %s", commands)
+	}
+	if !strings.Contains(commands, "ip -n "+SwitchL2NamespaceName(objectA.ID)+" link delete swp1") {
+		t.Fatalf("owned endpoint was not targeted exactly: %s", commands)
+	}
+}

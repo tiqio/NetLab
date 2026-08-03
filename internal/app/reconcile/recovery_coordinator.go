@@ -36,6 +36,27 @@ type RecoveryCheckpointParticipant interface {
 	ReconcileWithCheckpoints(context.Context, func(RecoveryResourceOutcome) error) error
 }
 
+type DurableTaskRecoverer interface {
+	Recover(context.Context) error
+}
+
+type DurableTaskRecoveryReconciler struct {
+	recoverer DurableTaskRecoverer
+}
+
+func NewDurableTaskRecoveryReconciler(recoverer DurableTaskRecoverer) *DurableTaskRecoveryReconciler {
+	return &DurableTaskRecoveryReconciler{recoverer: recoverer}
+}
+
+func (r *DurableTaskRecoveryReconciler) Name() string { return "durable-task-recovery" }
+
+func (r *DurableTaskRecoveryReconciler) Reconcile(ctx context.Context) error {
+	if r == nil || r.recoverer == nil {
+		return nil
+	}
+	return r.recoverer.Recover(ctx)
+}
+
 func NewRecoveryCoordinator(store RecoveryTaskStore, participants ...Reconciler) *RecoveryCoordinator {
 	return &RecoveryCoordinator{store: store, participants: participants}
 }
