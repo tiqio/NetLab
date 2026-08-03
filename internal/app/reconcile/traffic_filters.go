@@ -21,14 +21,15 @@ const defaultTrafficFilterColor = "#f59e0b"
 var trafficFilterColorPattern = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
 
 type managedFilter struct {
-	metadata   domain.TrafficFilter
-	correlator *captureRuntime.Correlator
-	match      captureRuntime.Match
-	interfaces map[domain.ID]bool
-	links      map[domain.ID]bool
-	decoders   map[string]*captureRuntime.PacketDecoder
-	mu         sync.Mutex
-	captureIDs []domain.ID
+	metadata    domain.TrafficFilter
+	correlator  *captureRuntime.Correlator
+	match       captureRuntime.Match
+	interfaces  map[domain.ID]bool
+	links       map[domain.ID]bool
+	objectLinks map[domain.ID]bool
+	decoders    map[string]*captureRuntime.PacketDecoder
+	mu          sync.Mutex
+	captureIDs  []domain.ID
 }
 
 type TrafficFilterManager struct {
@@ -66,9 +67,14 @@ func (m *TrafficFilterManager) StartScopedAs(id, labID domain.ID, match captureR
 }
 
 func (m *TrafficFilterManager) StartScopedAsWithColor(id, labID domain.ID, match captureRuntime.Match, maximum int, interfaceIDs, linkIDs []domain.ID, color string) (domain.TrafficFilter, error) {
+	return m.StartScopedAsWithObjectLinks(id, labID, match, maximum, interfaceIDs, linkIDs, nil, color)
+}
+
+func (m *TrafficFilterManager) StartScopedAsWithObjectLinks(id, labID domain.ID, match captureRuntime.Match, maximum int, interfaceIDs, linkIDs, objectLinkIDs []domain.ID, color string) (domain.TrafficFilter, error) {
 	interfaceIDs = uniqueTrafficFilterIDs(interfaceIDs)
 	linkIDs = uniqueTrafficFilterIDs(linkIDs)
-	if len(interfaceIDs)+len(linkIDs) == 0 {
+	objectLinkIDs = uniqueTrafficFilterIDs(objectLinkIDs)
+	if len(interfaceIDs)+len(linkIDs)+len(objectLinkIDs) == 0 {
 		return domain.TrafficFilter{}, domain.Problem{Code: "invalid_traffic_filter_scope", Message: "select at least one interface or link to observe", ResourceType: "traffic_filter", ResourceID: id, Phase: "traffic_filter_admission", Cleanup: "no capture resources created", OperatorHint: "choose one or more connected interfaces or links and retry"}
 	}
 	expression, err := captureRuntime.Compile(match)
@@ -90,17 +96,20 @@ func (m *TrafficFilterManager) StartScopedAsWithColor(id, labID domain.ID, match
 	if existing != nil && existing.metadata.State == "running" {
 		return existing.metadata, nil
 	}
-	value := domain.TrafficFilter{ID: id, LaboratoryID: labID, Expression: expression, Color: color, State: "running", MaxObservations: maximum, InterfaceIDs: interfaceIDs, LinkIDs: linkIDs, Observations: []domain.TrafficObservation{}, CreatedAt: time.Now().UTC()}
-	interfaces, links := map[domain.ID]bool{}, map[domain.ID]bool{}
+	value := domain.TrafficFilter{ID: id, LaboratoryID: labID, Expression: expression, Color: color, State: "running", MaxObservations: maximum, InterfaceIDs: interfaceIDs, LinkIDs: linkIDs, NetworkObjectLinkIDs: objectLinkIDs, Observations: []domain.TrafficObservation{}, CreatedAt: time.Now().UTC()}
+	interfaces, links, objectLinks := map[domain.ID]bool{}, map[domain.ID]bool{}, map[domain.ID]bool{}
 	for _, id := range interfaceIDs {
 		interfaces[id] = true
 	}
 	for _, id := range linkIDs {
 		links[id] = true
 	}
-	managed := &managedFilter{metadata: value, correlator: captureRuntime.NewCorrelator(2*time.Second, maximum), match: match, interfaces: interfaces, links: links, decoders: map[string]*captureRuntime.PacketDecoder{}}
+	for _, id := range objectLinkIDs {
+		objectLinks[id] = true
+	}
+	managed := &managedFilter{metadata: value, correlator: captureRuntime.NewCorrelator(2*time.Second, maximum), match: match, interfaces: interfaces, links: links, objectLinks: objectLinks, decoders: map[string]*captureRuntime.PacketDecoder{}}
 	if m.captures != nil {
-		required := len(interfaceIDs) + len(linkIDs)
+		required := len(interfaceIDs) + len(linkIDs) + len(objectLinkIDs)
 		available := m.captures.AvailableSlots()
 		if required > available {
 			return domain.TrafficFilter{}, domain.Problem{Code: "resource_exhausted", Message: fmt.Sprintf("traffic filter needs %d capture slots but only %d are available", required, available), Retryable: true, ResourceType: "traffic_filter", ResourceID: id, Phase: "traffic_filter_admission", Cleanup: "no capture resources created", OperatorHint: "reduce the selected observation scope or stop active captures and retry", RetryAfterSeconds: 2}
@@ -133,6 +142,16 @@ func (m *TrafficFilterManager) StartScopedAsWithColor(id, labID domain.ID, match
 			}
 			managed.captureIDs = append(managed.captureIDs, captureValue.ID)
 		}
+		for _, id := range objectLinkIDs {
+			captureValue, captureErr := m.captures.Start(context.Background(), CaptureRequest{LaboratoryID: labID, SourceType: "network_object_link", SourceID: id, Purpose: "traffic_filter", ParentID: value.ID, Filter: expression, Format: "pcap", MaxBytes: captureMaxBytes})
+			if captureErr != nil {
+				for _, captureID := range managed.captureIDs {
+					_, _ = m.captures.Stop(captureID)
+				}
+				return domain.TrafficFilter{}, captureErr
+			}
+			managed.captureIDs = append(managed.captureIDs, captureValue.ID)
+		}
 	}
 	m.mu.Lock()
 	m.values[value.ID] = managed
@@ -152,7 +171,7 @@ func (m *TrafficFilterManager) Observe(id domain.ID, fingerprint string, interfa
 	return nil
 }
 
-func (m *TrafficFilterManager) ObserveCapture(laboratoryID, interfaceID, linkID domain.ID, direction, format string, chunk []byte, at time.Time) {
+func (m *TrafficFilterManager) ObserveCapture(laboratoryID, interfaceID, linkID, objectLinkID domain.ID, direction, format string, chunk []byte, at time.Time) {
 	m.mu.RLock()
 	values := make([]*managedFilter, 0, len(m.values))
 	for _, value := range m.values {
@@ -162,15 +181,16 @@ func (m *TrafficFilterManager) ObserveCapture(laboratoryID, interfaceID, linkID 
 	}
 	m.mu.RUnlock()
 	for _, value := range values {
-		if len(value.interfaces) > 0 || len(value.links) > 0 {
+		if len(value.interfaces) > 0 || len(value.links) > 0 || len(value.objectLinks) > 0 {
 			matchesInterface := interfaceID != "" && value.interfaces[interfaceID]
 			matchesLink := linkID != "" && value.links[linkID]
-			if !matchesInterface && !matchesLink {
+			matchesObjectLink := objectLinkID != "" && value.objectLinks[objectLinkID]
+			if !matchesInterface && !matchesLink && !matchesObjectLink {
 				continue
 			}
 		}
 		value.mu.Lock()
-		decoderKey := string(interfaceID) + ":" + string(linkID) + ":" + direction
+		decoderKey := string(interfaceID) + ":" + string(linkID) + ":" + string(objectLinkID) + ":" + direction
 		decoder := value.decoders[decoderKey]
 		if decoder == nil {
 			decoder = captureRuntime.NewPacketDecoder(format)
@@ -183,7 +203,11 @@ func (m *TrafficFilterManager) ObserveCapture(laboratoryID, interfaceID, linkID 
 		}
 		for _, packet := range packets {
 			if captureRuntime.Matches(value.match, packet.Key) {
-				value.correlator.ObservePacket(captureRuntime.Fingerprint(packet.Key), interfaceID, linkID, direction, packet.Key, at)
+				if objectLinkID != "" {
+					value.correlator.ObserveNetworkObjectLinkPacket(captureRuntime.Fingerprint(packet.Key), objectLinkID, "ambiguous", packet.Key, at)
+				} else {
+					value.correlator.ObservePacket(captureRuntime.Fingerprint(packet.Key), interfaceID, linkID, direction, packet.Key, at)
+				}
 			}
 		}
 	}
@@ -267,6 +291,20 @@ func (m *TrafficFilterManager) Stop(id domain.ID) (domain.TrafficFilter, error) 
 	return value.metadata, nil
 }
 
+func (m *TrafficFilterManager) StopNetworkObjectLink(linkID domain.ID) {
+	m.mu.RLock()
+	ids := make([]domain.ID, 0)
+	for id, value := range m.values {
+		if value.objectLinks[linkID] && value.metadata.State == "running" {
+			ids = append(ids, id)
+		}
+	}
+	m.mu.RUnlock()
+	for _, id := range ids {
+		_, _ = m.Stop(id)
+	}
+}
+
 func (m *TrafficFilterManager) persistLocked() {
 	if m.path == "" {
 		return
@@ -312,7 +350,17 @@ func (m *TrafficFilterManager) load() {
 				SourceMAC: observation.SourceMAC, DestinationMAC: observation.DestinationMAC, Length: length,
 			}, observation.FirstSeen)
 		}
-		m.values[metadata.ID] = &managedFilter{metadata: metadata, correlator: correlator, match: record.Match, interfaces: map[domain.ID]bool{}, links: map[domain.ID]bool{}, decoders: map[string]*captureRuntime.PacketDecoder{}}
+		interfaces, links, objectLinks := map[domain.ID]bool{}, map[domain.ID]bool{}, map[domain.ID]bool{}
+		for _, id := range metadata.InterfaceIDs {
+			interfaces[id] = true
+		}
+		for _, id := range metadata.LinkIDs {
+			links[id] = true
+		}
+		for _, id := range metadata.NetworkObjectLinkIDs {
+			objectLinks[id] = true
+		}
+		m.values[metadata.ID] = &managedFilter{metadata: metadata, correlator: correlator, match: record.Match, interfaces: interfaces, links: links, objectLinks: objectLinks, decoders: map[string]*captureRuntime.PacketDecoder{}}
 	}
 	m.persistLocked()
 }

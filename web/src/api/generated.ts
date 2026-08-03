@@ -310,7 +310,7 @@ export interface ConsoleDescriptor {
 export interface CaptureSession {
   id: string;
   laboratory_id?: string;
-  source_type: "interface" | "link";
+  source_type: "interface" | "link" | "network_object_link";
   source_id: string;
   purpose?: string;
   parent_resource_id?: string;
@@ -334,8 +334,11 @@ export interface CaptureSession {
 
 export interface TrafficObservation {
   fingerprint: string;
+  resource_type?: "interface" | "link" | "network_object_link" | string;
+  resource_id?: string;
   interface_id: string;
   link_id?: string;
+  network_object_link_id?: string;
   direction: "ingress" | "egress" | string;
   source_address?: string;
   destination_address?: string;
@@ -357,6 +360,7 @@ export interface TrafficFilter {
   max_observations: number;
   interface_ids?: string[];
   link_ids?: string[];
+  network_object_link_ids?: string[];
   observations: TrafficObservation[];
   created_at: string;
   finished_at?: string;
@@ -397,7 +401,7 @@ export interface CreateNodeRequest {
 
 export interface StartCaptureRequest {
   laboratory_id?: string;
-  source_type: "interface" | "link";
+  source_type: "interface" | "link" | "network_object_link";
   source_id: string;
   interface?: string;
   filter?: string;
@@ -413,5 +417,6 @@ export interface StartTrafficFilterRequest {
   max_observations?: number;
   interface_ids?: string[];
   link_ids?: string[];
+  network_object_link_ids?: string[];
   color?: string;
 }

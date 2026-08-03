@@ -61,14 +61,18 @@ func NewCorrelator(window time.Duration, maximum int) *Correlator {
 }
 
 func (c *Correlator) Observe(fingerprint string, interfaceID, linkID domain.ID, direction string, length int, at time.Time) {
-	c.observe(fingerprint, interfaceID, linkID, direction, PacketKey{Length: length}, at)
+	c.observe(fingerprint, interfaceID, linkID, "", direction, PacketKey{Length: length}, at)
 }
 
 func (c *Correlator) ObservePacket(fingerprint string, interfaceID, linkID domain.ID, direction string, packet PacketKey, at time.Time) {
-	c.observe(fingerprint, interfaceID, linkID, direction, packet, at)
+	c.observe(fingerprint, interfaceID, linkID, "", direction, packet, at)
 }
 
-func (c *Correlator) observe(fingerprint string, interfaceID, linkID domain.ID, direction string, packet PacketKey, at time.Time) {
+func (c *Correlator) ObserveNetworkObjectLinkPacket(fingerprint string, linkID domain.ID, direction string, packet PacketKey, at time.Time) {
+	c.observe(fingerprint, "", "", linkID, direction, packet, at)
+}
+
+func (c *Correlator) observe(fingerprint string, interfaceID, linkID, objectLinkID domain.ID, direction string, packet PacketKey, at time.Time) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.observations[fingerprint] == nil && len(c.observations) >= c.maximum {
@@ -77,14 +81,21 @@ func (c *Correlator) observe(fingerprint string, interfaceID, linkID domain.ID, 
 	if c.observations[fingerprint] == nil {
 		c.observations[fingerprint] = map[string]domain.TrafficObservation{}
 	}
-	key := string(interfaceID) + ":" + string(linkID) + ":" + direction
+	key := string(interfaceID) + ":" + string(linkID) + ":" + string(objectLinkID) + ":" + direction
 	value, exists := c.observations[fingerprint][key]
 	if !exists || at.Sub(value.LastSeen) > c.window {
 		value = domain.TrafficObservation{
-			Fingerprint: fingerprint, InterfaceID: interfaceID, LinkID: linkID, Direction: direction,
+			Fingerprint: fingerprint, InterfaceID: interfaceID, LinkID: linkID, NetworkObjectLinkID: objectLinkID, Direction: direction,
 			SourceAddress: packet.Source, DestinationAddress: packet.Destination,
 			SourceMAC: packet.SourceMAC, DestinationMAC: packet.DestinationMAC,
 			PacketRole: packetRole(packet), FirstSeen: at,
+		}
+		if objectLinkID != "" {
+			value.ResourceType, value.ResourceID = "network_object_link", objectLinkID
+		} else if linkID != "" {
+			value.ResourceType, value.ResourceID = "link", linkID
+		} else {
+			value.ResourceType, value.ResourceID = "interface", interfaceID
 		}
 	}
 	value.LastSeen = at
@@ -150,5 +161,5 @@ func (c *Correlator) Snapshot() ([]domain.TrafficObservation, bool) {
 }
 
 func observationLocation(value domain.TrafficObservation) string {
-	return string(value.InterfaceID) + ":" + string(value.LinkID) + ":" + value.Direction
+	return string(value.InterfaceID) + ":" + string(value.LinkID) + ":" + string(value.NetworkObjectLinkID) + ":" + value.Direction
 }

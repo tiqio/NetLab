@@ -142,12 +142,13 @@ func (h *CaptureHandlers) streamCapture(c *gin.Context) {
 
 func (h *CaptureHandlers) startTrafficFilter(c *gin.Context) {
 	var body struct {
-		LaboratoryID    domain.ID            `json:"laboratory_id"`
-		Match           captureRuntime.Match `json:"match"`
-		MaxObservations int                  `json:"max_observations"`
-		InterfaceIDs    []domain.ID          `json:"interface_ids"`
-		LinkIDs         []domain.ID          `json:"link_ids"`
-		Color           string               `json:"color"`
+		LaboratoryID         domain.ID            `json:"laboratory_id"`
+		Match                captureRuntime.Match `json:"match"`
+		MaxObservations      int                  `json:"max_observations"`
+		InterfaceIDs         []domain.ID          `json:"interface_ids"`
+		LinkIDs              []domain.ID          `json:"link_ids"`
+		NetworkObjectLinkIDs []domain.ID          `json:"network_object_link_ids"`
+		Color                string               `json:"color"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		handleError(c, err)
@@ -157,7 +158,7 @@ func (h *CaptureHandlers) startTrafficFilter(c *gin.Context) {
 		handleError(c, domain.Problem{Code: "operation_unavailable", Message: "traffic filter automation unavailable"})
 		return
 	}
-	value, taskValue, err := h.operations.StartFilter(c, body.LaboratoryID, body.Match, body.MaxObservations, body.InterfaceIDs, body.LinkIDs, body.Color, c.GetHeader("Idempotency-Key"))
+	value, taskValue, err := h.operations.StartFilterWithObjectLinks(c, body.LaboratoryID, body.Match, body.MaxObservations, body.InterfaceIDs, body.LinkIDs, body.NetworkObjectLinkIDs, body.Color, c.GetHeader("Idempotency-Key"))
 	if err != nil {
 		handleError(c, err)
 		return

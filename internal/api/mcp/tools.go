@@ -366,7 +366,7 @@ func Tools(services Services) []Tool {
 			}
 			return map[string]any{"task": value}, nil
 		}},
-		{Name: "netlab.traffic_filters.start", Description: "Observe matching packet fingerprints across selected interfaces and links.", InputSchema: mutationSchema(map[string]any{"laboratory_id": stringProperty("Laboratory ID"), "match": map[string]any{"type": "object"}, "interface_ids": stringArrayProperty(), "link_ids": stringArrayProperty(), "max_observations": integerProperty(1)}, "laboratory_id", "match"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
+		{Name: "netlab.traffic_filters.start", Description: "Observe matching packet fingerprints across selected interfaces and links.", InputSchema: mutationSchema(map[string]any{"laboratory_id": stringProperty("Laboratory ID"), "match": map[string]any{"type": "object"}, "interface_ids": stringArrayProperty(), "link_ids": stringArrayProperty(), "network_object_link_ids": stringArrayProperty(), "max_observations": integerProperty(1)}, "laboratory_id", "match"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
 			if services.CaptureOps == nil {
 				return unavailable("traffic filter")
 			}
@@ -374,7 +374,7 @@ func Tools(services Services) []Tool {
 			if err := decodeArgument(args["match"], &match); err != nil {
 				return nil, err
 			}
-			value, taskValue, err := services.CaptureOps.StartFilter(c, domain.ID(optionalString(args, "laboratory_id")), match, intArgument(args, "max_observations"), idSlice(args["interface_ids"]), idSlice(args["link_ids"]), optionalString(args, "color"), optionalString(args, "idempotency_key"))
+			value, taskValue, err := services.CaptureOps.StartFilterWithObjectLinks(c, domain.ID(optionalString(args, "laboratory_id")), match, intArgument(args, "max_observations"), idSlice(args["interface_ids"]), idSlice(args["link_ids"]), idSlice(args["network_object_link_ids"]), optionalString(args, "color"), optionalString(args, "idempotency_key"))
 			if err != nil {
 				return nil, err
 			}

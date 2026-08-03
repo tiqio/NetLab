@@ -58,6 +58,7 @@ type NetworkObjectService struct {
 	objectLinks interface {
 		DeleteNetworkObjectLink(context.Context, domain.NetworkObjectLink, domain.NetworkObject, domain.NetworkObject) error
 	}
+	objectLinkObservers []interface{ StopNetworkObjectLink(domain.ID) }
 }
 
 func (s *NetworkObjectService) SetAttachmentRuntime(runtime interface {
@@ -70,6 +71,10 @@ func (s *NetworkObjectService) SetObjectLinkRuntime(runtime interface {
 	DeleteNetworkObjectLink(context.Context, domain.NetworkObjectLink, domain.NetworkObject, domain.NetworkObject) error
 }) {
 	s.objectLinks = runtime
+}
+
+func (s *NetworkObjectService) AddObjectLinkObserverCleanup(cleaner interface{ StopNetworkObjectLink(domain.ID) }) {
+	s.objectLinkObservers = append(s.objectLinkObservers, cleaner)
 }
 
 func NewNetworkObjectService(repository NetworkObjectRepository, runtimes NetworkRuntimeDispatch) *NetworkObjectService {
@@ -252,6 +257,9 @@ func (s *NetworkObjectService) DeleteObjectLink(ctx context.Context, id domain.I
 		return err
 	}
 	if s.objectLinks != nil {
+		for _, cleaner := range s.objectLinkObservers {
+			cleaner.StopNetworkObjectLink(id)
+		}
 		objectA, err := s.repository.GetNetworkObject(ctx, link.ObjectAID)
 		if err != nil {
 			return err

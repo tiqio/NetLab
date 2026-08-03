@@ -53,12 +53,16 @@ func (s *CaptureTaskService) StopCapture(ctx context.Context, id domain.ID, idem
 }
 
 func (s *CaptureTaskService) StartFilter(ctx context.Context, laboratoryID domain.ID, match captureRuntime.Match, maximum int, interfaceIDs, linkIDs []domain.ID, color, idempotencyKey string) (domain.TrafficFilter, domain.OperationTask, error) {
+	return s.StartFilterWithObjectLinks(ctx, laboratoryID, match, maximum, interfaceIDs, linkIDs, nil, color, idempotencyKey)
+}
+
+func (s *CaptureTaskService) StartFilterWithObjectLinks(ctx context.Context, laboratoryID domain.ID, match captureRuntime.Match, maximum int, interfaceIDs, linkIDs, objectLinkIDs []domain.ID, color, idempotencyKey string) (domain.TrafficFilter, domain.OperationTask, error) {
 	expression, err := captureRuntime.Compile(match)
 	if err != nil {
 		return domain.TrafficFilter{}, domain.OperationTask{}, err
 	}
 	id := domain.NewID()
-	input := map[string]any{"laboratory_id": laboratoryID, "match": match, "max_observations": maximum, "interface_ids": interfaceIDs, "link_ids": linkIDs, "color": color}
+	input := map[string]any{"laboratory_id": laboratoryID, "match": match, "max_observations": maximum, "interface_ids": interfaceIDs, "link_ids": linkIDs, "network_object_link_ids": objectLinkIDs, "color": color}
 	value := runtimeOperation("traffic_filter.start", "traffic_filter", id, idempotencyKey, 2, input)
 	queued, err := s.runner.EnqueueOrGet(ctx, value)
 	if err != nil {
@@ -70,9 +74,10 @@ func (s *CaptureTaskService) StartFilter(ctx context.Context, laboratoryID domai
 		maximum = int(runtimeTaskInt64(queued.Input["max_observations"]))
 		interfaceIDs = runtimeTaskIDs(queued.Input["interface_ids"])
 		linkIDs = runtimeTaskIDs(queued.Input["link_ids"])
+		objectLinkIDs = runtimeTaskIDs(queued.Input["network_object_link_ids"])
 		color = runtimeTaskText(queued.Input["color"])
 	}
-	return domain.TrafficFilter{ID: id, LaboratoryID: laboratoryID, Expression: expression, Color: color, State: "starting", MaxObservations: maximum, InterfaceIDs: interfaceIDs, LinkIDs: linkIDs, CreatedAt: value.CreatedAt}, queued, nil
+	return domain.TrafficFilter{ID: id, LaboratoryID: laboratoryID, Expression: expression, Color: color, State: "starting", MaxObservations: maximum, InterfaceIDs: interfaceIDs, LinkIDs: linkIDs, NetworkObjectLinkIDs: objectLinkIDs, CreatedAt: value.CreatedAt}, queued, nil
 }
 
 func (s *CaptureTaskService) StopFilter(ctx context.Context, id domain.ID, idempotencyKey string) (domain.OperationTask, error) {
@@ -80,7 +85,7 @@ func (s *CaptureTaskService) StopFilter(ctx context.Context, id domain.ID, idemp
 	if err != nil {
 		return domain.OperationTask{}, err
 	}
-	input := map[string]any{"laboratory_id": value.LaboratoryID, "match": match, "max_observations": value.MaxObservations, "interface_ids": value.InterfaceIDs, "link_ids": value.LinkIDs, "color": value.Color}
+	input := map[string]any{"laboratory_id": value.LaboratoryID, "match": match, "max_observations": value.MaxObservations, "interface_ids": value.InterfaceIDs, "link_ids": value.LinkIDs, "network_object_link_ids": value.NetworkObjectLinkIDs, "color": value.Color}
 	operation := runtimeOperation("traffic_filter.stop", "traffic_filter", id, idempotencyKey, 2, input)
 	return s.runner.EnqueueOrGet(ctx, operation)
 }
@@ -157,7 +162,7 @@ func (s *CaptureTaskService) handleFilterStart(ctx context.Context, value *domai
 	if err = s.runner.Checkpoint(ctx, value); err != nil {
 		return nil, err
 	}
-	filter, err := s.filters.StartScopedAsWithColor(value.ResourceID, domain.ID(runtimeTaskText(value.Input["laboratory_id"])), match, int(runtimeTaskInt64(value.Input["max_observations"])), runtimeTaskIDs(value.Input["interface_ids"]), runtimeTaskIDs(value.Input["link_ids"]), runtimeTaskText(value.Input["color"]))
+	filter, err := s.filters.StartScopedAsWithObjectLinks(value.ResourceID, domain.ID(runtimeTaskText(value.Input["laboratory_id"])), match, int(runtimeTaskInt64(value.Input["max_observations"])), runtimeTaskIDs(value.Input["interface_ids"]), runtimeTaskIDs(value.Input["link_ids"]), runtimeTaskIDs(value.Input["network_object_link_ids"]), runtimeTaskText(value.Input["color"]))
 	if ctx.Err() != nil {
 		_, _ = s.filters.Stop(value.ResourceID)
 		return nil, ctx.Err()
@@ -180,7 +185,7 @@ func (s *CaptureTaskService) handleFilterStop(ctx context.Context, value *domain
 	}
 	filter, err := s.filters.Stop(value.ResourceID)
 	if ctx.Err() != nil {
-		_, _ = s.filters.StartScopedAsWithColor(value.ResourceID, domain.ID(runtimeTaskText(value.Input["laboratory_id"])), match, int(runtimeTaskInt64(value.Input["max_observations"])), runtimeTaskIDs(value.Input["interface_ids"]), runtimeTaskIDs(value.Input["link_ids"]), runtimeTaskText(value.Input["color"]))
+		_, _ = s.filters.StartScopedAsWithObjectLinks(value.ResourceID, domain.ID(runtimeTaskText(value.Input["laboratory_id"])), match, int(runtimeTaskInt64(value.Input["max_observations"])), runtimeTaskIDs(value.Input["interface_ids"]), runtimeTaskIDs(value.Input["link_ids"]), runtimeTaskIDs(value.Input["network_object_link_ids"]), runtimeTaskText(value.Input["color"]))
 		return nil, ctx.Err()
 	}
 	if err != nil {

@@ -183,6 +183,8 @@ func main() {
 		logger.Warn("L3 switch runtime unavailable", "error", switchL3RuntimeErr)
 	}
 	networkService := reconcile.NewNetworkObjectService(repositories, reconcile.NetworkRuntimeDispatch{Bridge: bridgeRuntime, NAT: natRuntime, PC: pcRuntime, SwitchL2: switchL2Runtime, SwitchL3: switchL3Runtime})
+	networkService.AddObjectLinkObserverCleanup(captureManager)
+	networkService.AddObjectLinkObserverCleanup(trafficFilterManager)
 	networkTasks := reconcile.NewNetworkObjectTaskService(networkService, taskRunner)
 	httpapi.NewNetworkHandlers(networkService, networkTasks, pcRuntime, natRuntime, switchL3Runtime).Register(server.Engine())
 	server.Engine().GET("/api/v1/events", gin.WrapH(stream.NewEventHandler(publisher)))

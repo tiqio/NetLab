@@ -3,13 +3,38 @@ package reconcile
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/netlab/netlab/internal/domain"
+	captureRuntime "github.com/netlab/netlab/internal/runtime/capture"
 )
+
+func TestCaptureStopNetworkObjectLinkUsesLinkDeletedReason(t *testing.T) {
+	manager := NewCaptureManager(t.TempDir(), 1, 1<<20, time.Hour)
+	worker, err := captureRuntime.NewWorker(captureRuntime.WorkerConfig{Interface: "swp1", MaxBytes: 1 << 20, Format: "pcap"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	reader, writer := io.Pipe()
+	worker.StartReader(context.Background(), reader)
+	manager.values["capture-link"] = &managedCapture{metadata: domain.Capture{ID: "capture-link", SourceType: "network_object_link", SourceID: "object-link", State: "running"}, worker: worker}
+	manager.StopNetworkObjectLink("object-link")
+	_ = writer.Close()
+	select {
+	case <-worker.Done():
+	case <-time.After(time.Second):
+		t.Fatal("capture did not stop")
+	}
+	manager.watch("capture-link", manager.values["capture-link"])
+	value, err := manager.Get("capture-link")
+	if err != nil || value.CompletionReason != "link_deleted" {
+		t.Fatalf("capture=%+v err=%v", value, err)
+	}
+}
 
 func TestCaptureManagerRecoversAbandonedCapture(t *testing.T) {
 	stateDir := t.TempDir()

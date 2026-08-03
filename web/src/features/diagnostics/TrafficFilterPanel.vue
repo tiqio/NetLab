@@ -48,6 +48,7 @@ const entries = ref<FilterEntry[]>([]);
 const selectedFilterId = ref("");
 const selectedInterfaceIds = ref<string[]>([]);
 const selectedLinkIds = ref<string[]>([]);
+const selectedObjectLinkIds = ref<string[]>([]);
 const taskId = ref("");
 const taskState = ref("");
 const status = ref("");
@@ -82,7 +83,10 @@ const active = computed(() =>
   ["starting", "running", "stopping"].includes(filter.value?.state || ""),
 );
 const selectedScopeCount = computed(
-  () => selectedInterfaceIds.value.length + selectedLinkIds.value.length,
+  () =>
+    selectedInterfaceIds.value.length +
+    selectedLinkIds.value.length +
+    selectedObjectLinkIds.value.length,
 );
 const colorValid = computed(() => /^#[0-9a-fA-F]{6}$/.test(color.value));
 const interfacesByNode = computed(() =>
@@ -249,6 +253,7 @@ async function start() {
       max_observations: Number(maximum.value),
       interface_ids: selectedInterfaceIds.value,
       link_ids: selectedLinkIds.value,
+      network_object_link_ids: selectedObjectLinkIds.value,
       color: color.value,
     });
     selectedFilterId.value = value.traffic_filter.id;
@@ -318,6 +323,12 @@ function toggleLink(id: string, checked: boolean) {
     : selectedLinkIds.value.filter((value) => value !== id);
 }
 
+function toggleObjectLink(id: string, checked: boolean) {
+  selectedObjectLinkIds.value = checked
+    ? [...new Set([...selectedObjectLinkIds.value, id])]
+    : selectedObjectLinkIds.value.filter((value) => value !== id);
+}
+
 function selectConnectedInterfaces() {
   selectedInterfaceIds.value = (props.interfaces || [])
     .filter(
@@ -326,10 +337,14 @@ function selectConnectedInterfaces() {
     )
     .map((item) => item.id);
   selectedLinkIds.value = [];
+  selectedObjectLinkIds.value = [];
 }
 
 function selectLinks() {
-  selectedLinkIds.value = [...(props.links || []), ...(props.networkObjectLinks || [])]
+  selectedLinkIds.value = [...(props.links || [])]
+    .filter((item) => item.observed_state === "connected")
+    .map((item) => item.id);
+  selectedObjectLinkIds.value = [...(props.networkObjectLinks || [])]
     .filter((item) => item.observed_state === "connected")
     .map((item) => item.id);
   selectedInterfaceIds.value = attachmentRows.value
@@ -340,6 +355,7 @@ function selectLinks() {
 function clearScope() {
   selectedInterfaceIds.value = [];
   selectedLinkIds.value = [];
+  selectedObjectLinkIds.value = [];
 }
 
 function nodeName(nodeId: string) {
@@ -355,6 +371,7 @@ watch(
   () => {
     selectedInterfaceIds.value = [];
     selectedLinkIds.value = [];
+    selectedObjectLinkIds.value = [];
     selectedFilterId.value = "";
     void discover();
   },
@@ -381,6 +398,9 @@ watch(selectedFilterId, (id) => {
   if (selected) {
     selectedInterfaceIds.value = [...(selected.interface_ids || [])];
     selectedLinkIds.value = [...(selected.link_ids || [])];
+    selectedObjectLinkIds.value = [
+      ...(selected.network_object_link_ids || []),
+    ];
     expression.value = selected.expression;
     color.value = selected.color || "#f59e0b";
     selectedExample.value = filterExamples.some(
@@ -569,8 +589,8 @@ function applyExample(value: string | number | undefined) {
             >
               <input
                 type="checkbox"
-                :checked="selectedLinkIds.includes(objectLink.id)"
-                @change="toggleLink(objectLink.id, ($event.target as HTMLInputElement).checked)"
+                :checked="selectedObjectLinkIds.includes(objectLink.id)"
+                @change="toggleObjectLink(objectLink.id, ($event.target as HTMLInputElement).checked)"
               />
               <span>{{ objectLink.label }}</span>
               <span class="ml-auto text-muted-foreground">对象链路 · {{ objectLink.observed_state }}</span>

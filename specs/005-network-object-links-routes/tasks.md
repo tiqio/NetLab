@@ -41,7 +41,7 @@ all four user stories.
 
 - [X] T004 [P] Add failing domain tests for canonical object-link endpoint orientation, observation resource identity, and Docker IPv4/IPv6 route declarations in `internal/domain/operations_test.go` and `internal/domain/models_test.go`
 - [X] T005 [P] Add failing migration and repository tests for cross-side endpoint collisions, attachment collisions, backfill conflicts, reservation release, and transaction rollback in `internal/store/sqlite/interface_reservation_test.go` and `internal/store/sqlite/network_state_repository_test.go`
-- [ ] T006 [P] Add failing schema tests for object-link task envelopes, capture source types, Traffic Filter object-link scopes, directional observations, and Docker routes in `tests/contract/network_object_link_route_schema_test.go`
+- [X] T006 [P] Add failing schema tests for object-link task envelopes, capture source types, Traffic Filter object-link scopes, directional observations, and Docker routes in `tests/contract/network_object_link_route_schema_test.go`
 
 ### Shared Implementation
 

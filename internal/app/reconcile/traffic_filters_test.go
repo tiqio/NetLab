@@ -98,8 +98,8 @@ func TestTrafficFilterDecodesPacketsAndHonorsScope(t *testing.T) {
 	binary.LittleEndian.PutUint32(pcap[:4], 0xa1b2c3d4)
 	binary.LittleEndian.PutUint32(pcap[32:36], uint32(len(frame)))
 	copy(pcap[40:], frame)
-	manager.ObserveCapture("lab", "if-b", "link", "ingress", "pcap", pcap, time.Now())
-	manager.ObserveCapture("lab", "if-a", "link", "ingress", "pcap", pcap, time.Now())
+	manager.ObserveCapture("lab", "if-b", "link", "", "ingress", "pcap", pcap, time.Now())
+	manager.ObserveCapture("lab", "if-a", "link", "", "ingress", "pcap", pcap, time.Now())
 	value, _, err := manager.Get(filter.ID)
 	if err != nil || len(value.Observations) != 1 {
 		t.Fatalf("observations=%+v err=%v", value.Observations, err)
@@ -127,10 +127,38 @@ func TestTrafficFilterAcceptsEitherSelectedInterfaceOrLink(t *testing.T) {
 	binary.LittleEndian.PutUint32(pcap[32:36], uint32(len(frame)))
 	copy(pcap[40:], frame)
 	now := time.Now()
-	manager.ObserveCapture("lab", "if-a", "", "egress", "pcap", pcap, now)
-	manager.ObserveCapture("lab", "", "link-a", "ingress", "pcap", pcap, now.Add(time.Millisecond))
+	manager.ObserveCapture("lab", "if-a", "", "", "egress", "pcap", pcap, now)
+	manager.ObserveCapture("lab", "", "link-a", "", "ingress", "pcap", pcap, now.Add(time.Millisecond))
 	value, _, err := manager.Get(filter.ID)
 	if err != nil || len(value.Observations) != 2 {
 		t.Fatalf("observations=%+v err=%v", value.Observations, err)
+	}
+}
+
+func TestTrafficFilterAttributesNetworkObjectLink(t *testing.T) {
+	manager := NewTrafficFilterManager()
+	filter, err := manager.StartScopedAsWithObjectLinks("filter-object-link", "lab", captureRuntime.Match{Protocol: "udp", DestinationPort: 53}, 100, nil, nil, []domain.ID{"object-link"}, "#f59e0b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	frame := make([]byte, 14+20+8)
+	binary.BigEndian.PutUint16(frame[12:14], 0x0800)
+	frame[14], frame[23] = 0x45, 17
+	copy(frame[26:30], []byte{192, 0, 2, 1})
+	copy(frame[30:34], []byte{192, 0, 2, 53})
+	binary.BigEndian.PutUint16(frame[34:36], 1234)
+	binary.BigEndian.PutUint16(frame[36:38], 53)
+	pcap := make([]byte, 40+len(frame))
+	binary.LittleEndian.PutUint32(pcap[:4], 0xa1b2c3d4)
+	binary.LittleEndian.PutUint32(pcap[32:36], uint32(len(frame)))
+	copy(pcap[40:], frame)
+	manager.ObserveCapture("lab", "", "", "object-link", "observed", "pcap", pcap, time.Now())
+	value, _, err := manager.Get(filter.ID)
+	if err != nil || len(value.Observations) != 1 {
+		t.Fatalf("filter=%+v err=%v", value, err)
+	}
+	observation := value.Observations[0]
+	if observation.ResourceType != "network_object_link" || observation.ResourceID != "object-link" || observation.NetworkObjectLinkID != "object-link" {
+		t.Fatalf("observation=%+v", observation)
 	}
 }

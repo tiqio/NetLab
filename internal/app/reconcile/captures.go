@@ -31,10 +31,11 @@ type CaptureRequest struct {
 }
 
 type managedCapture struct {
-	metadata domain.Capture
-	worker   *captureRuntime.Worker
-	path     string
-	request  CaptureRequest
+	metadata   domain.Capture
+	worker     *captureRuntime.Worker
+	path       string
+	request    CaptureRequest
+	stopReason string
 }
 
 type captureRecord struct {
@@ -47,7 +48,7 @@ type CaptureArtifactService interface {
 	Create(context.Context, string, string, string, domain.ID, []byte, time.Duration) (domain.Artifact, error)
 }
 
-type CaptureObserver func(domain.ID, domain.ID, domain.ID, string, string, []byte, time.Time)
+type CaptureObserver func(domain.ID, domain.ID, domain.ID, domain.ID, string, string, []byte, time.Time)
 
 type CaptureManager struct {
 	directory      string
@@ -195,15 +196,17 @@ func (m *CaptureManager) StartAs(ctx context.Context, id domain.ID, request Capt
 		go func() {
 			defer cancel()
 			for chunk := range stream {
-				interfaceID, linkID := request.SourceID, domain.ID("")
+				interfaceID, linkID, objectLinkID := request.SourceID, domain.ID(""), domain.ID("")
 				if request.SourceType == "link" {
 					interfaceID, linkID = "", request.SourceID
+				} else if request.SourceType == "network_object_link" {
+					interfaceID, objectLinkID = "", request.SourceID
 				}
 				direction := request.Direction
 				if direction == "" {
 					direction = "observed"
 				}
-				m.observer(request.LaboratoryID, interfaceID, linkID, direction, request.Format, chunk, time.Now().UTC())
+				m.observer(request.LaboratoryID, interfaceID, linkID, objectLinkID, direction, request.Format, chunk, time.Now().UTC())
 			}
 		}()
 	}
@@ -276,7 +279,10 @@ func (m *CaptureManager) watch(id domain.ID, managed *managedCapture) {
 		current.metadata.LastError = structuredProblem(err, domain.Problem{Code: "capture_failed", Retryable: true, ResourceType: "capture", ResourceID: current.metadata.ID, Phase: "capturing", Cleanup: "capture worker exited and partial output is retained according to policy", OperatorHint: "inspect capture source availability and retry", RetryAfterSeconds: 2})
 	} else if managed.worker.Stopping() {
 		current.metadata.State = "cancelled"
-		current.metadata.CompletionReason = "cancelled"
+		current.metadata.CompletionReason = managed.stopReason
+		if current.metadata.CompletionReason == "" {
+			current.metadata.CompletionReason = "cancelled"
+		}
 	} else if managed.worker.Truncated() {
 		current.metadata.State = "truncated"
 		current.metadata.CompletionReason = "size_limit"
@@ -370,23 +376,44 @@ func (m *CaptureManager) AvailableSlots() int {
 }
 
 func (m *CaptureManager) Stop(id domain.ID) (domain.Capture, error) {
-	m.mu.RLock()
+	return m.StopWithReason(id, "cancelled")
+}
+
+func (m *CaptureManager) StopWithReason(id domain.ID, reason string) (domain.Capture, error) {
+	m.mu.Lock()
 	value := m.values[id]
-	m.mu.RUnlock()
 	if value == nil {
+		m.mu.Unlock()
 		return domain.Capture{}, fmt.Errorf("capture not found")
 	}
 	if value.worker == nil {
-		return value.metadata, nil
+		metadata := value.metadata
+		m.mu.Unlock()
+		return metadata, nil
 	}
-	value.worker.Stop()
-	m.mu.Lock()
+	value.stopReason = reason
 	if value.metadata.State == "running" || value.metadata.State == "starting" {
 		value.metadata.State = "stopping"
 	}
 	m.persistLocked()
+	worker := value.worker
 	m.mu.Unlock()
+	worker.Stop()
 	return m.Get(id)
+}
+
+func (m *CaptureManager) StopNetworkObjectLink(linkID domain.ID) {
+	m.mu.RLock()
+	ids := make([]domain.ID, 0)
+	for id, value := range m.values {
+		if value.metadata.SourceType == "network_object_link" && value.metadata.SourceID == linkID && value.worker != nil {
+			ids = append(ids, id)
+		}
+	}
+	m.mu.RUnlock()
+	for _, id := range ids {
+		_, _ = m.StopWithReason(id, "link_deleted")
+	}
 }
 
 func (m *CaptureManager) Subscribe(id domain.ID) (<-chan []byte, func(), error) {
