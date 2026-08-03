@@ -36,3 +36,16 @@
 | US3 | pending | pending | |
 | US4 | `go test ./internal/app/command ./internal/store/sqlite ./internal/runtime/linuxnet`; all passed | `bb07b51` | Docker route declarations are validated on create/settings and persisted for runtime reconciliation |
 | Final candidate | pending | pending | |
+
+## Incremental Worklog
+
+- `c3338a1` (`feat: observe and clean up object links`): added namespace-resolved object-link capture
+  identity, explicit Traffic Filter object-link scope and attribution, `link_deleted` capture completion,
+  pre-delete observer cleanup, generated frontend types, and scope selection fixes.
+- Focused gates for `c3338a1`: `go test ./internal/runtime/capture ./internal/app/reconcile
+  ./internal/api/http ./internal/api/mcp ./cmd/netlabd`; `go test -race ./internal/app/reconcile -run
+  'TestCaptureStopNetworkObjectLinkUsesLinkDeletedReason|TestTrafficFilterAttributesNetworkObjectLink'
+  -count=1`; `go test ./tests/contract -run
+  'TestNetworkObjectLinkAndRouteContractDelta|TestGeneratedClientIncludesObjectLinkCaptureAndFilterTypes'
+  -count=1`; `npm test -- --run src/features/diagnostics/TrafficFilterPanel.test.ts`; and
+  `npm run build`. All passed locally. The Vite chunk-size warning remains informational.
