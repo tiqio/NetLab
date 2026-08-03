@@ -23,7 +23,8 @@ func TestPrebuiltDeploymentPreservesExistingConfiguration(t *testing.T) {
 		`test -x "$NETLAB_PREBUILT_BINARY"`,
 		`install -Dm0755 "$NETLAB_PREBUILT_BINARY" /usr/local/bin/netlabd`,
 		`if [[ ! -f /etc/netlab/netlab.yaml ]]`,
-		`systemctl enable --now netlab`,
+		`systemctl enable netlab`,
+		`systemctl restart netlab`,
 	} {
 		if !strings.Contains(script, required) {
 			t.Fatalf("prebuilt deployment contract missing %q", required)

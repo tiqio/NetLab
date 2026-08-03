@@ -23,7 +23,8 @@ case "${1:-install}" in
       make install
     fi
     systemctl daemon-reload
-    systemctl enable --now netlab
+    systemctl enable netlab
+    systemctl restart netlab
     ;;
   uninstall) systemctl disable --now netlab || true; rm -f /etc/systemd/system/netlab.service /usr/local/bin/netlabd; systemctl daemon-reload ;;
   check) echo "host prerequisites satisfied" ;;
