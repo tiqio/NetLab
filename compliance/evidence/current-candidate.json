@@ -1,63 +1,93 @@
 {
   "schema_version": "1.0",
-  "id": "acceptance-workspace-2026-07-29",
-  "candidate_id": "workspace-2026-07-29",
-  "status": "failed",
+  "id": "acceptance-object-links-routes-0cd5ea2-20260803",
+  "candidate_id": "object-links-routes-0cd5ea2-20260803",
+  "status": "blocked",
   "gate_results": {
     "format": {
-      "status": "passed"
+      "status": "passed",
+      "details": "gofmt, git diff --check, and complete frontend Prettier passed on source 0cd5ea220bde45b1c5fd3c1def364e55469832cf"
     },
     "static_analysis": {
-      "status": "passed"
+      "status": "passed",
+      "details": "go vet ./... and frontend ESLint completed with zero errors"
     },
     "unit": {
-      "status": "passed"
+      "status": "passed",
+      "details": "go test ./... passed after the immutable prebuilt installer change"
     },
     "contract": {
-      "status": "passed"
+      "status": "passed",
+      "details": "REST, MCP, event, compatibility, and eight built-in template contracts passed; contract sha256:3eaffde190cf88ab4db67a6d273d1fc336383865898d0fc9630277f3710adbc0"
     },
     "frontend": {
-      "status": "passed"
+      "status": "passed",
+      "details": "59 Vitest files and 199 tests passed; production SPA and embedded asset build passed"
     },
     "privileged_integration": {
-      "status": "passed"
+      "status": "blocked",
+      "reason": "local privileged Docker dual-stack, object-link path, capture/filter, recovery, race, and leak gates passed; deployment and target-host acceptance are pending"
     },
     "recovery": {
-      "status": "passed"
+      "status": "passed",
+      "details": "service recovery, interrupted object-link deletion, namespace adoption, and host-policy tests passed locally"
     },
     "security": {
-      "status": "passed"
+      "status": "passed",
+      "details": "shell-vector, export redaction, evidence hygiene, systemd bounds, and immutable prebuilt deployment tests passed"
     },
     "leak": {
-      "status": "passed"
+      "status": "passed",
+      "details": "100-cycle object-link, capture/filter, and managed-route ownership cleanup gate passed locally"
     },
     "browser": {
-      "status": "failed",
-      "reason": "target-full-20260729-r2 passed 66 of 70 browser tests; target-cleanup-20260729-r3 subsequently passed all four focused cleanup tests, but the target coverage gate still fails because complete keyboard/pointer interaction evidence and genuine FancyWAN, FortiGate, and VyOS image versions are unavailable"
+      "status": "passed",
+      "details": "local Playwright passed 62 tests in desktop and minimum viewports; 24 runtime or target-only cases were capability-gated with no failures"
+    },
+    "candidate_artifact": {
+      "status": "passed",
+      "details": "source=0cd5ea220bde45b1c5fd3c1def364e55469832cf; archive=sha256:3e4f6797a323fd24ff5a09067cd6dd10c496f1b46f47533810d486a103acf179; binary=sha256:41372d9b84ecaf8f3ad0654ede0f7e8876b738a63309c04f3b1d7ec925179d75; built_at=2026-08-03T10:33:28Z"
+    },
+    "migration_and_rollback": {
+      "status": "passed",
+      "details": "target schema migrations 1-6 will advance through 12; predeployment binary sha256:8f91a35e246ba575d313912d534bbe6932e1dc286bf4454fce039b026f5d9480; rollback database sha256:63a2586c44f2c5651df624247993bdb68399f2eff66151ef574753fa9f353aa1; rollback artifacts are stored under /var/lib/netlab/backups"
     }
   },
   "scenario_evidence_ids": [
-    "local-full-20260729-r2",
-    "target-full-20260729-r2",
-    "target-cleanup-20260729-r3"
+    "local-object-link-route-gate-20260803",
+    "local-browser-dual-viewport-20260803",
+    "target-predeployment-backup-20260803"
   ],
   "exceptions": [],
   "cleanup_baseline": {
-    "digest": "sha256:df26d1f6986cf84c4b49e9a0bc7e573e9e100e839420bbb0f4fa83258977d76b",
-    "resources": {}
+    "digest": "sha256:c3c71c7534047234c183db68e7a49b8ff08ba69e6cd875119da4b91bb23863e1",
+    "resources": {
+      "qemu_runtime_directories": 1,
+      "nat_runtime_directories": 0,
+      "capture_files": 1,
+      "network_namespaces": 3,
+      "owned_links": 64,
+      "runtime_ownership_records": 35,
+      "unknown_ownership_records": 20
+    }
   },
   "cleanup_final": {
-    "digest": "sha256:e171267cc08d546dbf85cb6530cbf039aefc4c8de06f1d944d3cc49410328a2b",
+    "digest": "sha256:c3c71c7534047234c183db68e7a49b8ff08ba69e6cd875119da4b91bb23863e1",
     "resources": {
-      "network_namespaces": 2,
-      "unknown_ownership_records": 26
+      "qemu_runtime_directories": 1,
+      "nat_runtime_directories": 0,
+      "capture_files": 1,
+      "network_namespaces": 3,
+      "owned_links": 64,
+      "runtime_ownership_records": 35,
+      "unknown_ownership_records": 20
     }
   },
   "redaction_result": {
     "passed": true,
     "prohibited_content_count": 0
   },
-  "conclusion": "failed",
-  "started_at": "2026-07-29T05:09:30Z",
-  "finished_at": "2026-07-29T05:10:00Z"
+  "conclusion": "blocked",
+  "started_at": "2026-08-03T10:33:28Z",
+  "finished_at": "2026-08-03T11:06:00Z"
 }

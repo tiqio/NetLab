@@ -324,3 +324,19 @@
 - Frontend artifact hygiene passed. The compliance validator still described the previous
   `workspace-2026-07-29` candidate as not ready; T088 replaces that stale evidence with the immutable
   candidate built from this clean feature history.
+
+## Immutable Candidate
+
+- Candidate ID: `object-links-routes-0cd5ea2-20260803`; source SHA:
+  `0cd5ea220bde45b1c5fd3c1def364e55469832cf`; build time: August 3, 2026 at 10:33:28 UTC.
+- The immutable source/deployment archive is
+  `sha256:3e4f6797a323fd24ff5a09067cd6dd10c496f1b46f47533810d486a103acf179`;
+  the embedded prebuilt Linux binary is
+  `sha256:41372d9b84ecaf8f3ad0654ede0f7e8876b738a63309c04f3b1d7ec925179d75`;
+  and the combined contract digest is
+  `sha256:3eaffde190cf88ab4db67a6d273d1fc336383865898d0fc9630277f3710adbc0`.
+- The target database currently records migrations 1 through 6. The candidate contains migrations 1
+  through 12. Before deployment, the existing 7.1 GiB SQLite database passed `PRAGMA integrity_check`
+  after online backup, and the existing binary and database were copied into the target's protected
+  `/var/lib/netlab/backups` directory with SHA-256 sidecars. The aggregate evidence remains `blocked`
+  until target deployment and acceptance complete.
