@@ -327,12 +327,12 @@
 
 ## Immutable Candidate
 
-- Candidate ID: `object-links-routes-580d4d9-20260803`; source SHA:
-  `580d4d9afd884d7dafdd176e2fedafde8ba0c8f8`; build time: August 3, 2026 at 11:30:45 UTC.
+- Candidate ID: `object-links-routes-abe9a14-20260803`; source SHA:
+  `abe9a14d6ca414ae0965e02e4e30a92dd1dd537f`; build time: August 3, 2026 at 11:38:42 UTC.
 - The immutable source/deployment archive is
-  `sha256:b432d572068afcf1414e0ce862d0944e7ab0a480985b8fd3bef326cb4b201a00`;
+  `sha256:fd5a9e09e5541de9f207417c1a916f1450b233996af2dab1d02240b8756dffb0`;
   the embedded prebuilt Linux binary is
-  `sha256:30dd57b04eb7ac2604bddbb9ff867a97d464ae3be7587dac8b73615bb804bad9`;
+  `sha256:ea31a8f18825276df3ef3481523081c32039f17b024687e15aa2679a3e9e1b9b`;
   and the combined contract digest is
   `sha256:3eaffde190cf88ab4db67a6d273d1fc336383865898d0fc9630277f3710adbc0`.
 - The target database currently records migrations 1 through 6. The candidate contains migrations 1
@@ -342,6 +342,7 @@
   until target deployment and acceptance complete.
 - The first target candidate, `object-links-routes-6fec815-20260803`, was rolled back after the genuine
   three-object path exposed that a newly hot-added L3 veth port did not inherit the object's forwarding
-  policy. Commit `580d4d9` applies IPv4 and IPv6 forwarding to each arriving L3 port; the focused unit,
-  privileged three-object ICMP/TCP/UDP, capture/Traffic Filter, Docker dual-stack route, full Go test,
-  and Go vet gates pass locally for this replacement candidate.
+  policy. Commit `580d4d9` applies IPv4 and IPv6 forwarding to each arriving L3 port. Commit `abe9a14`
+  restores the acceptance fixture's global L3 forwarding initialization so the gate models the real
+  lifecycle while still proving per-port forwarding. Focused unit, privileged three-object ICMP/TCP/UDP,
+  capture/Traffic Filter, Docker dual-stack route, full Go test, and Go vet gates pass locally.
