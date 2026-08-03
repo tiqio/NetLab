@@ -327,12 +327,12 @@
 
 ## Immutable Candidate
 
-- Candidate ID: `object-links-routes-abe9a14-20260803`; source SHA:
-  `abe9a14d6ca414ae0965e02e4e30a92dd1dd537f`; build time: August 3, 2026 at 11:38:42 UTC.
+- Candidate ID: `object-links-routes-ca072b6-20260803`; source SHA:
+  `ca072b625b2a781e31855a0a66c528c261c0f15d`; build time: August 3, 2026 at 11:58:09 UTC.
 - The immutable source/deployment archive is
-  `sha256:fd5a9e09e5541de9f207417c1a916f1450b233996af2dab1d02240b8756dffb0`;
+  `sha256:7b040a226e9d5771409331cbd938cfbdfd422ee34d012c1c9a350fcdb1c403ce`;
   the embedded prebuilt Linux binary is
-  `sha256:ea31a8f18825276df3ef3481523081c32039f17b024687e15aa2679a3e9e1b9b`;
+  `sha256:d8e8d0b374a3fa18ceb0a1a076d9d485b50f2fdce9c2446592a5550868dca924`;
   and the combined contract digest is
   `sha256:3eaffde190cf88ab4db67a6d273d1fc336383865898d0fc9630277f3710adbc0`.
 - The target database currently records migrations 1 through 6. The candidate contains migrations 1
@@ -346,3 +346,7 @@
   restores the acceptance fixture's global L3 forwarding initialization so the gate models the real
   lifecycle while still proving per-port forwarding. Focused unit, privileged three-object ICMP/TCP/UDP,
   capture/Traffic Filter, Docker dual-stack route, full Go test, and Go vet gates pass locally.
+- Commit `ca072b6` makes the laboratory page object tolerate bounded live-menu redraws. The three
+  object-link browser journeys then passed on the target in both desktop and minimum viewports, including
+  shared-client convergence, parallel-link isolation, live deletion, immediate port reuse, refresh, and
+  acceptance-ledger cleanup back to the production baseline.

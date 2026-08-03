@@ -1,12 +1,12 @@
 {
   "schema_version": "1.0",
-  "id": "acceptance-object-links-routes-abe9a14-20260803",
-  "candidate_id": "object-links-routes-abe9a14-20260803",
+  "id": "acceptance-object-links-routes-ca072b6-20260803",
+  "candidate_id": "object-links-routes-ca072b6-20260803",
   "status": "blocked",
   "gate_results": {
     "format": {
       "status": "passed",
-      "details": "gofmt, git diff --check, and complete frontend Prettier passed on source abe9a14d6ca414ae0965e02e4e30a92dd1dd537f"
+      "details": "gofmt, git diff --check, and complete frontend Prettier passed on source ca072b625b2a781e31855a0a66c528c261c0f15d"
     },
     "static_analysis": {
       "status": "passed",
@@ -42,11 +42,11 @@
     },
     "browser": {
       "status": "passed",
-      "details": "local Playwright passed 62 tests in desktop and minimum viewports; 24 runtime or target-only cases were capability-gated with no failures"
+      "details": "local Playwright passed 62 tests in desktop and minimum viewports with 24 capability-gated skips; target-host object-link create, parallel observation, live deletion, port reuse, capture/filter isolation, shared-client refresh, and cleanup passed in both 1920x1080 and 1024x768 viewports"
     },
     "candidate_artifact": {
       "status": "passed",
-      "details": "source=abe9a14d6ca414ae0965e02e4e30a92dd1dd537f; archive=sha256:fd5a9e09e5541de9f207417c1a916f1450b233996af2dab1d02240b8756dffb0; binary=sha256:ea31a8f18825276df3ef3481523081c32039f17b024687e15aa2679a3e9e1b9b; built_at=2026-08-03T11:38:42Z"
+      "details": "source=ca072b625b2a781e31855a0a66c528c261c0f15d; archive=sha256:7b040a226e9d5771409331cbd938cfbdfd422ee34d012c1c9a350fcdb1c403ce; binary=sha256:d8e8d0b374a3fa18ceb0a1a076d9d485b50f2fdce9c2446592a5550868dca924; built_at=2026-08-03T11:58:09Z"
     },
     "migration_and_rollback": {
       "status": "passed",
@@ -88,6 +88,6 @@
     "prohibited_content_count": 0
   },
   "conclusion": "blocked",
-  "started_at": "2026-08-03T11:38:42Z",
-  "finished_at": "2026-08-03T11:39:10Z"
+  "started_at": "2026-08-03T11:58:09Z",
+  "finished_at": "2026-08-03T11:58:40Z"
 }
