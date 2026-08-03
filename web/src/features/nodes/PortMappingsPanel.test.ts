@@ -74,17 +74,21 @@ describe("PortMappingsPanel", () => {
 
     await wrapper.find("select").setValue("http");
     await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("高级设置"))!
+      .trigger("click");
+    await wrapper
       .find('button[title="通过 QEMU Guest Agent 自动探测 IPv4"]')
       .trigger("click");
     await flushPromises();
 
     expect(
-      wrapper.find<HTMLInputElement>('input[placeholder="10.10.0.100"]').element
+      wrapper.find<HTMLInputElement>('input[placeholder="自动识别"]').element
         .value,
     ).toBe("10.77.30.10");
     await wrapper
       .findAll("button")
-      .find((button) => button.text().includes("发布端口"))!
+      .find((button) => button.text().includes("保存并生效"))!
       .trigger("click");
     await flushPromises();
 
@@ -92,7 +96,7 @@ describe("PortMappingsPanel", () => {
       "node-1",
       expect.objectContaining({
         protocol: "tcp",
-        host_port: 8080,
+        host_port: 0,
         guest_address: "10.77.30.10",
         guest_port: 80,
       }),

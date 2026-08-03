@@ -244,11 +244,11 @@ function openAccess(mapping: PortMapping) {
 
 async function writeClipboard(value: string) {
   if (navigator.clipboard?.writeText) {
-    try {
-      await navigator.clipboard.writeText(value);
-      return;
-    } catch {
-    }
+    const copied = await navigator.clipboard.writeText(value).then(
+      () => true,
+      () => false,
+    );
+    if (copied) return;
   }
   const textarea = document.createElement("textarea");
   textarea.value = value;

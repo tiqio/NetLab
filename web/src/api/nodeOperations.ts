@@ -68,9 +68,7 @@ export const nodeOperationsApi = {
       }),
     }).then(decode<{ task: OperationTask }>),
   listMappings: (nodeId: string) =>
-    fetch(`/api/v1/nodes/${nodeId}/port-mappings`).then(
-      decode<PortMapping[]>,
-    ),
+    fetch(`/api/v1/nodes/${nodeId}/port-mappings`).then(decode<PortMapping[]>),
   createMapping: (
     nodeId: string,
     value: Omit<PortMapping, "id" | "node_id" | "observed_state">,

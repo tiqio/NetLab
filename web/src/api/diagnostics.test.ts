@@ -24,11 +24,7 @@ describe("wiresharkCommand", () => {
   });
 
   it("builds a pipefail-enabled Unix command with macOS fallback", () => {
-    const command = wiresharkCommand(
-      "capture-1",
-      "http://netlab.test",
-      "unix",
-    );
+    const command = wiresharkCommand("capture-1", "http://netlab.test", "unix");
     expect(command).toContain("set -o pipefail");
     expect(command).toContain("command -v wireshark");
     expect(command).toContain("/Applications/Wireshark.app");
@@ -37,7 +33,11 @@ describe("wiresharkCommand", () => {
 
   it("rejects unsafe capture identifiers", () => {
     expect(() =>
-      wiresharkCommand("capture-1;Remove-Item", "http://netlab.test", "windows"),
+      wiresharkCommand(
+        "capture-1;Remove-Item",
+        "http://netlab.test",
+        "windows",
+      ),
     ).toThrow("Invalid resource identifier");
   });
 });

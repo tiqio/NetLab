@@ -41,7 +41,8 @@ function cancel() {
     v-model="open"
     :title="title || 'Choose interface'"
     :description="
-      description || 'Select one available interface, then confirm the connection.'
+      description ||
+      'Select one available interface, then confirm the connection.'
     "
   >
     <div

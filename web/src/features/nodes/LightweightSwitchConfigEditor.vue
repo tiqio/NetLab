@@ -174,7 +174,10 @@ watch(
           type="button"
           size="sm"
           variant="destructive"
-          @click="l2Ports.splice(index, 1); publish()"
+          @click="
+            l2Ports.splice(index, 1);
+            publish();
+          "
         >
           删除端口
         </Button>
@@ -208,17 +211,15 @@ watch(
           type="button"
           size="sm"
           variant="destructive"
-          @click="l3Interfaces.splice(index, 1); publish()"
+          @click="
+            l3Interfaces.splice(index, 1);
+            publish();
+          "
         >
           删除接口
         </Button>
       </div>
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        @click="addL3Interface"
-      >
+      <Button type="button" size="sm" variant="outline" @click="addL3Interface">
         添加三层接口
       </Button>
       <div
@@ -254,7 +255,10 @@ watch(
           type="button"
           size="sm"
           variant="destructive"
-          @click="l3Routes.splice(index, 1); publish()"
+          @click="
+            l3Routes.splice(index, 1);
+            publish();
+          "
         >
           删除路由
         </Button>

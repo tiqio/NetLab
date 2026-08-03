@@ -55,7 +55,8 @@ export function validateLightweightSwitchConfig(
     for (const raw of ports) {
       const port = raw as { name?: string; pvid?: number; tagged?: number[] };
       const name = String(port.name || "");
-      if (!namePattern.test(name)) errors.push(`端口名称 ${name || "(空)"} 无效。`);
+      if (!namePattern.test(name))
+        errors.push(`端口名称 ${name || "(空)"} 无效。`);
       if (names.has(name)) errors.push(`端口名称 ${name} 重复。`);
       names.add(name);
       const pvid = Number(port.pvid || 0);
@@ -78,11 +79,13 @@ export function validateLightweightSwitchConfig(
     for (const raw of interfaces) {
       const iface = raw as { name?: string; addresses?: string[] };
       const name = String(iface.name || "");
-      if (!namePattern.test(name)) errors.push(`接口名称 ${name || "(空)"} 无效。`);
+      if (!namePattern.test(name))
+        errors.push(`接口名称 ${name || "(空)"} 无效。`);
       if (names.has(name)) errors.push(`接口名称 ${name} 重复。`);
       names.add(name);
       for (const address of iface.addresses || [])
-        if (!address.includes("/")) errors.push(`${address} 必须使用 CIDR 格式。`);
+        if (!address.includes("/"))
+          errors.push(`${address} 必须使用 CIDR 格式。`);
     }
     for (const raw of Array.isArray(config.routes) ? config.routes : []) {
       const route = raw as {
@@ -92,7 +95,8 @@ export function validateLightweightSwitchConfig(
       };
       if (!String(route.destination || "").includes("/"))
         errors.push("路由目标必须使用 CIDR 格式。");
-      if (Number(route.metric || 0) < 0) errors.push("路由 Metric 不能为负数。");
+      if (Number(route.metric || 0) < 0)
+        errors.push("路由 Metric 不能为负数。");
     }
   }
   return errors;

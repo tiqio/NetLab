@@ -152,9 +152,7 @@ onBeforeUnmount(() => {
         </span>
       </div>
       <p class="mt-1 text-xs text-muted-foreground">
-        {{
-          routeReadiness.routes.length
-        }}
+        {{ routeReadiness.routes.length }}
         条声明；启动和恢复时会在容器网络命名空间内精确收敛。
       </p>
       <ul class="mt-2 grid gap-1 text-xs">

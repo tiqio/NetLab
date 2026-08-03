@@ -13,7 +13,9 @@ import StatusBadge from "@/components/common/StatusBadge.vue";
 
 const props = defineProps<{ node: Node; interfaces: NodeInterface[] }>();
 const emit = defineEmits<{ terminal: []; changed: [] }>();
-const templateKey = computed(() => String(props.node.config?.template_key || ""));
+const templateKey = computed(() =>
+  String(props.node.config?.template_key || ""),
+);
 const isSwitch = computed(() => templateKey.value === "ruijie-switch");
 const dataInterfaces = computed(() =>
   props.interfaces.filter((item) => !item.name.startsWith("internal")),
@@ -58,7 +60,11 @@ const canApply = computed(
 watch(
   () => [props.node.id, props.interfaces],
   () => {
-    if (!dataInterfaces.value.some((item) => item.name === selectedInterface.value))
+    if (
+      !dataInterfaces.value.some(
+        (item) => item.name === selectedInterface.value,
+      )
+    )
       selectedInterface.value = dataInterfaces.value[0]?.name || "";
   },
   { immediate: true, deep: true },
@@ -133,21 +139,35 @@ async function applyConfiguration() {
       </div>
     </div>
 
-    <p v-if="internalInterfaces.length" class="mt-2 text-[10px] text-muted-foreground">
-      {{ internalInterfaces.length }} 个内部 TIPC 控制口已隐藏，不能用于拓扑接线。
+    <p
+      v-if="internalInterfaces.length"
+      class="mt-2 text-[10px] text-muted-foreground"
+    >
+      {{ internalInterfaces.length }} 个内部 TIPC
+      控制口已隐藏，不能用于拓扑接线。
     </p>
 
-    <div class="mt-3 grid gap-2 rounded-md border border-border bg-muted/10 p-2.5">
+    <div
+      class="mt-3 grid gap-2 rounded-md border border-border bg-muted/10 p-2.5"
+    >
       <FormField label="常用操作">
         <Select v-model="operation" data-testid="ruijie-operation">
-          <option v-for="item in operations" :key="item.value" :value="item.value">
+          <option
+            v-for="item in operations"
+            :key="item.value"
+            :value="item.value"
+          >
             {{ item.label }}
           </option>
         </Select>
       </FormField>
       <FormField v-if="requiresInterface" label="目标接口">
         <Select v-model="selectedInterface" data-testid="ruijie-interface">
-          <option v-for="item in dataInterfaces" :key="item.id" :value="item.name">
+          <option
+            v-for="item in dataInterfaces"
+            :key="item.id"
+            :value="item.name"
+          >
             {{ item.name }} · {{ item.mac_address }}
           </option>
         </Select>
@@ -184,16 +204,27 @@ async function applyConfiguration() {
       <Button size="sm" :disabled="!canApply" @click="applyConfiguration">
         {{ busy ? "正在下发…" : "应用配置" }}
       </Button>
-      <p v-if="node.observed_state !== 'running'" class="text-xs text-amber-300">
+      <p
+        v-if="node.observed_state !== 'running'"
+        class="text-xs text-amber-300"
+      >
         请先启动交换机，再应用 CLI 配置。
       </p>
-      <p v-if="error" role="alert" class="text-xs text-destructive">{{ error }}</p>
-      <p v-if="success" role="status" class="flex items-center gap-1 text-xs text-emerald-300">
+      <p v-if="error" role="alert" class="text-xs text-destructive">
+        {{ error }}
+      </p>
+      <p
+        v-if="success"
+        role="status"
+        class="flex items-center gap-1 text-xs text-emerald-300"
+      >
         <CheckCircle2 :size="13" /> {{ success }}
       </p>
       <details v-if="commands.length" class="text-[11px] text-muted-foreground">
         <summary class="cursor-pointer">查看已下发命令</summary>
-        <pre class="mt-1 overflow-auto rounded bg-background p-2">{{ commands.join("\n") }}</pre>
+        <pre class="mt-1 overflow-auto rounded bg-background p-2">{{
+          commands.join("\n")
+        }}</pre>
       </details>
     </div>
   </section>

@@ -70,7 +70,9 @@ const option = computed(() => {
   const scopeLinks = props.scopeLinks || [];
   const scopeLinkById = new Map(scopeLinks.map((link) => [link.id, link]));
   const resourceId = (item: TrafficObservation) =>
-    props.interfaceOwners?.[item.interface_id] || item.interface_id || undefined;
+    props.interfaceOwners?.[item.interface_id] ||
+    item.interface_id ||
+    undefined;
   const macOwner = (value?: string) =>
     value ? props.macOwners?.[value.toLowerCase()] : undefined;
   const groups = new Map<string, TrafficObservation[]>();
@@ -227,8 +229,9 @@ const option = computed(() => {
       if (!source || !target || source === target) continue;
       const key = `${source}>${target}`;
       const item =
-        observations.find((observation) => resourceId(observation) === target) ||
-        ordered[Math.min(index, ordered.length - 1)];
+        observations.find(
+          (observation) => resourceId(observation) === target,
+        ) || ordered[Math.min(index, ordered.length - 1)];
       const edge = edges.get(key) || {
         source,
         target,
@@ -304,8 +307,7 @@ const option = computed(() => {
           const observed = observedNodeIds.has(id);
           return {
             id,
-            name:
-              scopeNode?.label || props.resourceLabels?.[id] || id,
+            name: scopeNode?.label || props.resourceLabels?.[id] || id,
             x: scopeNode?.x ?? props.coordinates?.[id]?.x,
             y: scopeNode?.y ?? props.coordinates?.[id]?.y,
             symbolSize: 52,
@@ -420,7 +422,9 @@ const option = computed(() => {
       >
         <span>
           Session:
-          <time :datetime="sessionStartedAt">{{ formatTimestamp(sessionStartedAt) }}</time>
+          <time :datetime="sessionStartedAt">{{
+            formatTimestamp(sessionStartedAt)
+          }}</time>
           →
           <span v-if="listening" class="text-teal-300">running</span>
           <time v-else-if="sessionFinishedAt" :datetime="sessionFinishedAt">
@@ -430,9 +434,13 @@ const option = computed(() => {
         </span>
         <span v-if="observedTimeRange">
           Matched traffic:
-          <time :datetime="observedTimeRange.first">{{ formatTimestamp(observedTimeRange.first) }}</time>
+          <time :datetime="observedTimeRange.first">{{
+            formatTimestamp(observedTimeRange.first)
+          }}</time>
           →
-          <time :datetime="observedTimeRange.last">{{ formatTimestamp(observedTimeRange.last) }}</time>
+          <time :datetime="observedTimeRange.last">{{
+            formatTimestamp(observedTimeRange.last)
+          }}</time>
         </span>
         <span v-else>No matching packet timestamps yet.</span>
       </div>

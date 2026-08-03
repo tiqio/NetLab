@@ -148,7 +148,9 @@ function iconFor(name: string) {
               kind: 'qemu',
               name: item.name,
               template: item.template,
-              version: item.template?.versions.find((version) => version.enabled),
+              version: item.template?.versions.find(
+                (version) => version.enabled,
+              ),
             })
           "
         >
