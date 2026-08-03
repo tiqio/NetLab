@@ -399,6 +399,18 @@ func (m *CaptureManager) StopWithReason(id domain.ID, reason string) (domain.Cap
 	worker := value.worker
 	m.mu.Unlock()
 	worker.Stop()
+	select {
+	case <-worker.Done():
+		deadline := time.Now().Add(time.Second)
+		for time.Now().Before(deadline) {
+			metadata, getErr := m.Get(id)
+			if getErr != nil || metadata.State != "stopping" {
+				return metadata, getErr
+			}
+			time.Sleep(time.Millisecond)
+		}
+	case <-time.After(2 * time.Second):
+	}
 	return m.Get(id)
 }
 
