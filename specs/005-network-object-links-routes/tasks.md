@@ -106,7 +106,7 @@ metadata, direction, isolation, and activity decay.
 
 ### Tests for User Story 2
 
-- [ ] T032 [P] [US2] Add failing capture-worker tests for namespace execution, cancellation, bounded output, and one-endpoint bidirectional accounting in `internal/runtime/capture/worker_test.go`
+- [X] T032 [P] [US2] Add failing capture-worker tests for namespace execution, cancellation, bounded output, and one-endpoint bidirectional accounting in `internal/runtime/capture/worker_test.go`
 - [ ] T033 [P] [US2] Add failing capture-manager and task tests for `network_object_link` source resolution, retained metadata, stream handles, and restart behavior in `internal/app/reconcile/captures_test.go` and `internal/app/reconcile/capture_tasks_test.go`
 - [ ] T034 [P] [US2] Add failing Traffic Filter tests for explicit object-link scope, endpoint-A-relative directions, ambiguity, parallel-link isolation, and decay in `internal/app/reconcile/traffic_filters_test.go` and `internal/runtime/capture/path_test.go`
 - [ ] T035 [P] [US2] Add failing HTTP/MCP/event contract tests for object-link captures and observations in `tests/contract/network_object_link_observation_contract_test.go`

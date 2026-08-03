@@ -176,3 +176,7 @@
   template count other than the current 8, and `PortMappingsPanel.test.ts` cannot find its QGA preset
   button; repository-wide ESLint/Prettier also report pre-existing errors and unformatted files outside
   this milestone's change set.
+- `cf430d4` (`test: cover namespaced capture workers`): verifies namespace-wrapped capture commands,
+  cancellation of the capture subprocess, retained-stream byte bounds, and exact counting of packets in
+  both directions from one observed endpoint. Full capture-runtime tests and `go vet` passed, completing
+  T032 locally on August 3, 2026.
