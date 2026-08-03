@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "constitution_version": "1.0.0",
   "candidate_id": "object-links-routes-ca072b6-20260803",
-  "generated_at": "2026-07-29T05:13:21Z",
+  "generated_at": "2026-08-03T12:02:33Z",
   "findings": [
     {
       "id": "CONST-BASELINE-01",
@@ -160,7 +160,7 @@
       "principle": "Delivery Workflow and Quality Gates",
       "statement": "Recent lifecycle and frontend fixes must be proven on the designated production instance.",
       "severity": "high",
-      "status": "partial",
+      "status": "verified",
       "owner": "release-reviewer",
       "requirement_ids": [
         "FR-023",
@@ -168,10 +168,10 @@
         "FR-025",
         "FR-026"
       ],
-      "evidence_ids": [],
-      "next_action": "Deploy this candidate authoritatively, complete the interaction/version coverage gate, restore runtime ownership baseline, and rerun the full target-browser aggregate.",
+      "evidence_ids": ["target-object-links-routes-ca072b6-20260803"],
+      "next_action": null,
       "candidate_id": "object-links-routes-ca072b6-20260803",
-      "last_reviewed_at": "2026-07-29T05:13:21Z"
+      "last_reviewed_at": "2026-08-03T12:02:33Z"
     },
     {
       "id": "CONST-GOVERNANCE-11",

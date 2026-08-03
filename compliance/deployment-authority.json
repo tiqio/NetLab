@@ -7,15 +7,15 @@
     {
       "id": "production",
       "role": "authoritative",
-      "listen_address": "10.72.1.159:18082",
+      "listen_address": "10.72.1.7:18082",
       "state_directory": "/var/lib/netlab",
       "database_path": "/var/lib/netlab/netlab.db",
       "service_name": "netlab.service",
-      "candidate_id": "workspace-2026-07-29",
-      "contract_digest": "sha256:0bafb8b0232cd79040cd18f9fa046876f7cdc5ca99a7243690a31d99c963aefb",
+      "candidate_id": "object-links-routes-ca072b6-20260803",
+      "contract_digest": "sha256:3eaffde190cf88ab4db67a6d273d1fc336383865898d0fc9630277f3710adbc0",
       "externally_reachable": true,
       "management_scope": ["10.72.0.0/16"],
-      "verified_at": "2026-07-29T06:29:50Z"
+      "verified_at": "2026-08-03T12:02:33Z"
     },
     {
       "id": "legacy-preview",
@@ -31,5 +31,5 @@
       "verified_at": "2026-07-29T06:29:50Z"
     }
   ],
-  "verified_at": "2026-07-29T06:29:50Z"
+  "verified_at": "2026-08-03T12:02:33Z"
 }

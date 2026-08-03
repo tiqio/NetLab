@@ -25,20 +25,20 @@
       "details": "59 Vitest files and 199 tests passed; production SPA and embedded asset build passed"
     },
     "privileged_integration": {
-      "status": "blocked",
-      "reason": "local privileged Docker dual-stack, object-link path, capture/filter, recovery, race, and leak gates passed; the first target candidate was rolled back after exposing missing L3 hot-port forwarding, and final target acceptance is pending"
+      "status": "passed",
+      "details": "target-host real Docker IPv4/IPv6 static routes, three-object L3 ICMP/TCP/UDP forwarding, exact object-link capture and Traffic Filter direction attribution, parallel-link isolation, and 100-cycle ownership cleanup passed with the pinned BusyBox digest"
     },
     "recovery": {
       "status": "passed",
-      "details": "service recovery, interrupted object-link deletion, namespace adoption, and host-policy tests passed locally"
+      "details": "interrupted object-link deletion, namespace adoption, host-policy tests, and an authoritative netlab.service stop/start recovery completed successfully on 10.72.1.7"
     },
     "security": {
-      "status": "passed",
-      "details": "shell-vector, export redaction, evidence hygiene, systemd bounds, and immutable prebuilt deployment tests passed"
+      "status": "blocked",
+      "reason": "automated shell-vector, export redaction, evidence hygiene, systemd bounds, and immutable deployment tests passed, but the operator has not supplied the required out-of-band credential rotation attestation"
     },
     "leak": {
       "status": "passed",
-      "details": "100-cycle object-link, capture/filter, and managed-route ownership cleanup gate passed locally"
+      "details": "local and target 100-cycle object-link, capture/filter, and managed-route ownership cleanup passed; browser acceptance reported zero remaining owned resources and restored its production baseline"
     },
     "browser": {
       "status": "passed",
@@ -50,37 +50,46 @@
     },
     "migration_and_rollback": {
       "status": "passed",
-      "details": "target schema migrations 1-6 will advance through 12; predeployment binary sha256:8f91a35e246ba575d313912d534bbe6932e1dc286bf4454fce039b026f5d9480; rollback database sha256:63a2586c44f2c5651df624247993bdb68399f2eff66151ef574753fa9f353aa1; rollback artifacts are stored under /var/lib/netlab/backups"
+      "details": "target schema advanced from migrations 1-6 through 12; the first candidate was rolled back using the recorded binary and database artifacts after a mandatory path failure, then the corrected immutable candidate was deployed and verified healthy"
+    },
+    "release_governance": {
+      "status": "blocked",
+      "reason": "feature acceptance passed, but project release remains blocked by unrelated operator-owned credential rotation and genuine VyOS/FancyWAN/FortiGate media evidence"
     }
   },
   "scenario_evidence_ids": [
     "local-object-link-route-gate-20260803",
     "local-browser-dual-viewport-20260803",
-    "target-predeployment-backup-20260803"
+    "target-predeployment-backup-20260803",
+    "target-immutable-deployment-ca072b6-20260803",
+    "target-object-link-route-privileged-ca072b6-20260803",
+    "target-service-restart-ca072b6-20260803",
+    "target-browser-object-link-dual-viewport-ca072b6-20260803",
+    "target-object-links-routes-ca072b6-20260803"
   ],
   "exceptions": [],
   "cleanup_baseline": {
-    "digest": "sha256:c3c71c7534047234c183db68e7a49b8ff08ba69e6cd875119da4b91bb23863e1",
+    "digest": "sha256:a4acc9e94d9fc83707bac254df48c5c4abb8f0ef866a5318a1a417fc8dde3798",
     "resources": {
       "qemu_runtime_directories": 1,
       "nat_runtime_directories": 0,
       "capture_files": 1,
       "network_namespaces": 3,
       "owned_links": 64,
-      "runtime_ownership_records": 35,
-      "unknown_ownership_records": 20
+      "runtime_ownership_records": 85,
+      "unknown_ownership_records": 84
     }
   },
   "cleanup_final": {
-    "digest": "sha256:c3c71c7534047234c183db68e7a49b8ff08ba69e6cd875119da4b91bb23863e1",
+    "digest": "sha256:a4acc9e94d9fc83707bac254df48c5c4abb8f0ef866a5318a1a417fc8dde3798",
     "resources": {
       "qemu_runtime_directories": 1,
       "nat_runtime_directories": 0,
       "capture_files": 1,
       "network_namespaces": 3,
       "owned_links": 64,
-      "runtime_ownership_records": 35,
-      "unknown_ownership_records": 20
+      "runtime_ownership_records": 85,
+      "unknown_ownership_records": 84
     }
   },
   "redaction_result": {
@@ -89,5 +98,5 @@
   },
   "conclusion": "blocked",
   "started_at": "2026-08-03T11:58:09Z",
-  "finished_at": "2026-08-03T11:58:40Z"
+  "finished_at": "2026-08-03T12:02:33Z"
 }

@@ -335,11 +335,10 @@
   `sha256:d8e8d0b374a3fa18ceb0a1a076d9d485b50f2fdce9c2446592a5550868dca924`;
   and the combined contract digest is
   `sha256:3eaffde190cf88ab4db67a6d273d1fc336383865898d0fc9630277f3710adbc0`.
-- The target database currently records migrations 1 through 6. The candidate contains migrations 1
-  through 12. Before deployment, the existing 7.1 GiB SQLite database passed `PRAGMA integrity_check`
+- The target database advanced from migrations 1 through 6 to migrations 1 through 12. Before deployment,
+  the existing 7.1 GiB SQLite database passed `PRAGMA integrity_check`
   after online backup, and the existing binary and database were copied into the target's protected
-  `/var/lib/netlab/backups` directory with SHA-256 sidecars. The aggregate evidence remains `blocked`
-  until target deployment and acceptance complete.
+  `/var/lib/netlab/backups` directory with SHA-256 sidecars.
 - The first target candidate, `object-links-routes-6fec815-20260803`, was rolled back after the genuine
   three-object path exposed that a newly hot-added L3 veth port did not inherit the object's forwarding
   policy. Commit `580d4d9` applies IPv4 and IPv6 forwarding to each arriving L3 port. Commit `abe9a14`
@@ -350,3 +349,19 @@
   object-link browser journeys then passed on the target in both desktop and minimum viewports, including
   shared-client convergence, parallel-link isolation, live deletion, immediate port reuse, refresh, and
   acceptance-ledger cleanup back to the production baseline.
+
+## Target Acceptance
+
+- The immutable candidate was deployed to the authoritative `netlab.service` on `10.72.1.7:18082` at
+  August 3, 2026 11:59:21 UTC. The installed binary and capability endpoint report the recorded candidate,
+  binary digest, contract digest, and build time, and the service is active with migrations 1 through 12.
+- Target privileged gates passed for Docker IPv4/IPv6 static routes, three-object L3 ICMP/TCP/UDP traffic,
+  exact object-link capture and Traffic Filter direction attribution, parallel-link isolation, 100 cleanup
+  cycles, interrupted deletion recovery, ownership recovery, and authoritative service restart.
+- The final target browser run passed all six selected object-link journeys across desktop and minimum
+  viewports. It created and observed shared paths in two clients, isolated parallel-link capture/filter
+  scope, deleted a live link, reused its ports immediately, refreshed both clients, and reported zero
+  remaining acceptance-owned resources with the production baseline restored.
+- The feature acceptance conclusion is `passed`. The broader constitution ledger remains `not_ready`
+  because unrelated operator-owned credential rotation and genuine VyOS/FancyWAN/FortiGate media gates
+  remain blocked; those items are outside this feature's implementation scope.

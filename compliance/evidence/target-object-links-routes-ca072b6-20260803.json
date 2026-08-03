@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "id": "target-object-links-routes-ca072b6-20260803",
+  "kind": "integration",
+  "status": "accepted",
+  "candidate_id": "object-links-routes-ca072b6-20260803",
+  "release_version": "0.5.1-ca072b6",
+  "binary_digest": "sha256:d8e8d0b374a3fa18ceb0a1a076d9d485b50f2fdce9c2446592a5550868dca924",
+  "contract_digest": "sha256:3eaffde190cf88ab4db67a6d273d1fc336383865898d0fc9630277f3710adbc0",
+  "scope_digest": "sha256:864493f4d73337b6dd0535c26f293b98d7ac129dd581afa5aa22adfc1908d8ca",
+  "finding_ids": ["CONST-ROLLOUT-10"],
+  "procedure": "Deploy the immutable prebuilt candidate to the authoritative service, validate release identity and migrations, run isolated privileged Docker route and network-object-link paths, restart the service, and run the three object-link browser journeys in desktop and minimum viewports with acceptance-ledger cleanup.",
+  "target": {
+    "host_id": "netlab-target-host",
+    "platform": "linux-x86_64",
+    "authoritative_endpoint": "10.72.1.7:18082",
+    "service_name": "netlab.service",
+    "sqlite_migrations": "1-12",
+    "browser_viewports": ["1920x1080", "1024x768"]
+  },
+  "started_at": "2026-08-03T11:59:19Z",
+  "finished_at": "2026-08-03T12:02:33Z",
+  "outcome": "passed",
+  "cleanup": {
+    "baseline_restored": true,
+    "remaining_count": 0
+  },
+  "redaction": {
+    "passed": true,
+    "prohibited_content_count": 0
+  },
+  "artifacts": [
+    {
+      "kind": "acceptance-procedure",
+      "path": "specs/005-network-object-links-routes/quickstart.md",
+      "digest": "sha256:864493f4d73337b6dd0535c26f293b98d7ac129dd581afa5aa22adfc1908d8ca",
+      "contains_binary_payload": false
+    },
+    {
+      "kind": "deployment-inventory",
+      "path": "compliance/deployment-authority.json",
+      "digest": "sha256:136e6bdb64b8e3ed7395a9af729be94ce500eb611ff1141a5afc181679229e51",
+      "contains_binary_payload": false
+    }
+  ]
+}
