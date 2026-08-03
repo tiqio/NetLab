@@ -9,6 +9,7 @@ import type {
   Link,
   NetworkObject,
   NetworkObjectLink,
+  NetworkObjectLinkTaskEnvelope,
   Node,
   NodeInterface,
   OperationTask,
@@ -344,9 +345,13 @@ export const generatedApi = {
       port_b_name: string;
     },
   ) =>
-    request<NetworkObjectLink>(`/labs/${labId}/network-object-links`, "POST", {
-      body,
-    }),
+    request<NetworkObjectLinkTaskEnvelope>(
+      `/labs/${labId}/network-object-links`,
+      "POST",
+      { body },
+    ),
+  getNetworkObjectLink: (linkId: string) =>
+    request<NetworkObjectLink>(`/network-object-links/${linkId}`),
   deleteNetworkObjectLink: (linkId: string) =>
     request<void>(`/network-object-links/${linkId}`, "DELETE"),
   getNetworkObjectDiagnostics: (objectId: string) =>

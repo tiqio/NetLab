@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
+import type { NetworkObject, NetworkObjectLink } from "@/api";
 import { interfaceFactory, linkFactory, nodeFactory } from "@/test/factories";
 import {
   linkDisplayName,
+  networkObjectLinkDisplayName,
   parallelLinkCurveness,
+  parallelNetworkObjectLinkCurveness,
 } from "./linkPresentation";
 
 describe("link presentation", () => {
@@ -48,5 +51,60 @@ describe("link presentation", () => {
     expect(first).toBeLessThan(0);
     expect(second).toBeGreaterThan(0);
     expect(Math.abs(first)).toBeCloseTo(Math.abs(second));
+  });
+
+  it("labels and separates parallel network-object links", () => {
+    const objects: NetworkObject[] = [
+      {
+        id: "a",
+        name: "Switch A",
+        kind: "switch_l2",
+        laboratory_id: "lab",
+        revision: 1,
+        desired_state: "active",
+        observed_state: "active",
+        config: {},
+      },
+      {
+        id: "b",
+        name: "Switch B",
+        kind: "switch_l2",
+        laboratory_id: "lab",
+        revision: 1,
+        desired_state: "active",
+        observed_state: "active",
+        config: {},
+      },
+    ];
+    const links: NetworkObjectLink[] = [
+      {
+        id: "link-1",
+        laboratory_id: "lab",
+        object_a_id: "a",
+        port_a_name: "swp1",
+        object_b_id: "b",
+        port_b_name: "swp1",
+        revision: 1,
+        desired_state: "connected",
+        observed_state: "connected",
+      },
+      {
+        id: "link-2",
+        laboratory_id: "lab",
+        object_a_id: "a",
+        port_a_name: "swp2",
+        object_b_id: "b",
+        port_b_name: "swp2",
+        revision: 1,
+        desired_state: "connected",
+        observed_state: "connected",
+      },
+    ];
+    expect(networkObjectLinkDisplayName(links[0], objects)).toBe(
+      "Switch A:swp1 ↔ Switch B:swp1",
+    );
+    expect(parallelNetworkObjectLinkCurveness(links[0], links)).not.toBe(
+      parallelNetworkObjectLinkCurveness(links[1], links),
+    );
   });
 });

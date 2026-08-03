@@ -22,10 +22,7 @@ import LightweightNodeEditor from "@/features/nodes/LightweightNodeEditor.vue";
 import LightweightSwitchConfigurationPanel from "@/features/nodes/LightweightSwitchConfigurationPanel.vue";
 import ResourceCharts from "@/features/analytics/ResourceCharts.vue";
 import ConfirmationDialog from "@/components/common/ConfirmationDialog.vue";
-import {
-  linkDisplayName,
-  linkEndpointName,
-} from "./linkPresentation";
+import { linkDisplayName, linkEndpointName } from "./linkPresentation";
 
 const props = withDefaults(
   defineProps<{
@@ -43,7 +40,12 @@ const props = withDefaults(
     showLightweight?: boolean;
     diagnosticsRequestKey?: number;
   }>(),
-  { nodes: () => [], networkObjects: () => [], attachments: () => [], networkObjectLinks: () => [] },
+  {
+    nodes: () => [],
+    networkObjects: () => [],
+    attachments: () => [],
+    networkObjectLinks: () => [],
+  },
 );
 const emit = defineEmits<{
   changed: [];
@@ -62,6 +64,7 @@ const attachTagged = ref("");
 const objectLinkPeerId = ref("");
 const objectLinkLocalPort = ref("");
 const objectLinkPeerPort = ref("");
+const objectLinkStatus = ref("");
 const diagnostics = ref<Record<string, unknown>>();
 const diagnosticsLoading = ref(false);
 const error = ref("");
@@ -83,9 +86,7 @@ const endpointBName = computed(() =>
     : "",
 );
 const selectedLinkName = computed(() =>
-  props.link
-    ? linkDisplayName(props.link, props.interfaces, props.nodes)
-    : "",
+  props.link ? linkDisplayName(props.link, props.interfaces, props.nodes) : "",
 );
 const attachmentInterface = computed(() =>
   props.interfaces.find((item) => item.id === props.attachment?.interface_id),
@@ -98,8 +99,16 @@ const attachmentObject = computed(() =>
     (item) => item.id === props.attachment?.network_object_id,
   ),
 );
-const objectLinkA = computed(() => props.networkObjects.find((item) => item.id === props.networkObjectLink?.object_a_id));
-const objectLinkB = computed(() => props.networkObjects.find((item) => item.id === props.networkObjectLink?.object_b_id));
+const objectLinkA = computed(() =>
+  props.networkObjects.find(
+    (item) => item.id === props.networkObjectLink?.object_a_id,
+  ),
+);
+const objectLinkB = computed(() =>
+  props.networkObjects.find(
+    (item) => item.id === props.networkObjectLink?.object_b_id,
+  ),
+);
 const attachedInterfaceIds = computed(
   () => new Set(props.attachments.map((item) => item.interface_id)),
 );
@@ -118,7 +127,8 @@ const selectedObjectAttachments = computed(() =>
 );
 const configuredAttachmentPorts = computed(() => {
   const value = props.networkObject;
-  if (!value) return [] as Array<{ name: string; pvid?: number; tagged?: number[] }>;
+  if (!value)
+    return [] as Array<{ name: string; pvid?: number; tagged?: number[] }>;
   const rows =
     value.kind === "switch_l2"
       ? value.config?.ports
@@ -137,13 +147,28 @@ const configuredAttachmentPorts = computed(() => {
 });
 function objectPorts(value?: NetworkObject) {
   if (!value) return [];
-  const rows = value.kind === "switch_l2" ? value.config?.ports : value.kind === "switch_l3" || value.kind === "pc" ? value.config?.interfaces : [];
-  return Array.isArray(rows) ? rows.map((raw) => String((raw as { name?: string }).name || "")).filter(Boolean) : [];
+  const rows =
+    value.kind === "switch_l2"
+      ? value.config?.ports
+      : value.kind === "switch_l3" || value.kind === "pc"
+        ? value.config?.interfaces
+        : [];
+  return Array.isArray(rows)
+    ? rows
+        .map((raw) => String((raw as { name?: string }).name || ""))
+        .filter(Boolean)
+    : [];
 }
 const objectLinkPeers = computed(() =>
-  props.networkObjects.filter((item) => item.id !== props.networkObject?.id && ["pc", "switch_l2", "switch_l3"].includes(item.kind)),
+  props.networkObjects.filter(
+    (item) =>
+      item.id !== props.networkObject?.id &&
+      ["pc", "switch_l2", "switch_l3"].includes(item.kind),
+  ),
 );
-const objectLinkPeer = computed(() => props.networkObjects.find((item) => item.id === objectLinkPeerId.value));
+const objectLinkPeer = computed(() =>
+  props.networkObjects.find((item) => item.id === objectLinkPeerId.value),
+);
 const objectLinkPeerPorts = computed(() => objectPorts(objectLinkPeer.value));
 const objectLinkLocalPorts = computed(() => objectPorts(props.networkObject));
 const attachmentRows = computed(() =>
@@ -279,7 +304,9 @@ watch(attachNode, () => {
   attachInterface.value = "";
 });
 watch(attachPortName, (name) => {
-  const port = configuredAttachmentPorts.value.find((item) => item.name === name);
+  const port = configuredAttachmentPorts.value.find(
+    (item) => item.name === name,
+  );
   attachPVID.value = port?.pvid ?? 1;
   attachTagged.value = (port?.tagged || []).join(",");
 });
@@ -308,14 +335,28 @@ async function attach() {
   emit("changed");
 }
 async function createObjectLink() {
-  if (!props.networkObject || !objectLinkPeerId.value || !objectLinkLocalPort.value || !objectLinkPeerPort.value) return;
-  await api.createNetworkObjectLink(props.laboratoryId, {
-    object_a_id: props.networkObject.id,
-    port_a_name: objectLinkLocalPort.value,
-    object_b_id: objectLinkPeerId.value,
-    port_b_name: objectLinkPeerPort.value,
-  });
-  emit("changed");
+  if (
+    !props.networkObject ||
+    !objectLinkPeerId.value ||
+    !objectLinkLocalPort.value ||
+    !objectLinkPeerPort.value
+  )
+    return;
+  error.value = "";
+  try {
+    objectLinkStatus.value = "正在提交对象链路任务…";
+    const envelope = await api.createNetworkObjectLink(props.laboratoryId, {
+      object_a_id: props.networkObject.id,
+      port_a_name: objectLinkLocalPort.value,
+      object_b_id: objectLinkPeerId.value,
+      port_b_name: objectLinkPeerPort.value,
+    });
+    objectLinkStatus.value = `对象链路任务已提交 · ${envelope.task.id}`;
+    emit("changed");
+  } catch (value) {
+    objectLinkStatus.value = "";
+    error.value = value instanceof Error ? value.message : String(value);
+  }
 }
 async function deleteObjectLink() {
   if (!props.networkObjectLink) return;
@@ -445,16 +486,50 @@ async function deleteObjectLink() {
     <template v-else-if="networkObjectLink">
       <section class="panel-section">
         <div class="flex items-center justify-between gap-2">
-          <ResourceIdentity :id="networkObjectLink.id" type="network object link" />
+          <ResourceIdentity
+            :id="networkObjectLink.id"
+            type="network object link"
+          />
           <StatusBadge :state="networkObjectLink.observed_state" />
         </div>
         <dl>
-          <dt>端点 A</dt><dd>{{ objectLinkA?.name || networkObjectLink.object_a_id }}:{{ networkObjectLink.port_a_name }}</dd>
-          <dt>端点 B</dt><dd>{{ objectLinkB?.name || networkObjectLink.object_b_id }}:{{ networkObjectLink.port_b_name }}</dd>
-          <dt>状态</dt><dd>{{ networkObjectLink.observed_state }}</dd>
+          <dt>端点 A</dt>
+          <dd>
+            {{ objectLinkA?.name || networkObjectLink.object_a_id }}:{{
+              networkObjectLink.port_a_name
+            }}
+          </dd>
+          <dt>端点 B</dt>
+          <dd>
+            {{ objectLinkB?.name || networkObjectLink.object_b_id }}:{{
+              networkObjectLink.port_b_name
+            }}
+          </dd>
+          <dt>期望状态</dt>
+          <dd>{{ networkObjectLink.desired_state }}</dd>
+          <dt>实际状态</dt>
+          <dd>{{ networkObjectLink.observed_state }}</dd>
+          <dt>Revision</dt>
+          <dd>{{ networkObjectLink.revision }}</dd>
         </dl>
-        <p class="mt-3 rounded border border-primary/30 bg-primary/5 p-2 text-xs text-muted-foreground">该链路具有独立宿主桥，可直接抓包、运行 Traffic Filter，并可在两端运行时实时删除。</p>
-        <Button class="mt-3" variant="destructive" size="sm" @click="deleteObjectLink"><Trash2 :size="14" /> 实时删除链路</Button>
+        <StructuredProblem
+          v-if="networkObjectLink.last_error"
+          class="mt-3"
+          :problem="networkObjectLink.last_error"
+        />
+        <p
+          class="mt-3 rounded border border-primary/30 bg-primary/5 p-2 text-xs text-muted-foreground"
+        >
+          该链路使用直接 veth pair 连接两个网络命名空间，可抓包、运行 Traffic
+          Filter，并可在两端运行时实时删除。
+        </p>
+        <Button
+          class="mt-3"
+          variant="destructive"
+          size="sm"
+          @click="deleteObjectLink"
+          ><Trash2 :size="14" /> 实时删除链路</Button
+        >
       </section>
     </template>
     <template v-else-if="attachment">
@@ -468,14 +543,25 @@ async function deleteObjectLink() {
         </div>
         <dl>
           <dt>节点接口</dt>
-          <dd>{{ attachmentNode?.name || "Unknown node" }}:{{ attachmentInterface?.name || attachment.interface_id }}</dd>
+          <dd>
+            {{ attachmentNode?.name || "Unknown node" }}:{{
+              attachmentInterface?.name || attachment.interface_id
+            }}
+          </dd>
           <dt>网络端口</dt>
-          <dd>{{ attachmentObject?.name || attachment.network_object_id }}:{{ attachment.port_name || "port" }}</dd>
+          <dd>
+            {{ attachmentObject?.name || attachment.network_object_id }}:{{
+              attachment.port_name || "port"
+            }}
+          </dd>
           <dt>监听接口</dt>
           <dd>{{ attachment.interface_id }}</dd>
         </dl>
-        <p class="mt-3 rounded border border-primary/30 bg-primary/5 p-2 text-xs text-muted-foreground">
-          此附件链路通过节点宿主接口监听。打开底部 Capture 或 Traffic Filter，即可监控节点与 Lightweight 网络对象之间的流量。
+        <p
+          class="mt-3 rounded border border-primary/30 bg-primary/5 p-2 text-xs text-muted-foreground"
+        >
+          此附件链路通过节点宿主接口监听。打开底部 Capture 或 Traffic
+          Filter，即可监控节点与 Lightweight 网络对象之间的流量。
         </p>
       </section>
     </template>
@@ -572,13 +658,61 @@ async function deleteObjectLink() {
         :network-object="networkObject"
         @changed="$emit('changed')"
       />
-      <section v-if="['pc', 'switch_l2', 'switch_l3'].includes(networkObject.kind)" class="panel-section">
+      <section
+        v-if="['pc', 'switch_l2', 'switch_l3'].includes(networkObject.kind)"
+        class="panel-section"
+      >
         <h3><Cable :size="13" class="inline" /> 连接 Lightweight 网络对象</h3>
         <div class="grid gap-2">
-          <FormField label="本端端口"><Select v-model="objectLinkLocalPort"><option v-for="port in objectLinkLocalPorts" :key="port" :value="port">{{ port }}</option></Select></FormField>
-          <FormField label="目标对象"><Select v-model="objectLinkPeerId"><option value="">选择目标</option><option v-for="item in objectLinkPeers" :key="item.id" :value="item.id">{{ item.name }} · {{ item.kind }}</option></Select></FormField>
-          <FormField label="目标端口"><Select v-model="objectLinkPeerPort"><option v-for="port in objectLinkPeerPorts" :key="port" :value="port">{{ port }}</option></Select></FormField>
-          <Button size="sm" :disabled="!objectLinkPeerId || !objectLinkLocalPort || !objectLinkPeerPort" @click="createObjectLink"><Cable :size="14" /> 创建对象间链路</Button>
+          <FormField label="本端端口"
+            ><Select v-model="objectLinkLocalPort"
+              ><option
+                v-for="port in objectLinkLocalPorts"
+                :key="port"
+                :value="port"
+              >
+                {{ port }}
+              </option></Select
+            ></FormField
+          >
+          <FormField label="目标对象"
+            ><Select v-model="objectLinkPeerId"
+              ><option value="">选择目标</option>
+              <option
+                v-for="item in objectLinkPeers"
+                :key="item.id"
+                :value="item.id"
+              >
+                {{ item.name }} · {{ item.kind }}
+              </option></Select
+            ></FormField
+          >
+          <FormField label="目标端口"
+            ><Select v-model="objectLinkPeerPort"
+              ><option
+                v-for="port in objectLinkPeerPorts"
+                :key="port"
+                :value="port"
+              >
+                {{ port }}
+              </option></Select
+            ></FormField
+          >
+          <Button
+            size="sm"
+            :disabled="
+              !objectLinkPeerId || !objectLinkLocalPort || !objectLinkPeerPort
+            "
+            @click="createObjectLink"
+            ><Cable :size="14" /> 创建对象间链路</Button
+          >
+          <p
+            v-if="objectLinkStatus"
+            role="status"
+            class="text-xs text-muted-foreground"
+          >
+            {{ objectLinkStatus }}
+          </p>
         </div>
       </section>
     </template>

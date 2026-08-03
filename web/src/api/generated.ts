@@ -109,6 +109,11 @@ export interface NetworkObjectLink {
   last_error?: Problem;
 }
 
+export interface NetworkObjectLinkTaskEnvelope {
+  network_object_link: NetworkObjectLink;
+  task: OperationTask;
+}
+
 export interface TopologyPlacement {
   laboratory_id: string;
   resource_id: string;

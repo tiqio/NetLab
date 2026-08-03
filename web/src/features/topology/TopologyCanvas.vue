@@ -18,6 +18,10 @@ import type {
   TrafficObservation,
   TopologyPlacement,
 } from "@/api";
+import {
+  networkObjectLinkDisplayName,
+  parallelNetworkObjectLinkCurveness,
+} from "./linkPresentation";
 import type { WorkspacePreferences } from "@/types/workspace";
 import { resolvePlacements } from "./topologyLayout";
 import { screenToWorld } from "./topologyGeometry";
@@ -59,7 +63,13 @@ const props = withDefaults(
 const emit = defineEmits<{
   select: [
     string,
-    "node" | "link" | "network_object" | "network_attachment" | "network_object_link",
+    (
+      | "node"
+      | "link"
+      | "network_object"
+      | "network_attachment"
+      | "network_object_link"
+    ),
     boolean,
   ];
   interface: [string];
@@ -190,7 +200,10 @@ const selected = computed(() => new Set(props.selectedIds || []));
 const denseTopology = computed(
   () =>
     props.nodes.length >= 80 ||
-    props.links.length + props.networkAttachments.length + props.networkObjectLinks.length >= 200,
+    props.links.length +
+      props.networkAttachments.length +
+      props.networkObjectLinks.length >=
+      200,
 );
 const effectiveLabelDensity = computed(() =>
   denseTopology.value && props.preferences.labelDensity === "comfortable"
@@ -710,9 +723,9 @@ const option = computed(() => ({
                   ? props.trafficColor
                   : attachmentSelected
                     ? "#fde047"
-                  : healthy
-                    ? "#22d3ee"
-                    : "#ef4444",
+                    : healthy
+                      ? "#22d3ee"
+                      : "#ef4444",
                 width: trafficHit || attachmentSelected ? 4 : 2,
                 opacity: trafficHit ? 0.68 : 1,
                 type: healthy ? "dashed" : "dotted",
@@ -731,26 +744,41 @@ const option = computed(() => ({
           ];
         }),
         ...props.networkObjectLinks.map((link) => {
-          const objectA = props.networkObjects.find((item) => item.id === link.object_a_id);
-          const objectB = props.networkObjects.find((item) => item.id === link.object_b_id);
           const hit = trafficLinks.value.get(link.id);
           const selectedLink = selected.value.has(link.id);
           return {
             id: link.id,
             source: link.object_a_id,
             target: link.object_b_id,
-            label: `${objectA?.name || link.object_a_id}:${link.port_a_name} ↔ ${objectB?.name || link.object_b_id}:${link.port_b_name}`,
+            label: networkObjectLinkDisplayName(link, props.networkObjects),
             resourceType: "network_object_link",
             lineStyle: {
-              color: hit ? props.trafficColor : selectedLink ? "#fde047" : link.observed_state === "connected" ? "#38bdf8" : link.observed_state === "pending" ? "#f59e0b" : "#ef4444",
+              color: hit
+                ? props.trafficColor
+                : selectedLink
+                  ? "#fde047"
+                  : link.observed_state === "connected"
+                    ? "#38bdf8"
+                    : link.observed_state === "pending"
+                      ? "#f59e0b"
+                      : "#ef4444",
               width: hit || selectedLink ? 4 : 2,
               opacity: hit ? 0.72 : 1,
               type: link.observed_state === "connected" ? "solid" : "dashed",
-              curveness: 0.1,
-              shadowColor: hit ? props.trafficColor : selectedLink ? "#fde047" : undefined,
+              curveness: parallelNetworkObjectLinkCurveness(
+                link,
+                props.networkObjectLinks,
+              ),
+              shadowColor: hit
+                ? props.trafficColor
+                : selectedLink
+                  ? "#fde047"
+                  : undefined,
               shadowBlur: hit || selectedLink ? 8 : 0,
             },
-            tooltip: { formatter: `${objectA?.name || link.object_a_id}:${link.port_a_name} ↔ ${objectB?.name || link.object_b_id}:${link.port_b_name}<br/>对象间链路 · ${link.observed_state}<br/>可用于抓包和 Traffic Filter` },
+            tooltip: {
+              formatter: `${networkObjectLinkDisplayName(link, props.networkObjects)}<br/>对象间链路 · ${link.observed_state}<br/>可用于抓包和 Traffic Filter`,
+            },
           };
         }),
       ],

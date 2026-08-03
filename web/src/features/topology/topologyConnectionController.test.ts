@@ -49,4 +49,36 @@ describe("TopologyConnectionController", () => {
     expect(controller.cancel()).toEqual({ type: "cancelled" });
     expect(controller.sourceInterfaceId).toBe("");
   });
+
+  it("offers only free named ports for network objects", () => {
+    const controller = new TopologyConnectionController();
+    controller.begin("switch-a:swp1", { x: 10, y: 20 });
+    const choice = controller.dropOnResource("switch-b", [
+      {
+        id: "switch-b:swp1",
+        ownerId: "switch-b",
+        name: "swp1",
+        available: false,
+      },
+      {
+        id: "switch-b:swp2",
+        ownerId: "switch-b",
+        name: "swp2",
+        available: true,
+      },
+      {
+        id: "switch-b:swp3",
+        ownerId: "switch-b",
+        name: "swp3",
+        available: true,
+      },
+    ]);
+    expect(choice).toMatchObject({
+      type: "choose_port",
+      candidates: [
+        { id: "switch-b:swp2", name: "swp2" },
+        { id: "switch-b:swp3", name: "swp3" },
+      ],
+    });
+  });
 });

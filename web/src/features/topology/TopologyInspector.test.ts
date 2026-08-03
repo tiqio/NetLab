@@ -16,6 +16,59 @@ const natObject: NetworkObject = {
 };
 
 describe("TopologyInspector", () => {
+  it("shows authoritative object-link lifecycle and failure", () => {
+    const wrapper = mount(TopologyInspector, {
+      props: {
+        laboratoryId: "lab-1",
+        interfaces: [],
+        networkObjects: [
+          {
+            id: "a",
+            laboratory_id: "lab-1",
+            name: "Switch A",
+            kind: "switch_l2",
+            revision: 1,
+            desired_state: "active",
+            observed_state: "active",
+            config: {},
+          },
+          {
+            id: "b",
+            laboratory_id: "lab-1",
+            name: "Switch B",
+            kind: "switch_l2",
+            revision: 1,
+            desired_state: "active",
+            observed_state: "active",
+            config: {},
+          },
+        ],
+        networkObjectLink: {
+          id: "object-link-1",
+          laboratory_id: "lab-1",
+          object_a_id: "a",
+          port_a_name: "swp1",
+          object_b_id: "b",
+          port_b_name: "swp2",
+          revision: 4,
+          desired_state: "connected",
+          observed_state: "failed",
+          last_error: {
+            code: "runtime_failed",
+            message: "veth endpoint missing",
+          },
+        },
+      },
+    });
+    expect(wrapper.text()).toContain("Switch A:swp1");
+    expect(wrapper.text()).toContain("Switch B:swp2");
+    expect(wrapper.text()).toContain("期望状态");
+    expect(wrapper.text()).toContain("实际状态");
+    expect(wrapper.text()).toContain("veth endpoint missing");
+    expect(wrapper.text()).toContain("直接 veth pair");
+    expect(wrapper.text()).not.toContain("独立宿主桥");
+  });
+
   it("summarizes Docker route readiness and recovery guidance", () => {
     const node: Node = {
       id: "docker-1",

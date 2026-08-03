@@ -1,4 +1,10 @@
-import type { Link, Node, NodeInterface } from "@/api";
+import type {
+  Link,
+  NetworkObject,
+  NetworkObjectLink,
+  Node,
+  NodeInterface,
+} from "@/api";
 
 export function linkEndpointName(
   interfaceId: string,
@@ -9,6 +15,32 @@ export function linkEndpointName(
   if (!interfaceValue) return interfaceId;
   const node = nodes.find((item) => item.id === interfaceValue.node_id);
   return `${node?.name || interfaceValue.node_id}:${interfaceValue.name}`;
+}
+
+export function networkObjectLinkDisplayName(
+  link: NetworkObjectLink,
+  objects: NetworkObject[],
+) {
+  const objectA = objects.find((item) => item.id === link.object_a_id);
+  const objectB = objects.find((item) => item.id === link.object_b_id);
+  return `${objectA?.name || link.object_a_id}:${link.port_a_name} ↔ ${objectB?.name || link.object_b_id}:${link.port_b_name}`;
+}
+
+export function parallelNetworkObjectLinkCurveness(
+  link: NetworkObjectLink,
+  links: NetworkObjectLink[],
+) {
+  const pair = [link.object_a_id, link.object_b_id].sort().join(":");
+  const siblings = links
+    .filter(
+      (item) => [item.object_a_id, item.object_b_id].sort().join(":") === pair,
+    )
+    .sort((left, right) => left.id.localeCompare(right.id));
+  if (siblings.length < 2) return 0.1;
+  const index = siblings.findIndex((item) => item.id === link.id);
+  const spacing = Math.min(0.22, 0.76 / (siblings.length - 1));
+  const offset = (index - (siblings.length - 1) / 2) * spacing;
+  return link.object_a_id <= link.object_b_id ? offset : -offset;
 }
 
 export function linkDisplayName(
