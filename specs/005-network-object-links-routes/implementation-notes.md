@@ -55,3 +55,18 @@
   idempotent across repeated endpoint reconciliation.
 - Focused gate for `26f7ab3`: `go test ./internal/runtime/linuxnet ./internal/runtime/docker
   ./internal/app/command ./internal/store/sqlite -count=1`; all passed locally.
+- `96473ee` (`feat: configure Docker routes through control surfaces`): allows stopped Docker interface
+  settings through HTTP, adds typed Docker route create/settings MCP schemas and mutation support,
+  synchronizes generated TypeScript request types, adds family-aware route editors to node creation and
+  stopped-node Settings, and restores the `listNetworkObjectLinks` generated client operation.
+- Focused gates for `96473ee`: Docker route REST/MCP/generated-client contract tests, HTTP validation
+  tests, `NodeConfigurationPanel` and `CreateTopologyResourceDialog` Vitest suites, frontend build, and
+  changed-file ESLint all passed. Changed-file ESLint reported warnings only. The full contract suite
+  still reports the unrelated built-in template-count baseline failure (`templates=8`).
+- `1ac2be6` (`fix: reapply Docker routes during recovery`): makes the node reconciler invoke the
+  idempotent Docker runtime ensure path for already-running containers during service/host recovery,
+  rejects readiness when endpoint or route reconciliation fails, and covers stopped-container restart.
+- Focused gates for `1ac2be6`: `go test ./internal/runtime/docker ./internal/app/reconcile
+  ./internal/runtime/linuxnet ./internal/api/http ./internal/api/mcp ./internal/store/sqlite
+  ./internal/app/command -count=1`; focused Docker recovery race tests; and Docker route/OpenAPI contract
+  tests. All passed locally.
