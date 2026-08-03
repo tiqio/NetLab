@@ -2,10 +2,12 @@
 
 ## Active Feature
 
-- Specification: `specs/002-constitution-gap-closure/spec.md`
-- Plan: `specs/002-constitution-gap-closure/plan.md`
+- Specification: `specs/005-network-object-links-routes/spec.md`
+- Plan: `specs/005-network-object-links-routes/plan.md`
 - Constitution: `.specify/memory/constitution.md`
-- Contracts: `specs/002-constitution-gap-closure/contracts/`
+- Contracts: `specs/005-network-object-links-routes/contracts/`
+- Governance closure specification: `specs/002-constitution-gap-closure/spec.md`
+- Governance closure plan: `specs/002-constitution-gap-closure/plan.md`
 - Base platform specification: `specs/001-network-simulator-platform/spec.md`
 - Base platform plan: `specs/001-network-simulator-platform/plan.md`
 

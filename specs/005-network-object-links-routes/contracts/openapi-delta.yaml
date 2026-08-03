@@ -1,0 +1,228 @@
+openapi: 3.1.0
+info:
+  title: NetLab Object Link and Docker Route Contract Delta
+  version: 0.1.0
+paths:
+  /api/v1/labs/{labId}/network-object-links:
+    get:
+      operationId: listNetworkObjectLinks
+      parameters:
+        - $ref: '#/components/parameters/LabId'
+      responses:
+        '200':
+          description: Authoritative object links for the laboratory
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/NetworkObjectLink' }
+    post:
+      operationId: createNetworkObjectLink
+      parameters:
+        - $ref: '#/components/parameters/LabId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateNetworkObjectLink' }
+      responses:
+        '202':
+          description: Durable link intent and runtime task accepted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NetworkObjectLinkTaskEnvelope' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/InvalidRequest' }
+  /api/v1/network-object-links/{linkId}:
+    get:
+      operationId: getNetworkObjectLink
+      parameters:
+        - $ref: '#/components/parameters/LinkId'
+      responses:
+        '200':
+          description: Authoritative link state
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NetworkObjectLink' }
+    delete:
+      operationId: deleteNetworkObjectLink
+      parameters:
+        - $ref: '#/components/parameters/LinkId'
+        - $ref: '#/components/parameters/ExpectedRevision'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '202':
+          description: Live deletion accepted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NetworkObjectLinkTaskEnvelope' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/v1/captures:
+    post:
+      operationId: startCapture
+      description: Existing operation extended with network_object_link source type.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/StartCapture' }
+      responses:
+        '202':
+          description: Capture accepted
+  /api/v1/traffic-filters:
+    post:
+      operationId: startTrafficFilter
+      description: Existing operation extended with explicit object-link scope.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/StartTrafficFilter' }
+      responses:
+        '202':
+          description: Filter accepted
+components:
+  parameters:
+    LabId:
+      name: labId
+      in: path
+      required: true
+      schema: { type: string }
+    LinkId:
+      name: linkId
+      in: path
+      required: true
+      schema: { type: string }
+    ExpectedRevision:
+      name: If-Match-Revision
+      in: header
+      required: true
+      schema: { type: integer, minimum: 1 }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema: { type: string, minLength: 1, maxLength: 200 }
+  schemas:
+    NetworkObjectEndpoint:
+      type: object
+      additionalProperties: false
+      required: [object_id, port_name]
+      properties:
+        object_id: { type: string }
+        port_name: { type: string, minLength: 1, maxLength: 15 }
+    CreateNetworkObjectLink:
+      type: object
+      additionalProperties: false
+      required: [object_a_id, port_a_name, object_b_id, port_b_name]
+      properties:
+        object_a_id: { type: string }
+        port_a_name: { type: string, minLength: 1, maxLength: 15 }
+        object_b_id: { type: string }
+        port_b_name: { type: string, minLength: 1, maxLength: 15 }
+    NetworkObjectLink:
+      type: object
+      additionalProperties: false
+      required: [id, laboratory_id, object_a_id, port_a_name, object_b_id, port_b_name, revision, desired_state, actual_state]
+      properties:
+        id: { type: string }
+        laboratory_id: { type: string }
+        object_a_id: { type: string }
+        port_a_name: { type: string }
+        object_b_id: { type: string }
+        port_b_name: { type: string }
+        revision: { type: integer, minimum: 1 }
+        desired_state: { enum: [connected, deleted] }
+        actual_state: { enum: [pending, connecting, connected, disconnecting, failed] }
+        display_label: { type: string }
+        last_error: { oneOf: [{ $ref: '#/components/schemas/Problem' }, { type: 'null' }] }
+    NetworkObjectLinkTaskEnvelope:
+      type: object
+      additionalProperties: false
+      required: [network_object_link, task]
+      properties:
+        network_object_link: { $ref: '#/components/schemas/NetworkObjectLink' }
+        task: { $ref: '#/components/schemas/OperationTask' }
+    DockerStaticRoute:
+      type: object
+      additionalProperties: false
+      required: [destination]
+      properties:
+        destination: { type: string, description: Canonical IPv4 or IPv6 CIDR }
+        gateway: { type: [string, 'null'] }
+        metric: { type: [integer, 'null'], minimum: 0 }
+    NodeNetworkInterfaceSettings:
+      type: object
+      additionalProperties: false
+      required: [id, name, driver, modes, addresses, routes]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        driver: { type: string }
+        modes: { type: array, items: { type: string } }
+        addresses: { type: array, items: { type: string } }
+        routes:
+          type: array
+          items: { $ref: '#/components/schemas/DockerStaticRoute' }
+    StartCapture:
+      type: object
+      additionalProperties: false
+      required: [laboratory_id, source_type, source_id, format, max_bytes]
+      properties:
+        laboratory_id: { type: string }
+        source_type: { enum: [interface, link, network_object_link] }
+        source_id: { type: string }
+        filter: { type: string }
+        format: { enum: [pcap, pcapng] }
+        retain: { type: boolean }
+        max_bytes: { type: integer, minimum: 1 }
+        duration_seconds: { type: integer, minimum: 0 }
+    StartTrafficFilter:
+      type: object
+      additionalProperties: false
+      required: [laboratory_id, match]
+      properties:
+        laboratory_id: { type: string }
+        match: { type: object, additionalProperties: true }
+        interface_ids: { type: array, items: { type: string } }
+        link_ids: { type: array, items: { type: string } }
+        network_object_link_ids: { type: array, items: { type: string } }
+        color: { type: string }
+        max_observations: { type: integer, minimum: 1 }
+    TrafficObservation:
+      type: object
+      required: [resource_type, resource_id, direction, first_seen_at, last_seen_at, packets, bytes]
+      properties:
+        resource_type: { enum: [interface, link, network_object_link] }
+        resource_id: { type: string }
+        direction: { enum: [a_to_b, b_to_a, ingress, egress, ambiguous] }
+        first_seen_at: { type: string, format: date-time }
+        last_seen_at: { type: string, format: date-time }
+        packets: { type: integer, minimum: 0 }
+        bytes: { type: integer, minimum: 0 }
+    Problem:
+      type: object
+      additionalProperties: true
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }
+    OperationTask:
+      type: object
+      additionalProperties: true
+      required: [id, state]
+      properties:
+        id: { type: string }
+        state: { enum: [queued, running, succeeded, failed, cancelled] }
+  responses:
+    Conflict:
+      description: Revision, endpoint occupancy, or lifecycle conflict
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    InvalidRequest:
+      description: Invalid endpoint or Docker route declaration
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
