@@ -202,3 +202,12 @@
   Prettier passed; changed-file ESLint completed with zero errors; and both the production SPA build and
   embedded `netlabd` build passed locally on August 3, 2026. Existing Vue style warnings and the Vite
   chunk-size warning remain informational.
+- `cb08bd3` (`test: verify live object link observations`): adds a root-gated two-parallel-link test that
+  verifies one-endpoint bidirectional capture accounting, ICMP/TCP/UDP attribution in both endpoint-A-
+  relative directions, exact stable-link isolation, and observation availability within 500 ms. The
+  dynamic test exposed and fixed two production races: filters now receive their pcap header while still
+  pending, and capture chunks are isolated by owning filter and capture ID so concurrent filters cannot
+  corrupt each other's decoder streams. This completes T036.
+- Focused gates for `cb08bd3`: the real namespace/veth/tcpdump test passed as root in 3.15 seconds;
+  focused capture/filter/reconciliation tests, a three-run asynchronous cleanup check, the focused race
+  detector, and `go vet` all passed locally on August 3, 2026.
