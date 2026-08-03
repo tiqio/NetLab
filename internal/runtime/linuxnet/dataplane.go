@@ -308,6 +308,20 @@ func (d *DataPlane) configureNamespacePort(ctx context.Context, namespace, portN
 					return err
 				}
 			}
+			forwardIPv4 := "0"
+			if config.ForwardIPv4 {
+				forwardIPv4 = "1"
+			}
+			if err := d.executor.Run(ctx, d.ip, "netns", "exec", namespace, "sysctl", "-qw", "net/ipv4/conf/"+portName+"/forwarding="+forwardIPv4); err != nil {
+				return err
+			}
+			forwardIPv6 := "0"
+			if config.ForwardIPv6 {
+				forwardIPv6 = "1"
+			}
+			if err := d.executor.Run(ctx, d.ip, "netns", "exec", namespace, "sysctl", "-qw", "net/ipv6/conf/"+portName+"/forwarding="+forwardIPv6); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

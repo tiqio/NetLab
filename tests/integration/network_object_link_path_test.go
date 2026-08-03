@@ -63,10 +63,7 @@ func TestPrivilegedNetworkObjectLinkThreeObjectPath(t *testing.T) {
 	}()
 
 	namespaceA, _ := linuxnet.NetworkObjectNamespaceName(objectA)
-	namespaceB, _ := linuxnet.NetworkObjectNamespaceName(objectB)
 	namespaceC, _ := linuxnet.NetworkObjectNamespaceName(objectC)
-	runObjectLinkCommand(t, ctx, "ip", "netns", "exec", namespaceB, "sysctl", "-qw", "net.ipv4.ip_forward=1")
-
 	primary := domain.NetworkObjectLink{ID: domain.ID("path-primary-" + suffix), ObjectAID: objectA.ID, PortAName: "a0", ObjectBID: objectB.ID, PortBName: "b0"}
 	parallel := domain.NetworkObjectLink{ID: domain.ID("path-parallel-" + suffix), ObjectAID: objectA.ID, PortAName: "a1", ObjectBID: objectB.ID, PortBName: "b1"}
 	downstream := domain.NetworkObjectLink{ID: domain.ID("path-downstream-" + suffix), ObjectAID: objectB.ID, PortAName: "b2", ObjectBID: objectC.ID, PortBName: "c0"}
@@ -124,7 +121,7 @@ func networkObjectLinkL3Object(id string, addresses map[string]string) domain.Ne
 	for name, address := range addresses {
 		interfaces = append(interfaces, map[string]any{"name": name, "addresses": []any{address}})
 	}
-	return domain.NetworkObject{ID: domain.ID(id), Kind: domain.NetworkSwitchL3, Config: map[string]any{"interfaces": interfaces}}
+	return domain.NetworkObject{ID: domain.ID(id), Kind: domain.NetworkSwitchL3, Config: map[string]any{"interfaces": interfaces, "forward_ipv4": true}}
 }
 
 func runObjectLinkCommand(t *testing.T, ctx context.Context, name string, args ...string) string {

@@ -159,12 +159,16 @@ func TestNetworkObjectLinkCreatesDirectNamespaceVethPair(t *testing.T) {
 	runtime, _ := NewDataPlane(executor)
 	link := domain.NetworkObjectLink{ID: "object-link", ObjectAID: "l2-a", PortAName: "uplink0", ObjectBID: "l3-b", PortBName: "eth9"}
 	l2 := domain.NetworkObject{ID: "l2-a", Kind: domain.NetworkSwitchL2, Config: map[string]any{"vlan_filtering": true, "ports": []any{map[string]any{"name": "uplink0", "pvid": 10, "tagged": []any{20}}}}}
-	l3 := domain.NetworkObject{ID: "l3-b", Kind: domain.NetworkSwitchL3, Config: map[string]any{"interfaces": []any{map[string]any{"name": "eth9", "addresses": []any{"192.0.2.1/24"}}}}}
+	l3 := domain.NetworkObject{ID: "l3-b", Kind: domain.NetworkSwitchL3, Config: map[string]any{
+		"interfaces":   []any{map[string]any{"name": "eth9", "addresses": []any{"192.0.2.1/24"}}},
+		"forward_ipv4": true,
+		"forward_ipv6": true,
+	}}
 	if err := runtime.EnsureNetworkObjectLink(context.Background(), link, l2, l3); err != nil {
 		t.Fatal(err)
 	}
 	commands := strings.Join(executor.commands, "\n")
-	for _, expected := range []string{"type veth peer name", "netns " + SwitchL2NamespaceName(l2.ID), "uplink0 master br0", "vid 10 pvid untagged", "vid 20", "netns " + SwitchL3NamespaceName(l3.ID), "192.0.2.1/24 dev eth9"} {
+	for _, expected := range []string{"type veth peer name", "netns " + SwitchL2NamespaceName(l2.ID), "uplink0 master br0", "vid 10 pvid untagged", "vid 20", "netns " + SwitchL3NamespaceName(l3.ID), "192.0.2.1/24 dev eth9", "net/ipv4/conf/eth9/forwarding=1", "net/ipv6/conf/eth9/forwarding=1"} {
 		if !strings.Contains(commands, expected) {
 			t.Fatalf("missing %q in %s", expected, commands)
 		}
