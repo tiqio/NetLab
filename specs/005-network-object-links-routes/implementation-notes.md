@@ -189,3 +189,7 @@
   isolated by stable resource ID, reports unknown direction explicitly as ambiguous, and removes stale
   observations after the configured correlation window. Full capture and reconciliation tests plus
   `go vet` passed, completing T034 and T042 locally on August 3, 2026.
+- `6642b83` (`feat: publish object link observation events`): adds dynamic HTTP/MCP parity coverage for
+  object-link capture envelopes and direction-attributed Traffic Filter observations, plus distinct
+  ordered event constructors for capture state/completion and traffic observations. Focused stream,
+  contract, and `go vet` gates passed, completing T035 and T043 locally on August 3, 2026.
