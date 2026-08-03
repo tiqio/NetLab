@@ -133,3 +133,27 @@ func TestDataPlaneReconcilesNetworkObjectLinksWhileObjectsRemainActive(t *testin
 		t.Fatal("network object link was not deleted live")
 	}
 }
+
+func TestDataPlaneDoesNotResurrectDisconnectingObjectLinkDuringRecovery(t *testing.T) {
+	store := &dataPlaneStoreFake{lab: domain.Laboratory{ID: "lab", LifecycleState: "active"}, interfaceStates: map[domain.ID]string{}}
+	store.snapshot = domain.TopologySnapshot{
+		NetworkObjects: []domain.NetworkObject{{ID: "a", ObservedState: "active"}, {ID: "b", ObservedState: "active"}},
+		NetworkObjectLinks: []domain.NetworkObjectLink{{
+			ID: "object-link", ObjectAID: "a", ObjectBID: "b", DesiredState: "connected", ObservedState: "disconnecting",
+		}},
+	}
+	runtime := &dataPlaneRuntimeFake{}
+	outcomes := []RecoveryResourceOutcome{}
+	if err := NewDataPlaneReconciler(store, runtime).ReconcileWithCheckpoints(context.Background(), func(outcome RecoveryResourceOutcome) error {
+		outcomes = append(outcomes, outcome)
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if runtime.objectLinkEnsureCalls != 0 || runtime.objectLinkDeleted || store.objectLinkDeleted {
+		t.Fatalf("interrupted delete was mutated by generic recovery: runtime=%+v store=%+v", runtime, store)
+	}
+	if len(outcomes) != 1 || outcomes[0].State != "pending_task_recovery" {
+		t.Fatalf("outcomes=%+v", outcomes)
+	}
+}

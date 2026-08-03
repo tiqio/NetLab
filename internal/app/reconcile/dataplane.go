@@ -116,6 +116,9 @@ func (r *DataPlaneReconciler) Reconcile(ctx context.Context) (err error) {
 			}
 		}
 		for _, link := range snapshot.NetworkObjectLinks {
+			if link.ObservedState == "disconnecting" {
+				continue
+			}
 			if link.DesiredState == "disconnected" {
 				objectA, aExists := objects[link.ObjectAID]
 				objectB, bExists := objects[link.ObjectBID]
@@ -188,7 +191,9 @@ func (r *DataPlaneReconciler) ReconcileWithCheckpoints(ctx context.Context, chec
 		for _, link := range snapshot.NetworkObjectLinks {
 			state := "recovered"
 			message := ""
-			if link.ObservedState == "failed" {
+			if link.ObservedState == "disconnecting" {
+				state, message = "pending_task_recovery", "durable delete task owns interrupted cleanup"
+			} else if link.ObservedState == "failed" {
 				state, message = "failed", "network object link reconciliation failed"
 			}
 			if err = checkpoint(RecoveryResourceOutcome{ResourceType: "network_object_link", ResourceID: link.ID, State: state, Error: message}); err != nil {
