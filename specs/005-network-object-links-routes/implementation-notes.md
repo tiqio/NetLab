@@ -126,3 +126,12 @@
 - Focused gates for `d3bf1d8`: 19 topology controller/canvas/Inspector/presentation Vitest cases passed;
   `npm run build` passed; and changed-file ESLint completed with zero errors. Existing Vue style/default
   warnings and the Vite chunk-size warning remain informational.
+- `38bbf37` (`feat: connect shared network object ports`): reconciles first-class object-link create,
+  state, and delete events into every active Pinia client; preserves authoritative links when reopening
+  a laboratory; renders configured PC/L2/L3 object ports around selected or hovered objects; prevents
+  occupied endpoint selection; creates object links by selecting two canvas ports; records the returned
+  durable task globally; and shows the latest task state, progress, and structured failure in the
+  selected-link Inspector. This completes T019, T028, and T029.
+- Focused gates for `38bbf37`: 37 store/controller/presentation/canvas/Inspector Vitest cases passed;
+  `npm run build` passed; and changed-file ESLint completed with zero errors. Existing Vue style/default
+  warnings and the Vite chunk-size warning remain informational.

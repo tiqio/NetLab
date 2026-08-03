@@ -74,7 +74,7 @@ service, and confirm the same path recovers.
 - [X] T016 [P] [US1] Add failing create/list/revision/idempotency/task/outbox tests for durable object links in `internal/app/reconcile/network_object_tasks_test.go` and `internal/store/sqlite/network_state_repository_test.go`
 - [X] T017 [P] [US1] Add failing HTTP and MCP parity tests for create/list/get object-link task envelopes and occupied-port errors in `tests/contract/network_object_link_control_parity_test.go`
 - [ ] T018 [P] [US1] Add a failing privileged three-object path, parallel-link isolation, bidirectional ICMP/TCP/UDP, and service-restart recovery test in `tests/integration/network_object_link_path_test.go`
-- [ ] T019 [P] [US1] Add failing frontend tests for connector port selection, parallel line identity, readable endpoint labels, shared state updates, and refresh recovery in `web/src/features/topology/topologyConnectionController.test.ts`, `web/src/features/topology/TopologyCanvas.test.ts`, and `web/src/features/topology/TopologyInspector.test.ts`
+- [X] T019 [P] [US1] Add failing frontend tests for connector port selection, parallel line identity, readable endpoint labels, shared state updates, and refresh recovery in `web/src/features/topology/topologyConnectionController.test.ts`, `web/src/features/topology/TopologyCanvas.test.ts`, and `web/src/features/topology/TopologyInspector.test.ts`
 - [ ] T020 [P] [US1] Add a failing Playwright journey that creates a three-object path from the browser and observes the same links in a second client in `tests/e2e/journeys/networkObjectLinks.spec.ts`
 
 ### Implementation for User Story 1
@@ -86,8 +86,8 @@ service, and confirm the same path recovers.
 - [X] T025 [US1] Add `netlab.network_object_links.create` and `netlab.network_object_links.get` with the shared application handlers in `internal/api/mcp/network_tools.go`
 - [ ] T026 [US1] Publish ordered object-link create/state/recovery events through the shared event stream in `internal/api/stream/events.go` and `internal/app/events/outbox.go`
 - [X] T027 [US1] Synchronize object-link task, endpoint, state, and error types and API methods in `web/src/api/generated.ts` and `web/src/api/index.ts`
-- [ ] T028 [US1] Implement object-to-object connector selection, occupied-port feedback, parallel-link rendering, and `object:port ↔ object:port` presentation in `web/src/features/topology/topologyConnectionController.ts`, `web/src/features/topology/TopologyCanvas.vue`, and `web/src/features/topology/linkPresentation.ts`
-- [ ] T029 [US1] Display authoritative desired/actual state, revision, lifecycle task, and actionable failures for selected object links in `web/src/features/topology/TopologyInspector.vue` and `web/src/features/topology/TopologyWorkspace.vue`
+- [X] T028 [US1] Implement object-to-object connector selection, occupied-port feedback, parallel-link rendering, and `object:port ↔ object:port` presentation in `web/src/features/topology/topologyConnectionController.ts`, `web/src/features/topology/TopologyCanvas.vue`, and `web/src/features/topology/linkPresentation.ts`
+- [X] T029 [US1] Display authoritative desired/actual state, revision, lifecycle task, and actionable failures for selected object links in `web/src/features/topology/TopologyInspector.vue` and `web/src/features/topology/TopologyWorkspace.vue`
 - [ ] T030 [US1] Complete object-link export/import ID remapping and transactional endpoint reservation integration in `internal/store/sqlite/import_repository.go`, `internal/app/command/export.go`, and `internal/app/command/import.go`
 - [ ] T031 [US1] Run US1 unit, contract, frontend, privileged integration, recovery, and browser tests and record the focused milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
 
