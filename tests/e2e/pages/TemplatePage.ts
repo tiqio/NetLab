@@ -45,9 +45,12 @@ export class TemplatePage extends BasePage {
           : name;
     await this.openPalette();
     await this.page
-      .getByRole("button")
-      .filter({ hasText: paletteName })
-      .first()
+      .getByRole("button", {
+        name: new RegExp(
+          `^${paletteName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`,
+          "i",
+        ),
+      })
       .click();
     return this.page.getByRole("dialog", {
       name: new RegExp(`Add ${paletteName}`, "i"),

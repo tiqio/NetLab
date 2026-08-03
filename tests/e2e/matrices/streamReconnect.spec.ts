@@ -14,7 +14,9 @@ test("page refresh restores authoritative task and diagnostic workspaces", async
     runId,
   );
   await page.getByRole("tab", { name: "Capture" }).click();
-  await expect(page.getByText(/Select a node interface or link/)).toBeVisible();
+  await expect(
+    page.getByText(/Select a node and interface above/),
+  ).toBeVisible();
   await page.reload();
   await expect(page.getByTestId("laboratory-switcher")).toContainText(
     laboratory.name,

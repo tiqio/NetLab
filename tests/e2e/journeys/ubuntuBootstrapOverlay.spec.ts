@@ -8,9 +8,16 @@ import { TemplatePage } from "../pages/TemplatePage";
 test("Ubuntu QEMU receives cloud-init credentials and stable interface overlays", async ({
   page,
   automation,
+  environment,
   ledger,
   runId,
 }) => {
+  const ubuntuAvailable = environment.templates.some(
+    (template) =>
+      template.template_key === "ubuntu-qemu" &&
+      template.versions.some((version) => version.available),
+  );
+  test.skip(!ubuntuAvailable, "requires an available Ubuntu QEMU image");
   const { laboratory } = await createOwnedLaboratory(
     page,
     automation,

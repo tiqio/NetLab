@@ -430,7 +430,7 @@ test("navigation templates and task center support pointer and keyboard", async 
     }
 
     await search.fill("");
-    const pc = page.getByRole("button", { name: "PC", exact: true });
+    const pc = page.getByRole("button", { name: /^PC\b/ });
     const pcDuration = await activate(page, pc, activation);
     await expect(page.getByRole("dialog", { name: /Add PC/i })).toBeVisible();
     record(
