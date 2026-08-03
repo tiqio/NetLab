@@ -238,3 +238,11 @@
 - Focused gates for `21cb1ed`: task/repository/runtime/HTTP/MCP/contract tests, object-link create/delete
   parity, stale-observation suppression, focused race tests, and `go vet` passed locally on August 3,
   2026.
+## US3 Frontend Object-Link Deletion Milestone
+
+- Commit: `b2b1aec` (`feat: delete object links from topology workspace`)
+- Added revisioned durable delete calls from the topology toolbar, right-click menu, and Inspector.
+- Object links are hidden immediately, selection is cleared, stale refresh/event upserts are tombstoned, and failed submissions restore authoritative state with an explicit retry action.
+- Focused validation passed on August 3, 2026:
+  - `cd web && npm test -- --run src/features/topology/LinkContextMenu.test.ts src/features/topology/TopologyWorkspace.test.ts src/features/topology/TopologyCanvas.test.ts src/stores/laboratory.test.ts` (28 tests)
+  - `cd web && npm run build`

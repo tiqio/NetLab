@@ -146,7 +146,7 @@ successful retry after an injected partial cleanup failure.
 - [ ] T049 [P] [US3] Add failing dataplane and recovery tests for live pair deletion, missing-end tolerance, partial cleanup retry, and protection of unrelated host resources in `internal/runtime/linuxnet/dataplane_test.go` and `tests/recovery/network_object_link_recovery_test.go`
 - [X] T050 [P] [US3] Add failing capture tests for `link_deleted` completion, retained packet metadata, worker cancellation timeout, and stale observation suppression in `internal/app/reconcile/captures_test.go` and `internal/app/reconcile/traffic_filters_test.go`
 - [X] T051 [P] [US3] Add failing HTTP/MCP parity tests for revisioned delete task envelopes and retries in `tests/contract/network_object_link_delete_parity_test.go`
-- [ ] T052 [P] [US3] Add failing frontend tests for object-link context deletion, pending/failed state, immediate shared removal, selection clearing, and no ghost restoration in `web/src/features/topology/LinkContextMenu.test.ts`, `web/src/features/topology/TopologyWorkspace.test.ts`, and `web/src/features/topology/TopologyCanvas.test.ts`
+- [X] T052 [P] [US3] Add failing frontend tests for object-link context deletion, pending/failed state, immediate shared removal, selection clearing, and no ghost restoration in `web/src/features/topology/LinkContextMenu.test.ts`, `web/src/features/topology/TopologyWorkspace.test.ts`, and `web/src/features/topology/TopologyCanvas.test.ts`
 - [ ] T053 [P] [US3] Add a failing two-browser Playwright journey for live deletion, active capture completion, port reuse, object cascade, and refresh consistency in `tests/e2e/journeys/networkObjectLinkDeletion.spec.ts`
 
 ### Implementation for User Story 3
@@ -157,7 +157,7 @@ successful retry after an injected partial cleanup failure.
 - [X] T057 [US3] Cascade network-object deletion through object-link tasks and endpoint reservations without stale resources in `internal/app/reconcile/network_objects.go` and `internal/store/sqlite/network_repository.go`
 - [X] T058 [US3] Expose revisioned delete task envelopes and structured failures through HTTP and MCP in `internal/api/http/network_handlers.go` and `internal/api/mcp/network_tools.go`
 - [ ] T059 [US3] Publish deletion and capture-completion events in non-resurrecting order and reconcile interrupted deletion on startup in `internal/api/stream/events.go`, `internal/app/events/outbox.go`, and `internal/app/reconcile/recovery_coordinator.go`
-- [ ] T060 [US3] Add object-link right-click delete, task progress, retryable failure, selection clearing, and shared event removal in `web/src/features/topology/LinkContextMenu.vue`, `web/src/features/topology/TopologyWorkspace.vue`, and `web/src/features/topology/TopologyCanvas.vue`
+- [X] T060 [US3] Add object-link right-click delete, task progress, retryable failure, selection clearing, and shared event removal in `web/src/features/topology/LinkContextMenu.vue`, `web/src/features/topology/TopologyWorkspace.vue`, and `web/src/features/topology/TopologyCanvas.vue`
 - [ ] T061 [US3] Run US3 unit, contract, frontend, privileged deletion, recovery, leak, and multi-client tests and record the focused milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
 
 **Checkpoint**: User Story 3 supports observable live failure simulation and cleanup without stopping
