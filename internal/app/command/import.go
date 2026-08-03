@@ -90,6 +90,10 @@ func (s *ImportService) ImportAs(ctx context.Context, laboratoryID domain.ID, bu
 		if config == nil {
 			config = map[string]any{}
 		}
+		config = cloneMap(config)
+		if err := normalizeNodeNetworkConfig(config); err != nil {
+			return domain.Laboratory{}, fmt.Errorf("node %s network configuration: %w", exported.Name, err)
+		}
 		if exported.TemplateKey != "" {
 			config["template_key"] = exported.TemplateKey
 		}

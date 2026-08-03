@@ -2,7 +2,9 @@ package sqlite
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/netlab/netlab/internal/app/command"
@@ -90,7 +92,7 @@ func TestUpdateNodeSettingsPersistsInterfaceDriverAndNetworkConfig(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	settings := domain.NodeSettings{Name: node.Name, CPUCount: 1, MemoryMiB: 512, InterfaceLimit: 4, ProcessLimit: 32, NetworkInterfaces: []domain.NodeNetworkInterfaceSettings{{ID: interfaces[0].ID, Name: interfaces[0].Name, Driver: "e1000", Modes: []string{"dhcpv4"}}}}
+	settings := domain.NodeSettings{Name: node.Name, CPUCount: 1, MemoryMiB: 512, InterfaceLimit: 4, ProcessLimit: 32, NetworkInterfaces: []domain.NodeNetworkInterfaceSettings{{ID: interfaces[0].ID, Name: interfaces[0].Name, Driver: "e1000", Modes: []string{"static"}, Addresses: []string{"192.0.2.10/24"}, Routes: []domain.RouteConfig{{Destination: "198.51.100.99/24", Gateway: "192.0.2.1"}}}}}
 	updated, err := repository.UpdateNodeSettings(ctx, node.ID, node.Revision, settings)
 	if err != nil {
 		t.Fatal(err)
@@ -105,5 +107,9 @@ func TestUpdateNodeSettingsPersistsInterfaceDriverAndNetworkConfig(t *testing.T)
 	values, _ := updated.Config["network_interfaces"].([]any)
 	if len(values) != 1 {
 		t.Fatalf("network_interfaces=%#v", updated.Config["network_interfaces"])
+	}
+	body, _ := json.Marshal(values)
+	if !strings.Contains(string(body), `"destination":"198.51.100.0/24"`) {
+		t.Fatalf("network_interfaces=%s", body)
 	}
 }

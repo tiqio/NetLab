@@ -2,6 +2,7 @@ package command_test
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -130,5 +131,30 @@ func TestCreateQEMUNodeBuildsMACMatchedCloudInitNetworkConfig(t *testing.T) {
 		if !strings.Contains(builder.spec.NetworkConfig, expected) {
 			t.Fatalf("missing %s in %s", expected, builder.spec.NetworkConfig)
 		}
+	}
+}
+
+func TestCreateDockerNodePreservesCanonicalStaticRoutes(t *testing.T) {
+	ctx := context.Background()
+	database, err := storesqlite.Open(ctx, "file:docker-route-create?mode=memory&cache=shared")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer database.Close()
+	topology := storesqlite.NewTopologyRepository(database)
+	lab, _ := command.NewLaboratoryService(topology).Create(ctx, "docker-routes", "", domain.RecoveryRemainStopped)
+	node, _, err := command.NewNodeService(topology).CreateConfigured(ctx, lab.ID, command.CreateNodeRequest{
+		Name: "router", Kind: "docker", InterfaceCount: 1,
+		Config: map[string]any{"network_interfaces": []any{map[string]any{
+			"name": "eth0", "modes": []any{"static"}, "addresses": []any{"192.0.2.10/24"},
+			"routes": []any{map[string]any{"destination": "198.51.100.99/24", "gateway": "192.0.2.1", "metric": 10}},
+		}}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := json.Marshal(node.Config["network_interfaces"])
+	if !strings.Contains(string(body), `"destination":"198.51.100.0/24"`) || !strings.Contains(string(body), `"gateway":"192.0.2.1"`) {
+		t.Fatalf("network_interfaces=%s", body)
 	}
 }

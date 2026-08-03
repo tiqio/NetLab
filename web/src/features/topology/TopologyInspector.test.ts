@@ -16,6 +16,56 @@ const natObject: NetworkObject = {
 };
 
 describe("TopologyInspector", () => {
+  it("summarizes Docker route readiness and recovery guidance", () => {
+    const node: Node = {
+      id: "docker-1",
+      laboratory_id: "lab-1",
+      name: "Router",
+      kind: "docker",
+      revision: 1,
+      desired_state: "running",
+      observed_state: "failed",
+      cpu_count: 1,
+      cpu_quota_micros: 100000,
+      memory_mib: 128,
+      storage_gib: 0,
+      interface_limit: 8,
+      process_limit: 128,
+      config: {
+        network_interfaces: [
+          {
+            id: "if-1",
+            name: "eth0",
+            driver: "veth",
+            modes: ["static"],
+            addresses: ["192.0.2.2/24"],
+            routes: [{ destination: "198.51.100.0/24", gateway: "192.0.2.1" }],
+          },
+        ],
+      },
+      last_error: {
+        code: "runtime_configuration_timeout",
+        message: "route reconciliation timed out",
+      },
+    };
+    const wrapper = mount(TopologyInspector, {
+      props: { laboratoryId: "lab-1", node, interfaces: [] },
+      global: {
+        stubs: {
+          ResourceCharts: true,
+          NodeOperationsPanel: true,
+        },
+      },
+    });
+
+    const readiness = wrapper.get(
+      '[data-testid="inspector-docker-route-readiness"]',
+    );
+    expect(readiness.text()).toContain("路由应用失败");
+    expect(readiness.text()).toContain("eth0:198.51.100.0/24");
+    expect(readiness.text()).toContain("请检查接口地址、网关可达性");
+  });
+
   it("updates Lightweight L2 configuration from the Inspector", async () => {
     const networkObject: NetworkObject = {
       id: "l2-1",

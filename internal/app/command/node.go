@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -79,15 +80,8 @@ func (s *NodeService) CreateConfigured(ctx context.Context, labID domain.ID, req
 	}
 	kind := request.Kind
 	config := cloneMap(request.Config)
-	if raw, ok := config["network_interfaces"]; ok {
-		var interfaces []domain.NodeNetworkInterfaceSettings
-		body, _ := json.Marshal(raw)
-		if err := json.Unmarshal(body, &interfaces); err != nil {
-			return domain.Node{}, nil, domain.Problem{Code: "invalid_node_network", Message: "network interface configuration is invalid"}
-		}
-		if err := domain.ValidateNodeNetworkInterfaces(interfaces); err != nil {
-			return domain.Node{}, nil, domain.Problem{Code: "invalid_node_network", Message: err.Error()}
-		}
+	if err := normalizeNodeNetworkConfig(config); err != nil {
+		return domain.Node{}, nil, err
 	}
 	interfaceCount := request.InterfaceCount
 	cpuCount, cpuQuota, memoryMiB := request.CPUCount, request.CPUQuotaMicros, request.MemoryMiB
@@ -243,6 +237,39 @@ func (s *NodeService) CreateConfigured(ctx context.Context, labID domain.ID, req
 		return node, interfaces, err
 	}
 	return node, interfaces, nil
+}
+
+func normalizeNodeNetworkConfig(config map[string]any) error {
+	raw, ok := config["network_interfaces"]
+	if !ok {
+		return nil
+	}
+	var interfaces []domain.NodeNetworkInterfaceSettings
+	body, err := json.Marshal(raw)
+	if err != nil {
+		return domain.Problem{Code: "invalid_node_network", Message: "network interface configuration is invalid"}
+	}
+	if err := json.Unmarshal(body, &interfaces); err != nil {
+		return domain.Problem{Code: "invalid_node_network", Message: "network interface configuration is invalid"}
+	}
+	if err = domain.ValidateNodeNetworkInterfaces(interfaces); err != nil {
+		code := "invalid_node_network"
+		var configError domain.NetworkConfigError
+		if errors.As(err, &configError) {
+			code = configError.Code
+		}
+		return domain.Problem{Code: code, Message: err.Error()}
+	}
+	body, err = json.Marshal(interfaces)
+	if err != nil {
+		return domain.Problem{Code: "invalid_node_network", Message: "network interface configuration could not be normalized"}
+	}
+	var normalized any
+	if err := json.Unmarshal(body, &normalized); err != nil {
+		return domain.Problem{Code: "invalid_node_network", Message: "network interface configuration could not be normalized"}
+	}
+	config["network_interfaces"] = normalized
+	return nil
 }
 
 func BuildCloudInitNetworkConfig(interfaces []domain.Interface, raw any) (string, error) {

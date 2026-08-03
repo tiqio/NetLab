@@ -17,6 +17,7 @@ import GuestCommandPanel from "./GuestCommandPanel.vue";
 import PortMappingsPanel from "./PortMappingsPanel.vue";
 import NodeCapabilityPanel from "./NodeCapabilityPanel.vue";
 import ConfirmationDialog from "@/components/common/ConfirmationDialog.vue";
+import { dockerRouteReadiness } from "./dockerRouteReadiness";
 const props = defineProps<{ node: Node; interfaces: NodeInterface[] }>();
 const emit = defineEmits<{ changed: []; deleted: [] }>();
 const busy = ref(false);
@@ -27,6 +28,7 @@ let lifecycleGeneration = 0;
 const desired = computed(() =>
   props.node.desired_state === "running" ? "stopped" : "running",
 );
+const routeReadiness = computed(() => dockerRouteReadiness(props.node));
 async function run(action: () => Promise<unknown>, message: string) {
   if (busy.value) return;
   busy.value = true;
@@ -128,6 +130,45 @@ onBeforeUnmount(() => {
         {{ status }}
       </p>
       <StructuredProblem v-if="problem" class="mt-2" :problem="problem" />
+    </section>
+    <section
+      v-if="routeReadiness.state !== 'none'"
+      class="panel-section"
+      data-testid="docker-route-readiness"
+    >
+      <div class="flex items-center justify-between gap-2">
+        <h3>Docker 路由</h3>
+        <span
+          class="rounded-full border px-2 py-0.5 text-[11px]"
+          :class="
+            routeReadiness.state === 'failed'
+              ? 'border-destructive/50 text-destructive'
+              : routeReadiness.state === 'applied'
+                ? 'border-emerald-500/40 text-emerald-300'
+                : 'border-amber-500/40 text-amber-300'
+          "
+        >
+          {{ routeReadiness.label }}
+        </span>
+      </div>
+      <p class="mt-1 text-xs text-muted-foreground">
+        {{
+          routeReadiness.routes.length
+        }}
+        条声明；启动和恢复时会在容器网络命名空间内精确收敛。
+      </p>
+      <ul class="mt-2 grid gap-1 text-xs">
+        <li
+          v-for="route in routeReadiness.routes"
+          :key="`${route.interfaceName}:${route.destination}`"
+        >
+          <code>{{ route.interfaceName }}</code> · {{ route.destination }}
+          <span v-if="route.gateway"> via {{ route.gateway }}</span>
+          <span v-if="route.metric !== undefined">
+            · metric {{ route.metric }}</span
+          >
+        </li>
+      </ul>
     </section>
     <ConfirmationDialog
       v-model="deleteOpen"

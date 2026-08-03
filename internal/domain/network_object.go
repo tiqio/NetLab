@@ -30,6 +30,17 @@ type RouteConfig struct {
 	Metric      int    `json:"metric,omitempty" yaml:"metric,omitempty"`
 }
 
+type NetworkConfigError struct {
+	Code    string
+	Message string
+}
+
+func (e NetworkConfigError) Error() string { return e.Message }
+
+func networkConfigError(code, format string, args ...any) error {
+	return NetworkConfigError{Code: code, Message: fmt.Sprintf(format, args...)}
+}
+
 type PCInterfaceConfig struct {
 	Name      string        `json:"name" yaml:"name"`
 	Modes     []AddressMode `json:"modes" yaml:"modes"`
@@ -145,38 +156,52 @@ func ValidatePCConfig(config PCConfig) error {
 
 func ValidateNodeNetworkInterfaces(interfaces []NodeNetworkInterfaceSettings) error {
 	seenNames := map[string]bool{}
-	for _, iface := range interfaces {
+	connectedPrefixes := map[string]string{}
+	declaredRoutes := map[string]string{}
+	interfacePrefixes := make(map[string][]netip.Prefix, len(interfaces))
+	for interfaceIndex := range interfaces {
+		iface := &interfaces[interfaceIndex]
 		if !networkInterfaceNamePattern.MatchString(iface.Name) {
-			return fmt.Errorf("invalid network interface name %q", iface.Name)
+			return networkConfigError("invalid_interface_name", "invalid network interface name %q", iface.Name)
 		}
 		if seenNames[iface.Name] {
-			return fmt.Errorf("duplicate network interface %q", iface.Name)
+			return networkConfigError("duplicate_interface", "duplicate network interface %q", iface.Name)
 		}
 		seenNames[iface.Name] = true
 		prefixes := make([]netip.Prefix, 0, len(iface.Addresses))
-		for _, raw := range iface.Addresses {
+		for addressIndex, raw := range iface.Addresses {
 			prefix, err := netip.ParsePrefix(raw)
 			if err != nil {
-				return fmt.Errorf("invalid address %q on %s", raw, iface.Name)
+				return networkConfigError("invalid_interface_address", "invalid address %q on %s", raw, iface.Name)
 			}
-			prefixes = append(prefixes, prefix.Masked())
+			iface.Addresses[addressIndex] = prefix.String()
+			prefix = prefix.Masked()
+			prefixes = append(prefixes, prefix)
+			connectedPrefixes[prefix.String()] = iface.Name
 		}
-		seenRoutes := map[string]bool{}
-		for _, route := range iface.Routes {
+		interfacePrefixes[iface.Name] = prefixes
+	}
+	for interfaceIndex := range interfaces {
+		iface := &interfaces[interfaceIndex]
+		prefixes := interfacePrefixes[iface.Name]
+		for routeIndex := range iface.Routes {
+			route := &iface.Routes[routeIndex]
 			destination, err := netip.ParsePrefix(route.Destination)
 			if err != nil {
-				return fmt.Errorf("invalid route destination %q on %s", route.Destination, iface.Name)
+				return networkConfigError("invalid_route_destination", "invalid route destination %q on %s", route.Destination, iface.Name)
 			}
 			destination = destination.Masked()
+			route.Destination = destination.String()
 			if route.Metric < 0 {
-				return fmt.Errorf("invalid route metric %d on %s", route.Metric, iface.Name)
+				return networkConfigError("invalid_route_metric", "invalid route metric %d on %s", route.Metric, iface.Name)
 			}
 			gateway := netip.Addr{}
 			if route.Gateway != "" {
 				gateway, err = netip.ParseAddr(route.Gateway)
 				if err != nil || gateway.Is4() != destination.Addr().Is4() {
-					return fmt.Errorf("route gateway %q does not match destination family on %s", route.Gateway, iface.Name)
+					return networkConfigError("route_family_mismatch", "route gateway %q does not match destination family on %s", route.Gateway, iface.Name)
 				}
+				route.Gateway = gateway.String()
 				reachable := false
 				for _, prefix := range prefixes {
 					if prefix.Addr().Is4() == gateway.Is4() && prefix.Contains(gateway) {
@@ -185,14 +210,17 @@ func ValidateNodeNetworkInterfaces(interfaces []NodeNetworkInterfaceSettings) er
 					}
 				}
 				if !reachable {
-					return fmt.Errorf("route gateway %q is unreachable through %s", route.Gateway, iface.Name)
+					return networkConfigError("route_gateway_unreachable", "route gateway %q is unreachable through %s", route.Gateway, iface.Name)
 				}
 			}
 			key := destination.String()
-			if seenRoutes[key] {
-				return fmt.Errorf("duplicate or conflicting route %q on %s", key, iface.Name)
+			if connectedInterface, exists := connectedPrefixes[key]; exists {
+				return networkConfigError("route_conflict", "route %q on %s conflicts with connected prefix on %s", key, iface.Name, connectedInterface)
 			}
-			seenRoutes[key] = true
+			if existingInterface, exists := declaredRoutes[key]; exists {
+				return networkConfigError("route_conflict", "duplicate or conflicting route %q on %s and %s", key, existingInterface, iface.Name)
+			}
+			declaredRoutes[key] = iface.Name
 		}
 	}
 	return nil

@@ -16,6 +16,7 @@ import ResourceIdentity from "@/components/common/ResourceIdentity.vue";
 import StatusBadge from "@/components/common/StatusBadge.vue";
 import StructuredProblem from "@/components/common/StructuredProblem.vue";
 import NodeOperationsPanel from "@/features/nodes/NodeOperationsPanel.vue";
+import { dockerRouteReadiness } from "@/features/nodes/dockerRouteReadiness";
 import RuijieConfigurationPanel from "@/features/nodes/RuijieConfigurationPanel.vue";
 import LightweightNodeEditor from "@/features/nodes/LightweightNodeEditor.vue";
 import LightweightSwitchConfigurationPanel from "@/features/nodes/LightweightSwitchConfigurationPanel.vue";
@@ -201,6 +202,9 @@ const nodeInterfaces = computed(() =>
     ? props.interfaces.filter((item) => item.node_id === props.node!.id)
     : [],
 );
+const selectedNodeRouteReadiness = computed(() =>
+  props.node ? dockerRouteReadiness(props.node) : undefined,
+);
 const isRuijieNode = computed(() =>
   ["ruijie-router", "ruijie-switch"].includes(
     String(props.node?.config?.template_key || ""),
@@ -361,6 +365,40 @@ async function deleteObjectLink() {
           class="mt-3"
           :problem="node.last_error"
         />
+        <div
+          v-if="selectedNodeRouteReadiness?.state !== 'none'"
+          class="mt-3 rounded-md border border-border bg-muted/30 p-3 text-xs"
+          data-testid="inspector-docker-route-readiness"
+        >
+          <div class="flex items-center justify-between gap-2">
+            <strong>Docker 路由</strong>
+            <span
+              :class="
+                selectedNodeRouteReadiness?.state === 'failed'
+                  ? 'text-destructive'
+                  : selectedNodeRouteReadiness?.state === 'applied'
+                    ? 'text-emerald-300'
+                    : 'text-amber-300'
+              "
+            >
+              {{ selectedNodeRouteReadiness?.label }}
+            </span>
+          </div>
+          <p class="mt-1 text-muted-foreground">
+            {{ selectedNodeRouteReadiness?.routes.length }} 条声明：
+            {{
+              selectedNodeRouteReadiness?.routes
+                .map((route) => `${route.interfaceName}:${route.destination}`)
+                .join("、")
+            }}
+          </p>
+          <p
+            v-if="selectedNodeRouteReadiness?.state === 'failed'"
+            class="mt-1 text-destructive"
+          >
+            请检查接口地址、网关可达性，并在修正后重试启动。
+          </p>
+        </div>
       </section>
       <RuijieConfigurationPanel
         v-if="isRuijieNode"
