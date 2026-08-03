@@ -195,7 +195,7 @@ and confirm exact-set convergence and actionable failures.
 - [X] T075 [US4] Synchronize Docker route request/response types and API serialization in `web/src/api/generated.ts` and `web/src/api/nodeOperations.ts`
 - [X] T076 [US4] Add family-aware Docker route editors, defaults, stopped-node settings support, and backend problem presentation in `web/src/features/nodes/NodeConfigurationPanel.vue` and `web/src/features/topology/CreateTopologyResourceDialog.vue`
 - [X] T077 [US4] Surface route application progress and route-specific readiness failures in `web/src/features/nodes/NodeOperationsPanel.vue` and `web/src/features/topology/TopologyInspector.vue`
-- [ ] T078 [US4] Run US4 domain, command, adapter, contract, frontend, privileged L3, recovery, and browser tests and record the focused milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
+- [X] T078 [US4] Run US4 domain, command, adapter, contract, frontend, privileged L3, recovery, and browser tests and record the focused milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
 
 **Checkpoint**: User Story 4 makes Docker L3 configuration reproducible without manual host intervention.
 

@@ -254,3 +254,29 @@
 - Focused gates for `9f7081a` passed locally on August 3, 2026 against a candidate built from the current source: both the 1920x1080 desktop and 1024x768 minimum viewport projects passed with acceptance evidence and cleanup coverage.
 - US3 focused milestone SHA: `4d0f46d`. Final US3 gates passed locally on August 3, 2026: reconciliation, SQLite, linuxnet, HTTP/MCP, event stream, focused object-link contracts and recovery tests; focused race and `go vet`; both privileged three-object path and bidirectional capture/Traffic Filter attribution tests; 28 frontend deletion/store/canvas tests; production SPA build; changed-file ESLint with zero errors; changed-file Prettier; and the two-browser live-delete journey in desktop and minimum viewports.
 - Repository-wide baseline exceptions remain outside US3: `TestBuiltInTemplatesLoad` expects a template count different from the authoritative 8, full Vitest has one existing `PortMappingsPanel` QGA preset DOM lookup failure, and repository-wide ESLint reports the established warning/error backlog. These are not masked by the focused US3 gate and remain for the final polish phase.
+
+## US4 Docker Static Route Milestone
+
+- `f7d7a30` (`fix: stabilize Docker dual-stack route recovery`) waits for IPv6 duplicate-address
+  detection to complete before route application, uses authoritative container inspection rather than
+  stale list summaries, waits for a usable container namespace PID, cleans owned veth endpoints before
+  stop, and gives Docker operations enough time to complete graceful container shutdown. Regression
+  coverage includes tentative and duplicate IPv6 addresses, delayed namespace readiness, stale running
+  summaries, and endpoint cleanup ordering.
+- The approved public test image was used only from the local Docker store as
+  `busybox@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662`;
+  no image, credential, bootstrap secret, or packet capture was added to Git.
+- The privileged Docker IPv4/IPv6 route path passed three consecutive runs locally on August 3, 2026.
+  Each run created a real BusyBox container, waited for IPv6 DAD, verified direct IPv4/IPv6 gateway
+  reachability and routed traffic, restarted the container, and confirmed route recovery without manual
+  host namespace configuration.
+- `fff7632` (`fix: preserve Docker route settings feedback`) keeps successful node-settings feedback
+  visible across the authoritative node revision refresh and makes the Docker route Playwright journey
+  capability-driven rather than target-profile-only. The interaction is registered in the acceptance
+  inventory, while authoritative backend readback remains the stable end-to-end acceptance assertion.
+- US4 focused milestone SHA: `fff7632`. Final focused gates passed locally on August 3, 2026: domain,
+  command, Docker adapter, Linux networking, reconciliation, and focused contract tests; race tests and
+  `go vet`; the three-run privileged Docker dual-stack route path; 21 focused frontend configuration,
+  creation, lifecycle, and Inspector tests; production SPA build; changed-file ESLint with zero errors;
+  changed-file Prettier; and the Docker route Playwright journey in both 1920x1080 desktop and 1024x768
+  minimum viewport projects.
