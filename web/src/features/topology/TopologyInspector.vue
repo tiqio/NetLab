@@ -404,9 +404,7 @@ async function deleteObjectLink() {
   error.value = "";
   try {
     objectLinkStatus.value = "正在提交对象链路删除任务…";
-    const envelope = await api.deleteNetworkObjectLink(
-      props.networkObjectLink,
-    );
+    const envelope = await api.deleteNetworkObjectLink(props.networkObjectLink);
     objectLinkStatus.value = `对象链路删除任务已提交 · ${envelope.task.id}`;
     emit("clear");
     emit("changed");

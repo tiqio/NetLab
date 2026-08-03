@@ -86,9 +86,7 @@ export const useLaboratoryStore = defineStore("laboratory", {
         this.active = normalizeSnapshot(await api.getLab(id));
         this.active.network_object_links = (
           this.active.network_object_links || []
-        ).filter(
-          (link) => !this.hiddenNetworkObjectLinkIds.includes(link.id),
-        );
+        ).filter((link) => !this.hiddenNetworkObjectLinkIds.includes(link.id));
         this.sequence = this.active.event_sequence;
         this.syncState = "live";
         this.connectEvents();
