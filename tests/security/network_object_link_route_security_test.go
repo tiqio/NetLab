@@ -3,6 +3,7 @@ package security_test
 import (
 	"context"
 	"encoding/json"
+	"os"
 	"strings"
 	"testing"
 
@@ -10,6 +11,25 @@ import (
 	"github.com/netlab/netlab/internal/domain"
 	"github.com/netlab/netlab/internal/runtime/linuxnet"
 )
+
+func TestPrebuiltDeploymentPreservesExistingConfiguration(t *testing.T) {
+	body, err := os.ReadFile("../../deploy/scripts/install.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	script := string(body)
+	for _, required := range []string{
+		`NETLAB_PREBUILT_BINARY`,
+		`test -x "$NETLAB_PREBUILT_BINARY"`,
+		`install -Dm0755 "$NETLAB_PREBUILT_BINARY" /usr/local/bin/netlabd`,
+		`if [[ ! -f /etc/netlab/netlab.yaml ]]`,
+		`systemctl enable --now netlab`,
+	} {
+		if !strings.Contains(script, required) {
+			t.Fatalf("prebuilt deployment contract missing %q", required)
+		}
+	}
+}
 
 type securityExecutor struct {
 	programs []string

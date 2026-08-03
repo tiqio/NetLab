@@ -8,7 +8,23 @@ done
 test -e /dev/kvm || { echo "/dev/kvm is unavailable" >&2; exit 1; }
 
 case "${1:-install}" in
-  install) make install; systemctl daemon-reload; systemctl enable --now netlab ;;
+  install)
+    if [[ -n "${NETLAB_PREBUILT_BINARY:-}" ]]; then
+      test -x "$NETLAB_PREBUILT_BINARY" || { echo "prebuilt binary is not executable: $NETLAB_PREBUILT_BINARY" >&2; exit 1; }
+      install -Dm0755 "$NETLAB_PREBUILT_BINARY" /usr/local/bin/netlabd
+      install -Dm0644 deploy/systemd/netlab.service /etc/systemd/system/netlab.service
+      install -d -m0755 /etc/netlab /usr/local/share/netlab/templates/qemu /usr/local/share/netlab/templates/docker
+      if [[ ! -f /etc/netlab/netlab.yaml ]]; then
+        install -m0644 deploy/config/netlab.example.yaml /etc/netlab/netlab.yaml
+      fi
+      install -m0644 templates/qemu/manifest.yaml /usr/local/share/netlab/templates/qemu/manifest.yaml
+      install -m0644 templates/docker/manifest.yaml /usr/local/share/netlab/templates/docker/manifest.yaml
+    else
+      make install
+    fi
+    systemctl daemon-reload
+    systemctl enable --now netlab
+    ;;
   uninstall) systemctl disable --now netlab || true; rm -f /etc/systemd/system/netlab.service /usr/local/bin/netlabd; systemctl daemon-reload ;;
   check) echo "host prerequisites satisfied" ;;
   *) echo "usage: $0 [install|uninstall|check]" >&2; exit 2 ;;
