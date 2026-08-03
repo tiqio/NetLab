@@ -184,3 +184,8 @@
   source metadata and resolved locator persistence, live stream replay, durable capture task identity,
   and non-streamable retained metadata after service restart for `network_object_link` captures. Full
   reconciliation tests and `go vet` passed, completing T033 locally on August 3, 2026.
+- `fe92f64` (`feat: attribute object link traffic direction`): starts separate ingress and egress
+  Traffic Filter workers on endpoint A, maps them to `b_to_a` and `a_to_b`, keeps parallel object links
+  isolated by stable resource ID, reports unknown direction explicitly as ambiguous, and removes stale
+  observations after the configured correlation window. Full capture and reconciliation tests plus
+  `go vet` passed, completing T034 and T042 locally on August 3, 2026.
