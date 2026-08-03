@@ -147,7 +147,7 @@ successful retry after an injected partial cleanup failure.
 - [X] T050 [P] [US3] Add failing capture tests for `link_deleted` completion, retained packet metadata, worker cancellation timeout, and stale observation suppression in `internal/app/reconcile/captures_test.go` and `internal/app/reconcile/traffic_filters_test.go`
 - [X] T051 [P] [US3] Add failing HTTP/MCP parity tests for revisioned delete task envelopes and retries in `tests/contract/network_object_link_delete_parity_test.go`
 - [X] T052 [P] [US3] Add failing frontend tests for object-link context deletion, pending/failed state, immediate shared removal, selection clearing, and no ghost restoration in `web/src/features/topology/LinkContextMenu.test.ts`, `web/src/features/topology/TopologyWorkspace.test.ts`, and `web/src/features/topology/TopologyCanvas.test.ts`
-- [ ] T053 [P] [US3] Add a failing two-browser Playwright journey for live deletion, active capture completion, port reuse, object cascade, and refresh consistency in `tests/e2e/journeys/networkObjectLinkDeletion.spec.ts`
+- [X] T053 [P] [US3] Add a failing two-browser Playwright journey for live deletion, active capture completion, port reuse, object cascade, and refresh consistency in `tests/e2e/journeys/networkObjectLinkDeletion.spec.ts`
 
 ### Implementation for User Story 3
 
