@@ -19,6 +19,7 @@ const props = withDefaults(
     laboratoryId?: string;
     interfaceId?: string;
     linkId?: string;
+    objectLinkId?: string;
     interfaceOwners?: Record<string, string>;
     coordinates?: Record<string, { x: number; y: number }>;
     initialSection?: string;
@@ -38,7 +39,7 @@ const props = withDefaults(
     linkId: undefined,
   },
 );
-const emit = defineEmits<{
+defineEmits<{
   trafficOverlay: [TrafficObservation[], boolean, string];
 }>();
 const section = computed(() =>
@@ -61,9 +62,14 @@ const resourceLabels = computed(() => {
     );
   }
   for (const link of props.networkObjectLinks || []) {
-    const left = props.networkObjects?.find((item) => item.id === link.object_a_id);
-    const right = props.networkObjects?.find((item) => item.id === link.object_b_id);
-    labels[link.id] = `${left?.name || link.object_a_id}:${link.port_a_name} ↔ ${right?.name || link.object_b_id}:${link.port_b_name}`;
+    const left = props.networkObjects?.find(
+      (item) => item.id === link.object_a_id,
+    );
+    const right = props.networkObjects?.find(
+      (item) => item.id === link.object_b_id,
+    );
+    labels[link.id] =
+      `${left?.name || link.object_a_id}:${link.port_a_name} ↔ ${right?.name || link.object_b_id}:${link.port_b_name}`;
   }
   return labels;
 });
@@ -97,12 +103,14 @@ watch(
       :network-objects="networkObjects || []"
       :request-interface-id="section === 'capture' ? interfaceId : undefined"
       :request-link-id="section === 'capture' ? linkId : undefined"
+      :request-object-link-id="section === 'capture' ? objectLinkId : undefined"
     /><TrafficFilterPanel
       v-if="trafficActivated"
       v-show="section === 'traffic-filter'"
       :laboratory-id="laboratoryId"
       :interface-id="interfaceId"
       :link-id="linkId"
+      :object-link-id="objectLinkId"
       :nodes="nodes || []"
       :interfaces="interfaces || []"
       :links="links || []"

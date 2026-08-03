@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { Clipboard, Download, ExternalLink, Radio, Square } from "lucide-vue-next";
+import {
+  Clipboard,
+  Download,
+  ExternalLink,
+  Radio,
+  Square,
+} from "lucide-vue-next";
 import { api, type CaptureSession } from "@/api";
 import {
   safeArtifactUrl,
@@ -14,6 +20,7 @@ const props = defineProps<{
   laboratoryId?: string;
   interfaceId?: string;
   linkId?: string;
+  objectLinkId?: string;
   sourceLabel?: string;
 }>();
 const emit = defineEmits<{
@@ -27,7 +34,9 @@ const taskId = ref("");
 const status = ref("");
 const busy = ref(false);
 const helperDialogOpen = ref(false);
-const helperIssue = ref<"missing" | "origin" | "wireshark" | "launch">("missing");
+const helperIssue = ref<"missing" | "origin" | "wireshark" | "launch">(
+  "missing",
+);
 const helperMessage = ref("");
 const helperBaseUrl = "http://127.0.0.1:38765";
 let captureRefreshTimer: ReturnType<typeof setTimeout> | undefined;
@@ -37,8 +46,7 @@ const captureStreamable = computed(() =>
   ),
 );
 const helperCommand = computed(
-  () =>
-    `netlab-wireshark-helper -allow-origin ${window.location.origin}`,
+  () => `netlab-wireshark-helper -allow-origin ${window.location.origin}`,
 );
 class HelperResponseError extends Error {
   constructor(
@@ -49,13 +57,17 @@ class HelperResponseError extends Error {
   }
 }
 async function start() {
-  if (!props.interfaceId && !props.linkId) return;
+  if (!props.interfaceId && !props.linkId && !props.objectLinkId) return;
   busy.value = true;
   try {
     const value = await api.startCapture({
       laboratory_id: props.laboratoryId,
-      source_type: props.linkId ? "link" : "interface",
-      source_id: props.linkId || props.interfaceId || "",
+      source_type: props.objectLinkId
+        ? "network_object_link"
+        : props.linkId
+          ? "link"
+          : "interface",
+      source_id: props.objectLinkId || props.linkId || props.interfaceId || "",
       filter: filter.value || undefined,
       format: format.value,
       retain: true,
@@ -77,7 +89,9 @@ async function discover() {
     const values = await api.listCaptures(props.laboratoryId);
     capture.value = values
       .filter(
-        (item) => item.source_id === (props.linkId || props.interfaceId),
+        (item) =>
+          item.source_id ===
+          (props.objectLinkId || props.linkId || props.interfaceId),
       )
       .sort((left, right) =>
         right.created_at.localeCompare(left.created_at),
@@ -87,7 +101,15 @@ async function discover() {
     status.value = error instanceof Error ? error.message : String(error);
   }
 }
-watch(() => [props.laboratoryId, props.interfaceId, props.linkId], discover);
+watch(
+  () => [
+    props.laboratoryId,
+    props.interfaceId,
+    props.linkId,
+    props.objectLinkId,
+  ],
+  discover,
+);
 watch(capture, (value) => emit("captureChange", value), { immediate: true });
 onMounted(discover);
 onBeforeUnmount(() => clearTimeout(captureRefreshTimer));
@@ -184,10 +206,7 @@ async function openWireshark() {
             : error instanceof Error
               ? error.message
               : "The local Wireshark helper could not be reached.";
-      showHelperIssue(
-        "missing",
-        message,
-      );
+      showHelperIssue("missing", message);
     }
   } finally {
     busy.value = false;
@@ -196,7 +215,7 @@ async function openWireshark() {
 
 async function helperRequest<T = Record<string, unknown>>(
   path: string,
-  init: RequestInit,
+  init: Parameters<typeof fetch>[1],
 ) {
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), 3500);
@@ -227,7 +246,8 @@ function showHelperIssue(
   helperIssue.value = issue;
   helperMessage.value = message;
   helperDialogOpen.value = true;
-  status.value = "Local Wireshark helper unavailable. See the installation dialog.";
+  status.value =
+    "Local Wireshark helper unavailable. See the installation dialog.";
 }
 
 async function writeClipboard(value: string) {
@@ -235,7 +255,8 @@ async function writeClipboard(value: string) {
     try {
       await navigator.clipboard.writeText(value);
       return;
-    } catch {
+    } catch (error) {
+      void error;
     }
   }
   const textarea = document.createElement("textarea");
@@ -258,7 +279,8 @@ async function writeClipboard(value: string) {
       <div>
         <strong class="text-sm">{{ sourceLabel }}</strong>
         <p class="text-[11px] text-muted-foreground">
-          This source has independent capture controls and remains active while you switch tabs.
+          This source has independent capture controls and remains active while
+          you switch tabs.
         </p>
       </div>
       <StatusBadge v-if="capture" :state="capture.state" />
@@ -278,9 +300,9 @@ async function writeClipboard(value: string) {
     <div class="flex flex-wrap gap-2">
       <Button
         size="sm"
-        :disabled="(!interfaceId && !linkId) || busy"
+        :disabled="(!interfaceId && !linkId && !objectLinkId) || busy"
         :title="
-          !interfaceId && !linkId
+          !interfaceId && !linkId && !objectLinkId
             ? 'Select a node interface or link before starting capture'
             : busy
               ? 'Capture request is in progress'
@@ -337,7 +359,10 @@ async function writeClipboard(value: string) {
         ><Download :size="13" /> Retained file</a
       >
     </div>
-    <p v-if="!interfaceId && !linkId" class="text-xs text-amber-300">
+    <p
+      v-if="!interfaceId && !linkId && !objectLinkId"
+      class="text-xs text-amber-300"
+    >
       Select a node interface or link before starting capture.
     </p>
     <article
@@ -394,10 +419,14 @@ async function writeClipboard(value: string) {
           Restart the helper with this NetLab address explicitly allowed.
         </p>
         <p v-else class="text-muted-foreground">
-          Wireshark installation alone is not enough. Download and keep the NetLab helper running on the same computer as this browser. The server-specific Windows helper can be started by double-clicking it.
+          Wireshark installation alone is not enough. Download and keep the
+          NetLab helper running on the same computer as this browser. The
+          server-specific Windows helper can be started by double-clicking it.
         </p>
         <p class="text-xs text-muted-foreground">
-          Diagnostic check: open the local helper health address. If it does not show JSON, the helper is not running or was blocked by the operating system.
+          Diagnostic check: open the local helper health address. If it does not
+          show JSON, the helper is not running or was blocked by the operating
+          system.
         </p>
         <a
           :href="`${helperBaseUrl}/health`"
@@ -406,9 +435,10 @@ async function writeClipboard(value: string) {
           class="text-primary underline"
           >Test local helper</a
         >
-        <code class="overflow-x-auto rounded border border-border bg-background p-2 text-xs">{{
-          helperCommand
-        }}</code>
+        <code
+          class="overflow-x-auto rounded border border-border bg-background p-2 text-xs"
+          >{{ helperCommand }}</code
+        >
         <div class="flex flex-wrap gap-2">
           <a
             class="rounded border border-border px-2 py-1 text-xs hover:bg-accent"

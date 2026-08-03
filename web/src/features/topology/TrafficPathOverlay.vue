@@ -13,11 +13,16 @@ defineProps<{ observations: TrafficObservation[]; ambiguous?: boolean }>();
     <ol>
       <li
         v-for="item in observations"
-        :key="`${item.fingerprint}-${item.interface_id}-${item.direction}`"
+        :key="`${item.fingerprint}-${item.network_object_link_id || item.link_id || item.interface_id}-${item.direction}`"
       >
-        {{ item.link_id || item.interface_id }} · {{ item.direction }} ·
-        {{ item.count }} packets · {{ item.bytes }} bytes ·
-        {{ item.first_seen }} — {{ item.last_seen }}
+        {{
+          item.network_object_link_id ||
+          item.resource_id ||
+          item.link_id ||
+          item.interface_id
+        }}
+        · {{ item.direction }} · {{ item.count }} packets ·
+        {{ item.bytes }} bytes · {{ item.first_seen }} — {{ item.last_seen }}
       </li>
     </ol>
   </aside>

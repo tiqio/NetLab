@@ -341,6 +341,7 @@ function trafficObservationKey(observation: TrafficObservation) {
     observation.fingerprint,
     observation.interface_id,
     observation.link_id,
+    observation.network_object_link_id,
     observation.direction,
   ].join(":");
 }
@@ -372,8 +373,38 @@ function aggregateTrafficLinks(observations: TrafficObservation[]) {
     }
   >();
   for (const observation of observations) {
-    if (!observation.link_id) continue;
-    const link = props.links.find((item) => item.id === observation.link_id);
+    const resourceId =
+      observation.network_object_link_id ||
+      (observation.resource_type === "network_object_link"
+        ? observation.resource_id
+        : observation.link_id);
+    if (!resourceId) continue;
+    const objectLink = props.networkObjectLinks.find(
+      (item) => item.id === resourceId,
+    );
+    if (objectLink) {
+      const current = result.get(resourceId) || {
+        count: 0,
+        bytes: 0,
+        directions: new Set<string>(),
+        pairs: new Set<string>(),
+      };
+      current.count += observation.count;
+      current.bytes += observation.bytes;
+      current.directions.add(observation.direction);
+      if (observation.direction === "a_to_b") {
+        current.source = objectLink.object_a_id;
+        current.target = objectLink.object_b_id;
+        current.pairs.add(`${current.source}>${current.target}`);
+      } else if (observation.direction === "b_to_a") {
+        current.source = objectLink.object_b_id;
+        current.target = objectLink.object_a_id;
+        current.pairs.add(`${current.source}>${current.target}`);
+      }
+      result.set(resourceId, current);
+      continue;
+    }
+    const link = props.links.find((item) => item.id === resourceId);
     if (!link) continue;
     const ownerA = ownerByInterface.value[link.endpoint_a_id];
     const ownerB = ownerByInterface.value[link.endpoint_b_id];
@@ -393,7 +424,7 @@ function aggregateTrafficLinks(observations: TrafficObservation[]) {
         target = observation.direction === "ingress" ? ownerB : ownerA;
       }
     }
-    const current = result.get(observation.link_id) || {
+    const current = result.get(resourceId) || {
       count: 0,
       bytes: 0,
       directions: new Set<string>(),
@@ -420,7 +451,7 @@ function aggregateTrafficLinks(observations: TrafficObservation[]) {
         }
       }
     }
-    result.set(observation.link_id, current);
+    result.set(resourceId, current);
   }
   return result;
 }
@@ -435,6 +466,21 @@ const trafficNodeIds = computed(() => {
   for (const observation of lingeringTraffic.value) {
     const owner = ownerByInterface.value[observation.interface_id];
     if (owner) result.add(owner);
+    const objectLinkId =
+      observation.network_object_link_id ||
+      (observation.resource_type === "network_object_link"
+        ? observation.resource_id
+        : undefined);
+    if (objectLinkId) {
+      const objectLink = props.networkObjectLinks.find(
+        (item) => item.id === objectLinkId,
+      );
+      if (objectLink) {
+        result.add(objectLink.object_a_id);
+        result.add(objectLink.object_b_id);
+      }
+      continue;
+    }
     if (!observation.link_id) continue;
     const link = props.links.find((item) => item.id === observation.link_id);
     if (!link) continue;
@@ -1085,6 +1131,36 @@ function refreshOverlays() {
         targetId: attachment.network_object_id,
         count: observations.reduce((total, item) => total + item.count, 0),
         bytes: observations.reduce((total, item) => total + item.bytes, 0),
+      });
+    }
+    for (const link of props.networkObjectLinks) {
+      const hit = trafficLinks.value.get(link.id);
+      if (!hit) continue;
+      const particleHit = particleLinks.value.get(link.id);
+      const sourceId = hit.source || link.object_a_id;
+      const targetId = hit.target || link.object_b_id;
+      const source = chart.value?.graphItemPixel?.(sourceId);
+      const target = chart.value?.graphItemPixel?.(targetId);
+      if (!source || !target) continue;
+      const curveness =
+        sourceId === link.object_a_id
+          ? -parallelNetworkObjectLinkCurveness(link, props.networkObjectLinks)
+          : parallelNetworkObjectLinkCurveness(link, props.networkObjectLinks);
+      trafficPaths.push({
+        id: `traffic:${link.id}`,
+        x1: source.x,
+        y1: source.y,
+        x2: target.x,
+        y2: target.y,
+        pathData: curvedPathData(source, target, curveness),
+        mode: hit.pairs.size === 1 ? "single" : "unknown",
+        guideMode: hit.pairs.size === 1 ? "single" : "none",
+        particleMode: particleHit?.pairs.size === 1 ? "single" : "unknown",
+        particlesActive: Boolean(particleHit),
+        sourceId,
+        targetId,
+        count: hit.count,
+        bytes: hit.bytes,
       });
     }
   }

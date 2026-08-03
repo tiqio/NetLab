@@ -21,6 +21,7 @@ const props = defineProps<{
   selectedNodeId?: string;
   selectedInterface?: NodeInterface;
   selectedLinkId?: string;
+  selectedObjectLinkId?: string;
   interfaceOwners?: Record<string, string>;
   coordinates?: Record<string, { x: number; y: number }>;
   resourceIds?: string[];
@@ -70,6 +71,7 @@ const value = computed({
           :laboratory-id="laboratoryId"
           :interface-id="selectedInterface?.id"
           :link-id="selectedLinkId"
+          :object-link-id="selectedObjectLinkId"
           :interface-owners="interfaceOwners"
           :coordinates="coordinates"
           :initial-section="active"

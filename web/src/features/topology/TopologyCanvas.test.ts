@@ -207,6 +207,94 @@ describe("TopologyCanvas", () => {
     ).toContain("Switch A:swp1 ↔ Switch B:swp1");
   });
 
+  it("renders exact object-link direction and decays particles before the guide", async () => {
+    vi.useFakeTimers();
+    const wrapper = mount(TopologyCanvas, {
+      props: {
+        nodes: [],
+        interfaces: [],
+        links: [],
+        networkObjects: [
+          {
+            id: "a",
+            laboratory_id: "lab",
+            name: "A",
+            kind: "switch_l2",
+            revision: 1,
+            desired_state: "active",
+            observed_state: "active",
+            config: {},
+          },
+          {
+            id: "b",
+            laboratory_id: "lab",
+            name: "B",
+            kind: "switch_l2",
+            revision: 1,
+            desired_state: "active",
+            observed_state: "active",
+            config: {},
+          },
+        ],
+        networkObjectLinks: [
+          {
+            id: "ol-traffic",
+            laboratory_id: "lab",
+            object_a_id: "a",
+            port_a_name: "swp1",
+            object_b_id: "b",
+            port_b_name: "swp1",
+            revision: 1,
+            desired_state: "connected",
+            observed_state: "connected",
+          },
+        ],
+        preferences: defaultWorkspacePreferences("lab"),
+        trafficActive: true,
+        traffic: [
+          {
+            fingerprint: "udp",
+            resource_type: "network_object_link",
+            resource_id: "ol-traffic",
+            interface_id: "",
+            network_object_link_id: "ol-traffic",
+            direction: "a_to_b",
+            first_seen: "2026-08-03T00:00:00Z",
+            last_seen: "2026-08-03T00:00:00.100Z",
+            count: 2,
+            bytes: 128,
+          },
+        ],
+      },
+    });
+    await nextTick();
+    await nextTick();
+    const path = wrapper.get('[data-traffic-path-id="traffic:ol-traffic"]');
+    expect(path.attributes("data-traffic-source")).toBe("a");
+    expect(path.attributes("data-traffic-target")).toBe("b");
+    expect(path.find(".traffic-flow-core").exists()).toBe(true);
+
+    await vi.advanceTimersByTimeAsync(800);
+    await nextTick();
+    expect(
+      wrapper
+        .get('[data-traffic-path-id="traffic:ol-traffic"]')
+        .find(".traffic-flow-core")
+        .exists(),
+    ).toBe(false);
+    expect(
+      wrapper.find('[data-traffic-path-id="traffic:ol-traffic"]').exists(),
+    ).toBe(true);
+
+    await vi.advanceTimersByTimeAsync(4000);
+    await nextTick();
+    expect(
+      wrapper.find('[data-traffic-path-id="traffic:ol-traffic"]').exists(),
+    ).toBe(false);
+    wrapper.unmount();
+    vi.useRealTimers();
+  });
+
   it("renders selectable named ports on a selected network object", async () => {
     const wrapper = mount(TopologyCanvas, {
       props: {

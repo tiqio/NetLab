@@ -94,7 +94,9 @@ describe("CapturePanel", () => {
       props: { laboratoryId: "lab", interfaceId: "if-1" },
     });
     await flushPromises();
-    await wrapper.get('button[title="Open this live stream in local Wireshark"]').trigger("click");
+    await wrapper
+      .get('button[title="Open this live stream in local Wireshark"]')
+      .trigger("click");
     await flushPromises();
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(String(fetchMock.mock.calls[1][1]?.body)).toContain(
@@ -142,7 +144,8 @@ describe("CapturePanel", () => {
     await flushPromises();
     expect(wrapper.text()).toContain("cap-new");
     expect(
-      wrapper.get('button[title="Open this live stream in local Wireshark"]')
+      wrapper
+        .get('button[title="Open this live stream in local Wireshark"]')
         .attributes("disabled"),
     ).toBeUndefined();
   });
@@ -164,19 +167,78 @@ describe("CapturePanel", () => {
         created_at: "2026-07-30T00:00:00Z",
       },
     ]);
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("connection refused")));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(new Error("connection refused")),
+    );
     const wrapper = mount(CapturePanel, {
       attachTo: document.body,
       props: { laboratoryId: "lab", interfaceId: "if-1" },
     });
     await flushPromises();
-    await wrapper.get('button[title="Open this live stream in local Wireshark"]').trigger("click");
+    await wrapper
+      .get('button[title="Open this live stream in local Wireshark"]')
+      .trigger("click");
     await flushPromises();
-    expect(document.body.textContent).toContain("Wireshark integration required");
+    expect(document.body.textContent).toContain(
+      "Wireshark integration required",
+    );
     expect(document.body.textContent).toContain(
       "Wireshark installation alone is not enough",
     );
     expect(document.body.textContent).toContain("Windows helper");
     expect(document.body.textContent).toContain("Install Wireshark");
   });
+});
+
+it("starts capture for a selected network object link", async () => {
+  vi.spyOn(api, "listCaptures").mockResolvedValue([]);
+  const startCapture = vi.spyOn(api, "startCapture").mockResolvedValue({
+    task: {
+      id: "task-object-link",
+      kind: "capture.start",
+      resource_type: "capture",
+      resource_id: "capture-object-link",
+      state: "queued",
+      progress_current: 0,
+      progress_total: 2,
+      created_at: "2026-08-03T00:00:00Z",
+    },
+    capture: {
+      id: "capture-object-link",
+      laboratory_id: "lab",
+      source_type: "network_object_link",
+      source_id: "object-link",
+      format: "pcap",
+      state: "starting",
+      retain: true,
+      max_bytes: 1024,
+      bytes_written: 0,
+      packets: 0,
+      truncated: false,
+      created_at: "2026-08-03T00:00:00Z",
+    },
+    stream_url: "/api/v1/captures/capture-object-link/stream",
+    wireshark: {
+      mode: "http_stream",
+      media_type: "application/vnd.tcpdump.pcap",
+    },
+  });
+  const wrapper = mount(CapturePanel, {
+    props: {
+      laboratoryId: "lab",
+      objectLinkId: "object-link",
+      sourceLabel: "A:swp1 ↔ B:swp1",
+    },
+  });
+  await flushPromises();
+  await wrapper.findAll("button")[0].trigger("click");
+  await flushPromises();
+  expect(startCapture).toHaveBeenCalledWith(
+    expect.objectContaining({
+      source_type: "network_object_link",
+      source_id: "object-link",
+    }),
+  );
+  expect(wrapper.text()).toContain("A:swp1 ↔ B:swp1");
 });

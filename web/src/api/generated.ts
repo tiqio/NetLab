@@ -344,7 +344,7 @@ export interface TrafficObservation {
   interface_id: string;
   link_id?: string;
   network_object_link_id?: string;
-  direction: "ingress" | "egress" | string;
+  direction: "ingress" | "egress" | "a_to_b" | "b_to_a" | "ambiguous" | string;
   source_address?: string;
   destination_address?: string;
   source_mac?: string;

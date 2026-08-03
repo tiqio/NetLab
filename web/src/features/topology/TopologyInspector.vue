@@ -3,6 +3,7 @@ import { computed, ref, watch } from "vue";
 import { Cable, Database, Info, Network, Trash2 } from "lucide-vue-next";
 import {
   api,
+  type CaptureSession,
   type Link,
   type NetworkAttachment,
   type NetworkObject,
@@ -68,6 +69,7 @@ const objectLinkPeerId = ref("");
 const objectLinkLocalPort = ref("");
 const objectLinkPeerPort = ref("");
 const objectLinkStatus = ref("");
+const objectLinkCapture = ref<CaptureSession>();
 const diagnostics = ref<Record<string, unknown>>();
 const diagnosticsLoading = ref(false);
 const error = ref("");
@@ -112,14 +114,20 @@ const objectLinkB = computed(() =>
     (item) => item.id === props.networkObjectLink?.object_b_id,
   ),
 );
-const objectLinkTask = computed(() =>
-  [...props.tasks]
-    .filter(
-      (item) =>
-        item.resource_type === "network_object_link" &&
-        item.resource_id === props.networkObjectLink?.id,
-    )
-    .sort((left, right) => right.created_at.localeCompare(left.created_at))[0],
+const objectLinkTask = computed(
+  () =>
+    [...props.tasks]
+      .filter(
+        (item) =>
+          item.resource_type === "network_object_link" &&
+          item.resource_id === props.networkObjectLink?.id,
+      )
+      .sort((left, right) =>
+        right.created_at.localeCompare(left.created_at),
+      )[0],
+);
+const objectLinkCaptureStream = computed(() =>
+  objectLinkCapture.value ? api.streamCapture(objectLinkCapture.value.id) : "",
 );
 const attachedInterfaceIds = computed(
   () => new Set(props.attachments.map((item) => item.interface_id)),
@@ -308,6 +316,27 @@ watch(
     objectLinkLocalPort.value = objectLinkLocalPorts.value[0] || "";
     objectLinkPeerPort.value = "";
   },
+);
+watch(
+  () => props.networkObjectLink?.id,
+  async (id) => {
+    objectLinkCapture.value = undefined;
+    if (!id) return;
+    try {
+      objectLinkCapture.value = (await api.listCaptures(props.laboratoryId))
+        .filter(
+          (capture) =>
+            capture.source_type === "network_object_link" &&
+            capture.source_id === id,
+        )
+        .sort((left, right) =>
+          right.created_at.localeCompare(left.created_at),
+        )[0];
+    } catch {
+      objectLinkCapture.value = undefined;
+    }
+  },
+  { immediate: true },
 );
 watch(objectLinkPeerId, () => {
   objectLinkPeerPort.value = objectLinkPeerPorts.value[0] || "";
@@ -528,10 +557,40 @@ async function deleteObjectLink() {
             <dd>{{ objectLinkTask.id }} · {{ objectLinkTask.state }}</dd>
             <dt>Task progress</dt>
             <dd>
-              {{ objectLinkTask.progress_current }} / {{ objectLinkTask.progress_total }}
+              {{ objectLinkTask.progress_current }} /
+              {{ objectLinkTask.progress_total }}
             </dd>
           </template>
+          <template v-if="objectLinkCapture">
+            <dt>最近抓包</dt>
+            <dd>{{ objectLinkCapture.id }} · {{ objectLinkCapture.state }}</dd>
+            <dt>Packets / bytes</dt>
+            <dd>
+              {{ objectLinkCapture.packets }} /
+              {{ objectLinkCapture.bytes_written }}
+            </dd>
+            <dt>Completion</dt>
+            <dd>{{ objectLinkCapture.completion_reason || "active" }}</dd>
+          </template>
         </dl>
+        <div v-if="objectLinkCapture" class="mt-3 flex flex-wrap gap-2 text-xs">
+          <a
+            v-if="
+              ['starting', 'running', 'streaming', 'requested'].includes(
+                objectLinkCapture.state,
+              )
+            "
+            :href="objectLinkCaptureStream"
+            class="text-primary underline"
+            >Live stream</a
+          >
+          <a
+            v-if="objectLinkCapture.artifact_url"
+            :href="objectLinkCapture.artifact_url"
+            class="text-primary underline"
+            >Retained artifact</a
+          >
+        </div>
         <StructuredProblem
           v-if="objectLinkTask?.error"
           class="mt-3"

@@ -21,6 +21,7 @@ const props = defineProps<{
   laboratoryId?: string;
   interfaceId?: string;
   linkId?: string;
+  objectLinkId?: string;
   nodes?: Node[];
   interfaces?: NodeInterface[];
   links?: Link[];
@@ -78,7 +79,6 @@ const currentEntry = computed(() =>
   ),
 );
 const filter = computed(() => currentEntry.value?.traffic_filter);
-const ambiguous = computed(() => currentEntry.value?.ambiguous || false);
 const active = computed(() =>
   ["starting", "running", "stopping"].includes(filter.value?.state || ""),
 );
@@ -106,8 +106,7 @@ const nodeById = computed(
   () => new Map((props.nodes || []).map((item) => [item.id, item])),
 );
 const networkObjectById = computed(
-  () =>
-    new Map((props.networkObjects || []).map((item) => [item.id, item])),
+  () => new Map((props.networkObjects || []).map((item) => [item.id, item])),
 );
 const attachmentRows = computed(() =>
   (props.attachments || [])
@@ -133,54 +132,6 @@ const objectLinkRows = computed(() =>
     label: `${networkObjectById.value.get(link.object_a_id)?.name || link.object_a_id}:${link.port_a_name} ↔ ${networkObjectById.value.get(link.object_b_id)?.name || link.object_b_id}:${link.port_b_name}`,
   })),
 );
-const macOwners = computed(() => {
-  const owners: Record<string, string> = {};
-  for (const item of props.interfaces || []) {
-    if (item.mac_address) owners[item.mac_address.toLowerCase()] = item.node_id;
-  }
-  return owners;
-});
-const scopeLinks = computed(() => {
-  const selectedInterfaces = new Set(selectedInterfaceIds.value);
-  const selectedLinks = new Set(selectedLinkIds.value);
-  return (props.links || [])
-    .filter(
-      (link) =>
-        selectedLinks.has(link.id) ||
-        (selectedInterfaces.has(link.endpoint_a_id) &&
-          selectedInterfaces.has(link.endpoint_b_id)),
-    )
-    .map((link) => {
-      const left = interfaceById.value.get(link.endpoint_a_id);
-      const right = interfaceById.value.get(link.endpoint_b_id);
-      if (!left || !right) return undefined;
-      return {
-        id: link.id,
-        source: left.node_id,
-        target: right.node_id,
-        label: linkLabel(link),
-      };
-    })
-    .filter((link): link is NonNullable<typeof link> => Boolean(link));
-});
-const scopeNodes = computed(() => {
-  const nodeIds = new Set<string>();
-  for (const interfaceId of selectedInterfaceIds.value) {
-    const item = interfaceById.value.get(interfaceId);
-    if (item) nodeIds.add(item.node_id);
-  }
-  for (const link of scopeLinks.value) {
-    nodeIds.add(link.source);
-    nodeIds.add(link.target);
-  }
-  return [...nodeIds].map((id) => ({
-    id,
-    label: nodeName(id),
-    x: props.coordinates?.[id]?.x,
-    y: props.coordinates?.[id]?.y,
-  }));
-});
-
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
@@ -288,7 +239,10 @@ async function refresh(showStatus = true) {
 function scheduleRefresh() {
   clearTimeout(refreshTimer);
   if (!active.value) return;
-  refreshTimer = setTimeout(() => void refresh(false), ACTIVE_REFRESH_INTERVAL_MS);
+  refreshTimer = setTimeout(
+    () => void refresh(false),
+    ACTIVE_REFRESH_INTERVAL_MS,
+  );
 }
 
 async function stop() {
@@ -358,10 +312,6 @@ function clearScope() {
   selectedObjectLinkIds.value = [];
 }
 
-function nodeName(nodeId: string) {
-  return (props.nodes || []).find((node) => node.id === nodeId)?.name || nodeId;
-}
-
 function linkLabel(link: Link) {
   return linkDisplayName(link, props.interfaces || [], props.nodes || []);
 }
@@ -391,6 +341,13 @@ watch(
   },
   { immediate: true },
 );
+watch(
+  () => props.objectLinkId,
+  (id) => {
+    if (id) toggleObjectLink(id, true);
+  },
+  { immediate: true },
+);
 watch(selectedFilterId, (id) => {
   const selected = entries.value.find(
     (entry) => entry.traffic_filter.id === id,
@@ -398,9 +355,7 @@ watch(selectedFilterId, (id) => {
   if (selected) {
     selectedInterfaceIds.value = [...(selected.interface_ids || [])];
     selectedLinkIds.value = [...(selected.link_ids || [])];
-    selectedObjectLinkIds.value = [
-      ...(selected.network_object_link_ids || []),
-    ];
+    selectedObjectLinkIds.value = [...(selected.network_object_link_ids || [])];
     expression.value = selected.expression;
     color.value = selected.color || "#f59e0b";
     selectedExample.value = filterExamples.some(
@@ -590,10 +545,17 @@ function applyExample(value: string | number | undefined) {
               <input
                 type="checkbox"
                 :checked="selectedObjectLinkIds.includes(objectLink.id)"
-                @change="toggleObjectLink(objectLink.id, ($event.target as HTMLInputElement).checked)"
+                @change="
+                  toggleObjectLink(
+                    objectLink.id,
+                    ($event.target as HTMLInputElement).checked,
+                  )
+                "
               />
               <span>{{ objectLink.label }}</span>
-              <span class="ml-auto text-muted-foreground">对象链路 · {{ objectLink.observed_state }}</span>
+              <span class="ml-auto text-muted-foreground"
+                >对象链路 · {{ objectLink.observed_state }}</span
+              >
             </label>
             <label
               v-for="attachment in attachmentRows"
@@ -602,7 +564,9 @@ function applyExample(value: string | number | undefined) {
             >
               <input
                 type="checkbox"
-                :checked="selectedInterfaceIds.includes(attachment.interface_id)"
+                :checked="
+                  selectedInterfaceIds.includes(attachment.interface_id)
+                "
                 @change="
                   toggleInterface(
                     attachment.interface_id,
@@ -622,7 +586,9 @@ function applyExample(value: string | number | undefined) {
       <div class="flex flex-wrap items-center gap-2">
         <Button
           size="sm"
-          :disabled="!laboratoryId || !selectedScopeCount || !colorValid || busy"
+          :disabled="
+            !laboratoryId || !selectedScopeCount || !colorValid || busy
+          "
           :title="
             !selectedScopeCount
               ? '请至少选择一个接口或链路'
@@ -675,7 +641,9 @@ function applyExample(value: string | number | undefined) {
         </div>
         <p class="mt-2 text-xs text-muted-foreground">
           匹配的数据包直接在主拓扑链路上流动显示。单向流量展示发送方 →
-          接收方箭头；活动会话约每 100 ms 刷新。停止流量后粒子会先消失，方向箭头约保留 4 秒，便于确认最近的数据流向。
+          接收方箭头；活动会话约每 100 ms
+          刷新。停止流量后粒子会先消失，方向箭头约保留 4
+          秒，便于确认最近的数据流向。
         </p>
         <dl class="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
           <dt>表达式</dt>

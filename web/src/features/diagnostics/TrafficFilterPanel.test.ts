@@ -70,6 +70,19 @@ const networkObjects = [
     config: {},
   },
 ] as NetworkObject[];
+const networkObjectLinks = [
+  {
+    id: "object-link-a",
+    laboratory_id: "lab",
+    object_a_id: "switch-a",
+    port_a_name: "swp1",
+    object_b_id: "switch-b",
+    port_b_name: "swp1",
+    revision: 1,
+    desired_state: "connected",
+    observed_state: "connected",
+  },
+] as const;
 
 describe("TrafficFilterPanel interactions", () => {
   beforeEach(() => {
@@ -86,6 +99,85 @@ describe("TrafficFilterPanel interactions", () => {
       .findAll("button")
       .find((button) => button.text().trim() === "启动")!;
     expect(start.attributes("disabled")).toBeDefined();
+  });
+
+  it("scopes a filter to the selected network object link", async () => {
+    const startTrafficFilter = vi
+      .spyOn(api, "startTrafficFilter")
+      .mockResolvedValue({
+        task: {
+          id: "task-object-link",
+          kind: "traffic_filter.start",
+          resource_type: "traffic_filter",
+          resource_id: "filter-object-link",
+          state: "queued",
+          progress_current: 0,
+          progress_total: 2,
+          created_at: "2026-08-03T00:00:00Z",
+        },
+        traffic_filter: {
+          id: "filter-object-link",
+          laboratory_id: "lab",
+          expression: "icmp",
+          color: "#f59e0b",
+          state: "starting",
+          max_observations: 1000,
+          network_object_link_ids: ["object-link-a"],
+          observations: [],
+          created_at: "2026-08-03T00:00:00Z",
+        },
+      });
+    vi.spyOn(api, "getTask").mockResolvedValue({
+      id: "task-object-link",
+      kind: "traffic_filter.start",
+      resource_type: "traffic_filter",
+      resource_id: "filter-object-link",
+      state: "succeeded",
+      progress_current: 2,
+      progress_total: 2,
+      created_at: "2026-08-03T00:00:00Z",
+    });
+    vi.spyOn(api, "getTrafficFilter").mockResolvedValue({
+      ambiguous: false,
+      traffic_filter: {
+        id: "filter-object-link",
+        laboratory_id: "lab",
+        expression: "icmp",
+        color: "#f59e0b",
+        state: "running",
+        max_observations: 1000,
+        network_object_link_ids: ["object-link-a"],
+        observations: [],
+        created_at: "2026-08-03T00:00:00Z",
+      },
+    });
+    const wrapper = mount(TrafficFilterPanel, {
+      props: {
+        laboratoryId: "lab",
+        objectLinkId: "object-link-a",
+        nodes,
+        interfaces,
+        links,
+        networkObjects: [
+          ...networkObjects,
+          { ...networkObjects[0], id: "switch-b", name: "Lightweight B" },
+        ],
+        networkObjectLinks: [...networkObjectLinks],
+      },
+    });
+    await flushPromises();
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().trim() === "启动")!
+      .trigger("click");
+    await flushPromises();
+    expect(startTrafficFilter).toHaveBeenCalledWith(
+      expect.objectContaining({
+        interface_ids: [],
+        link_ids: [],
+        network_object_link_ids: ["object-link-a"],
+      }),
+    );
   });
 
   it("treats a Lightweight attachment as an observable link segment", async () => {
@@ -153,9 +245,7 @@ describe("TrafficFilterPanel interactions", () => {
     });
     await flushPromises();
 
-    expect(wrapper.text()).toContain(
-      "BusyBox:eth0 ↔ Lightweight L2:lan0",
-    );
+    expect(wrapper.text()).toContain("BusyBox:eth0 ↔ Lightweight L2:lan0");
     await wrapper
       .findAll("button")
       .find((button) => button.text().trim() === "启动")!
@@ -294,8 +384,10 @@ describe("TrafficFilterPanel interactions", () => {
         .value,
     ).toBe("tcp port 443");
     expect(
-      (wrapper.find('input[aria-label="过滤器颜色值"]').element as HTMLInputElement)
-        .value,
+      (
+        wrapper.find('input[aria-label="过滤器颜色值"]')
+          .element as HTMLInputElement
+      ).value,
     ).toBe("#38bdf8");
   });
 
@@ -308,7 +400,9 @@ describe("TrafficFilterPanel interactions", () => {
     const examples = wrapper.find('select[aria-label="过滤模板"]');
     const expressionInput = wrapper.find('input[aria-label="pcap 过滤表达式"]');
     await examples.setValue("udp port 53");
-    expect((expressionInput.element as HTMLInputElement).value).toBe("udp port 53");
+    expect((expressionInput.element as HTMLInputElement).value).toBe(
+      "udp port 53",
+    );
 
     await expressionInput.setValue("tcp port 8080");
     expect((examples.element as HTMLSelectElement).value).toBe("custom");

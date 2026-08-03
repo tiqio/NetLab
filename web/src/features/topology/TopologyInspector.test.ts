@@ -16,7 +16,24 @@ const natObject: NetworkObject = {
 };
 
 describe("TopologyInspector", () => {
-  it("shows authoritative object-link lifecycle and failure", () => {
+  it("shows authoritative object-link lifecycle, capture metadata, and failure", async () => {
+    vi.spyOn(api, "listCaptures").mockResolvedValue([
+      {
+        id: "capture-object-link",
+        laboratory_id: "lab-1",
+        source_type: "network_object_link",
+        source_id: "object-link-1",
+        format: "pcap",
+        state: "running",
+        retain: true,
+        max_bytes: 1024,
+        bytes_written: 256,
+        packets: 4,
+        truncated: false,
+        artifact_url: "/api/v1/artifacts/capture-object-link",
+        created_at: "2026-08-03T00:00:00Z",
+      },
+    ]);
     const wrapper = mount(TopologyInspector, {
       props: {
         laboratoryId: "lab-1",
@@ -85,6 +102,11 @@ describe("TopologyInspector", () => {
     expect(wrapper.text()).toContain("task could not restore the veth pair");
     expect(wrapper.text()).toContain("直接 veth pair");
     expect(wrapper.text()).not.toContain("独立宿主桥");
+    await flushPromises();
+    expect(wrapper.text()).toContain("capture-object-link · running");
+    expect(wrapper.text()).toContain("4 / 256");
+    expect(wrapper.text()).toContain("Live stream");
+    expect(wrapper.text()).toContain("Retained artifact");
   });
 
   it("summarizes Docker route readiness and recovery guidance", () => {

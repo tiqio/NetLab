@@ -1,9 +1,19 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { Cable, Radio } from "lucide-vue-next";
-import type { CaptureSession, Link, Node, NodeInterface } from "@/api";
+import type {
+  CaptureSession,
+  Link,
+  NetworkObject,
+  NetworkObjectLink,
+  Node,
+  NodeInterface,
+} from "@/api";
 import { Button } from "@/components/ui";
-import { linkDisplayName } from "@/features/topology/linkPresentation";
+import {
+  linkDisplayName,
+  networkObjectLinkDisplayName,
+} from "@/features/topology/linkPresentation";
 import CapturePanel from "./CapturePanel.vue";
 
 const props = defineProps<{
@@ -11,11 +21,14 @@ const props = defineProps<{
   nodes: Node[];
   interfaces: NodeInterface[];
   links: Link[];
+  networkObjects?: NetworkObject[];
+  networkObjectLinks?: NetworkObjectLink[];
   requestInterfaceId?: string;
   requestLinkId?: string;
+  requestObjectLinkId?: string;
 }>();
 
-type SourceType = "interface" | "link";
+type SourceType = "interface" | "link" | "network_object_link";
 
 interface OpenSource {
   key: string;
@@ -25,6 +38,7 @@ interface OpenSource {
 }
 
 const LINK_GROUP_ID = "links";
+const OBJECT_LINK_GROUP_ID = "object-links";
 const activeGroupId = ref("");
 const activeSourceKey = ref("");
 const openSources = ref<OpenSource[]>([]);
@@ -55,16 +69,16 @@ const activeInterfaces = computed(() =>
     : interfacesByNode.value.get(activeGroupId.value) || [],
 );
 
-const activeSource = computed(() =>
-  openSources.value.find((source) => source.key === activeSourceKey.value),
-);
-
 function interfaceKey(id: string) {
   return `interface:${id}`;
 }
 
 function linkKey(id: string) {
   return `link:${id}`;
+}
+
+function objectLinkKey(id: string) {
+  return `network_object_link:${id}`;
 }
 
 function ensureOpen(source: OpenSource) {
@@ -98,6 +112,16 @@ function openLink(linkId: string) {
   });
 }
 
+function openObjectLink(linkId: string) {
+  if (!props.networkObjectLinks?.some((link) => link.id === linkId)) return;
+  ensureOpen({
+    key: objectLinkKey(linkId),
+    type: "network_object_link",
+    id: linkId,
+    groupId: OBJECT_LINK_GROUP_ID,
+  });
+}
+
 function selectGroup(groupId: string) {
   activeGroupId.value = groupId;
   const remembered = lastSourceByGroup.value[groupId];
@@ -107,6 +131,11 @@ function selectGroup(groupId: string) {
   }
   if (groupId === LINK_GROUP_ID) {
     if (props.links[0]) openLink(props.links[0].id);
+    return;
+  }
+  if (groupId === OBJECT_LINK_GROUP_ID) {
+    if (props.networkObjectLinks?.[0])
+      openObjectLink(props.networkObjectLinks[0].id);
     return;
   }
   const firstInterface = interfacesByNode.value.get(groupId)?.[0];
@@ -148,8 +177,14 @@ function linkLabel(link: Link) {
 function sourceLabel(source: OpenSource) {
   if (source.type === "interface")
     return `${nodeLabel(source.groupId)} · ${interfaceLabel(source.id)}`;
-  const link = props.links.find((item) => item.id === source.id);
-  return link ? linkLabel(link) : source.id;
+  if (source.type === "link") {
+    const link = props.links.find((item) => item.id === source.id);
+    return link ? linkLabel(link) : source.id;
+  }
+  const link = props.networkObjectLinks?.find((item) => item.id === source.id);
+  return link
+    ? networkObjectLinkDisplayName(link, props.networkObjects || [])
+    : source.id;
 }
 
 watch(
@@ -164,9 +199,15 @@ watch(
 );
 
 watch(
-  () => [props.requestInterfaceId, props.requestLinkId] as const,
-  ([interfaceId, linkId]) => {
-    if (linkId) openLink(linkId);
+  () =>
+    [
+      props.requestInterfaceId,
+      props.requestLinkId,
+      props.requestObjectLinkId,
+    ] as const,
+  ([interfaceId, linkId, objectLinkId]) => {
+    if (objectLinkId) openObjectLink(objectLinkId);
+    else if (linkId) openLink(linkId);
     else if (interfaceId) openInterface(interfaceId);
   },
   { immediate: true },
@@ -176,14 +217,20 @@ watch(
   () => [
     props.interfaces.map((item) => item.id),
     props.links.map((item) => item.id),
+    (props.networkObjectLinks || []).map((item) => item.id),
   ],
   () => {
     const interfaceIds = new Set(props.interfaces.map((item) => item.id));
     const linkIds = new Set(props.links.map((item) => item.id));
+    const objectLinkIds = new Set(
+      (props.networkObjectLinks || []).map((item) => item.id),
+    );
     openSources.value = openSources.value.filter((source) =>
       source.type === "interface"
         ? interfaceIds.has(source.id)
-        : linkIds.has(source.id),
+        : source.type === "link"
+          ? linkIds.has(source.id)
+          : objectLinkIds.has(source.id),
     );
     if (
       !openSources.value.some((source) => source.key === activeSourceKey.value)
@@ -224,6 +271,17 @@ watch(
         <Cable :size="12" /> Links
         <span class="text-[10px] opacity-70">{{ links.length }}</span>
       </Button>
+      <Button
+        v-if="networkObjectLinks?.length"
+        size="sm"
+        :variant="activeGroupId === OBJECT_LINK_GROUP_ID ? 'default' : 'ghost'"
+        @click="selectGroup(OBJECT_LINK_GROUP_ID)"
+      >
+        <Cable :size="12" /> Object links
+        <span class="text-[10px] opacity-70">{{
+          networkObjectLinks.length
+        }}</span>
+      </Button>
     </nav>
 
     <nav
@@ -259,6 +317,23 @@ watch(
         />
         {{ linkLabel(link) }}
       </Button>
+      <Button
+        v-for="link in activeGroupId === OBJECT_LINK_GROUP_ID
+          ? networkObjectLinks || []
+          : []"
+        :key="link.id"
+        size="sm"
+        :variant="
+          activeSourceKey === objectLinkKey(link.id) ? 'default' : 'ghost'
+        "
+        @click="openObjectLink(link.id)"
+      >
+        <span
+          class="size-2 rounded-full"
+          :class="stateClass(objectLinkKey(link.id))"
+        />
+        {{ networkObjectLinkDisplayName(link, networkObjects || []) }}
+      </Button>
     </nav>
 
     <div v-if="openSources.length" class="min-h-0 flex-1 overflow-auto">
@@ -269,6 +344,9 @@ watch(
         :laboratory-id="laboratoryId"
         :interface-id="source.type === 'interface' ? source.id : undefined"
         :link-id="source.type === 'link' ? source.id : undefined"
+        :object-link-id="
+          source.type === 'network_object_link' ? source.id : undefined
+        "
         :source-label="sourceLabel(source)"
         @capture-change="(capture) => updateCapture(source.key, capture)"
       />
