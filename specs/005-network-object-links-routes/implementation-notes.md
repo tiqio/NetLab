@@ -31,7 +31,7 @@
 |---|---|---|---|
 | Setup | Ignore rules and fixture compilation | pending | No ignore changes required |
 | Foundation | Domain, SQLite migration/repository, command, ports, Linux networking, capture runtime, reconcile, and focused contract gates passed | `61cec9b` | Added durable object-link observation state, atomic `link_deleted` completion, observation/runtime ports, and object-link import/export remapping |
-| US1 | pending | pending | |
+| US1 | Durable task, repository, HTTP/MCP parity, outbox ordering, and race gates passed | `d542d2f` | Object-link create/list/get now share idempotent durable commands and synchronous occupied-port admission |
 | US2 | pending | pending | |
 | US3 | pending | pending | |
 | US4 | Focused domain, command, store, API, runtime, reconcile, contract, Vitest, build, and changed-file ESLint gates passed | `c18f223` | Canonical route declarations survive create/settings/export/import and expose route-specific readiness; ESLint reports warnings only |
@@ -108,3 +108,12 @@
   ./internal/app/command ./internal/app/ports ./internal/runtime/linuxnet ./internal/runtime/capture
   ./internal/app/reconcile -count=1`; focused object-link/route/OpenAPI contract tests; and dedicated
   observation completion/import rollback tests all passed locally on August 3, 2026.
+- `d542d2f` (`feat: add durable object link controls`): routes first-class object-link creation through
+  the shared durable task runner, returns the same predicted link/task envelope for repeated idempotency
+  keys across REST and MCP, adds authoritative single-link GET, validates laboratory membership and port
+  occupancy before enqueue, and maps occupied endpoints to HTTP 409 while invalid topology is HTTP 422.
+  Repository events retain revision 1 and precede the terminal task update in ordered outbox sequence.
+- Focused gates for `d542d2f`: core domain/store/task/reconcile/HTTP/MCP/stream tests, the object-link
+  control parity contract suite, and `go test -race ./internal/app/reconcile -run
+  TestNetworkObjectLinkCreateIsDurableIdempotentAndObservable -count=1` all passed locally on August 3,
+  2026.

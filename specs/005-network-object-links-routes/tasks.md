@@ -71,8 +71,8 @@ service, and confirm the same path recovers.
 ### Tests for User Story 1
 
 - [X] T015 [P] [US1] Replace bridge-plus-two-veth expectations with failing direct-one-veth-pair, deterministic naming, idempotent ensure, and exact cleanup tests in `internal/runtime/linuxnet/dataplane_test.go`
-- [ ] T016 [P] [US1] Add failing create/list/revision/idempotency/task/outbox tests for durable object links in `internal/app/reconcile/network_object_tasks_test.go` and `internal/store/sqlite/network_state_repository_test.go`
-- [ ] T017 [P] [US1] Add failing HTTP and MCP parity tests for create/list/get object-link task envelopes and occupied-port errors in `tests/contract/network_object_link_control_parity_test.go`
+- [X] T016 [P] [US1] Add failing create/list/revision/idempotency/task/outbox tests for durable object links in `internal/app/reconcile/network_object_tasks_test.go` and `internal/store/sqlite/network_state_repository_test.go`
+- [X] T017 [P] [US1] Add failing HTTP and MCP parity tests for create/list/get object-link task envelopes and occupied-port errors in `tests/contract/network_object_link_control_parity_test.go`
 - [ ] T018 [P] [US1] Add a failing privileged three-object path, parallel-link isolation, bidirectional ICMP/TCP/UDP, and service-restart recovery test in `tests/integration/network_object_link_path_test.go`
 - [ ] T019 [P] [US1] Add failing frontend tests for connector port selection, parallel line identity, readable endpoint labels, shared state updates, and refresh recovery in `web/src/features/topology/topologyConnectionController.test.ts`, `web/src/features/topology/TopologyCanvas.test.ts`, and `web/src/features/topology/TopologyInspector.test.ts`
 - [ ] T020 [P] [US1] Add a failing Playwright journey that creates a three-object path from the browser and observes the same links in a second client in `tests/e2e/journeys/networkObjectLinks.spec.ts`
@@ -81,9 +81,9 @@ service, and confirm the same path recovers.
 
 - [X] T021 [US1] Replace the per-link host bridge and two veth pairs with one owned veth pair moved directly into endpoint A and B namespaces in `internal/runtime/linuxnet/dataplane.go`
 - [ ] T022 [US1] Add deterministic object-link ownership discovery, partial-pair adoption, pending-create reconciliation, and orphan cleanup in `internal/app/reconcile/host_ownership_scanners.go`, `internal/app/reconcile/recovery_coordinator.go`, and `internal/runtime/ownership/manifest.go`
-- [ ] T023 [US1] Implement revisioned and idempotent object-link create/list/get commands with durable tasks and ordered outbox events in `internal/app/reconcile/network_object_tasks.go` and `internal/app/reconcile/network_objects.go`
-- [ ] T024 [US1] Upgrade object-link HTTP create/list/get routes to the task-envelope and structured-conflict contract in `internal/api/http/network_handlers.go` and `internal/api/http/mutation_middleware.go`
-- [ ] T025 [US1] Add `netlab.network_object_links.create` and `netlab.network_object_links.get` with the shared application handlers in `internal/api/mcp/network_tools.go`
+- [X] T023 [US1] Implement revisioned and idempotent object-link create/list/get commands with durable tasks and ordered outbox events in `internal/app/reconcile/network_object_tasks.go` and `internal/app/reconcile/network_objects.go`
+- [X] T024 [US1] Upgrade object-link HTTP create/list/get routes to the task-envelope and structured-conflict contract in `internal/api/http/network_handlers.go` and `internal/api/http/mutation_middleware.go`
+- [X] T025 [US1] Add `netlab.network_object_links.create` and `netlab.network_object_links.get` with the shared application handlers in `internal/api/mcp/network_tools.go`
 - [ ] T026 [US1] Publish ordered object-link create/state/recovery events through the shared event stream in `internal/api/stream/events.go` and `internal/app/events/outbox.go`
 - [ ] T027 [US1] Synchronize object-link task, endpoint, state, and error types and API methods in `web/src/api/generated.ts` and `web/src/api/index.ts`
 - [ ] T028 [US1] Implement object-to-object connector selection, occupied-port feedback, parallel-link rendering, and `object:port ↔ object:port` presentation in `web/src/features/topology/topologyConnectionController.ts`, `web/src/features/topology/TopologyCanvas.vue`, and `web/src/features/topology/linkPresentation.ts`
