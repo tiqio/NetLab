@@ -91,3 +91,10 @@
   TestPrivilegedDockerStaticRoutePath -count=1` and `go vet ./tests/integration ./tests/testsupport` passed
   locally. Dynamic execution is intentionally gated by `NETLAB_PRIVILEGED=1` and an approved
   `NETLAB_DOCKER_ROUTE_IMAGE` pinned with `@sha256:`.
+- `3703ff5` (`test: cover Docker route browser journey`): adds a two-viewport Playwright journey that
+  creates canonicalized IPv4 and IPv6 routes through the Add-to-topology dialog, verifies authoritative
+  readback, edits the exact stopped-node route set through Settings, and verifies the Inspector summary.
+- Focused gate for `3703ff5`: `NODE_PATH=$PWD/node_modules npx playwright test --config
+  playwright.config.ts --list ../tests/e2e/journeys/dockerStaticRoutes.spec.ts` discovered the desktop and
+  minimum-viewport cases locally. Dynamic execution remains target-host gated because it requires the
+  real Docker runtime and available BusyBox image.
