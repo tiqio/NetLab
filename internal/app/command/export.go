@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/netlab/netlab/internal/app/audit"
@@ -109,7 +110,7 @@ func (s *ExportService) Build(ctx context.Context, labID domain.ID) (LaboratoryE
 	}
 	for _, node := range snapshot.Nodes {
 		nodes[node.ID] = node
-		config := audit.Redact(node.Config)
+		config := exportConfig(node.Config)
 		templateKey, _ := config["template_key"].(string)
 		imageDigest, _ := config["image_digest"].(string)
 		if imageDigest != "" && !digestPattern.MatchString(imageDigest) {
@@ -137,7 +138,7 @@ func (s *ExportService) Build(ctx context.Context, labID domain.ID) (LaboratoryE
 			"export_id": networkObject.ID,
 			"name":      networkObject.Name,
 			"kind":      networkObject.Kind,
-			"config":    audit.Redact(networkObject.Config),
+			"config":    exportConfig(networkObject.Config),
 		})
 	}
 	for _, link := range snapshot.NetworkObjectLinks {
@@ -150,6 +151,49 @@ func (s *ExportService) Build(ctx context.Context, labID domain.ID) (LaboratoryE
 		return value.TemplateVersions[i].TemplateKey < value.TemplateVersions[j].TemplateKey
 	})
 	return value, nil
+}
+
+func exportConfig(input map[string]any) map[string]any {
+	return audit.Redact(stripRuntimeExportValues(input))
+}
+
+func stripRuntimeExportValues(input map[string]any) map[string]any {
+	if input == nil {
+		return nil
+	}
+	result := make(map[string]any, len(input))
+	for key, value := range input {
+		if runtimeExportKey(key) {
+			continue
+		}
+		switch typed := value.(type) {
+		case map[string]any:
+			result[key] = stripRuntimeExportValues(typed)
+		case []any:
+			items := make([]any, 0, len(typed))
+			for _, item := range typed {
+				if nested, ok := item.(map[string]any); ok {
+					items = append(items, stripRuntimeExportValues(nested))
+				} else {
+					items = append(items, item)
+				}
+			}
+			result[key] = items
+		default:
+			result[key] = value
+		}
+	}
+	return result
+}
+
+func runtimeExportKey(key string) bool {
+	normalized := strings.ToLower(strings.ReplaceAll(key, "-", "_"))
+	for _, marker := range []string{"container_pid", "namespace_pid", "namespace_name", "runtime_interface", "runtime_locator", "host_interface", "packet_payload", "packet_bytes", "capture_payload"} {
+		if strings.Contains(normalized, marker) {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *ExportService) CreateArtifact(ctx context.Context, labID domain.ID, ttl time.Duration) (domain.Artifact, error) {
