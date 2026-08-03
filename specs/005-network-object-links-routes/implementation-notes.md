@@ -180,3 +180,7 @@
   cancellation of the capture subprocess, retained-stream byte bounds, and exact counting of packets in
   both directions from one observed endpoint. Full capture-runtime tests and `go vet` passed, completing
   T032 locally on August 3, 2026.
+- `97fb185` (`test: cover object link capture lifecycle`): verifies endpoint-A namespace resolution,
+  source metadata and resolved locator persistence, live stream replay, durable capture task identity,
+  and non-streamable retained metadata after service restart for `network_object_link` captures. Full
+  reconciliation tests and `go vet` passed, completing T033 locally on August 3, 2026.
