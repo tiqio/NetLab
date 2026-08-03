@@ -79,6 +79,16 @@ func (s *NodeService) CreateConfigured(ctx context.Context, labID domain.ID, req
 	}
 	kind := request.Kind
 	config := cloneMap(request.Config)
+	if raw, ok := config["network_interfaces"]; ok {
+		var interfaces []domain.NodeNetworkInterfaceSettings
+		body, _ := json.Marshal(raw)
+		if err := json.Unmarshal(body, &interfaces); err != nil {
+			return domain.Node{}, nil, domain.Problem{Code: "invalid_node_network", Message: "network interface configuration is invalid"}
+		}
+		if err := domain.ValidateNodeNetworkInterfaces(interfaces); err != nil {
+			return domain.Node{}, nil, domain.Problem{Code: "invalid_node_network", Message: err.Error()}
+		}
+	}
 	interfaceCount := request.InterfaceCount
 	cpuCount, cpuQuota, memoryMiB := request.CPUCount, request.CPUQuotaMicros, request.MemoryMiB
 	storageGiB, interfaceLimit, processLimit := request.StorageGiB, request.InterfaceLimit, request.ProcessLimit

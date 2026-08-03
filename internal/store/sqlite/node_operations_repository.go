@@ -120,6 +120,9 @@ func (r *TopologyRepository) UpdateNodeSettings(ctx context.Context, id domain.I
 	if settings.CPUCount < 1 || settings.CPUCount > 256 || settings.CPUQuotaMicros < 0 || (settings.CPUQuotaMicros > 0 && settings.CPUQuotaMicros < 1000) || settings.MemoryMiB < 64 || settings.InterfaceLimit < 1 || settings.ProcessLimit < 1 || settings.ProcessLimit > 1048576 {
 		return domain.Node{}, domain.Problem{Code: "invalid_node_settings", Message: "node settings are outside supported limits", ResourceType: "node", ResourceID: id}
 	}
+	if err := domain.ValidateNodeNetworkInterfaces(settings.NetworkInterfaces); err != nil {
+		return domain.Node{}, domain.Problem{Code: "invalid_node_network", Message: err.Error(), ResourceType: "node", ResourceID: id}
+	}
 	var updated domain.Node
 	err := r.database.Write(ctx, func(tx *sql.Tx) error {
 		var laboratoryID domain.ID
@@ -192,7 +195,7 @@ func (r *TopologyRepository) UpdateNodeSettings(ctx context.Context, id domain.I
 					return updateErr
 				}
 				descriptors = append(descriptors, map[string]any{"id": string(iface.ID), "slot": iface.Slot, "name": iface.Name, "driver": value.Driver, "mac_address": iface.MACAddress})
-				network = append(network, map[string]any{"name": iface.Name, "modes": value.Modes, "addresses": value.Addresses})
+				network = append(network, map[string]any{"name": iface.Name, "modes": value.Modes, "addresses": value.Addresses, "routes": value.Routes})
 			}
 			config["interfaces"] = descriptors
 			config["network_interfaces"] = network
