@@ -193,3 +193,12 @@
   object-link capture envelopes and direction-attributed Traffic Filter observations, plus distinct
   ordered event constructors for capture state/completion and traffic observations. Focused stream,
   contract, and `go vet` gates passed, completing T035 and T043 locally on August 3, 2026.
+- `e806804` (`feat: observe network object links in topology`): treats a network-object link as a
+  first-class capture and Traffic Filter source throughout the SPA, preserves exact stable identity for
+  parallel links, renders endpoint-A-relative particles and a longer-lived direction guide, and exposes
+  readable endpoint names, capture counters, completion metadata, live stream, and retained artifact
+  handles in the global workspace and Inspector. This completes T037 and T044 through T046.
+- Focused gates for `e806804`: 29 capture/filter/topology/Inspector Vitest cases passed; changed-file
+  Prettier passed; changed-file ESLint completed with zero errors; and both the production SPA build and
+  embedded `netlabd` build passed locally on August 3, 2026. Existing Vue style warnings and the Vite
+  chunk-size warning remain informational.
