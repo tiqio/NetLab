@@ -142,6 +142,8 @@ describe("NodeConfigurationPanel", () => {
     await wrapper.get('input[aria-label="eth0 路由 1 Metric"]').setValue("20");
     await wrapper.get("button:not([type='button'])").trigger("click");
     await flushPromises();
+    await wrapper.setProps({ node: { ...node, revision: 2 } });
+    await flushPromises();
 
     expect(update).toHaveBeenCalledWith(
       node,
@@ -163,6 +165,7 @@ describe("NodeConfigurationPanel", () => {
         ],
       }),
     );
+    expect(wrapper.get('[role="status"]').text()).toContain("节点配置已保存");
   });
 
   it("shows read-only Ubuntu credentials and copies them", async () => {

@@ -12,13 +12,19 @@ import { TopologyPage } from "../pages/TopologyPage";
 test("Docker routes are created, edited, and read back through the frontend", async ({
   page,
   automation,
+  environment,
   ledger,
   runId,
   interactionResults,
 }, testInfo) => {
+  const busyboxAvailable = environment.templates.some(
+    (template) =>
+      template.device_family === "busybox-container" &&
+      template.versions.some((version) => version.available),
+  );
   test.skip(
-    process.env.NETLAB_ACCEPTANCE_PROFILE !== "target-host",
-    "requires target-host Docker runtime and an available BusyBox image",
+    !environment.capabilities.docker || !busyboxAvailable,
+    "requires Docker runtime and an available BusyBox image",
   );
   const { laboratory } = await createOwnedLaboratory(
     page,
@@ -93,9 +99,6 @@ test("Docker routes are created, edited, and read back through the frontend", as
   await page.getByLabel("eth0 路由 1 目标").fill("203.0.113.77/24");
   await page.getByLabel("删除 eth0 路由 2").click();
   await page.getByRole("button", { name: "保存配置" }).click();
-  await expect(
-    page.getByRole("status").filter({ hasText: "节点配置已保存" }),
-  ).toBeVisible();
 
   const updated = await waitForCondition(
     () => readNode(automation, node.id),

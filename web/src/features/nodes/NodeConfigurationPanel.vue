@@ -89,7 +89,7 @@ function configuredNetwork() {
   );
 }
 
-function reset() {
+function reset(clearFeedback = true) {
   const configured = configuredNetwork();
   name.value = props.node.name;
   interfaceForms.value = props.interfaces.map((item) => {
@@ -138,8 +138,10 @@ function reset() {
     } as InterfaceForm;
   });
   initialValue.value = JSON.stringify(interfaceForms.value);
-  status.value = "";
-  problem.value = undefined;
+  if (clearFeedback) {
+    status.value = "";
+    problem.value = undefined;
+  }
 }
 
 function addRoute(item: InterfaceForm, family: "ipv4" | "ipv6") {
@@ -284,7 +286,7 @@ async function save() {
 watch(
   () => [props.node, props.interfaces] as const,
   () => {
-    reset();
+    reset(false);
     void loadCredentials();
   },
   { immediate: true, deep: true },

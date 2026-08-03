@@ -822,6 +822,19 @@
       "operation": "network_object_link.delete",
       "cleanup_effect": "link-and-observers-removed",
       "sensitive_evidence": []
+    },
+    {
+      "id": "docker.routes.frontend",
+      "area": "topology",
+      "label": "Configure Docker static routes",
+      "locator": { "role": "button", "name": "保存配置" },
+      "applicable_states": ["stopped-docker-node-selected"],
+      "activation": ["pointer"],
+      "outcome_class": "mutation",
+      "operation": "node.settings.update",
+      "required_capabilities": ["docker"],
+      "cleanup_effect": "laboratory-cascade",
+      "sensitive_evidence": []
     }
   ]
 }
