@@ -157,6 +157,7 @@ func (r *NodeReconciler) reconcileNode(ctx context.Context, node domain.Node) er
 		return nil
 	}
 	var actual ports.ActualNode
+	startedNow := false
 	err = runNodePhase(ctx, r.timeouts.Inspect, func(phaseCtx context.Context) error {
 		var inspectErr error
 		actual, inspectErr = runtime.Inspect(phaseCtx, node)
@@ -209,6 +210,19 @@ func (r *NodeReconciler) reconcileNode(ctx context.Context, node domain.Node) er
 			return nil
 		}
 		actual.State = domain.ObservedRunning
+		startedNow = true
+	}
+	if !startedNow && node.Kind == string(domain.RuntimeDocker) && node.DesiredState == domain.DesiredRunning && actual.State == domain.ObservedRunning {
+		err = runNodePhase(ctx, r.timeouts.Apply, func(phaseCtx context.Context) error { return runtime.Start(phaseCtx, node) })
+		if err != nil {
+			code := "runtime_configuration_failed"
+			if errors.Is(err, context.DeadlineExceeded) {
+				code = "runtime_configuration_timeout"
+			}
+			problem := structuredProblem(err, nodeProblem(node, code, "runtime_configuration", "running container retained; endpoint and route ownership remain available for retry", "inspect the container namespace and retry reconciliation", 3))
+			_ = r.transition(ctx, &node, domain.ObservedFailed, problem)
+			return nil
+		}
 	}
 	if node.DesiredState == domain.DesiredRunning && actual.State == domain.ObservedRunning && node.ObservedState != domain.ObservedRunning {
 		if node.ObservedState != domain.ObservedStarting && node.ObservedState != domain.ObservedUnknown {

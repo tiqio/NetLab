@@ -40,6 +40,26 @@ type lifecycleRuntime struct {
 	startWait    bool
 }
 
+type countingDockerRuntime struct {
+	state      domain.ObservedState
+	startCalls int
+	startErr   error
+}
+
+func (r *countingDockerRuntime) Inspect(context.Context, domain.Node) (ports.ActualNode, error) {
+	return ports.ActualNode{State: r.state, Owner: map[string]string{"container_id": "container-1", "pid": "4242"}}, nil
+}
+
+func (r *countingDockerRuntime) Start(context.Context, domain.Node) error {
+	r.startCalls++
+	return r.startErr
+}
+
+func (r *countingDockerRuntime) Stop(context.Context, domain.Node) error { return nil }
+func (r *countingDockerRuntime) Delete(context.Context, domain.Node) error {
+	return nil
+}
+
 func (r lifecycleRuntime) Inspect(context.Context, domain.Node) (ports.ActualNode, error) {
 	return ports.ActualNode{State: r.state, Owner: r.owner}, nil
 }
@@ -122,6 +142,32 @@ func TestNodeReconcilerPersistsSuccessfulStartCheckpoints(t *testing.T) {
 		if store.transitions[index] != expected[index] {
 			t.Fatalf("transitions=%v", store.transitions)
 		}
+	}
+}
+
+func TestNodeReconcilerReappliesRunningDockerConfigurationDuringRecovery(t *testing.T) {
+	store := &lifecycleStore{node: domain.Node{ID: "node", Kind: "docker", DesiredState: domain.DesiredRunning, ObservedState: domain.ObservedRunning}}
+	runtime := &countingDockerRuntime{state: domain.ObservedRunning}
+	if err := NewNodeReconciler(store, RuntimeDispatch{Docker: runtime}).ReconcileWithCheckpoints(context.Background(), func(RecoveryResourceOutcome) error { return nil }); err != nil {
+		t.Fatal(err)
+	}
+	if runtime.startCalls != 1 || len(store.transitions) != 0 {
+		t.Fatalf("startCalls=%d transitions=%v", runtime.startCalls, store.transitions)
+	}
+}
+
+func TestNodeReconcilerDoesNotReportRunningWhenDockerConfigurationFails(t *testing.T) {
+	store := &lifecycleStore{node: domain.Node{ID: "node", Kind: "docker", DesiredState: domain.DesiredRunning, ObservedState: domain.ObservedRunning}}
+	runtime := &countingDockerRuntime{state: domain.ObservedRunning, startErr: errors.New("route gateway unavailable")}
+	if err := NewNodeReconciler(store, RuntimeDispatch{Docker: runtime}).Reconcile(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if runtime.startCalls != 1 || len(store.transitions) != 1 || store.transitions[0] != domain.ObservedFailed {
+		t.Fatalf("startCalls=%d transitions=%v", runtime.startCalls, store.transitions)
+	}
+	problem := store.problems[0]
+	if problem == nil || problem.Code != "runtime_configuration_failed" || problem.Phase != "runtime_configuration" || problem.OperatorHint == "" {
+		t.Fatalf("problem=%+v", problem)
 	}
 }
 

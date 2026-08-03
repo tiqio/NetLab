@@ -98,6 +98,25 @@ func TestStartRunningContainerRebuildsEndpointsWithoutReplacingContainer(t *test
 	}
 }
 
+func TestStartStoppedContainerStartsThenReconcilesEndpoints(t *testing.T) {
+	engine := &fakeEngine{
+		items:      []container.Summary{{ID: "stopped-container", State: container.StateExited}},
+		inspection: container.InspectResponse{State: &container.State{Running: true, Pid: 4343}},
+	}
+	endpoints := &fakeEndpoints{}
+	adapter := NewAdapterWithRuntime(engine, endpoints)
+
+	if err := adapter.Start(context.Background(), domain.Node{ID: "node-stopped"}); err != nil {
+		t.Fatal(err)
+	}
+	if engine.startCalls != 1 || engine.removeCalls != 0 {
+		t.Fatalf("start=%d remove=%d", engine.startCalls, engine.removeCalls)
+	}
+	if !reflect.DeepEqual(endpoints.ensurePIDs, []int{4343}) {
+		t.Fatalf("endpoint PIDs=%#v", endpoints.ensurePIDs)
+	}
+}
+
 func TestStartCompensatesNewContainerWhenEndpointSetupFails(t *testing.T) {
 	engine := &fakeEngine{inspection: container.InspectResponse{State: &container.State{Running: true, Pid: 5252}}}
 	endpoints := &fakeEndpoints{ensureErr: errors.New("endpoint failed")}
