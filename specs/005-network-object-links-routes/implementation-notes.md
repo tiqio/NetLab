@@ -246,3 +246,5 @@
 - Focused validation passed on August 3, 2026:
   - `cd web && npm test -- --run src/features/topology/LinkContextMenu.test.ts src/features/topology/TopologyWorkspace.test.ts src/features/topology/TopologyCanvas.test.ts src/stores/laboratory.test.ts` (28 tests)
   - `cd web && npm run build`
+- `b74f6ce` (`fix: avoid resurrecting deleting object links`): makes the generic DataPlane reconciler leave `disconnecting` object links under durable delete-task ownership during service recovery and reports `pending_task_recovery` rather than publishing a misleading recovered outcome. This closes the identified restart resurrection race; T059 remains open for the full interrupted-cleanup recovery and event-ordering journey.
+- Focused combined gates for `b74f6ce` passed locally on August 3, 2026: reconcile/store/linuxnet/event/stream packages, focused object-link delete/capture/Traffic Filter contracts, focused `go vet`, 28 frontend deletion/store/canvas tests, and the production SPA build.
