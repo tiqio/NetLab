@@ -30,9 +30,9 @@
 | Milestone | Local gates | Commit SHA | Notes |
 |---|---|---|---|
 | Setup | Ignore rules and fixture compilation | pending | No ignore changes required |
-| Foundation | `go test ./internal/domain ./internal/store/sqlite ./internal/runtime/linuxnet ./internal/app/reconcile`; all passed | pending | Added endpoint reservations, typed routes, direct veth links, and namespace-aware object-link capture |
+| Foundation | `go test ./internal/domain ./internal/store/sqlite ./internal/runtime/linuxnet ./internal/app/reconcile`; all passed | `3813579` | Added endpoint reservations, typed routes, direct veth links, and namespace-aware object-link capture |
 | US1 | pending | pending | |
 | US2 | pending | pending | |
 | US3 | pending | pending | |
-| US4 | pending | pending | |
+| US4 | `go test ./internal/app/command ./internal/store/sqlite ./internal/runtime/linuxnet`; all passed | `bb07b51` | Docker route declarations are validated on create/settings and persisted for runtime reconciliation |
 | Final candidate | pending | pending | |

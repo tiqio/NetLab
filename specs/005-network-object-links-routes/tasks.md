@@ -187,8 +187,8 @@ and confirm exact-set convergence and actionable failures.
 
 ### Implementation for User Story 4
 
-- [ ] T070 [US4] Implement canonical Docker route validation and normalization on typed interface settings before persistence or readiness in `internal/domain/models.go` and `internal/app/command/node.go`
-- [ ] T071 [US4] Preserve Docker network interface and route declarations through create, stopped-node settings, export, import, and generated task inputs in `internal/app/command/node.go`, `internal/app/command/export.go`, `internal/app/command/import.go`, and `internal/store/sqlite/node_operations_repository.go`
+- [X] T070 [US4] Implement canonical Docker route validation and normalization on typed interface settings before persistence or readiness in `internal/domain/models.go` and `internal/app/command/node.go`
+- [X] T071 [US4] Preserve Docker network interface and route declarations through create, stopped-node settings, export, import, and generated task inputs in `internal/app/command/node.go`, `internal/app/command/export.go`, `internal/app/command/import.go`, and `internal/store/sqlite/node_operations_repository.go`
 - [ ] T072 [US4] Reconcile the exact owned route set inside the container namespace using argument vectors, remove only stale NetLab-managed routes, and return route-specific errors in `internal/runtime/linuxnet/docker_endpoint.go`
 - [ ] T073 [US4] Run endpoint and route reconciliation for created, already-running, restarted, recreated, service-recovered, and host-recovered containers before ready state in `internal/runtime/docker/adapter.go` and `internal/app/reconcile/recovery_coordinator.go`
 - [ ] T074 [US4] Expose typed Docker routes and validation problems through HTTP and MCP node create/settings operations in `internal/api/http/node_operations_handlers.go` and `internal/api/mcp/tools.go`
