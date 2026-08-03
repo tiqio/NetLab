@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { Cable, Eye, Route, Unplug } from "lucide-vue-next";
+import { Cable, Eye, Route, Trash2, Unplug } from "lucide-vue-next";
 import { Button, DropdownMenu } from "@/components/ui";
 
-defineProps<{ disabled?: boolean }>();
+defineProps<{ disabled?: boolean; objectLink?: boolean; pending?: boolean }>();
 const emit = defineEmits<{
   inspect: [];
   reconnect: [];
   disconnect: [];
   route: [];
+  delete: [];
 }>();
 </script>
 
@@ -22,18 +23,38 @@ const emit = defineEmits<{
       <Button variant="ghost" class="justify-start" @click="emit('inspect')">
         <Eye :size="13" /> Inspect
       </Button>
-      <Button variant="ghost" class="justify-start" @click="emit('reconnect')">
+      <Button
+        v-if="!objectLink"
+        variant="ghost"
+        class="justify-start"
+        @click="emit('reconnect')"
+      >
         <Cable :size="13" /> Reconnect endpoint
       </Button>
-      <Button variant="ghost" class="justify-start" @click="emit('route')">
+      <Button
+        v-if="!objectLink"
+        variant="ghost"
+        class="justify-start"
+        @click="emit('route')"
+      >
         <Route :size="13" /> Edit local route
       </Button>
       <Button
+        v-if="!objectLink"
         variant="destructive"
         class="justify-start"
         @click="emit('disconnect')"
       >
         <Unplug :size="13" /> Disconnect
+      </Button>
+      <Button
+        v-else
+        variant="destructive"
+        class="justify-start"
+        :disabled="pending"
+        @click="emit('delete')"
+      >
+        <Trash2 :size="13" /> {{ pending ? "Deleting…" : "Delete link" }}
       </Button>
     </div>
   </DropdownMenu>

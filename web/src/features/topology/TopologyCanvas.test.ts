@@ -9,6 +9,7 @@ vi.mock("@/components/charts/EChart.vue", () => ({
     props: ["option", "ariaLabel"],
     emits: [
       "chartClick",
+      "chartContext",
       "canvasWheel",
       "nodeDragStart",
       "nodeDrag",
@@ -32,6 +33,7 @@ vi.mock("@/components/charts/EChart.vue", () => ({
       <button data-roam @click="$emit('graphRoam',{zoom:2,centerX:5,centerY:4})">roam</button>
       <button data-wheel @click="$emit('graphRoam',{zoom:2.2,centerX:-5,centerY:2})">wheel</button>
       <button data-drag @click="$emit('nodeDragStart',{data:{id:'node-1',resourceType:'node'},event:{offsetX:10,offsetY:10}});$emit('nodeDrag',{data:{id:'node-1'},event:{offsetX:30,offsetY:20},graphPoint:{x:12,y:34}})">drag</button>
+      <button data-object-link-context @click="$emit('chartContext',{data:{id:'object-link-1',resourceType:'network_object_link'},event:{event:{clientX:45,clientY:55,preventDefault(){}}}})">context</button>
     </div>`,
   },
 }));
@@ -99,6 +101,25 @@ describe("TopologyCanvas", () => {
       },
     });
     expect(wrapper.classes()).toContain("min-h-[320px]");
+  });
+  it("emits context actions for first-class object links", async () => {
+    const wrapper = mount(TopologyCanvas, {
+      props: {
+        nodes: [],
+        interfaces: [],
+        links: [],
+        networkObjects: [],
+        networkObjectLinks: [],
+        preferences: defaultWorkspacePreferences("lab"),
+      },
+    });
+    await wrapper.get("[data-object-link-context]").trigger("click");
+    expect(wrapper.emitted("context")?.[0]).toEqual([
+      "object-link-1",
+      "network_object_link",
+      45,
+      55,
+    ]);
   });
   it("renders and activates a connector for the selected node", async () => {
     const wrapper = mount(TopologyCanvas, {

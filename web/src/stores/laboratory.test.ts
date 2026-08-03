@@ -222,6 +222,48 @@ describe("laboratory store", () => {
     });
   });
 
+  it("keeps an optimistically deleted object link hidden across refreshes", async () => {
+    const store = useLaboratoryStore();
+    const snapshot = {
+      laboratory: laboratoryFactory({ id: "lab" }),
+      nodes: [],
+      interfaces: [],
+      links: [],
+      network_objects: [],
+      network_object_links: [
+        {
+          id: "object-link-1",
+          laboratory_id: "lab",
+          object_a_id: "switch-a",
+          port_a_name: "swp1",
+          object_b_id: "switch-b",
+          port_b_name: "swp1",
+          revision: 4,
+          desired_state: "connected",
+          observed_state: "connected",
+        },
+      ],
+      placements: [],
+      event_sequence: 40,
+    };
+    vi.spyOn(api, "getLab").mockResolvedValue(snapshot);
+    await store.open("lab");
+    store.hideNetworkObjectLink("object-link-1");
+    await store.open("lab");
+    expect(store.active?.network_object_links).toHaveLength(0);
+
+    store.applyEvent({
+      sequence: 41,
+      type: "network_object_link.state_changed",
+      laboratory_id: "lab",
+      resource_type: "network_object_link",
+      resource_id: "object-link-1",
+      revision: 5,
+      data: { observed_state: "disconnecting" },
+    });
+    expect(store.active?.network_object_links).toHaveLength(0);
+  });
+
   it("incrementally reconciles topology resources and tasks", () => {
     const store = useLaboratoryStore();
     store.active = {

@@ -352,8 +352,15 @@ export const generatedApi = {
     ),
   getNetworkObjectLink: (linkId: string) =>
     request<NetworkObjectLink>(`/network-object-links/${linkId}`),
-  deleteNetworkObjectLink: (linkId: string) =>
-    request<void>(`/network-object-links/${linkId}`, "DELETE"),
+  deleteNetworkObjectLink: (
+    value: Pick<NetworkObjectLink, "id" | "revision">,
+    idempotencyKey?: string,
+  ) =>
+    request<NetworkObjectLinkTaskEnvelope>(
+      `/network-object-links/${value.id}`,
+      "DELETE",
+      { revision: value.revision, idempotencyKey },
+    ),
   getNetworkObjectDiagnostics: (objectId: string) =>
     request<Record<string, unknown>>(
       `/network-objects/${objectId}/diagnostics`,

@@ -48,6 +48,7 @@ import { fitViewport } from "./topologyGeometry";
 import { TopologyKeyboardController } from "./topologyKeyboardController";
 import { resolvePlacements } from "./topologyLayout";
 import { buildPlacementBatch } from "./topologyPlacementBatch";
+import { runObjectLinkDeletion } from "./objectLinkDeletion";
 import {
   boxSelect,
   cleanSelection,
@@ -64,12 +65,14 @@ const initialized = ref(false);
 const panEnabled = ref(false);
 const resourceContext = ref<{
   id: string;
-  type: "node" | "link" | "network_object";
+  type: "node" | "link" | "network_object" | "network_object_link";
   x: number;
   y: number;
 }>();
 const contextDeleteNode = ref<Node>();
 const contextDeleteObject = ref<NetworkObject>();
+const deletingObjectLinkIds = ref<string[]>([]);
+const failedObjectLinkDelete = ref<NetworkObjectLink>();
 const diagnosticsRequestKey = ref(0);
 const trafficObservations = ref<TrafficObservation[]>([]);
 const trafficOverlayActive = ref(false);
@@ -165,10 +168,17 @@ const contextObject = computed(() =>
       )
     : undefined,
 );
+const contextObjectLink = computed(() =>
+  resourceContext.value?.type === "network_object_link"
+    ? store.active?.network_object_links?.find(
+        (item) => item.id === resourceContext.value?.id,
+      )
+    : undefined,
+);
 
 function openResourceContext(
   id: string,
-  type: "node" | "link" | "network_object",
+  type: "node" | "link" | "network_object" | "network_object_link",
   x: number,
   y: number,
 ) {
@@ -179,6 +189,45 @@ function openResourceContext(
     x: Math.max(8, Math.min(x, window.innerWidth - 220)),
     y: Math.max(8, Math.min(y, window.innerHeight - 260)),
   };
+}
+
+async function deleteObjectLink(link: NetworkObjectLink) {
+  if (deletingObjectLinkIds.value.includes(link.id)) return;
+  failedObjectLinkDelete.value = undefined;
+  deletingObjectLinkIds.value.push(link.id);
+  closeResourceContext();
+  canvasStatus.value = `正在删除对象链路 ${link.id}…`;
+  try {
+    const envelope = await runObjectLinkDeletion(link, {
+      hide: (id) => store.hideNetworkObjectLink(id),
+      clearSelection: () => {
+        if (selectedIds.value.includes(link.id)) clearSelection();
+      },
+      submit: (value) => api.deleteNetworkObjectLink(value),
+      recordTask: (task) => {
+        const index = store.tasks.findIndex((item) => item.id === task.id);
+        if (index >= 0) store.tasks[index] = task;
+        else store.tasks.unshift(task);
+      },
+      unhide: (id) => store.unhideNetworkObjectLink(id),
+      reload: async () => {
+        if (store.active) await store.open(store.active.laboratory.id);
+      },
+    });
+    canvasStatus.value = `对象链路删除任务 ${envelope.task.id} 已提交。`;
+  } catch (value) {
+    failedObjectLinkDelete.value = link;
+    canvasStatus.value = `对象链路删除失败：${value instanceof Error ? value.message : String(value)}`;
+  } finally {
+    deletingObjectLinkIds.value = deletingObjectLinkIds.value.filter(
+      (id) => id !== link.id,
+    );
+  }
+}
+
+async function retryObjectLinkDelete() {
+  const link = failedObjectLinkDelete.value;
+  if (link) await deleteObjectLink(link);
 }
 function closeResourceContext() {
   resourceContext.value = undefined;
@@ -1394,6 +1443,21 @@ onBeforeUnmount(() => {
             @disconnect="disconnectSelectedLink"
             @route="toggleSelectedRoute"
           />
+          <LinkContextMenu
+            v-else-if="selectedObjectLink"
+            object-link
+            :pending="deletingObjectLinkIds.includes(selectedObjectLink.id)"
+            @inspect="shell?.openInspector()"
+            @delete="deleteObjectLink(selectedObjectLink)"
+          />
+          <Button
+            v-if="failedObjectLinkDelete"
+            size="sm"
+            variant="destructive"
+            @click="retryObjectLinkDelete"
+          >
+            Retry link deletion
+          </Button>
           <template v-if="editingRouteLinkId">
             <Button size="sm" variant="secondary" @click="finishRouteEdit">
               Save route
@@ -1547,7 +1611,9 @@ onBeforeUnmount(() => {
               ? `Actions for ${contextNode.name}`
               : contextObject
                 ? `Actions for ${contextObject.name}`
-                : 'Link actions'
+                : contextObjectLink
+                  ? `Actions for ${contextObjectLink.id}`
+                  : 'Link actions'
           "
           class="fixed w-52 rounded-md border border-border bg-popover p-1 shadow-2xl"
           :style="{
@@ -1649,6 +1715,30 @@ onBeforeUnmount(() => {
               "
             >
               Disconnect
+            </Button>
+          </template>
+          <template v-else-if="contextObjectLink">
+            <Button
+              variant="ghost"
+              size="sm"
+              class="w-full justify-start"
+              role="menuitem"
+              @click="
+                closeResourceContext();
+                shell?.openInspector();
+              "
+            >
+              Inspect
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              class="w-full justify-start text-red-300"
+              role="menuitem"
+              :disabled="deletingObjectLinkIds.includes(contextObjectLink.id)"
+              @click="deleteObjectLink(contextObjectLink)"
+            >
+              <Trash2 :size="13" /> Delete link
             </Button>
           </template>
           <template v-else-if="contextObject">

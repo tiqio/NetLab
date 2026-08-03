@@ -86,7 +86,12 @@ const emit = defineEmits<{
   ];
   routePoint: [string, { x: number; y: number }];
   transientCancelled: [];
-  context: [string, "node" | "link" | "network_object", number, number];
+  context: [
+    string,
+    "node" | "link" | "network_object" | "network_object_link",
+    number,
+    number,
+  ];
 }>();
 const interaction = new TopologyInteractionController();
 const trafficClock = ref(Date.now());
@@ -927,7 +932,9 @@ function handleContext(event: unknown) {
   const type = value.data?.resourceType;
   if (
     !value.data?.id ||
-    !["node", "link", "network_object"].includes(type || "")
+    !["node", "link", "network_object", "network_object_link"].includes(
+      type || "",
+    )
   )
     return;
   value.event?.event?.preventDefault?.();
@@ -935,7 +942,7 @@ function handleContext(event: unknown) {
   emit(
     "context",
     value.data.id,
-    type as "node" | "link" | "network_object",
+    type as "node" | "link" | "network_object" | "network_object_link",
     pointer?.clientX || 0,
     pointer?.clientY || 0,
   );

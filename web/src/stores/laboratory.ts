@@ -55,6 +55,7 @@ export const useLaboratoryStore = defineStore("laboratory", {
     tasks: [] as OperationTask[],
     nodeCapabilities: {} as Record<string, RuntimeCapabilityObservation[]>,
     hiddenLaboratoryIds: [] as string[],
+    hiddenNetworkObjectLinkIds: [] as string[],
     sequence: 0,
     eventStatus: "disconnected" as
       "disconnected" | "connecting" | "connected" | "reconnecting",
@@ -83,6 +84,11 @@ export const useLaboratoryStore = defineStore("laboratory", {
       this.syncState = this.active ? "refreshing" : "initializing";
       try {
         this.active = normalizeSnapshot(await api.getLab(id));
+        this.active.network_object_links = (
+          this.active.network_object_links || []
+        ).filter(
+          (link) => !this.hiddenNetworkObjectLinkIds.includes(link.id),
+        );
         this.sequence = this.active.event_sequence;
         this.syncState = "live";
         this.connectEvents();
@@ -105,6 +111,19 @@ export const useLaboratoryStore = defineStore("laboratory", {
         this.hiddenLaboratoryIds.push(id);
       this.labs = this.labs.filter((laboratory) => laboratory.id !== id);
       if (this.active?.laboratory.id === id) this.active = null;
+    },
+    hideNetworkObjectLink(id: string) {
+      if (!this.hiddenNetworkObjectLinkIds.includes(id))
+        this.hiddenNetworkObjectLinkIds.push(id);
+      if (this.active)
+        this.active.network_object_links = (
+          this.active.network_object_links || []
+        ).filter((link) => link.id !== id);
+    },
+    unhideNetworkObjectLink(id: string) {
+      this.hiddenNetworkObjectLinkIds = this.hiddenNetworkObjectLinkIds.filter(
+        (linkId) => linkId !== id,
+      );
     },
     applyEvent(event: StateEvent) {
       if (event.sequence <= this.sequence) return;
@@ -269,12 +288,14 @@ export const useLaboratoryStore = defineStore("laboratory", {
       if (event.resource_type === "network_object_link") {
         this.active.network_object_links ||= [];
         if (event.type.endsWith(".deleted")) {
+          this.unhideNetworkObjectLink(event.resource_id);
           this.active.network_object_links =
             this.active.network_object_links.filter(
               (item) => item.id !== event.resource_id,
             );
           return;
         }
+        if (this.hiddenNetworkObjectLinkIds.includes(event.resource_id)) return;
         this.upsert(
           this.active.network_object_links,
           event.resource_id,

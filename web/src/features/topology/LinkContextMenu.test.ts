@@ -20,4 +20,18 @@ describe("LinkContextMenu", () => {
       if (label === "Inspect") expect(wrapper.emitted(event)).toHaveLength(1);
     }
   });
+
+  it("offers inspect and delete only for an object link", async () => {
+    const wrapper = mount(LinkContextMenu, {
+      props: { objectLink: true },
+    });
+    await wrapper.get("button").trigger("click");
+    const menu = wrapper.get('[aria-label="Link actions"]');
+    expect(menu.text()).toContain("Inspect");
+    expect(menu.text()).toContain("Delete link");
+    expect(menu.text()).not.toContain("Reconnect endpoint");
+    expect(menu.text()).not.toContain("Edit local route");
+    await menu.findAll("button")[1].trigger("click");
+    expect(wrapper.emitted("delete")).toHaveLength(1);
+  });
 });
