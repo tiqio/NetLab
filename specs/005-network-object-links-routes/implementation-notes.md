@@ -218,3 +218,13 @@
   completes T038.
 - Focused gates for `0b87558`: the Playwright journey and acceptance coverage/cleanup gates passed in
   both the 1920x1080 desktop and 1024x768 minimum viewport projects locally on August 3, 2026.
+- `673152d` (`fix: wait for capture stop persistence`) makes capture stop wait for worker completion and
+  terminal metadata persistence with bounded timeouts. This removes the asynchronous temporary-directory
+  cleanup race and ensures callers receive authoritative stopped metadata rather than a transient state.
+- US2 focused milestone SHA: `673152d`. Final local gates passed on August 3, 2026: full capture runtime,
+  reconciliation, event, and stream packages; focused object-link observation/control contracts; focused
+  race and `go vet`; 29 frontend capture/filter/topology/Inspector tests; production SPA and embedded Go
+  build; the root-gated ICMP/TCP/UDP bidirectional attribution test in 3.32 seconds; and the two-project
+  Playwright isolation journey with acceptance coverage and cleanup gates. The repository-wide contract
+  baseline still includes the previously recorded built-in template count mismatch; a broad shared-memory
+  contract run can also expose test-state reuse, so US2 uses isolated focused contract gates.

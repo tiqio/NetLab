@@ -124,7 +124,7 @@ metadata, direction, isolation, and activity decay.
 - [X] T044 [US2] Extend frontend capture/filter API types and source selectors with object-link identities in `web/src/api/generated.ts`, `web/src/api/index.ts`, `web/src/features/diagnostics/CapturePanel.vue`, and `web/src/features/diagnostics/TrafficFilterPanel.vue`
 - [X] T045 [US2] Render object-link capture state, packet/byte counts, completion, stream/artifact handles, and human-readable endpoint identity in `web/src/features/diagnostics/GlobalCaptureWorkspace.vue` and `web/src/features/topology/TopologyInspector.vue`
 - [X] T046 [US2] Map object-link observations to the exact topology edge and render direction-aware particles with configured decay and ambiguity presentation in `web/src/features/topology/TrafficPathOverlay.vue`, `web/src/features/topology/trafficPathTypes.ts`, and `web/src/features/topology/TopologyCanvas.vue`
-- [ ] T047 [US2] Run US2 capture, filter, contract, frontend, privileged integration, and browser tests and record the focused milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
+- [X] T047 [US2] Run US2 capture, filter, contract, frontend, privileged integration, and browser tests and record the focused milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
 
 **Checkpoint**: User Story 2 provides first-class troubleshooting for one selected object link without
 false activity on parallel links.
