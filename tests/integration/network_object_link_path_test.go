@@ -99,6 +99,9 @@ func TestPrivilegedNetworkObjectLinkThreeObjectPath(t *testing.T) {
 		t.Fatalf("delete primary parallel link: %v", err)
 	}
 	assertObjectLinkPing(t, ctx, namespaceA, "10.41.1.2")
+	runObjectLinkCommand(t, ctx, "ip", "-n", namespaceA, "route", "replace", "10.42.0.0/30", "via", "10.41.1.2")
+	runObjectLinkCommand(t, ctx, "ip", "-n", namespaceC, "route", "replace", "10.41.1.0/30", "via", "10.42.0.1")
+	assertObjectLinkPing(t, ctx, namespaceA, "10.42.0.2")
 
 	recovered, err := linuxnet.NewDataPlane(nil)
 	if err != nil {
@@ -108,7 +111,7 @@ func TestPrivilegedNetworkObjectLinkThreeObjectPath(t *testing.T) {
 		link domain.NetworkObjectLink
 		a    domain.NetworkObject
 		b    domain.NetworkObject
-	}{{primary, objectA, objectB}, {parallel, objectA, objectB}, {downstream, objectB, objectC}} {
+	}{{parallel, objectA, objectB}, {downstream, objectB, objectC}} {
 		if err = recovered.EnsureNetworkObjectLink(ctx, item.link, item.a, item.b); err != nil {
 			t.Fatalf("recover %s: %v", item.link.ID, err)
 		}
