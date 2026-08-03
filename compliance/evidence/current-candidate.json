@@ -1,12 +1,12 @@
 {
   "schema_version": "1.0",
-  "id": "acceptance-object-links-routes-6fec815-20260803",
-  "candidate_id": "object-links-routes-6fec815-20260803",
+  "id": "acceptance-object-links-routes-580d4d9-20260803",
+  "candidate_id": "object-links-routes-580d4d9-20260803",
   "status": "blocked",
   "gate_results": {
     "format": {
       "status": "passed",
-      "details": "gofmt, git diff --check, and complete frontend Prettier passed on source 6fec81522f4e74ce4a7aa872195068034d349fd7"
+      "details": "gofmt, git diff --check, and complete frontend Prettier passed on source 580d4d9afd884d7dafdd176e2fedafde8ba0c8f8"
     },
     "static_analysis": {
       "status": "passed",
@@ -14,7 +14,7 @@
     },
     "unit": {
       "status": "passed",
-      "details": "go test ./... passed after the immutable prebuilt installer change"
+      "details": "go test ./... passed after the target-discovered L3 hot-port forwarding fix"
     },
     "contract": {
       "status": "passed",
@@ -26,7 +26,7 @@
     },
     "privileged_integration": {
       "status": "blocked",
-      "reason": "local privileged Docker dual-stack, object-link path, capture/filter, recovery, race, and leak gates passed; deployment and target-host acceptance are pending"
+      "reason": "local privileged Docker dual-stack, object-link path, capture/filter, recovery, race, and leak gates passed; the first target candidate was rolled back after exposing missing L3 hot-port forwarding, and final target acceptance is pending"
     },
     "recovery": {
       "status": "passed",
@@ -46,7 +46,7 @@
     },
     "candidate_artifact": {
       "status": "passed",
-      "details": "source=6fec81522f4e74ce4a7aa872195068034d349fd7; archive=sha256:496567e1a01a184b880fc59e73a4bacb0519af9c18bcc1ef2a7e14fd986528a0; binary=sha256:296aeae2e509820f7a9299ad218977e6413a128d87358953ba8509d97a7d193b; built_at=2026-08-03T11:11:00Z"
+      "details": "source=580d4d9afd884d7dafdd176e2fedafde8ba0c8f8; archive=sha256:b432d572068afcf1414e0ce862d0944e7ab0a480985b8fd3bef326cb4b201a00; binary=sha256:30dd57b04eb7ac2604bddbb9ff867a97d464ae3be7587dac8b73615bb804bad9; built_at=2026-08-03T11:30:45Z"
     },
     "migration_and_rollback": {
       "status": "passed",
@@ -88,6 +88,6 @@
     "prohibited_content_count": 0
   },
   "conclusion": "blocked",
-  "started_at": "2026-08-03T11:11:00Z",
-  "finished_at": "2026-08-03T11:13:37Z"
+  "started_at": "2026-08-03T11:30:45Z",
+  "finished_at": "2026-08-03T11:31:32Z"
 }

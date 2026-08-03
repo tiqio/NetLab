@@ -327,12 +327,12 @@
 
 ## Immutable Candidate
 
-- Candidate ID: `object-links-routes-6fec815-20260803`; source SHA:
-  `6fec81522f4e74ce4a7aa872195068034d349fd7`; build time: August 3, 2026 at 11:11:00 UTC.
+- Candidate ID: `object-links-routes-580d4d9-20260803`; source SHA:
+  `580d4d9afd884d7dafdd176e2fedafde8ba0c8f8`; build time: August 3, 2026 at 11:30:45 UTC.
 - The immutable source/deployment archive is
-  `sha256:496567e1a01a184b880fc59e73a4bacb0519af9c18bcc1ef2a7e14fd986528a0`;
+  `sha256:b432d572068afcf1414e0ce862d0944e7ab0a480985b8fd3bef326cb4b201a00`;
   the embedded prebuilt Linux binary is
-  `sha256:296aeae2e509820f7a9299ad218977e6413a128d87358953ba8509d97a7d193b`;
+  `sha256:30dd57b04eb7ac2604bddbb9ff867a97d464ae3be7587dac8b73615bb804bad9`;
   and the combined contract digest is
   `sha256:3eaffde190cf88ab4db67a6d273d1fc336383865898d0fc9630277f3710adbc0`.
 - The target database currently records migrations 1 through 6. The candidate contains migrations 1
@@ -340,3 +340,8 @@
   after online backup, and the existing binary and database were copied into the target's protected
   `/var/lib/netlab/backups` directory with SHA-256 sidecars. The aggregate evidence remains `blocked`
   until target deployment and acceptance complete.
+- The first target candidate, `object-links-routes-6fec815-20260803`, was rolled back after the genuine
+  three-object path exposed that a newly hot-added L3 veth port did not inherit the object's forwarding
+  policy. Commit `580d4d9` applies IPv4 and IPv6 forwarding to each arriving L3 port; the focused unit,
+  privileged three-object ICMP/TCP/UDP, capture/Traffic Filter, Docker dual-stack route, full Go test,
+  and Go vet gates pass locally for this replacement candidate.
