@@ -358,6 +358,22 @@
       "sensitive_evidence": []
     },
     {
+      "id": "network-object-links.observability-isolation",
+      "area": "diagnostics",
+      "label": "Observe one selected network-object link",
+      "locator": { "role": "region", "name": "Diagnostics" },
+      "applicable_states": [
+        "parallel-network-object-links",
+        "object-link-selected"
+      ],
+      "activation": ["keyboard"],
+      "outcome_class": "task",
+      "operation": "capture.start,traffic_filter.start",
+      "required_capabilities": ["namespace", "capture"],
+      "cleanup_effect": "stop-observation-and-laboratory-cascade",
+      "sensitive_evidence": []
+    },
+    {
       "id": "topology.selection.escape",
       "area": "topology",
       "label": "Cancel transient topology interaction",
