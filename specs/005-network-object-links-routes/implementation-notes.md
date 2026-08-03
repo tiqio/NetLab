@@ -141,3 +141,9 @@
   open until recovery-specific event publication is implemented with the ownership recovery work.
 - Focused gates for `a926dfb`: full `internal/store/sqlite` and `internal/app/reconcile` package tests and
   `go vet` passed locally on August 3, 2026.
+- `a02861f` (`test: cover network object link paths`): adds a root-gated three-object L3 netns
+  acceptance test covering two isolated parallel links, routed three-object traffic, bidirectional
+  ICMP/TCP/UDP, live deletion of one parallel pair, and service-restart-style idempotent re-ensure with a
+  fresh DataPlane instance. This completes T018.
+- Focused gates for this milestone: the integration package discovered and cleanly skipped the dynamic
+  test without `NETLAB_PRIVILEGED=1`, and `go vet ./tests/integration` passed locally on August 3, 2026.
