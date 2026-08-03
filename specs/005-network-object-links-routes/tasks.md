@@ -206,13 +206,13 @@ and confirm exact-set convergence and actionable failures.
 **Purpose**: Prevent regressions, publish final contracts and operator guidance, validate a clean local
 candidate, then deploy and test the immutable artifact on `10.72.1.7`.
 
-- [ ] T079 [P] Add regression tests proving standard node-interface links, attachments, NAT, host-interface capture, standard-link capture, and existing Traffic Filter scopes retain their semantics in `tests/integration/network_compatibility_regression_test.go`
-- [ ] T080 [P] Add a 100-cycle create/capture/filter/delete/recreate leak test for direct object links and Docker managed routes in `tests/integration/network_object_link_route_leak_test.go`
-- [ ] T081 [P] Add security tests proving endpoint names and route values never enter interpolated shell strings and exports/evidence omit runtime identifiers, credentials, packet payloads, and target secrets in `tests/security/network_object_link_route_security_test.go`
-- [ ] T082 [P] Synchronize implemented REST schemas and operation IDs with `specs/005-network-object-links-routes/contracts/openapi-delta.yaml`
-- [ ] T083 [P] Synchronize implemented MCP tool inputs, outputs, errors, and capture metadata with `specs/005-network-object-links-routes/contracts/mcp-tools.md`
-- [ ] T084 [P] Synchronize ordered object-link, route, capture, and Traffic Filter event semantics with `specs/005-network-object-links-routes/contracts/events.md`
-- [ ] T085 [P] Document object-link creation, live deletion, capture, Traffic Filter, Docker route configuration, recovery behavior, and limitations in `README.md`
+- [X] T079 [P] Add regression tests proving standard node-interface links, attachments, NAT, host-interface capture, standard-link capture, and existing Traffic Filter scopes retain their semantics in `tests/integration/network_compatibility_regression_test.go`
+- [X] T080 [P] Add a 100-cycle create/capture/filter/delete/recreate leak test for direct object links and Docker managed routes in `tests/integration/network_object_link_route_leak_test.go`
+- [X] T081 [P] Add security tests proving endpoint names and route values never enter interpolated shell strings and exports/evidence omit runtime identifiers, credentials, packet payloads, and target secrets in `tests/security/network_object_link_route_security_test.go`
+- [X] T082 [P] Synchronize implemented REST schemas and operation IDs with `specs/005-network-object-links-routes/contracts/openapi-delta.yaml`
+- [X] T083 [P] Synchronize implemented MCP tool inputs, outputs, errors, and capture metadata with `specs/005-network-object-links-routes/contracts/mcp-tools.md`
+- [X] T084 [P] Synchronize ordered object-link, route, capture, and Traffic Filter event semantics with `specs/005-network-object-links-routes/contracts/events.md`
+- [X] T085 [P] Document object-link creation, live deletion, capture, Traffic Filter, Docker route configuration, recovery behavior, and limitations in `README.md`
 - [ ] T086 Run formatting, static analysis, Go unit/contract/security tests, frontend Vitest/build/lint/format checks, privileged integration, recovery, Playwright, and leak gates from `specs/005-network-object-links-routes/quickstart.md`
 - [ ] T087 Record the final clean local gate results and focused implementation milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
 - [ ] T088 Build the candidate only from the clean commit and record source SHA, artifact SHA-256 digest, SQLite migration state, and rollback artifact in `compliance/evidence/current-candidate.json`

@@ -280,3 +280,19 @@
   creation, lifecycle, and Inspector tests; production SPA build; changed-file ESLint with zero errors;
   changed-file Prettier; and the Docker route Playwright journey in both 1920x1080 desktop and 1024x768
   minimum viewport projects.
+
+## Cross-Cutting Regression and Contract Milestones
+
+- `aed80b7` (`test: harden object link route regressions`) adds compatibility coverage for standard
+  links, bridge/NAT attachments, interface/link capture locators, and existing Traffic Filter scopes; a
+  configurable 100-cycle object-link/capture/filter/route-ownership cleanup gate; and malicious endpoint,
+  route, export, and evidence tests. The new export gate exposed and fixed transient container PID,
+  namespace locator, runtime-interface, and packet-payload leakage while retaining declared routes and
+  credential redaction.
+- `9163e41` (`docs: synchronize object link route contracts`) aligns REST operation IDs and schemas with
+  implemented `observed_state`, node settings, observation counters/timestamps, and cancelling task state;
+  aligns MCP inputs/outputs and capture metadata; documents the ordered event payloads actually emitted;
+  and adds operator guidance for live links, observation, Docker routes, recovery, and limitations.
+- Focused gates for these milestones passed locally on August 3, 2026: contract, integration, and security
+  regression selections; the default 100-cycle leak test; export command tests; `go vet` for command,
+  contract, integration, and security packages; and repository whitespace validation.
