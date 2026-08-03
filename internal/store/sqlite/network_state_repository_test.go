@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -80,5 +81,16 @@ func TestNetworkObjectLinkCreatePublishesRevisionedEvent(t *testing.T) {
 	}
 	if revision != 1 {
 		t.Fatalf("revision=%d", revision)
+	}
+	problem := &domain.Problem{Code: "runtime_failed", Message: "veth endpoint missing"}
+	if err = repositories.SetNetworkObjectLinkState(ctx, link.ID, "failed", problem); err != nil {
+		t.Fatal(err)
+	}
+	var payload string
+	if err = database.DB.QueryRowContext(ctx, `SELECT payload_json FROM outbox_events WHERE event_type='network_object_link.state_changed' AND resource_id=?`, link.ID).Scan(&payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload == "" || !strings.Contains(payload, `"observed_state":"failed"`) || !strings.Contains(payload, `"last_error"`) {
+		t.Fatalf("payload=%s", payload)
 	}
 }

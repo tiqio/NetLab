@@ -350,8 +350,20 @@ func (r *Repositories) ListNetworkObjectLinksByObject(ctx context.Context, objec
 
 func (r *Repositories) SetNetworkObjectLinkState(ctx context.Context, id domain.ID, state string, problem *domain.Problem) error {
 	body, _ := json.Marshal(problem)
-	_, err := r.database.DB.ExecContext(ctx, `UPDATE network_object_links SET observed_state=?,last_error_json=? WHERE id=?`, state, nullableBytes(body, problem != nil), id)
-	return err
+	return r.database.Write(ctx, func(tx *sql.Tx) error {
+		var laboratoryID domain.ID
+		var revision domain.Revision
+		if err := tx.QueryRowContext(ctx, `SELECT laboratory_id,revision FROM network_object_links WHERE id=?`, id).Scan(&laboratoryID, &revision); err != nil {
+			if err == sql.ErrNoRows {
+				return ErrNotFound
+			}
+			return err
+		}
+		if _, err := tx.ExecContext(ctx, `UPDATE network_object_links SET observed_state=?,last_error_json=? WHERE id=?`, state, nullableBytes(body, problem != nil), id); err != nil {
+			return err
+		}
+		return appendEvent(ctx, tx, "network_object_link.state_changed", laboratoryID, "network_object_link", id, revision, "", map[string]any{"observed_state": state, "last_error": problem})
+	})
 }
 
 func (r *Repositories) DeleteNetworkObjectLink(ctx context.Context, id domain.ID) error {
