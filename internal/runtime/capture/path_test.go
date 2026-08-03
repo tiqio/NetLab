@@ -119,3 +119,30 @@ func TestCorrelatorPreservesICMPEchoRole(t *testing.T) {
 		t.Fatalf("observations=%+v", values)
 	}
 }
+
+func TestNetworkObjectLinkCorrelationIsIsolatedDirectionalAndDecays(t *testing.T) {
+	correlator := NewCorrelator(500*time.Millisecond, 100)
+	now := time.Now().UTC()
+	packet := PacketKey{Protocol: 17, Source: "192.0.2.1", Destination: "192.0.2.2", SourcePort: 1234, DestinationPort: 53, Length: 64}
+	correlator.ObserveNetworkObjectLinkPacket("forward", "link-a", "a_to_b", packet, now)
+	correlator.ObserveNetworkObjectLinkPacket("reverse", "link-a", "b_to_a", packet, now.Add(time.Millisecond))
+	correlator.ObserveNetworkObjectLinkPacket("parallel", "link-b", "ambiguous", packet, now.Add(2*time.Millisecond))
+	values, ambiguous := correlator.SnapshotAt(now.Add(100 * time.Millisecond))
+	if !ambiguous || len(values) != 3 {
+		t.Fatalf("observations=%+v ambiguous=%v", values, ambiguous)
+	}
+	directions := map[domain.ID]map[string]bool{}
+	for _, value := range values {
+		if directions[value.NetworkObjectLinkID] == nil {
+			directions[value.NetworkObjectLinkID] = map[string]bool{}
+		}
+		directions[value.NetworkObjectLinkID][value.Direction] = true
+	}
+	if !directions["link-a"]["a_to_b"] || !directions["link-a"]["b_to_a"] || !directions["link-b"]["ambiguous"] {
+		t.Fatalf("directions=%+v", directions)
+	}
+	values, ambiguous = correlator.SnapshotAt(now.Add(time.Second))
+	if len(values) != 0 || ambiguous {
+		t.Fatalf("expired observations=%+v ambiguous=%v", values, ambiguous)
+	}
+}

@@ -109,7 +109,7 @@ func (m *TrafficFilterManager) StartScopedAsWithObjectLinks(id, labID domain.ID,
 	}
 	managed := &managedFilter{metadata: value, correlator: captureRuntime.NewCorrelator(2*time.Second, maximum), match: match, interfaces: interfaces, links: links, objectLinks: objectLinks, decoders: map[string]*captureRuntime.PacketDecoder{}}
 	if m.captures != nil {
-		required := len(interfaceIDs) + len(linkIDs) + len(objectLinkIDs)
+		required := len(interfaceIDs) + len(linkIDs) + 2*len(objectLinkIDs)
 		available := m.captures.AvailableSlots()
 		if required > available {
 			return domain.TrafficFilter{}, domain.Problem{Code: "resource_exhausted", Message: fmt.Sprintf("traffic filter needs %d capture slots but only %d are available", required, available), Retryable: true, ResourceType: "traffic_filter", ResourceID: id, Phase: "traffic_filter_admission", Cleanup: "no capture resources created", OperatorHint: "reduce the selected observation scope or stop active captures and retry", RetryAfterSeconds: 2}
@@ -143,14 +143,16 @@ func (m *TrafficFilterManager) StartScopedAsWithObjectLinks(id, labID domain.ID,
 			managed.captureIDs = append(managed.captureIDs, captureValue.ID)
 		}
 		for _, id := range objectLinkIDs {
-			captureValue, captureErr := m.captures.Start(context.Background(), CaptureRequest{LaboratoryID: labID, SourceType: "network_object_link", SourceID: id, Purpose: "traffic_filter", ParentID: value.ID, Filter: expression, Format: "pcap", MaxBytes: captureMaxBytes})
-			if captureErr != nil {
-				for _, captureID := range managed.captureIDs {
-					_, _ = m.captures.Stop(captureID)
+			for _, direction := range []string{"egress", "ingress"} {
+				captureValue, captureErr := m.captures.Start(context.Background(), CaptureRequest{LaboratoryID: labID, SourceType: "network_object_link", SourceID: id, Purpose: "traffic_filter", ParentID: value.ID, Filter: expression, Format: "pcap", MaxBytes: captureMaxBytes, Direction: direction})
+				if captureErr != nil {
+					for _, captureID := range managed.captureIDs {
+						_, _ = m.captures.Stop(captureID)
+					}
+					return domain.TrafficFilter{}, captureErr
 				}
-				return domain.TrafficFilter{}, captureErr
+				managed.captureIDs = append(managed.captureIDs, captureValue.ID)
 			}
-			managed.captureIDs = append(managed.captureIDs, captureValue.ID)
 		}
 	}
 	m.mu.Lock()
@@ -204,12 +206,23 @@ func (m *TrafficFilterManager) ObserveCapture(laboratoryID, interfaceID, linkID,
 		for _, packet := range packets {
 			if captureRuntime.Matches(value.match, packet.Key) {
 				if objectLinkID != "" {
-					value.correlator.ObserveNetworkObjectLinkPacket(captureRuntime.Fingerprint(packet.Key), objectLinkID, "ambiguous", packet.Key, at)
+					value.correlator.ObserveNetworkObjectLinkPacket(captureRuntime.Fingerprint(packet.Key), objectLinkID, networkObjectLinkDirection(direction), packet.Key, at)
 				} else {
 					value.correlator.ObservePacket(captureRuntime.Fingerprint(packet.Key), interfaceID, linkID, direction, packet.Key, at)
 				}
 			}
 		}
+	}
+}
+
+func networkObjectLinkDirection(direction string) string {
+	switch direction {
+	case "egress", "a_to_b":
+		return "a_to_b"
+	case "ingress", "b_to_a":
+		return "b_to_a"
+	default:
+		return "ambiguous"
 	}
 }
 

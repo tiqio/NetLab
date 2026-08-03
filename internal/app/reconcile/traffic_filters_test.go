@@ -162,3 +162,44 @@ func TestTrafficFilterAttributesNetworkObjectLink(t *testing.T) {
 		t.Fatalf("observation=%+v", observation)
 	}
 }
+
+func TestTrafficFilterScopesParallelObjectLinksAndUsesEndpointARelativeDirection(t *testing.T) {
+	manager := NewTrafficFilterManager()
+	filter, err := manager.StartScopedAsWithObjectLinks("filter-object-link-direction", "lab", captureRuntime.Match{Protocol: "udp", DestinationPort: 53}, 100, nil, nil, []domain.ID{"object-link-a"}, "#f59e0b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	pcap := udpDNSPacketCapture()
+	manager.ObserveCapture("lab", "", "", "object-link-b", "egress", "pcap", pcap, time.Now())
+	manager.ObserveCapture("lab", "", "", "object-link-a", "egress", "pcap", pcap, time.Now().Add(time.Millisecond))
+	manager.ObserveCapture("lab", "", "", "object-link-a", "ingress", "pcap", pcap, time.Now().Add(2*time.Millisecond))
+	value, ambiguous, err := manager.Get(filter.ID)
+	if err != nil || ambiguous || len(value.Observations) != 2 {
+		t.Fatalf("filter=%+v ambiguous=%v err=%v", value, ambiguous, err)
+	}
+	directions := map[string]bool{}
+	for _, observation := range value.Observations {
+		if observation.NetworkObjectLinkID != "object-link-a" {
+			t.Fatalf("parallel link leaked into observations: %+v", observation)
+		}
+		directions[observation.Direction] = true
+	}
+	if !directions["a_to_b"] || !directions["b_to_a"] {
+		t.Fatalf("directions=%+v", directions)
+	}
+}
+
+func udpDNSPacketCapture() []byte {
+	frame := make([]byte, 14+20+8)
+	binary.BigEndian.PutUint16(frame[12:14], 0x0800)
+	frame[14], frame[23] = 0x45, 17
+	copy(frame[26:30], []byte{192, 0, 2, 1})
+	copy(frame[30:34], []byte{192, 0, 2, 53})
+	binary.BigEndian.PutUint16(frame[34:36], 1234)
+	binary.BigEndian.PutUint16(frame[36:38], 53)
+	pcap := make([]byte, 40+len(frame))
+	binary.LittleEndian.PutUint32(pcap[:4], 0xa1b2c3d4)
+	binary.LittleEndian.PutUint32(pcap[32:36], uint32(len(frame)))
+	copy(pcap[40:], frame)
+	return pcap
+}

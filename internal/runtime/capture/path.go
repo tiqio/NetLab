@@ -125,16 +125,31 @@ func packetRole(packet PacketKey) string {
 }
 
 func (c *Correlator) Snapshot() ([]domain.TrafficObservation, bool) {
+	return c.SnapshotAt(time.Now().UTC())
+}
+
+func (c *Correlator) SnapshotAt(now time.Time) ([]domain.TrafficObservation, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	values := make([]domain.TrafficObservation, 0)
 	ambiguous := false
-	for _, byInterface := range c.observations {
+	for fingerprint, byInterface := range c.observations {
 		orders := map[string]int{}
 		var path []domain.TrafficObservation
-		for _, observation := range byInterface {
+		for key, observation := range byInterface {
+			if now.Sub(observation.LastSeen) > c.window {
+				delete(byInterface, key)
+				continue
+			}
+			if observation.Direction == "ambiguous" {
+				ambiguous = true
+			}
 			values = append(values, observation)
 			path = append(path, observation)
+		}
+		if len(byInterface) == 0 {
+			delete(c.observations, fingerprint)
+			continue
 		}
 		sort.Slice(path, func(i, j int) bool { return path[i].FirstSeen.Before(path[j].FirstSeen) })
 		for index := 1; index < len(path); index++ {
