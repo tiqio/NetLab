@@ -158,7 +158,7 @@ successful retry after an injected partial cleanup failure.
 - [X] T058 [US3] Expose revisioned delete task envelopes and structured failures through HTTP and MCP in `internal/api/http/network_handlers.go` and `internal/api/mcp/network_tools.go`
 - [X] T059 [US3] Publish deletion and capture-completion events in non-resurrecting order and reconcile interrupted deletion on startup in `internal/api/stream/events.go`, `internal/app/events/outbox.go`, and `internal/app/reconcile/recovery_coordinator.go`
 - [X] T060 [US3] Add object-link right-click delete, task progress, retryable failure, selection clearing, and shared event removal in `web/src/features/topology/LinkContextMenu.vue`, `web/src/features/topology/TopologyWorkspace.vue`, and `web/src/features/topology/TopologyCanvas.vue`
-- [ ] T061 [US3] Run US3 unit, contract, frontend, privileged deletion, recovery, leak, and multi-client tests and record the focused milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
+- [X] T061 [US3] Run US3 unit, contract, frontend, privileged deletion, recovery, leak, and multi-client tests and record the focused milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
 
 **Checkpoint**: User Story 3 supports observable live failure simulation and cleanup without stopping
 unrelated nodes or leaving ghost topology state.
