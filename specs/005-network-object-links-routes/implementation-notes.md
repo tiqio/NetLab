@@ -135,3 +135,9 @@
 - Focused gates for `38bbf37`: 37 store/controller/presentation/canvas/Inspector Vitest cases passed;
   `npm run build` passed; and changed-file ESLint completed with zero errors. Existing Vue style/default
   warnings and the Vite chunk-size warning remain informational.
+- `a926dfb` (`feat: publish object link state events`): commits each object-link observed-state and
+  structured-error update atomically with a revisioned `network_object_link.state_changed` outbox event,
+  allowing every connected client to observe pending, connected, and failed transitions. T026 remains
+  open until recovery-specific event publication is implemented with the ownership recovery work.
+- Focused gates for `a926dfb`: full `internal/store/sqlite` and `internal/app/reconcile` package tests and
+  `go vet` passed locally on August 3, 2026.
