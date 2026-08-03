@@ -75,7 +75,7 @@ service, and confirm the same path recovers.
 - [X] T017 [P] [US1] Add failing HTTP and MCP parity tests for create/list/get object-link task envelopes and occupied-port errors in `tests/contract/network_object_link_control_parity_test.go`
 - [X] T018 [P] [US1] Add a failing privileged three-object path, parallel-link isolation, bidirectional ICMP/TCP/UDP, and service-restart recovery test in `tests/integration/network_object_link_path_test.go`
 - [X] T019 [P] [US1] Add failing frontend tests for connector port selection, parallel line identity, readable endpoint labels, shared state updates, and refresh recovery in `web/src/features/topology/topologyConnectionController.test.ts`, `web/src/features/topology/TopologyCanvas.test.ts`, and `web/src/features/topology/TopologyInspector.test.ts`
-- [ ] T020 [P] [US1] Add a failing Playwright journey that creates a three-object path from the browser and observes the same links in a second client in `tests/e2e/journeys/networkObjectLinks.spec.ts`
+- [X] T020 [P] [US1] Add a failing Playwright journey that creates a three-object path from the browser and observes the same links in a second client in `tests/e2e/journeys/networkObjectLinks.spec.ts`
 
 ### Implementation for User Story 1
 

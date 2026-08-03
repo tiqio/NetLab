@@ -158,3 +158,10 @@
 - Focused gates for `2152d65`: full ownership, Linux dataplane, reconciliation, SQLite, event publisher,
   and stream tests passed; relevant import/export tests passed; `go vet` passed; and focused recovery tests
   passed under the race detector locally on August 3, 2026.
+- `462fbcb` (`test: cover shared object link browser path`): adds keyboard access to configured
+  network-object ports, includes readable object-link names in the topology accessibility summary, and
+  adds a Playwright journey that creates a three-object path entirely through the canvas before verifying
+  both links in a second browser before and after refresh. This completes T020.
+- Focused gates for `462fbcb`: 40 topology/store Vitest cases and the production SPA build passed; the
+  browser journey passed against the final embedded SPA in both the 1920x1080 desktop and 1024x768 minimum
+  viewport projects locally on August 3, 2026.
