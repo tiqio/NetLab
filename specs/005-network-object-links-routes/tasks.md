@@ -49,10 +49,10 @@ all four user stories.
 - [X] T008 Add canonical route and endpoint validation with stable problem codes in `internal/domain/network_object.go` and `internal/domain/models.go`
 - [X] T009 Add the endpoint-reservation, object-link lifecycle, Traffic Filter scope, observation attribution, and managed-route migration in `internal/store/sqlite/migrations/0011_network_object_link_endpoints_routes.sql`
 - [X] T010 Implement transactional endpoint reservation, collision detection across endpoint sides and attachment types, object-link revision updates, and safe reservation release in `internal/store/sqlite/network_repository.go`
-- [ ] T011 Create durable capture/filter observation persistence for object-link attribution and extend task, audit, and outbox storage for `link_deleted` completion in `internal/store/sqlite/runtime_observation_repository.go` and `internal/store/sqlite/automation_repository.go`
-- [ ] T012 Define namespace-aware observation locator and exact managed-route runtime interfaces in `internal/app/ports/topology.go`
-- [ ] T013 Update topology export/import DTOs to preserve object-link endpoint intent and Docker route declarations while excluding runtime locators and packet payloads in `internal/app/command/export.go` and `internal/app/command/import.go`
-- [ ] T014 Run the foundational domain, migration, repository, and contract tests and record commands/results plus the focused milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
+- [X] T011 Create durable capture/filter observation persistence for object-link attribution and extend task, audit, and outbox storage for `link_deleted` completion in `internal/store/sqlite/runtime_observation_repository.go` and `internal/store/sqlite/automation_repository.go`
+- [X] T012 Define namespace-aware observation locator and exact managed-route runtime interfaces in `internal/app/ports/topology.go`
+- [X] T013 Update topology export/import DTOs to preserve object-link endpoint intent and Docker route declarations while excluding runtime locators and packet payloads in `internal/app/command/export.go` and `internal/app/command/import.go`
+- [X] T014 Run the foundational domain, migration, repository, and contract tests and record commands/results plus the focused milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
 
 **Checkpoint**: Endpoint occupancy is enforceable across every connection type, shared contracts can carry
 object-link observations and Docker routes, and the first local milestone is committed.

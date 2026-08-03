@@ -30,7 +30,7 @@
 | Milestone | Local gates | Commit SHA | Notes |
 |---|---|---|---|
 | Setup | Ignore rules and fixture compilation | pending | No ignore changes required |
-| Foundation | `go test ./internal/domain ./internal/store/sqlite ./internal/runtime/linuxnet ./internal/app/reconcile`; all passed | `3813579` | Added endpoint reservations, typed routes, direct veth links, and namespace-aware object-link capture |
+| Foundation | Domain, SQLite migration/repository, command, ports, Linux networking, capture runtime, reconcile, and focused contract gates passed | `61cec9b` | Added durable object-link observation state, atomic `link_deleted` completion, observation/runtime ports, and object-link import/export remapping |
 | US1 | pending | pending | |
 | US2 | pending | pending | |
 | US3 | pending | pending | |
@@ -98,3 +98,13 @@
   playwright.config.ts --list ../tests/e2e/journeys/dockerStaticRoutes.spec.ts` discovered the desktop and
   minimum-viewport cases locally. Dynamic execution remains target-host gated because it requires the
   real Docker runtime and available BusyBox image.
+- `61cec9b` (`feat: persist object link observations`): adds migration `0012` for durable capture
+  lifecycle metadata, Traffic Filter scopes, and normalized directional observations; atomically commits
+  `link_deleted` capture state with its task, audit record, and outbox events; defines stable namespace-aware
+  observation locators and exact managed-route runtime boundaries; and preserves/remaps first-class
+  network-object links through export/import without runtime locators or packet payloads. Imported active
+  links reserve both ports transactionally, while deleted intent does not reoccupy endpoints.
+- Focused gates for `61cec9b`: `go test ./internal/domain ./internal/store/sqlite
+  ./internal/app/command ./internal/app/ports ./internal/runtime/linuxnet ./internal/runtime/capture
+  ./internal/app/reconcile -count=1`; focused object-link/route/OpenAPI contract tests; and dedicated
+  observation completion/import rollback tests all passed locally on August 3, 2026.
