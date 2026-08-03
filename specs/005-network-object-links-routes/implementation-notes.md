@@ -211,3 +211,10 @@
 - Focused gates for `cb08bd3`: the real namespace/veth/tcpdump test passed as root in 3.15 seconds;
   focused capture/filter/reconciliation tests, a three-run asynchronous cleanup check, the focused race
   detector, and `go vet` all passed locally on August 3, 2026.
+- `0b87558` (`test: isolate object link browser observations`): creates two owned two-port lightweight
+  switches and two connected parallel object links through real local APIs, selects one stable link from
+  the keyboard topology surface, and verifies that both the Capture workspace and Traffic Filter persist
+  only that link ID. It also registers the new diagnostics interaction in the acceptance inventory. This
+  completes T038.
+- Focused gates for `0b87558`: the Playwright journey and acceptance coverage/cleanup gates passed in
+  both the 1920x1080 desktop and 1024x768 minimum viewport projects locally on August 3, 2026.

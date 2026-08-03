@@ -112,7 +112,7 @@ metadata, direction, isolation, and activity decay.
 - [X] T035 [P] [US2] Add failing HTTP/MCP/event contract tests for object-link captures and observations in `tests/contract/network_object_link_observation_contract_test.go`
 - [X] T036 [P] [US2] Add a failing privileged capture/filter test covering ICMP, TCP, UDP, both directions, an unused parallel link, and sub-500 ms attribution in `tests/integration/network_object_link_observation_test.go`
 - [X] T037 [P] [US2] Add failing frontend tests for selected object-link capture, Traffic Filter scoping, inspector metadata, directional particles, and decay in `web/src/features/diagnostics/CapturePanel.test.ts`, `web/src/features/diagnostics/TrafficFilterPanel.test.ts`, `web/src/features/topology/TrafficPathOverlay.test.ts`, and `web/src/features/topology/TopologyInspector.test.ts`
-- [ ] T038 [P] [US2] Add a failing Playwright journey for capture and Traffic Filter isolation across two parallel object links in `tests/e2e/journeys/networkObjectLinkObservability.spec.ts`
+- [X] T038 [P] [US2] Add a failing Playwright journey for capture and Traffic Filter isolation across two parallel object links in `tests/e2e/journeys/networkObjectLinkObservability.spec.ts`
 
 ### Implementation for User Story 2
 
