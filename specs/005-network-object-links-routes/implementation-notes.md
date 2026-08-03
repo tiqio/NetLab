@@ -117,3 +117,12 @@
   control parity contract suite, and `go test -race ./internal/app/reconcile -run
   TestNetworkObjectLinkCreateIsDurableIdempotentAndObservable -count=1` all passed locally on August 3,
   2026.
+- `d3bf1d8` (`feat: improve object link topology UX`): synchronizes the SPA object-link create task
+  envelope and authoritative GET method, adds readable `object:port ↔ object:port` labels and distinct
+  parallel curves, filters occupied named object ports, and presents desired/actual state, revision,
+  structured runtime failures, and the submitted lifecycle task ID in the Inspector. This milestone
+  completes T027; shared refresh recovery, canvas-driven object-port connection, and durable task
+  follow-up remain open under T019, T028, and T029.
+- Focused gates for `d3bf1d8`: 19 topology controller/canvas/Inspector/presentation Vitest cases passed;
+  `npm run build` passed; and changed-file ESLint completed with zero errors. Existing Vue style/default
+  warnings and the Vite chunk-size warning remain informational.
