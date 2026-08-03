@@ -49,3 +49,9 @@
   'TestNetworkObjectLinkAndRouteContractDelta|TestGeneratedClientIncludesObjectLinkCaptureAndFilterTypes'
   -count=1`; `npm test -- --run src/features/diagnostics/TrafficFilterPanel.test.ts`; and
   `npm run build`. All passed locally. The Vite chunk-size warning remains informational.
+- `26f7ab3` (`feat: reconcile owned Docker routes`): persists the exact NetLab-owned route set inside
+  the container root, removes only stale recorded routes, applies IPv4 and IPv6 declarations through
+  argument vectors, restores the prior set after route or ownership-write failures, and remains
+  idempotent across repeated endpoint reconciliation.
+- Focused gate for `26f7ab3`: `go test ./internal/runtime/linuxnet ./internal/runtime/docker
+  ./internal/app/command ./internal/store/sqlite -count=1`; all passed locally.
