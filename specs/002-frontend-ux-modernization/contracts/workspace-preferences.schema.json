@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://netlab.local/schemas/workspace-preferences.schema.json",
+  "title": "NetLab Workspace Preferences",
+  "description": "Browser-local, non-authoritative visual preferences for one laboratory.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "laboratoryId",
+    "updatedAt",
+    "panels",
+    "viewport",
+    "placements",
+    "groups",
+    "linkRoutes",
+    "activeBottomTab"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "laboratoryId": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "panels": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["devicePalette", "inspector", "bottomDrawer"],
+      "properties": {
+        "devicePalette": { "$ref": "#/$defs/sidePanel" },
+        "inspector": { "$ref": "#/$defs/sidePanel" },
+        "bottomDrawer": { "$ref": "#/$defs/bottomPanel" }
+      }
+    },
+    "viewport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["centerX", "centerY", "zoom"],
+      "properties": {
+        "centerX": { "type": "number" },
+        "centerY": { "type": "number" },
+        "zoom": { "type": "number", "minimum": 0.1, "maximum": 8 }
+      }
+    },
+    "placements": {
+      "type": "object",
+      "propertyNames": { "minLength": 1, "maxLength": 256 },
+      "additionalProperties": { "$ref": "#/$defs/placement" }
+    },
+    "groups": {
+      "type": "array",
+      "maxItems": 500,
+      "items": { "$ref": "#/$defs/group" }
+    },
+    "linkRoutes": {
+      "type": "object",
+      "propertyNames": { "minLength": 1, "maxLength": 256 },
+      "additionalProperties": {
+        "type": "array",
+        "maxItems": 32,
+        "items": { "$ref": "#/$defs/point" }
+      }
+    },
+    "activeBottomTab": {
+      "type": "string",
+      "enum": ["tasks", "console", "captures", "traffic-filter"]
+    }
+  },
+  "$defs": {
+    "sidePanel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["collapsed", "size"],
+      "properties": {
+        "collapsed": { "type": "boolean" },
+        "size": { "type": "integer", "minimum": 180, "maximum": 640 }
+      }
+    },
+    "bottomPanel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["collapsed", "size"],
+      "properties": {
+        "collapsed": { "type": "boolean" },
+        "size": { "type": "integer", "minimum": 160, "maximum": 720 }
+      }
+    },
+    "point": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" }
+      }
+    },
+    "placement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "pinned", "updatedAt"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "pinned": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "memberResourceIds", "collapsed"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "label": { "type": "string", "maxLength": 256 },
+        "memberResourceIds": {
+          "type": "array",
+          "maxItems": 1000,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1, "maxLength": 256 }
+        },
+        "bounds": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["x", "y", "width", "height"],
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" },
+            "width": { "type": "number", "minimum": 0 },
+            "height": { "type": "number", "minimum": 0 }
+          }
+        },
+        "collapsed": { "type": "boolean" }
+      }
+    }
+  }
+}

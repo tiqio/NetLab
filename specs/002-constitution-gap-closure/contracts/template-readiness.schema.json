@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://netlab.local/contracts/template-readiness.schema.json",
+  "title": "NetLab Template Readiness Matrix",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "candidate_id", "generated_at", "templates"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "candidate_id": { "type": "string", "minLength": 1 },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "templates": {
+      "type": "array",
+      "minItems": 6,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["template_key", "template_version", "runtime_kind", "status", "genuine_workload", "bootstrap", "console", "capabilities", "lifecycle", "cleanup"],
+        "properties": {
+          "template_key": { "type": "string", "minLength": 1 },
+          "template_version": { "type": "string", "minLength": 1 },
+          "runtime_kind": { "enum": ["qemu", "docker"] },
+          "status": { "enum": ["unavailable", "mechanics_validated", "genuine_validated", "blocked", "accepted_exception"] },
+          "genuine_workload": { "type": "boolean" },
+          "image": {
+            "type": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string" },
+              "version": { "type": "string" },
+              "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+              "format": { "type": "string" },
+              "source_type": { "type": "string" },
+              "license_status": { "type": "string" }
+            }
+          },
+          "bootstrap": { "$ref": "#/$defs/check" },
+          "console": { "$ref": "#/$defs/check" },
+          "capabilities": { "$ref": "#/$defs/check" },
+          "lifecycle": { "$ref": "#/$defs/check" },
+          "cleanup": { "$ref": "#/$defs/check" },
+          "exception_id": { "type": ["string", "null"] }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "status": { "const": "genuine_validated" } } },
+            "then": { "properties": { "genuine_workload": { "const": true } }, "required": ["image"] }
+          },
+          {
+            "if": { "properties": { "status": { "const": "accepted_exception" } } },
+            "then": { "required": ["exception_id"] }
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "check": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["status"],
+      "properties": {
+        "status": { "enum": ["not_tested", "passed", "failed", "blocked", "not_applicable"] },
+        "evidence_id": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

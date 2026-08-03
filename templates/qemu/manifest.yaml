@@ -1,0 +1,74 @@
+schema_version: 1
+templates:
+  - key: fancywan
+    display_name: FancyWAN
+    runtime_kind: qemu
+    versions:
+      - version: bulbel
+        manifest_version: 1
+        defaults: {cpu_count: 2, memory_mib: 2048, disk_gib: 20, interfaces: 4, interface_name_format: "eth%d"}
+        nic_drivers: [virtio-net-pci, e1000]
+        console_modes: [telnet, vnc]
+        capabilities: [cloud_init, guest_exec, nic_hotplug]
+        runtime_options: {machine: pc, cpu: host}
+        enabled: true
+  - key: ubuntu-qemu
+    display_name: Ubuntu
+    runtime_kind: qemu
+    versions:
+      - version: "24.04"
+        manifest_version: 1
+        defaults: {cpu_count: 2, memory_mib: 4096, disk_gib: 30, interfaces: 2, interface_name_format: "ens%d"}
+        nic_drivers: [virtio-net-pci, e1000, rtl8139]
+        console_modes: [telnet, vnc]
+        capabilities: [cloud_init, guest_exec, nic_hotplug]
+        runtime_options: {machine: q35, cpu: host}
+        enabled: true
+  - key: fortigate
+    display_name: FortiGate
+    runtime_kind: qemu
+    versions:
+      - version: "7.2.0-build1157"
+        manifest_version: 1
+        defaults: {cpu_count: 1, memory_mib: 2048, disk_gib: 10, interfaces: 4, interface_name_format: "port%d"}
+        nic_drivers: [virtio-net-pci, e1000]
+        console_modes: [telnet]
+        capabilities: [nic_hotplug]
+        runtime_options: {machine: pc, cpu: host, commercial_image: true}
+        enabled: true
+  - key: vyos
+    display_name: VyOS
+    runtime_kind: qemu
+    versions:
+      - version: rolling
+        manifest_version: 1
+        defaults: {cpu_count: 1, memory_mib: 1024, disk_gib: 10, interfaces: 4, interface_name_format: "eth%d"}
+        nic_drivers: [virtio-net-pci, e1000]
+        console_modes: [telnet]
+        capabilities: [cloud_init, guest_exec, nic_hotplug]
+        runtime_options: {machine: q35, cpu: host}
+        enabled: true
+  - key: ruijie-router
+    display_name: Ruijie Router
+    runtime_kind: qemu
+    versions:
+      - version: "V1.06"
+        manifest_version: 1
+        defaults: {cpu_count: 1, cpu_quota_micros: 100000, memory_mib: 1024, disk_gib: 8, interfaces: 10, interface_name_format: "G0/%d"}
+        nic_drivers: [e1000]
+        console_modes: [telnet, vnc]
+        capabilities: [nic_hotplug]
+        runtime_options: {machine: pc, cpu: host, disk_interface: ide, rtc_base: utc, vga: std, mac_address_mode: sequential, internal_interface_count: 1, recommended_image_name: "Ruijie Router", recommended_image_version: "V1.06"}
+        enabled: true
+  - key: ruijie-switch
+    display_name: Ruijie Switch
+    runtime_kind: qemu
+    versions:
+      - version: "V1.06"
+        manifest_version: 1
+        defaults: {cpu_count: 1, cpu_quota_micros: 100000, memory_mib: 1024, disk_gib: 8, interfaces: 10, interface_name_format: "G0/%d"}
+        nic_drivers: [e1000]
+        console_modes: [telnet, vnc]
+        capabilities: [nic_hotplug]
+        runtime_options: {machine: pc, cpu: host, disk_interface: ide, rtc_base: utc, vga: std, mac_address_mode: sequential, internal_interface_count: 1, recommended_image_name: "Ruijie Switch", recommended_image_version: "V1.06"}
+        enabled: true

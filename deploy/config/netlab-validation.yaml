@@ -1,0 +1,21 @@
+listen: "127.0.0.1:18080"
+state_dir: "/var/lib/netlab-validation"
+database_path: "/var/lib/netlab-validation/netlab.db"
+runtime_dir: "/run/netlab-validation"
+template_dir: "/usr/local/share/netlab/templates"
+template_readiness_path: "/etc/netlab/template-readiness.json"
+release:
+  version: "dev"
+  candidate_id: "validation-only"
+  binary_digest: ""
+  contract_digest: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+  built_at: ""
+startup_concurrency:
+  qemu: 1
+  other: 2
+captures:
+  concurrent: 2
+  duration: "5m"
+  max_bytes: 67108864
+  retention: "1h"
+  global_max_bytes: 268435456

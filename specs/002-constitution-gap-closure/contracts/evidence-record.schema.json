@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://netlab.local/contracts/evidence-record.schema.json",
+  "title": "NetLab Compliance Evidence Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "kind", "status", "candidate_id", "release_version", "contract_digest", "scope_digest", "finding_ids", "procedure", "target", "started_at", "finished_at", "outcome", "cleanup", "redaction", "artifacts"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "id": { "type": "string", "minLength": 1 },
+    "kind": { "enum": ["unit", "contract", "frontend", "integration", "recovery", "leak", "security", "manual", "deployment", "review"] },
+    "status": { "enum": ["collected", "validated", "accepted", "rejected", "stale", "superseded"] },
+    "candidate_id": { "type": "string", "minLength": 1 },
+    "release_version": { "type": "string", "minLength": 1 },
+    "binary_digest": { "$ref": "#/$defs/sha256OrNull" },
+    "contract_digest": { "$ref": "#/$defs/sha256" },
+    "scope_digest": { "$ref": "#/$defs/sha256" },
+    "finding_ids": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^CONST-[A-Z0-9-]+$" } },
+    "procedure": { "type": "string", "minLength": 1 },
+    "target": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["host_id", "platform"],
+      "properties": {
+        "host_id": { "type": "string", "minLength": 1 },
+        "platform": { "type": "string", "minLength": 1 }
+      }
+    },
+    "started_at": { "type": "string", "format": "date-time" },
+    "finished_at": { "type": "string", "format": "date-time" },
+    "outcome": { "enum": ["passed", "failed", "skipped", "blocked"] },
+    "cleanup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baseline_restored", "remaining_count"],
+      "properties": {
+        "baseline_restored": { "type": "boolean" },
+        "remaining_count": { "type": "integer", "minimum": 0 },
+        "remediation": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["passed", "prohibited_content_count"],
+      "properties": {
+        "passed": { "type": "boolean" },
+        "prohibited_content_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "path", "digest", "contains_binary_payload"],
+        "properties": {
+          "kind": { "type": "string" },
+          "path": { "type": "string" },
+          "digest": { "$ref": "#/$defs/sha256" },
+          "contains_binary_payload": { "const": false }
+        }
+      }
+    },
+    "supersedes": { "type": "array", "uniqueItems": true, "items": { "type": "string" } }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "sha256OrNull": { "anyOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }] }
+  }
+}

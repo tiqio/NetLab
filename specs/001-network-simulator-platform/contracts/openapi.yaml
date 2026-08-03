@@ -1,0 +1,568 @@
+openapi: 3.1.0
+info:
+  title: NetLab API
+  version: 1.0.0
+  description: Shared single-host network-simulator control API.
+servers:
+  - url: /api/v1
+security: []
+paths:
+  /capabilities:
+    get:
+      operationId: getCapabilities
+      responses:
+        '200': {description: Capabilities and configured limits, content: {application/json: {schema: {type: object}}}}
+  /runtime-ownership:
+    get:
+      operationId: listRuntimeOwnership
+      description: Lists persisted host-runtime objects used for recovery and leak verification.
+      responses:
+        '200': {description: Runtime ownership records, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/RuntimeOwnershipRecord'}}}}}
+  /templates:
+    get:
+      operationId: listTemplates
+      responses:
+        '200': {description: Templates, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/DeviceTemplate'}}}}}
+  /images:
+    get:
+      operationId: listImages
+      responses:
+        '200': {description: Images, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/ImageVersion'}}}}}
+    post:
+      operationId: importImage
+      description: Stream or register an operator-supplied image; never downloads commercial images automatically.
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [source_type, source_reference, license_notes], properties: {source_type: {enum: [upload, local_import, oci_registry]}, source_reference: {type: string}, expected_sha256: {type: string}, license_notes: {type: string}}}}}}
+      responses:
+        '202': {$ref: '#/components/responses/AcceptedTask'}
+  /labs:
+    get:
+      operationId: listLabs
+      responses:
+        '200': {description: Labs, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Laboratory'}}}}}
+    post:
+      operationId: createLab
+      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CreateLab'}}}}
+      responses:
+        '201': {description: Created, content: {application/json: {schema: {$ref: '#/components/schemas/Laboratory'}}}}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /labs/{labId}:
+    parameters: [{$ref: '#/components/parameters/LabId'}]
+    get:
+      operationId: getLab
+      responses:
+        '200': {description: Complete topology snapshot, headers: {X-Event-Sequence: {schema: {type: integer}}}, content: {application/json: {schema: {$ref: '#/components/schemas/LabSnapshot'}}}}
+        '404': {$ref: '#/components/responses/NotFound'}
+    patch:
+      operationId: updateLab
+      parameters: [{$ref: '#/components/parameters/IfMatch'}]
+      requestBody: {required: true, content: {application/merge-patch+json: {schema: {type: object}}}}
+      responses:
+        '200': {description: Updated, content: {application/json: {schema: {$ref: '#/components/schemas/Laboratory'}}}}
+        '412': {$ref: '#/components/responses/PreconditionFailed'}
+    delete:
+      operationId: deleteLab
+      parameters: [{$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      responses:
+        '202': {$ref: '#/components/responses/AcceptedTask'}
+  /labs/{labId}/nodes:
+    parameters: [{$ref: '#/components/parameters/LabId'}]
+    post:
+      operationId: createNode
+      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CreateNode'}}}}
+      responses:
+        '202': {$ref: '#/components/responses/AcceptedTask'}
+  /labs/{labId}/links:
+    parameters: [{$ref: '#/components/parameters/LabId'}]
+    post:
+      operationId: connectLink
+      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [endpoint_a_id, endpoint_b_id], properties: {endpoint_a_id: {type: string, format: uuid}, endpoint_b_id: {type: string, format: uuid}}}}}}
+      responses:
+        '202': {$ref: '#/components/responses/AcceptedTask'}
+  /labs/{labId}/placements:
+    parameters: [{$ref: '#/components/parameters/LabId'}]
+    put:
+      operationId: updateTopologyPlacements
+      parameters: [{$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/PlacementBatch'}}}}
+      responses:
+        '200': {description: Updated shared placements, content: {application/json: {schema: {$ref: '#/components/schemas/TopologyPlacementResult'}}}}
+        '412': {$ref: '#/components/responses/PreconditionFailed'}
+  /labs/{labId}/exports:
+    parameters: [{$ref: '#/components/parameters/LabId'}]
+    post:
+      operationId: exportLab
+      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
+      responses:
+        '202': {$ref: '#/components/responses/AcceptedTask'}
+  /lab-imports:
+    post:
+      operationId: importLab
+      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, description: Redacted LaboratoryExport bundle}}}}
+      responses:
+        '202': {$ref: '#/components/responses/AcceptedTask'}
+  /nodes/{nodeId}:
+    parameters: [{$ref: '#/components/parameters/NodeId'}]
+    get:
+      operationId: getNode
+      responses:
+        '200': {description: Node, content: {application/json: {schema: {$ref: '#/components/schemas/Node'}}}}
+    delete:
+      operationId: deleteNode
+      parameters: [{$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      responses:
+        '202': {$ref: '#/components/responses/AcceptedTask'}
+  /nodes/{nodeId}/state:
+    parameters: [{$ref: '#/components/parameters/NodeId'}]
+    put:
+      operationId: setNodeState
+      parameters: [{$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [desired_state], properties: {desired_state: {enum: [running, stopped]}}}}}}
+      responses:
+        '202': {$ref: '#/components/responses/AcceptedTask'}
+  /nodes/{nodeId}/interfaces:
+    parameters: [{$ref: '#/components/parameters/NodeId'}]
+    post:
+      operationId: addInterface
+      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [driver], properties: {driver: {type: string}}}}}}
+      responses:
+        '202': {$ref: '#/components/responses/AcceptedTask'}
+  /interfaces/{interfaceId}:
+    delete:
+      operationId: removeInterface
+      parameters: [{name: interfaceId, in: path, required: true, schema: {type: string, format: uuid}}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      responses:
+        '202': {$ref: '#/components/responses/AcceptedTask'}
+  /links/{linkId}:
+    delete:
+      operationId: disconnectLink
+      parameters: [{name: linkId, in: path, required: true, schema: {type: string, format: uuid}}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      responses:
+        '202': {$ref: '#/components/responses/AcceptedTask'}
+  /links/{linkId}/reconnect:
+    post:
+      operationId: reconnectLink
+      parameters: [{name: linkId, in: path, required: true, schema: {type: string, format: uuid}}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [retained_endpoint_id, replacement_endpoint_id], properties: {retained_endpoint_id: {type: string, format: uuid}, replacement_endpoint_id: {type: string, format: uuid}}}}}}
+      responses:
+        '202': {$ref: '#/components/responses/AcceptedTask'}
+        '412': {$ref: '#/components/responses/PreconditionFailed'}
+  /nodes/{nodeId}/guest-exec:
+    parameters: [{$ref: '#/components/parameters/NodeId'}]
+    post:
+      operationId: executeGuestCommand
+      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [argv], properties: {argv: {type: array, minItems: 1, items: {type: string}}, timeout_seconds: {type: integer, minimum: 1, maximum: 3600}, output_limit_bytes: {type: integer, minimum: 1024, maximum: 10485760}}}}}}
+      responses:
+        '202': {$ref: '#/components/responses/AcceptedTask'}
+  /nodes/{nodeId}/port-mappings:
+    parameters: [{$ref: '#/components/parameters/NodeId'}]
+    get:
+      operationId: listNodePortMappings
+      responses:
+        '200': {description: Durable host port mappings owned by the node, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/PortMapping'}}}}}
+    post:
+      operationId: createPortMapping
+      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CreatePortMapping'}}}}
+      responses:
+        '202': {$ref: '#/components/responses/AcceptedTask'}
+  /port-mappings/{mappingId}:
+    delete:
+      operationId: deletePortMapping
+      parameters: [{name: mappingId, in: path, required: true, schema: {type: string, format: uuid}}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      responses:
+        '202': {$ref: '#/components/responses/AcceptedTask'}
+  /nodes/{nodeId}/consoles:
+    parameters: [{$ref: '#/components/parameters/NodeId'}]
+    get:
+      operationId: listNodeConsoles
+      responses:
+        '200': {description: Console descriptors, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/ConsoleDescriptor'}}}}}
+  /captures:
+    get:
+      operationId: listCaptures
+      parameters: [{name: laboratory_id, in: query, schema: {type: string, format: uuid}}, {name: include_internal, in: query, schema: {type: boolean, default: false}}]
+      responses:
+        '200': {description: Capture sessions, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/CaptureSession'}}}}}
+    post:
+      operationId: startCapture
+      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/StartCapture'}}}}
+      responses:
+        '202': {$ref: '#/components/responses/AcceptedTask'}
+  /captures/{captureId}:
+    get:
+      operationId: getCapture
+      parameters: [{name: captureId, in: path, required: true, schema: {type: string, format: uuid}}]
+      responses:
+        '200': {description: Capture metadata, content: {application/json: {schema: {$ref: '#/components/schemas/CaptureSession'}}}}
+    delete:
+      operationId: stopCapture
+      parameters: [{name: captureId, in: path, required: true, schema: {type: string, format: uuid}}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      responses:
+        '202': {$ref: '#/components/responses/AcceptedTask'}
+  /captures/{captureId}/stream:
+    get:
+      operationId: streamCapture
+      parameters: [{name: captureId, in: path, required: true, schema: {type: string, format: uuid}}]
+      responses:
+        '200': {description: Live packet stream, content: {application/vnd.tcpdump.pcap: {schema: {type: string, contentMediaType: application/vnd.tcpdump.pcap}}}}
+  /client-tools/wireshark-helper/{platform}:
+    get:
+      operationId: downloadWiresharkHelper
+      parameters:
+        - name: platform
+          in: path
+          required: true
+          schema: {enum: [linux-amd64, windows-amd64, darwin-amd64, darwin-arm64]}
+      responses:
+        '200':
+          description: Platform-specific NetLab Wireshark helper executable
+          headers:
+            X-Checksum-SHA256: {schema: {type: string}}
+          content:
+            application/octet-stream: {schema: {type: string, format: binary}}
+        '404': {description: Helper package unavailable for the requested platform}
+  /traffic-filters:
+    get:
+      operationId: listTrafficFilters
+      parameters: [{name: laboratory_id, in: query, schema: {type: string, format: uuid}}]
+      responses:
+        '200': {description: Traffic Filter sessions with ambiguity metadata, content: {application/json: {schema: {type: array, items: {type: object}}}}}
+    post:
+      operationId: startTrafficFilter
+      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/StartTrafficFilter'}}}}
+      responses:
+        '202': {$ref: '#/components/responses/AcceptedTask'}
+  /traffic-filters/{filterId}:
+    get:
+      operationId: getTrafficFilter
+      parameters: [{name: filterId, in: path, required: true, schema: {type: string, format: uuid}}]
+      responses:
+        '200': {description: Filter and observed path, content: {application/json: {schema: {type: object}}}}
+    delete:
+      operationId: stopTrafficFilter
+      parameters: [{name: filterId, in: path, required: true, schema: {type: string, format: uuid}}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      responses:
+        '202': {$ref: '#/components/responses/AcceptedTask'}
+  /tasks/{taskId}:
+    get:
+      operationId: getTask
+      parameters: [{$ref: '#/components/parameters/TaskId'}]
+      responses:
+        '200': {description: Task, content: {application/json: {schema: {$ref: '#/components/schemas/OperationTask'}}}}
+  /tasks/{taskId}/cancel:
+    post:
+      operationId: cancelTask
+      parameters: [{$ref: '#/components/parameters/TaskId'}]
+      responses:
+        '202': {$ref: '#/components/responses/AcceptedTask'}
+  /artifacts/{artifactId}:
+    get:
+      operationId: downloadArtifact
+      parameters: [{name: artifactId, in: path, required: true, schema: {type: string, format: uuid}}]
+      responses:
+        '200': {description: Artifact bytes, content: {application/octet-stream: {schema: {type: string, format: binary}}}}
+  /labs/{labId}/duplicate:
+    post:
+      operationId: duplicateLab
+      parameters: [{$ref: '#/components/parameters/LabId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [name], properties: {name: {type: string, minLength: 1}}}}}}
+      responses:
+        '202': {$ref: '#/components/responses/AcceptedTask'}
+  /tasks:
+    get:
+      operationId: listTasks
+      parameters: [{name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 1000}}]
+      responses:
+        '200': {description: Durable operation tasks, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/OperationTask'}}}}}
+  /audit-events:
+    get:
+      operationId: listAuditEvents
+      responses:
+        '200': {description: Redacted audit events, content: {application/json: {schema: {type: array, items: {type: object}}}}}
+  /nodes/{nodeId}/resources:
+    get:
+      operationId: getNodeResources
+      parameters: [{$ref: '#/components/parameters/NodeId'}]
+      responses:
+        '200': {description: Configured limits and observed cgroup metrics, content: {application/json: {schema: {type: object}}}}
+    put:
+      operationId: updateNodeResources
+      parameters: [{$ref: '#/components/parameters/NodeId'}, {$ref: '#/components/parameters/IfMatch'}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [cpu_count, cpu_quota_micros, memory_mib]}}}}
+      responses:
+        '200': {description: Updated node, content: {application/json: {schema: {$ref: '#/components/schemas/Node'}}}}
+  /nodes/{nodeId}/settings:
+    put:
+      operationId: updateNodeSettings
+      description: Update the name, restart-sensitive resources, interface drivers, and cloud-init network settings of a stopped node.
+      parameters: [{$ref: '#/components/parameters/NodeId'}, {$ref: '#/components/parameters/IfMatch'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, cpu_count, cpu_quota_micros, memory_mib, interface_limit, process_limit]
+              properties:
+                name: {type: string, minLength: 1, maxLength: 128}
+                cpu_count: {type: integer, minimum: 1, maximum: 256}
+                cpu_quota_micros: {type: integer, minimum: 0, description: Zero disables CPU-time limiting; 100000 equals one host CPU core per period.}
+                memory_mib: {type: integer, minimum: 64}
+                interface_limit: {type: integer, minimum: 1}
+                process_limit: {type: integer, minimum: 1, maximum: 1048576}
+                network_interfaces:
+                  type: array
+                  items:
+                    type: object
+                    required: [id, name, driver, modes, addresses]
+                    properties:
+                      id: {type: string, format: uuid}
+                      name: {type: string}
+                      driver: {enum: [virtio-net-pci, e1000, e1000e, vmxnet3]}
+                      modes: {type: array, items: {enum: [dhcpv4, dhcpv6, slaac, static]}}
+                      addresses: {type: array, items: {type: string}}
+      responses:
+        '200': {description: Updated stopped node, content: {application/json: {schema: {$ref: '#/components/schemas/Node'}}}}
+        '409': {description: Node is not stopped, the revision changed, or the name conflicts}
+  /nodes/{nodeId}/bootstrap-credentials:
+    get:
+      operationId: getNodeBootstrapCredentials
+      description: Recover the initial username and plaintext password from a managed Ubuntu cloud-init seed ISO.
+      parameters: [{$ref: '#/components/parameters/NodeId'}]
+      responses:
+        '200':
+          description: Recoverable initial cloud-init credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [username, password, source]
+                properties:
+                  username: {type: string}
+                  password: {type: string}
+                  source: {type: string, enum: [cloud-init-seed]}
+        '404': {description: The node has no recoverable Ubuntu cloud-init credentials}
+  /nodes/{nodeId}/consoles/{mode}/stream:
+    get:
+      operationId: streamNodeConsole
+      parameters: [{$ref: '#/components/parameters/NodeId'}, {name: mode, in: path, required: true, schema: {enum: [ssh, telnet, vnc]}}, {name: session_id, in: query, required: false, schema: {type: string, maxLength: 128, pattern: '^[A-Za-z0-9][A-Za-z0-9._-]*$'}}]
+      responses:
+        '101': {description: WebSocket console stream}
+  /nodes/{nodeId}/consoles/{mode}/sessions/{sessionId}:
+    delete:
+      operationId: closeNodeConsoleSession
+      parameters: [{$ref: '#/components/parameters/NodeId'}, {name: mode, in: path, required: true, schema: {enum: [ssh, telnet, vnc]}}, {name: sessionId, in: path, required: true, schema: {type: string, maxLength: 128, pattern: '^[A-Za-z0-9][A-Za-z0-9._-]*$'}}]
+      responses:
+        '204': {description: Console session closed or already absent}
+  /labs/{labId}/network-objects:
+    get:
+      operationId: listNetworkObjects
+      parameters: [{$ref: '#/components/parameters/LabId'}]
+      responses:
+        '200': {description: Network objects, content: {application/json: {schema: {type: array, items: {type: object}}}}}
+    post:
+      operationId: createNetworkObject
+      parameters: [{$ref: '#/components/parameters/LabId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [name, kind]}}}}
+      responses:
+        '202': {$ref: '#/components/responses/AcceptedTask'}
+  /network-objects/{objectId}:
+    get:
+      operationId: getNetworkObject
+      parameters: [{name: objectId, in: path, required: true, schema: {type: string}}]
+      responses: {'200': {description: Network object}}
+    patch:
+      operationId: updateNetworkObject
+      parameters: [{name: objectId, in: path, required: true, schema: {type: string}}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, config]
+              properties:
+                name: {type: string, minLength: 1, maxLength: 128}
+                config: {type: object}
+      responses:
+        '202': {$ref: '#/components/responses/AcceptedTask'}
+        '412': {description: Network object revision changed}
+    delete:
+      operationId: deleteNetworkObject
+      parameters: [{name: objectId, in: path, required: true, schema: {type: string}}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      responses: {'202': {$ref: '#/components/responses/AcceptedTask'}}
+  /network-objects/{objectId}/attachments:
+    post:
+      operationId: attachNetworkObject
+      parameters: [{name: objectId, in: path, required: true, schema: {type: string}}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [interface_id]}}}}
+      responses: {'201': {description: Attachment created}}
+  /network-objects/{objectId}/diagnostics:
+    get:
+      operationId: getNetworkObjectDiagnostics
+      parameters: [{name: objectId, in: path, required: true, schema: {type: string}}]
+      responses: {'200': {description: Addressing, lease, forwarding, and NAT diagnostics}}
+  /labs/{labId}/network-object-links:
+    get:
+      operationId: listNetworkObjectLinks
+      parameters: [{$ref: '#/components/parameters/LabId'}]
+      responses: {'200': {description: First-class links between namespace-backed network objects, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/NetworkObjectLink'}}}}}}
+    post:
+      operationId: createNetworkObjectLink
+      parameters: [{$ref: '#/components/parameters/LabId'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [object_a_id, port_a_name, object_b_id, port_b_name]
+              properties: {object_a_id: {type: string}, port_a_name: {type: string, minLength: 1, maxLength: 15}, object_b_id: {type: string}, port_b_name: {type: string, minLength: 1, maxLength: 15}}
+      responses: {'201': {description: Network object link accepted, content: {application/json: {schema: {$ref: '#/components/schemas/NetworkObjectLink'}}}}}
+  /network-object-links/{linkId}:
+    delete:
+      operationId: deleteNetworkObjectLink
+      parameters: [{name: linkId, in: path, required: true, schema: {type: string}}]
+      responses: {'204': {description: Link and owned bridge/veth resources deleted live}}
+components:
+  parameters:
+    LabId: {name: labId, in: path, required: true, schema: {type: string, format: uuid}}
+    NodeId: {name: nodeId, in: path, required: true, schema: {type: string, format: uuid}}
+    TaskId: {name: taskId, in: path, required: true, schema: {type: string, format: uuid}}
+    IfMatch: {name: If-Match, in: header, required: true, schema: {type: string}, description: Quoted resource revision}
+    IdempotencyKey: {name: Idempotency-Key, in: header, required: false, schema: {type: string, minLength: 8, maxLength: 128}}
+  responses:
+    AcceptedTask: {description: Accepted, content: {application/json: {schema: {$ref: '#/components/schemas/TaskEnvelope'}}}}
+    Conflict: {description: Conflict, content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}}
+    PreconditionFailed: {description: Revision mismatch, content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}}
+    NotFound: {description: Not found, content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}}
+  schemas:
+    Laboratory:
+      type: object
+      required: [id, name, revision, recovery_policy, lifecycle_state]
+      properties: {id: {type: string, format: uuid}, name: {type: string}, description: {type: string}, revision: {type: integer}, recovery_policy: {enum: [auto_restore, remain_stopped]}, lifecycle_state: {enum: [active, deleting, delete_failed]}}
+    CreateLab:
+      type: object
+      required: [name]
+      properties: {name: {type: string, minLength: 1, maxLength: 128}, description: {type: string, maxLength: 4096}, recovery_policy: {enum: [auto_restore, remain_stopped], default: auto_restore}}
+    LabSnapshot:
+      type: object
+      required: [laboratory, nodes, interfaces, links, network_objects, network_object_links, placements, event_sequence]
+      properties: {laboratory: {$ref: '#/components/schemas/Laboratory'}, nodes: {type: array, items: {$ref: '#/components/schemas/Node'}}, interfaces: {type: array, items: {$ref: '#/components/schemas/NodeInterface'}}, links: {type: array, items: {$ref: '#/components/schemas/Link'}}, network_objects: {type: array, items: {$ref: '#/components/schemas/NetworkObject'}}, network_object_links: {type: array, items: {$ref: '#/components/schemas/NetworkObjectLink'}}, placements: {type: array, items: {$ref: '#/components/schemas/TopologyPlacement'}}, event_sequence: {type: integer}}
+    NetworkObjectLink:
+      type: object
+      required: [id, laboratory_id, object_a_id, port_a_name, object_b_id, port_b_name, revision, desired_state, observed_state]
+      properties: {id: {type: string}, laboratory_id: {type: string}, object_a_id: {type: string}, port_a_name: {type: string}, object_b_id: {type: string}, port_b_name: {type: string}, revision: {type: integer}, desired_state: {enum: [connected, disconnected]}, observed_state: {enum: [pending, connected, failed]}, last_error: {$ref: '#/components/schemas/Problem'}}
+    DeviceTemplate:
+      type: object
+      required: [id, template_key, display_name, runtime_kind, versions, created_at]
+      properties: {id: {type: string, format: uuid}, template_key: {type: string}, display_name: {type: string}, runtime_kind: {enum: [qemu, docker]}, versions: {type: array, items: {$ref: '#/components/schemas/TemplateVersion'}}, created_at: {type: string, format: date-time}}
+    TemplateVersion:
+      type: object
+      required: [id, template_id, version, manifest_version, defaults, capabilities, supported_nic_drivers, console_modes, runtime_options, enabled, created_at]
+      properties: {id: {type: string, format: uuid}, template_id: {type: string, format: uuid}, version: {type: string}, manifest_version: {type: integer}, image_version_id: {type: string, format: uuid}, defaults: {type: object, required: [cpu_count, memory_mib, interfaces, interface_name_format], properties: {cpu_count: {type: integer}, cpu_quota_micros: {type: integer}, memory_mib: {type: integer}, disk_gib: {type: integer}, interfaces: {type: integer}, interface_name_format: {type: string}}}, capabilities: {type: array, items: {type: string}}, supported_nic_drivers: {type: array, items: {type: string}}, console_modes: {type: array, items: {enum: [telnet, vnc]}}, runtime_options: {type: object}, enabled: {type: boolean}, created_at: {type: string, format: date-time}}
+    ImageVersion:
+      type: object
+      required: [id, runtime_kind, name, version, digest, source_type, source_reference, format, size_bytes, availability, license_status, license_notes, validation_result, created_at]
+      properties: {id: {type: string, format: uuid}, runtime_kind: {enum: [qemu, docker]}, name: {type: string}, version: {type: string}, digest: {type: string}, source_type: {type: string}, source_reference: {type: string}, format: {type: string}, size_bytes: {type: integer}, availability: {enum: [staging, available, invalid, missing, deleting]}, license_status: {enum: [reviewed, unreviewed, rejected]}, license_notes: {type: string}, validation_result: {type: object}, created_at: {type: string, format: date-time}}
+    Node:
+      type: object
+      required: [id, laboratory_id, name, kind, revision, desired_state, observed_state]
+      properties: {id: {type: string, format: uuid}, laboratory_id: {type: string, format: uuid}, name: {type: string}, kind: {enum: [qemu, docker, pc, switch_l2, switch_l3]}, template_version_id: {type: string, format: uuid}, revision: {type: integer}, desired_state: {enum: [stopped, running, deleted]}, observed_state: {enum: [unknown, provisioning, starting, running, stopping, stopped, failed, deleting]}, cpu_count: {type: integer}, cpu_quota_micros: {type: integer}, memory_mib: {type: integer}, storage_gib: {type: integer}, interface_limit: {type: integer}, process_limit: {type: integer}, config: {type: object}, last_error: {$ref: '#/components/schemas/Problem'}}
+    CreateNode:
+      type: object
+      required: [name]
+      properties: {name: {type: string}, kind: {enum: [qemu, docker, pc, switch_l2, switch_l3]}, template_version_id: {type: string, format: uuid}, image_version_id: {type: string, format: uuid}, cpu_count: {type: integer}, cpu_quota_micros: {type: integer}, memory_mib: {type: integer}, storage_gib: {type: integer}, interface_limit: {type: integer}, process_limit: {type: integer}, interface_count: {type: integer}, config: {type: object}, bootstrap: {type: object, properties: {user_data: {type: string}, meta_data: {type: string}, network_config: {type: string}}}}
+    NodeInterface:
+      type: object
+      required: [id, node_id, slot, name, driver, mac_address, revision]
+      properties: {id: {type: string, format: uuid}, node_id: {type: string, format: uuid}, slot: {type: integer}, name: {type: string}, driver: {type: string}, mac_address: {type: string}, desired_link_id: {type: string, format: uuid}, operational_state: {type: string}, revision: {type: integer}}
+    Link:
+      type: object
+      required: [id, laboratory_id, endpoint_a_id, endpoint_b_id, revision, desired_state, observed_state]
+      properties: {id: {type: string, format: uuid}, laboratory_id: {type: string, format: uuid}, endpoint_a_id: {type: string, format: uuid}, endpoint_b_id: {type: string, format: uuid}, revision: {type: integer}, desired_state: {type: string}, observed_state: {type: string}}
+    TopologyPlacement:
+      type: object
+      required: [laboratory_id, resource_id, resource_type, x, y, revision]
+      properties: {laboratory_id: {type: string, format: uuid}, resource_id: {type: string, format: uuid}, resource_type: {enum: [node, network_object]}, x: {type: number}, y: {type: number}, revision: {type: integer, minimum: 0}}
+    PlacementUpdate:
+      type: object
+      required: [resource_id, resource_type, x, y]
+      properties: {resource_id: {type: string, format: uuid}, resource_type: {enum: [node, network_object]}, x: {type: number}, y: {type: number}, revision: {type: integer, minimum: 1}}
+    PlacementBatch:
+      type: object
+      required: [placements]
+      properties: {placements: {type: array, minItems: 1, maxItems: 100, items: {$ref: '#/components/schemas/PlacementUpdate'}}}
+    TopologyPlacementResult:
+      type: object
+      required: [laboratory_revision, placements]
+      properties: {laboratory_revision: {type: integer, minimum: 1}, placements: {type: array, items: {$ref: '#/components/schemas/TopologyPlacement'}}}
+    NetworkObject:
+      type: object
+      required: [id, laboratory_id, name, kind, revision, desired_state, observed_state, config]
+      properties: {id: {type: string, format: uuid}, laboratory_id: {type: string, format: uuid}, name: {type: string}, kind: {enum: [bridge, nat_bridge, pc, switch_l2, switch_l3]}, revision: {type: integer}, desired_state: {type: string}, observed_state: {type: string}, config: {type: object}}
+    CreatePortMapping:
+      type: object
+      required: [protocol, guest_port]
+      properties: {protocol: {enum: [tcp, udp]}, host_address: {type: string, default: 0.0.0.0}, host_port: {type: integer, minimum: 0, maximum: 65535, description: Zero or omitted automatically allocates a free port from 20000-39999.}, guest_address: {type: string, description: Empty or omitted automatically resolves the node address from static configuration or an active NAT DHCP lease.}, guest_port: {type: integer, minimum: 1, maximum: 65535}}
+    PortMapping:
+      type: object
+      required: [id, node_id, protocol, host_address, host_port, guest_address, guest_port, revision, observed_state, created_at]
+      properties: {id: {type: string, format: uuid}, node_id: {type: string, format: uuid}, protocol: {enum: [tcp, udp]}, host_address: {type: string}, host_port: {type: integer, minimum: 1, maximum: 65535}, guest_address: {type: string}, guest_port: {type: integer, minimum: 1, maximum: 65535}, revision: {type: integer, minimum: 1}, observed_state: {enum: [pending, active, failed, deleting]}, last_error: {$ref: '#/components/schemas/Problem'}, created_at: {type: string, format: date-time}}
+    ConsoleDescriptor:
+      type: object
+      required: [mode, stream_url, idle_seconds]
+      properties: {mode: {enum: [ssh, telnet, vnc]}, stream_url: {type: string}, idle_seconds: {type: integer}, reconnectable: {type: boolean}, subprotocol: {type: string}}
+    StartCapture:
+      type: object
+      required: [source_type, source_id]
+      properties: {laboratory_id: {type: string, format: uuid}, source_type: {enum: [interface, link]}, source_id: {type: string, format: uuid}, interface: {type: string}, filter: {type: string}, format: {enum: [pcap, pcapng]}, retain: {type: boolean, default: false}, duration_seconds: {type: integer, maximum: 900}, max_bytes: {type: integer, maximum: 268435456}}
+    CaptureSession:
+      type: object
+      required: [id, source_type, source_id, format, state, retain, max_bytes, bytes_written, packets, truncated, created_at]
+      properties: {id: {type: string, format: uuid}, laboratory_id: {type: string, format: uuid}, source_type: {enum: [interface, link]}, source_id: {type: string, format: uuid}, purpose: {type: string}, parent_resource_id: {type: string, format: uuid}, filter: {type: string}, format: {enum: [pcap, pcapng]}, state: {enum: [requested, starting, streaming, stopping, completed, cancelled, failed, truncated]}, retain: {type: boolean}, max_bytes: {type: integer}, bytes_written: {type: integer}, packets: {type: integer}, truncated: {type: boolean}, artifact_id: {type: string, format: uuid}, artifact_url: {type: string}, expires_at: {type: string, format: date-time}, completion_reason: {type: string}, created_at: {type: string, format: date-time}, started_at: {type: string, format: date-time}, finished_at: {type: string, format: date-time}, last_error: {$ref: '#/components/schemas/Problem'}}
+    StartTrafficFilter:
+      type: object
+      required: [laboratory_id, match]
+      properties: {laboratory_id: {type: string, format: uuid}, interface_ids: {type: array, items: {type: string, format: uuid}}, link_ids: {type: array, items: {type: string, format: uuid}}, match: {$ref: '#/components/schemas/TrafficFilterExpression'}, max_observations: {type: integer, minimum: 1, maximum: 100000}, color: {type: string, pattern: '^#[0-9a-fA-F]{6}$', default: '#f59e0b'}}
+    TrafficFilterExpression:
+      type: object
+      description: A leaf predicate or exactly one recursive boolean operator. AND/OR require at least two operands; nesting depth is limited to 32.
+      properties:
+        source_address: {type: string}
+        destination_address: {type: string}
+        protocol: {enum: [tcp, udp, icmp, icmp6, arp, ip, ip6]}
+        source_port: {type: integer, minimum: 1, maximum: 65535}
+        destination_port: {type: integer, minimum: 1, maximum: 65535}
+        and: {type: array, minItems: 2, items: {$ref: '#/components/schemas/TrafficFilterExpression'}}
+        or: {type: array, minItems: 2, items: {$ref: '#/components/schemas/TrafficFilterExpression'}}
+        not: {$ref: '#/components/schemas/TrafficFilterExpression'}
+    OperationTask:
+      type: object
+      required: [id, kind, resource_type, resource_id, state, progress_current, progress_total, created_at]
+      properties: {id: {type: string, format: uuid}, kind: {type: string}, resource_type: {type: string}, resource_id: {type: string}, requested_revision: {type: integer}, state: {enum: [queued, running, cancelling, succeeded, failed, cancelled]}, progress_current: {type: integer}, progress_total: {type: integer}, result: {type: object}, error: {$ref: '#/components/schemas/Problem'}, created_at: {type: string, format: date-time}, started_at: {type: string, format: date-time}, finished_at: {type: string, format: date-time}}
+    RuntimeOwnershipRecord:
+      type: object
+      required: [resource_type, resource_id, object_kind, object_name, cleanup_state]
+      properties:
+        resource_type: {type: string}
+        resource_id: {type: string, format: uuid}
+        object_kind: {type: string}
+        object_name: {type: string}
+        metadata: {type: object, additionalProperties: {type: string}}
+        cleanup_state: {type: string}
+    TaskEnvelope:
+      type: object
+      required: [task]
+      properties: {task: {$ref: '#/components/schemas/OperationTask'}, node: {$ref: '#/components/schemas/Node'}, link: {$ref: '#/components/schemas/Link'}, interface: {$ref: '#/components/schemas/NodeInterface'}, port_mapping: {$ref: '#/components/schemas/PortMapping'}, artifact: {$ref: '#/components/schemas/Artifact'}}
+    Problem:
+      type: object
+      properties: {code: {type: string}, message: {type: string}, retryable: {type: boolean}, resource_type: {type: string}, resource_id: {type: string}, task_id: {type: string, format: uuid}, phase: {type: string}, cleanup: {type: string}, operator_hint: {type: string}, retry_after_seconds: {type: integer, minimum: 1}, details: {type: object}}

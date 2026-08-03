@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0",
+  "id": "acceptance-workspace-2026-07-29",
+  "candidate_id": "workspace-2026-07-29",
+  "status": "failed",
+  "gate_results": {
+    "format": {
+      "status": "passed"
+    },
+    "static_analysis": {
+      "status": "passed"
+    },
+    "unit": {
+      "status": "passed"
+    },
+    "contract": {
+      "status": "passed"
+    },
+    "frontend": {
+      "status": "passed"
+    },
+    "privileged_integration": {
+      "status": "passed"
+    },
+    "recovery": {
+      "status": "passed"
+    },
+    "security": {
+      "status": "passed"
+    },
+    "leak": {
+      "status": "passed"
+    },
+    "browser": {
+      "status": "failed",
+      "reason": "target-full-20260729-r2 passed 66 of 70 browser tests; target-cleanup-20260729-r3 subsequently passed all four focused cleanup tests, but the target coverage gate still fails because complete keyboard/pointer interaction evidence and genuine FancyWAN, FortiGate, and VyOS image versions are unavailable"
+    }
+  },
+  "scenario_evidence_ids": [
+    "local-full-20260729-r2",
+    "target-full-20260729-r2",
+    "target-cleanup-20260729-r3"
+  ],
+  "exceptions": [],
+  "cleanup_baseline": {
+    "digest": "sha256:df26d1f6986cf84c4b49e9a0bc7e573e9e100e839420bbb0f4fa83258977d76b",
+    "resources": {}
+  },
+  "cleanup_final": {
+    "digest": "sha256:e171267cc08d546dbf85cb6530cbf039aefc4c8de06f1d944d3cc49410328a2b",
+    "resources": {
+      "network_namespaces": 2,
+      "unknown_ownership_records": 26
+    }
+  },
+  "redaction_result": {
+    "passed": true,
+    "prohibited_content_count": 0
+  },
+  "conclusion": "failed",
+  "started_at": "2026-07-29T05:09:30Z",
+  "finished_at": "2026-07-29T05:10:00Z"
+}

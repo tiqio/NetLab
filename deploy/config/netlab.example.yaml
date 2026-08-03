@@ -1,0 +1,29 @@
+listen: "0.0.0.0:18082"
+state_dir: "/var/lib/netlab"
+database_path: "/var/lib/netlab/netlab.db"
+runtime_dir: "/run/netlab"
+template_dir: "/usr/local/share/netlab/templates"
+template_readiness_path: "/etc/netlab/template-readiness.json"
+release:
+  version: "operator-supplied-version"
+  candidate_id: "operator-supplied-candidate-id"
+  binary_digest: "operator-supplied-sha256"
+  contract_digest: "operator-supplied-sha256"
+  built_at: "operator-supplied-rfc3339"
+deployment:
+  role: "authoritative"
+  management_scopes:
+    - "10.72.0.0/16"
+  evidence_dir: "/var/lib/netlab/compliance/evidence"
+startup_concurrency:
+  qemu: 2
+  other: 4
+captures:
+  concurrent: 4
+  duration: "15m"
+  max_bytes: 268435456
+  retention: "24h"
+  global_max_bytes: 10737418240
+logging:
+  level: "info"
+  format: "json"

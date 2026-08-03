@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://netlab.local/contracts/deployment-authority.schema.json",
+  "title": "NetLab Deployment Authority Inventory",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "host_id", "approved_management_scopes", "instances", "verified_at"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "host_id": { "type": "string", "minLength": 1 },
+    "approved_management_scopes": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "credential_rotation_attestation": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["rotated_at", "attested_by"],
+      "properties": {
+        "rotated_at": { "type": "string", "format": "date-time" },
+        "attested_by": { "type": "string", "minLength": 1 },
+        "secret_value_recorded": { "const": false }
+      }
+    },
+    "instances": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "role", "listen_address", "state_directory", "database_path", "service_name", "candidate_id", "contract_digest", "externally_reachable"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "role": { "enum": ["candidate", "authoritative", "isolated", "draining", "retired"] },
+          "listen_address": { "type": "string", "minLength": 1 },
+          "state_directory": { "type": "string", "minLength": 1 },
+          "database_path": { "type": "string", "minLength": 1 },
+          "service_name": { "type": "string", "minLength": 1 },
+          "candidate_id": { "type": "string", "minLength": 1 },
+          "contract_digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+          "externally_reachable": { "type": "boolean" },
+          "management_scope": { "type": "array", "items": { "type": "string" } },
+          "verified_at": { "type": ["string", "null"], "format": "date-time" }
+        }
+      }
+    },
+    "verified_at": { "type": "string", "format": "date-time" }
+  }
+}

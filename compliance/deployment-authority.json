@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "host_id": "netlab-target-host",
+  "approved_management_scopes": ["10.72.0.0/16"],
+  "credential_rotation_attestation": null,
+  "instances": [
+    {
+      "id": "production",
+      "role": "authoritative",
+      "listen_address": "10.72.1.159:18082",
+      "state_directory": "/var/lib/netlab",
+      "database_path": "/var/lib/netlab/netlab.db",
+      "service_name": "netlab.service",
+      "candidate_id": "workspace-2026-07-29",
+      "contract_digest": "sha256:0bafb8b0232cd79040cd18f9fa046876f7cdc5ca99a7243690a31d99c963aefb",
+      "externally_reachable": true,
+      "management_scope": ["10.72.0.0/16"],
+      "verified_at": "2026-07-29T06:29:50Z"
+    },
+    {
+      "id": "legacy-preview",
+      "role": "retired",
+      "listen_address": "127.0.0.1:18081",
+      "state_directory": "/var/lib/netlab-preview",
+      "database_path": "/var/lib/netlab-preview/netlab.db",
+      "service_name": "netlab-target-e2e.service",
+      "candidate_id": "workspace-2026-07-29",
+      "contract_digest": "sha256:0bafb8b0232cd79040cd18f9fa046876f7cdc5ca99a7243690a31d99c963aefb",
+      "externally_reachable": false,
+      "management_scope": ["127.0.0.1/32"],
+      "verified_at": "2026-07-29T06:29:50Z"
+    }
+  ],
+  "verified_at": "2026-07-29T06:29:50Z"
+}

@@ -1,0 +1,46 @@
+[Unit]
+Description=NetLab Network Simulator
+After=network-online.target docker.service
+Wants=network-online.target docker.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/netlabd -config /etc/netlab/netlab.yaml
+Environment=NETLAB_DEPLOYMENT_ROLE=authoritative
+Restart=on-failure
+RestartSec=3
+KillMode=process
+User=root
+Group=root
+RuntimeDirectory=netlab
+RuntimeDirectoryMode=0700
+StateDirectory=netlab
+StateDirectoryMode=0700
+LogsDirectory=netlab
+LogsDirectoryMode=0750
+UMask=0077
+LimitNOFILE=1048576
+AmbientCapabilities=CAP_CHOWN CAP_KILL CAP_SETGID CAP_SETUID CAP_NET_ADMIN CAP_NET_RAW CAP_SYS_ADMIN CAP_SYS_PTRACE
+CapabilityBoundingSet=CAP_CHOWN CAP_KILL CAP_SETGID CAP_SETUID CAP_NET_ADMIN CAP_NET_RAW CAP_SYS_ADMIN CAP_SYS_PTRACE
+NoNewPrivileges=true
+PrivateDevices=false
+DeviceAllow=/dev/kvm rw
+DeviceAllow=/dev/net/tun rw
+ProtectHostname=true
+ProtectClock=true
+ProtectKernelTunables=false
+ProtectControlGroups=false
+Delegate=yes
+DelegateSubgroup=manager
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=false
+LockPersonality=true
+MemoryDenyWriteExecute=false
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK AF_PACKET
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

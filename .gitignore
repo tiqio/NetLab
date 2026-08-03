@@ -1,0 +1,45 @@
+# Go
+*.exe
+*.test
+*.out
+vendor/
+/bin/
+/build/
+
+# Node
+node_modules/
+web/dist/
+web/coverage/
+web/playwright-report/
+web/test-results/
+web/test-results/acceptance/
+acceptance/.runs/
+acceptance/*.ledger.json
+acceptance/*.evidence.json
+/test-results/
+*.tsbuildinfo
+*.log
+
+# Runtime and sensitive assets
+.env*
+/images/
+/runtime/
+/captures/
+/exports/
+/seeds/
+/secrets/
+*.qcow2
+*.raw
+*.pcap
+*.pcapng
+*.iso
+*.key
+*.crt
+
+# Editors and OS
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+.vscode/
+.idea/

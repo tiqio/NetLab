@@ -1,0 +1,196 @@
+{
+  "schema_version": "1.0",
+  "constitution_version": "1.0.0",
+  "candidate_id": "workspace-2026-07-29",
+  "generated_at": "2026-07-29T05:13:21Z",
+  "findings": [
+    {
+      "id": "CONST-BASELINE-01",
+      "principle": "Delivery Workflow and Quality Gates",
+      "statement": "Completion status must be supported by one current, non-contradictory evidence conclusion.",
+      "severity": "critical",
+      "status": "partial",
+      "owner": "project-owner",
+      "requirement_ids": [
+        "FR-001",
+        "FR-003",
+        "FR-027"
+      ],
+      "evidence_ids": [],
+      "next_action": "Remove the two residual network namespaces and 26 unknown ownership records, complete the remaining browser coverage, and rerun the single candidate-wide aggregate.",
+      "candidate_id": "workspace-2026-07-29",
+      "last_reviewed_at": "2026-07-29T05:13:21Z"
+    },
+    {
+      "id": "CONST-EVIDENCE-02",
+      "principle": "Lifecycle Correctness and Recoverability",
+      "statement": "Behavior-changing work must be proven against the exact current candidate.",
+      "severity": "critical",
+      "status": "stale",
+      "owner": "release-reviewer",
+      "requirement_ids": [
+        "FR-002",
+        "FR-025",
+        "FR-026",
+        "FR-028"
+      ],
+      "evidence_ids": [],
+      "next_action": "Produce accepted metadata-only scenario records after the failed current-candidate aggregate is corrected; do not promote the existing failed run to verified evidence.",
+      "candidate_id": "workspace-2026-07-29",
+      "last_reviewed_at": "2026-07-29T05:13:21Z"
+    },
+    {
+      "id": "CONST-AUTHORITY-03",
+      "principle": "Shared State and Control-Plane Parity",
+      "statement": "Exactly one externally reachable production control plane must be authoritative.",
+      "severity": "critical",
+      "status": "verified",
+      "owner": "operator",
+      "requirement_ids": [
+        "FR-005",
+        "FR-006"
+      ],
+      "evidence_ids": ["deployment-boundary-workspace-2026-07-29"],
+      "next_action": null,
+      "candidate_id": "workspace-2026-07-29",
+      "last_reviewed_at": "2026-07-29T05:13:21Z"
+    },
+    {
+      "id": "CONST-BOUNDARY-04",
+      "principle": "Resource Safety and Isolation",
+      "statement": "Unauthenticated management endpoints must be restricted to approved networks.",
+      "severity": "critical",
+      "status": "verified",
+      "owner": "operator",
+      "requirement_ids": [
+        "FR-007"
+      ],
+      "evidence_ids": ["deployment-boundary-workspace-2026-07-29"],
+      "next_action": null,
+      "candidate_id": "workspace-2026-07-29",
+      "last_reviewed_at": "2026-07-29T05:13:21Z"
+    },
+    {
+      "id": "CONST-CREDENTIALS-05",
+      "principle": "Image, Secret, and Execution Hygiene",
+      "statement": "Previously exposed deployment credentials must be rotated out of band.",
+      "severity": "critical",
+      "status": "blocked",
+      "owner": "operator",
+      "requirement_ids": [
+        "FR-008"
+      ],
+      "evidence_ids": [],
+      "next_action": "Rotate the previously exposed host credential out of band and add a non-secret attestation.",
+      "candidate_id": "workspace-2026-07-29",
+      "last_reviewed_at": "2026-07-29T05:13:21Z"
+    },
+    {
+      "id": "CONST-RUNTIME-06",
+      "principle": "Live Topology and Observability",
+      "statement": "Observed runtime state must agree across host, store, events, API, MCP, and UI.",
+      "severity": "high",
+      "status": "partial",
+      "owner": "runtime-maintainer",
+      "requirement_ids": [
+        "FR-009",
+        "FR-010",
+        "FR-012",
+        "FR-014"
+      ],
+      "evidence_ids": [],
+      "next_action": "Fix ownership discovery retention and the two leaked namespaces, then rerun the already passing multi-browser runtime-truth journey with a restored cleanup baseline.",
+      "candidate_id": "workspace-2026-07-29",
+      "last_reviewed_at": "2026-07-29T05:13:21Z"
+    },
+    {
+      "id": "CONST-FAILURE-07",
+      "principle": "Lifecycle Correctness and Recoverability",
+      "statement": "Terminal failures must identify phase, retryability, cleanup, and operator action.",
+      "severity": "high",
+      "status": "partial",
+      "owner": "runtime-maintainer",
+      "requirement_ids": [
+        "FR-011",
+        "FR-013"
+      ],
+      "evidence_ids": [],
+      "next_action": "Attach accepted metadata-only failure-injection evidence after candidate cleanup is restored; privileged failure and focused browser cleanup tests already pass.",
+      "candidate_id": "workspace-2026-07-29",
+      "last_reviewed_at": "2026-07-29T05:13:21Z"
+    },
+    {
+      "id": "CONST-TEMPLATES-08",
+      "principle": "Deliberate Runtime Scope",
+      "statement": "Supported template families must be proven with genuine legally supplied workloads.",
+      "severity": "high",
+      "status": "blocked",
+      "owner": "operator",
+      "requirement_ids": [
+        "FR-015",
+        "FR-016",
+        "FR-017",
+        "FR-018"
+      ],
+      "evidence_ids": [],
+      "next_action": "Supply genuine VyOS and FancyWAN media and complete FortiGate license review before claiming support.",
+      "candidate_id": "workspace-2026-07-29",
+      "last_reviewed_at": "2026-07-29T05:13:21Z"
+    },
+    {
+      "id": "CONST-CAPABILITY-09",
+      "principle": "Automation-First Interfaces",
+      "statement": "Image-dependent QEMU and automatic networking capabilities must report readiness truthfully.",
+      "severity": "high",
+      "status": "partial",
+      "owner": "runtime-maintainer",
+      "requirement_ids": [
+        "FR-019",
+        "FR-020",
+        "FR-021",
+        "FR-022"
+      ],
+      "evidence_ids": [],
+      "next_action": "Complete genuine VyOS and FancyWAN media validation plus automatic DHCPv4/DHCPv6/SLAAC acceptance; Ubuntu QEMU runs under the explicitly reported TCG fallback on this host.",
+      "candidate_id": "workspace-2026-07-29",
+      "last_reviewed_at": "2026-07-29T05:13:21Z"
+    },
+    {
+      "id": "CONST-ROLLOUT-10",
+      "principle": "Delivery Workflow and Quality Gates",
+      "statement": "Recent lifecycle and frontend fixes must be proven on the designated production instance.",
+      "severity": "high",
+      "status": "partial",
+      "owner": "release-reviewer",
+      "requirement_ids": [
+        "FR-023",
+        "FR-024",
+        "FR-025",
+        "FR-026"
+      ],
+      "evidence_ids": [],
+      "next_action": "Deploy this candidate authoritatively, complete the interaction/version coverage gate, restore runtime ownership baseline, and rerun the full target-browser aggregate.",
+      "candidate_id": "workspace-2026-07-29",
+      "last_reviewed_at": "2026-07-29T05:13:21Z"
+    },
+    {
+      "id": "CONST-GOVERNANCE-11",
+      "principle": "Governance",
+      "statement": "Release review must record constitution impact and approval metadata.",
+      "severity": "medium",
+      "status": "blocked",
+      "owner": "project-owner",
+      "requirement_ids": [
+        "FR-027",
+        "FR-028"
+      ],
+      "evidence_ids": [],
+      "next_action": "Record reviewer identity and approval after all mandatory gates pass for this candidate.",
+      "candidate_id": "workspace-2026-07-29",
+      "last_reviewed_at": "2026-07-29T05:13:21Z"
+    }
+  ],
+  "exceptions": [],
+  "acceptance_run_id": "acceptance-workspace-2026-07-29",
+  "release_conclusion": "not_ready"
+}

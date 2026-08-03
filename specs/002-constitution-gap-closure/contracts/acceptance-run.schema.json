@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://netlab.local/schemas/acceptance-run.schema.json",
+  "type": "object",
+  "required": ["schema_version", "id", "candidate_id", "status", "gate_results", "scenario_evidence_ids", "exceptions", "cleanup_baseline", "cleanup_final", "redaction_result", "conclusion", "started_at", "finished_at"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "id": {"type": "string", "minLength": 1},
+    "candidate_id": {"type": "string", "minLength": 1},
+    "status": {"enum": ["planned", "running", "passed", "failed", "blocked", "cancelled"]},
+    "gate_results": {"type": "object", "additionalProperties": {"type": "object", "required": ["status"], "properties": {"status": {"enum": ["passed", "failed", "blocked", "cancelled", "skipped"]}, "reason": {"type": "string"}, "details": {"type": "string"}}, "additionalProperties": false}},
+    "scenario_evidence_ids": {"type": "array", "items": {"type": "string"}},
+    "exceptions": {"type": "array", "items": {"type": "string"}},
+    "cleanup_baseline": {"$ref": "#/$defs/baseline"},
+    "cleanup_final": {"$ref": "#/$defs/baseline"},
+    "redaction_result": {"type": "object", "required": ["passed", "prohibited_content_count"], "properties": {"passed": {"type": "boolean"}, "prohibited_content_count": {"type": "integer", "minimum": 0}}, "additionalProperties": false},
+    "conclusion": {"enum": ["passed", "failed", "blocked", "cancelled"]},
+    "started_at": {"type": "string", "format": "date-time"},
+    "finished_at": {"type": "string", "format": "date-time"}
+  },
+  "$defs": {"baseline": {"type": "object", "required": ["digest", "resources"], "properties": {"digest": {"type": "string", "minLength": 1}, "resources": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}}}, "additionalProperties": false}},
+  "additionalProperties": false
+}

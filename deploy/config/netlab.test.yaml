@@ -1,0 +1,14 @@
+listen: 127.0.0.1:8080
+state_dir: /tmp/netlab-e2e
+database_path: /tmp/netlab-e2e/netlab.db
+runtime_dir: /tmp/netlab-e2e/run
+template_dir: templates
+startup_concurrency:
+  qemu: 2
+  other: 4
+captures:
+  concurrent: 2
+  duration: 1m
+  max_bytes: 16777216
+  retention: 1h
+  global_max_bytes: 67108864

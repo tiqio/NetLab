@@ -1,0 +1,26 @@
+schema_version: 1
+templates:
+  - key: busybox-container
+    display_name: BusyBox
+    runtime_kind: docker
+    versions:
+      - version: latest
+        manifest_version: 1
+        defaults: {cpu_count: 1, memory_mib: 128, interfaces: 1, interface_name_format: "eth%d"}
+        nic_drivers: [veth]
+        console_modes: []
+        capabilities: []
+        runtime_options: {command: ["sleep", "infinity"]}
+        enabled: true
+  - key: ubuntu-container
+    display_name: Ubuntu
+    runtime_kind: docker
+    versions:
+      - version: "24.04"
+        manifest_version: 1
+        defaults: {cpu_count: 1, memory_mib: 512, interfaces: 1, interface_name_format: "eth%d"}
+        nic_drivers: [veth]
+        console_modes: []
+        capabilities: []
+        runtime_options: {command: ["sleep", "infinity"]}
+        enabled: true

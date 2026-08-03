@@ -1,0 +1,284 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://netlab.local/schemas/frontend-acceptance-evidence-v1.json",
+  "title": "NetLab Frontend Acceptance Evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "status",
+    "started_at",
+    "finished_at",
+    "environment",
+    "viewports",
+    "interaction_results",
+    "version_coverage",
+    "cleanup"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "run_id": { "type": "string", "minLength": 8 },
+    "status": { "enum": ["passed", "failed"] },
+    "started_at": { "type": "string", "format": "date-time" },
+    "finished_at": { "type": "string", "format": "date-time" },
+    "environment": { "$ref": "#/$defs/environment" },
+    "viewports": {
+      "type": "array",
+      "minItems": 2,
+      "items": { "$ref": "#/$defs/viewport" }
+    },
+    "interaction_results": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/interactionResult" }
+    },
+    "version_coverage": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/versionCoverage" }
+    },
+    "cleanup": { "$ref": "#/$defs/cleanup" },
+    "client_observations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/clientObservation" }
+    }
+  },
+  "$defs": {
+    "viewport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height"],
+      "properties": {
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base_url", "target_kind", "capabilities", "baseline_clean"],
+      "properties": {
+        "base_url": {
+          "type": "string",
+          "pattern": "^https?://[^@/]+(?::[0-9]+)?$"
+        },
+        "target_kind": { "enum": ["local-disposable", "remote-privileged"] },
+        "service_version": { "type": "string" },
+        "capabilities": {
+          "type": "object",
+          "additionalProperties": { "type": "boolean" }
+        },
+        "capability_decisions": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "templates": { "type": "array", "items": { "type": "object" } },
+        "browser": { "type": "object" },
+        "baseline_clean": { "type": "boolean" },
+        "baseline_laboratory_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "baseline_runtime_ownership": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "resource_type",
+              "resource_id",
+              "object_kind",
+              "object_name",
+              "cleanup_state"
+            ],
+            "properties": {
+              "resource_type": { "type": "string" },
+              "resource_id": { "type": "string" },
+              "object_kind": { "type": "string" },
+              "object_name": { "type": "string" },
+              "cleanup_state": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "taskObservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "task_id",
+        "kind",
+        "states",
+        "terminal_state",
+        "duration_ms",
+        "cleanup_state"
+      ],
+      "properties": {
+        "task_id": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "minLength": 1 },
+        "states": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "terminal_state": { "enum": ["succeeded", "failed", "cancelled"] },
+        "duration_ms": { "type": "integer", "minimum": 0 },
+        "cleanup_state": { "type": "string", "minLength": 1 },
+        "problem_code": { "type": "string" }
+      }
+    },
+    "skipDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capability", "class", "reason", "evidence"],
+      "properties": {
+        "capability": { "type": "string", "minLength": 1 },
+        "class": { "const": "environment-optional" },
+        "reason": { "type": "string", "minLength": 1 },
+        "evidence": { "type": "string", "minLength": 1 }
+      }
+    },
+    "interactionResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "interaction_id",
+        "status",
+        "viewport",
+        "activation",
+        "precondition",
+        "action",
+        "expected",
+        "actual",
+        "duration_ms",
+        "cleanup_status"
+      ],
+      "properties": {
+        "interaction_id": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["passed", "failed", "skipped"] },
+        "viewport": { "$ref": "#/$defs/viewport" },
+        "activation": { "enum": ["pointer", "keyboard", "drag"] },
+        "precondition": { "type": "string", "minLength": 1 },
+        "action": { "type": "string", "minLength": 1 },
+        "expected": { "type": "string", "minLength": 1 },
+        "actual": { "type": "string", "minLength": 1 },
+        "duration_ms": { "type": "integer", "minimum": 0 },
+        "visible_feedback_ms": { "type": "integer", "minimum": 0 },
+        "pending_identity_ms": { "type": "integer", "minimum": 0 },
+        "task": { "$ref": "#/$defs/taskObservation" },
+        "resource_ids": { "type": "array", "items": { "type": "string" } },
+        "cleanup_status": { "type": "string", "minLength": 1 },
+        "skip": { "$ref": "#/$defs/skipDecision" },
+        "evidence_refs": { "type": "array", "items": { "type": "string" } }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "status": { "const": "skipped" } },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": { "skip": { "$ref": "#/$defs/skipDecision" } },
+            "required": ["skip"]
+          },
+          "else": { "not": { "required": ["skip"] } }
+        }
+      ]
+    },
+    "versionCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime",
+        "device_family",
+        "version_id",
+        "coverage_level",
+        "result"
+      ],
+      "properties": {
+        "runtime": { "enum": ["qemu", "docker", "lightweight"] },
+        "device_family": { "type": "string", "minLength": 1 },
+        "version_id": { "type": "string", "minLength": 1 },
+        "image_id": { "type": "string" },
+        "coverage_level": {
+          "enum": ["full-journey", "lifecycle-connectivity"]
+        },
+        "result": { "enum": ["passed", "failed"] },
+        "interactions": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "ownedResource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "resource_type",
+        "resource_id",
+        "owner_run_id",
+        "created_at",
+        "cleanup_method",
+        "cleanup_state"
+      ],
+      "properties": {
+        "resource_type": { "type": "string", "minLength": 1 },
+        "resource_id": { "type": "string", "minLength": 1 },
+        "owner_run_id": { "type": "string", "minLength": 1 },
+        "laboratory_id": { "type": "string" },
+        "revision": { "type": "integer", "minimum": 0 },
+        "created_at": { "type": "string", "format": "date-time" },
+        "cleanup_method": { "type": "string", "minLength": 1 },
+        "cleanup_state": {
+          "enum": ["owned", "deleting", "deleted", "missing", "leaked"]
+        },
+        "remediation": { "type": "string" }
+      }
+    },
+    "cleanup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "started_at",
+        "finished_at",
+        "trigger",
+        "attempted",
+        "baseline_restored",
+        "remaining_count",
+        "resources",
+        "remediation"
+      ],
+      "properties": {
+        "started_at": { "type": "string", "format": "date-time" },
+        "finished_at": { "type": "string", "format": "date-time" },
+        "trigger": { "enum": ["success", "failure", "timeout", "interrupt"] },
+        "attempted": { "const": true },
+        "baseline_restored": { "type": "boolean" },
+        "remaining_count": { "type": "integer", "minimum": 0 },
+        "resources": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ownedResource" }
+        },
+        "remediation": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "clientObservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "client_id",
+        "mutation_id",
+        "event_sequence",
+        "resource_revision",
+        "observed_at",
+        "convergence_ms"
+      ],
+      "properties": {
+        "client_id": { "type": "string", "minLength": 1 },
+        "mutation_id": { "type": "string", "minLength": 1 },
+        "event_sequence": { "type": "integer", "minimum": 0 },
+        "resource_revision": { "type": "integer", "minimum": 0 },
+        "observed_at": { "type": "string", "format": "date-time" },
+        "convergence_ms": { "type": "integer", "minimum": 0 },
+        "local_preferences_hash": { "type": "string" }
+      }
+    }
+  }
+}

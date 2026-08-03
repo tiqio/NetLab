@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://netlab.local/schemas/lab-export-v1.json",
+  "title": "NetLab Laboratory Export",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "exported_at", "laboratory", "template_versions", "nodes", "links", "network_objects", "redaction"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "exported_at": {"type": "string", "format": "date-time"},
+    "laboratory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "description", "recovery_policy"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1, "maxLength": 128},
+        "description": {"type": "string", "maxLength": 4096},
+        "recovery_policy": {"enum": ["auto_restore", "remain_stopped"]}
+      }
+    },
+    "template_versions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["template_key", "manifest_version", "image_digest"],
+        "properties": {
+          "template_key": {"type": "string"},
+          "manifest_version": {"type": "integer", "minimum": 1},
+          "image_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+        }
+      }
+    },
+    "nodes": {"type": "array", "items": {"$ref": "#/$defs/node"}},
+    "links": {"type": "array", "items": {"$ref": "#/$defs/link"}},
+    "network_objects": {"type": "array", "items": {"type": "object"}},
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["images_excluded", "credentials_excluded", "bootstrap_secrets_excluded", "captures_excluded"],
+      "properties": {
+        "images_excluded": {"const": true},
+        "credentials_excluded": {"const": true},
+        "bootstrap_secrets_excluded": {"const": true},
+        "captures_excluded": {"const": true}
+      }
+    }
+  },
+  "$defs": {
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["export_id", "name", "kind", "desired_state", "config"],
+      "properties": {
+        "export_id": {"type": "string"},
+        "name": {"type": "string"},
+        "kind": {"enum": ["qemu", "docker", "pc", "switch_l2", "switch_l3"]},
+        "template_key": {"type": "string"},
+        "image_digest": {"type": "string"},
+        "desired_state": {"enum": ["stopped", "running"]},
+        "config": {"type": "object"}
+      }
+    },
+    "link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["endpoint_a", "endpoint_b"],
+      "properties": {
+        "endpoint_a": {"type": "string"},
+        "endpoint_b": {"type": "string"}
+      }
+    }
+  }
+}

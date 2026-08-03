@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://netlab.local/schemas/frontend-interaction-inventory-v1.json",
+  "title": "NetLab Frontend Interaction Inventory",
+  "type": "object",
+  "required": ["version", "interactions"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "string", "minLength": 1 },
+    "interactions": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/interaction" }
+    }
+  },
+  "$defs": {
+    "interaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "area",
+        "label",
+        "locator",
+        "applicable_states",
+        "activation",
+        "outcome_class",
+        "cleanup_effect",
+        "sensitive_evidence"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)+$" },
+        "area": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "locator": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["role"],
+          "properties": {
+            "role": { "type": "string", "minLength": 1 },
+            "name": { "type": "string" },
+            "test_id": { "type": "string" }
+          }
+        },
+        "applicable_states": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "activation": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["pointer", "keyboard", "drag"] }
+        },
+        "outcome_class": {
+          "enum": [
+            "presentation",
+            "navigation",
+            "mutation",
+            "task",
+            "stream",
+            "download",
+            "error"
+          ]
+        },
+        "operation": { "type": "string", "minLength": 1 },
+        "required_capabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 },
+          "default": []
+        },
+        "optional_environment_capabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 },
+          "default": []
+        },
+        "cleanup_effect": { "type": "string", "minLength": 1 },
+        "sensitive_evidence": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "outcome_class": { "enum": ["mutation", "task"] } },
+            "required": ["outcome_class"]
+          },
+          "then": {
+            "properties": {
+              "operation": { "type": "string", "minLength": 1 }
+            },
+            "required": ["operation"]
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,22 @@
+[Unit]
+Description=NetLab Isolated Validation Instance
+After=network-online.target docker.service
+Wants=network-online.target docker.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/netlabd -config /etc/netlab/netlab-validation.yaml
+Restart=on-failure
+RestartSec=3
+User=root
+Group=root
+RuntimeDirectory=netlab-validation
+RuntimeDirectoryMode=0700
+StateDirectory=netlab-validation
+StateDirectoryMode=0700
+UMask=0077
+NoNewPrivileges=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK AF_PACKET
+
+[Install]
+WantedBy=multi-user.target

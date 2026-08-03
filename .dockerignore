@@ -1,0 +1,14 @@
+node_modules/
+web/node_modules/
+.git/
+Dockerfile*
+.dockerignore
+*.log*
+.env*
+coverage/
+web/coverage/
+images/
+runtime/
+captures/
+exports/
+secrets/

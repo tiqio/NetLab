@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0",
+  "id": "deployment-boundary-workspace-2026-07-29",
+  "kind": "deployment",
+  "status": "accepted",
+  "candidate_id": "workspace-2026-07-29",
+  "release_version": "0.2.0",
+  "binary_digest": "sha256:d4363f01cd8db141d8742bbba7c53313f45ca3a9cec06738f0644d446ee1f4f5",
+  "contract_digest": "sha256:0bafb8b0232cd79040cd18f9fa046876f7cdc5ca99a7243690a31d99c963aefb",
+  "scope_digest": "sha256:281d34a2106a52b824479956624ed4153590baab131862efb8fd1c3dfdb6c1f6",
+  "finding_ids": ["CONST-AUTHORITY-03", "CONST-BOUNDARY-04"],
+  "procedure": "Deploy netlab.service on the non-conflicting authoritative endpoint, retain the validation instance on loopback, load the nftables trusted-management policy, verify trusted access, and verify denial from a temporary 192.0.2.0/30 network namespace.",
+  "target": {
+    "host_id": "netlab-target-host",
+    "platform": "linux-x86_64",
+    "authoritative_endpoint": "10.72.1.159:18082",
+    "validation_endpoint": "127.0.0.1:18081",
+    "trusted_scope": "10.72.0.0/16"
+  },
+  "started_at": "2026-07-29T06:25:00Z",
+  "finished_at": "2026-07-29T06:41:36Z",
+  "outcome": "passed",
+  "cleanup": {
+    "baseline_restored": true,
+    "remaining_count": 0
+  },
+  "redaction": {
+    "passed": true,
+    "prohibited_content_count": 0
+  },
+  "artifacts": [
+    {
+      "kind": "nftables-policy",
+      "path": "deploy/nftables/netlab-management.nft",
+      "digest": "sha256:63f5290cbe42e2990c18ae2b0356e0d33e013b72492fd69013e5ce15f2db248b",
+      "contains_binary_payload": false
+    },
+    {
+      "kind": "deployment-inventory",
+      "path": "compliance/deployment-authority.json",
+      "digest": "sha256:f1bdbb5591de56ee493316ccc20144057832aad0d746c164527aae182c5e820d",
+      "contains_binary_payload": false
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+CREATE TABLE IF NOT EXISTS image_versions (
+  id TEXT PRIMARY KEY, runtime_kind TEXT NOT NULL, name TEXT NOT NULL, version TEXT NOT NULL,
+  digest TEXT NOT NULL UNIQUE, source_type TEXT NOT NULL, source_reference TEXT NOT NULL,
+  format TEXT NOT NULL, size_bytes INTEGER NOT NULL DEFAULT 0, availability TEXT NOT NULL,
+  license_status TEXT NOT NULL, license_notes TEXT NOT NULL, validation_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL, UNIQUE(runtime_kind,name,version)
+);
+CREATE TABLE IF NOT EXISTS device_templates (
+  id TEXT PRIMARY KEY, template_key TEXT NOT NULL UNIQUE, display_name TEXT NOT NULL,
+  runtime_kind TEXT NOT NULL, created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS template_versions (
+  id TEXT PRIMARY KEY, template_id TEXT NOT NULL REFERENCES device_templates(id),
+  manifest_version INTEGER NOT NULL, version TEXT NOT NULL, image_version_id TEXT REFERENCES image_versions(id),
+  defaults_json TEXT NOT NULL, capabilities_json TEXT NOT NULL, nic_drivers_json TEXT NOT NULL,
+  console_modes_json TEXT NOT NULL, runtime_options_json TEXT NOT NULL, enabled INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL, UNIQUE(template_id,version)
+);

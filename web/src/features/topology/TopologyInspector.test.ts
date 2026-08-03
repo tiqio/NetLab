@@ -1,0 +1,283 @@
+import { flushPromises, mount } from "@vue/test-utils";
+import { describe, expect, it, vi } from "vitest";
+import { api, type NetworkObject, type Node } from "@/api";
+import TopologyInspector from "./TopologyInspector.vue";
+import LightweightSwitchConfigEditor from "@/features/nodes/LightweightSwitchConfigEditor.vue";
+
+const natObject: NetworkObject = {
+  id: "nat-1",
+  laboratory_id: "lab-1",
+  name: "Internet NAT",
+  kind: "nat_bridge",
+  revision: 1,
+  desired_state: "active",
+  observed_state: "active",
+  config: {},
+};
+
+describe("TopologyInspector", () => {
+  it("updates Lightweight L2 configuration from the Inspector", async () => {
+    const networkObject: NetworkObject = {
+      id: "l2-1",
+      laboratory_id: "lab-1",
+      name: "Lightweight L2",
+      kind: "switch_l2",
+      revision: 3,
+      desired_state: "active",
+      observed_state: "active",
+      config: {
+        vlan_filtering: true,
+        ports: [{ name: "eth0", pvid: 1, tagged: [] }],
+      },
+    };
+    const update = vi
+      .spyOn(api, "updateNetworkObject")
+      .mockResolvedValue({ task: { id: "task-1" } } as never);
+    const wrapper = mount(TopologyInspector, {
+      props: {
+        laboratoryId: "lab-1",
+        networkObject,
+        interfaces: [],
+      },
+    });
+    const editor = wrapper.findComponent(LightweightSwitchConfigEditor);
+    const inputs = editor.findAll("input");
+    await inputs[1].setValue("lan0");
+    await inputs[2].setValue("10");
+    await inputs[3].setValue("20");
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("应用配置"))!
+      .trigger("click");
+    await flushPromises();
+
+    expect(update).toHaveBeenCalledWith(networkObject, {
+      name: "Lightweight L2",
+      config: {
+        vlan_filtering: true,
+        ports: [{ name: "lan0", pvid: 10, tagged: [20] }],
+      },
+    });
+    expect(wrapper.text()).toContain("配置更新任务已提交");
+    update.mockRestore();
+  });
+
+  it("shows Ruijie interface configuration and forwards terminal requests", async () => {
+    const node: Node = {
+      id: "switch-1",
+      laboratory_id: "lab-1",
+      name: "Layer-2 switch",
+      kind: "qemu",
+      revision: 1,
+      desired_state: "running",
+      observed_state: "running",
+      cpu_count: 1,
+      cpu_quota_micros: 100000,
+      memory_mib: 1024,
+      storage_gib: 8,
+      interface_limit: 64,
+      process_limit: 4096,
+      config: { template_key: "ruijie-switch" },
+    };
+    const wrapper = mount(TopologyInspector, {
+      props: {
+        laboratoryId: "lab-1",
+        node,
+        interfaces: [
+          {
+            id: "if-1",
+            node_id: node.id,
+            slot: 0,
+            name: "G0/0",
+            driver: "e1000",
+            mac_address: "02:00:00:00:00:01",
+            operational_state: "up",
+            revision: 1,
+          },
+        ],
+      },
+      global: {
+        stubs: {
+          ResourceCharts: true,
+          NodeOperationsPanel: true,
+        },
+      },
+    });
+
+    expect(wrapper.find('[data-testid="ruijie-config-panel"]').exists()).toBe(
+      true,
+    );
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("打开终端"))!
+      .trigger("click");
+    expect(wrapper.emitted("terminal")).toEqual([[node]]);
+  });
+
+  it("shows friendly node and interface names for link endpoints", () => {
+    const wrapper = mount(TopologyInspector, {
+      props: {
+        laboratoryId: "lab-1",
+        link: {
+          id: "link-1",
+          laboratory_id: "lab-1",
+          endpoint_a_id: "if-a",
+          endpoint_b_id: "if-b",
+          revision: 1,
+          desired_state: "connected",
+          observed_state: "connected",
+        },
+        nodes: [
+          {
+            id: "node-a",
+            laboratory_id: "lab-1",
+            name: "BusyBox1",
+            kind: "docker",
+            revision: 1,
+            desired_state: "running",
+            observed_state: "running",
+            cpu_count: 1,
+            cpu_quota_micros: 0,
+            memory_mib: 128,
+            storage_gib: 0,
+            interface_limit: 64,
+            process_limit: 4096,
+            config: {},
+          },
+          {
+            id: "node-b",
+            laboratory_id: "lab-1",
+            name: "BusyBox2",
+            kind: "docker",
+            revision: 1,
+            desired_state: "running",
+            observed_state: "running",
+            cpu_count: 1,
+            cpu_quota_micros: 0,
+            memory_mib: 128,
+            storage_gib: 0,
+            interface_limit: 64,
+            process_limit: 4096,
+            config: {},
+          },
+        ],
+        interfaces: [
+          {
+            id: "if-a",
+            node_id: "node-a",
+            slot: 0,
+            name: "eth0",
+            driver: "veth",
+            mac_address: "02:00:00:00:00:01",
+            operational_state: "up",
+            revision: 1,
+          },
+          {
+            id: "if-b",
+            node_id: "node-b",
+            slot: 0,
+            name: "eth1",
+            driver: "veth",
+            mac_address: "02:00:00:00:00:02",
+            operational_state: "up",
+            revision: 1,
+          },
+        ],
+      },
+    });
+
+    expect(wrapper.text()).toContain("BusyBox1:eth0");
+    expect(wrapper.text()).toContain("BusyBox2:eth1");
+    expect(wrapper.text()).not.toContain("if-a");
+    expect(wrapper.text()).not.toContain("if-b");
+  });
+
+  it("shows NAT runtime configuration and attached node status", () => {
+    const wrapper = mount(TopologyInspector, {
+      props: {
+        laboratoryId: "lab-1",
+        networkObject: {
+          ...natObject,
+          config: {
+            ipv4_prefix: "10.250.30.0/24",
+            uplink: "auto",
+            dhcpv4: {
+              start: "10.250.30.100",
+              end: "10.250.30.200",
+              lease_time: "1h",
+            },
+            dns_servers: ["1.1.1.1", "8.8.8.8"],
+          },
+        },
+        nodes: [
+          {
+            id: "node-1",
+            laboratory_id: "lab-1",
+            name: "NAT-BusyBox",
+            kind: "docker",
+            revision: 1,
+            desired_state: "running",
+            observed_state: "running",
+            cpu_count: 1,
+            cpu_quota_micros: 0,
+            memory_mib: 128,
+            storage_gib: 0,
+            interface_limit: 64,
+            process_limit: 4096,
+            config: {},
+          },
+        ],
+        interfaces: [
+          {
+            id: "if-1",
+            node_id: "node-1",
+            slot: 0,
+            name: "eth0",
+            driver: "veth",
+            mac_address: "02:00:00:00:00:01",
+            operational_state: "up",
+            revision: 1,
+          },
+        ],
+        attachments: [
+          {
+            id: "attachment-1",
+            network_object_id: "nat-1",
+            interface_id: "if-1",
+            port_name: "lan0",
+            observed_state: "active",
+          },
+        ],
+      },
+    });
+
+    expect(wrapper.text()).toContain("10.250.30.0/24");
+    expect(wrapper.text()).toContain("10.250.30.1");
+    expect(wrapper.text()).toContain("10.250.30.100 – 10.250.30.200 · 1h");
+    expect(wrapper.text()).toContain("NAT-BusyBox");
+    expect(wrapper.text()).toContain("eth0 · veth");
+    expect(wrapper.text()).toContain("active");
+  });
+
+  it("loads network diagnostics when requested by the context menu", async () => {
+    const diagnostics = vi
+      .spyOn(api, "getNetworkObjectDiagnostics")
+      .mockResolvedValue({ forwarding_status: { outbound_rule: true } });
+    const wrapper = mount(TopologyInspector, {
+      props: {
+        laboratoryId: "lab-1",
+        networkObject: natObject,
+        interfaces: [],
+        diagnosticsRequestKey: 0,
+      },
+    });
+
+    await wrapper.setProps({ diagnosticsRequestKey: 1 });
+    await flushPromises();
+
+    expect(diagnostics).toHaveBeenCalledWith("nat-1");
+    expect(wrapper.text()).toContain("outbound_rule");
+    expect(wrapper.emitted("diagnosticsLoaded")).toEqual([["Internet NAT"]]);
+    diagnostics.mockRestore();
+  });
+});
