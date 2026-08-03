@@ -25,7 +25,39 @@ func NewNetworkObjectTaskService(service *NetworkObjectService, runner *task.Run
 	runner.Register("network_object.update", value.handleUpdate)
 	runner.Register("network_object.delete", value.handleDelete)
 	runner.Register("network_object_link.create", value.handleObjectLinkCreate)
+	runner.Register("network_object_link.delete", value.handleObjectLinkDelete)
 	return value
+}
+
+func (s *NetworkObjectTaskService) DeleteObjectLink(ctx context.Context, id domain.ID, revision domain.Revision, idempotencyKey string) (domain.NetworkObjectLink, domain.OperationTask, error) {
+	link, err := s.service.GetObjectLink(ctx, id)
+	if err != nil {
+		if idempotencyKey != "" {
+			if existing, lookupErr := s.runner.GetByIdempotency(ctx, "network_object_link.delete", idempotencyKey); lookupErr == nil {
+				if existing.ResourceID != id || domain.Revision(networkTaskInt64(existing.Input["revision"])) != revision {
+					return domain.NetworkObjectLink{}, domain.OperationTask{}, domain.Problem{Code: "idempotency_conflict", Message: "idempotency key was already used with a different delete request", ResourceType: "network_object_link", ResourceID: existing.ResourceID, TaskID: existing.ID, Phase: "delete_admission"}
+				}
+				return domain.NetworkObjectLink{ID: id, LaboratoryID: domain.ID(networkTaskText(existing.Input["laboratory_id"])), ObjectAID: domain.ID(networkTaskText(existing.Input["object_a_id"])), PortAName: networkTaskText(existing.Input["port_a_name"]), ObjectBID: domain.ID(networkTaskText(existing.Input["object_b_id"])), PortBName: networkTaskText(existing.Input["port_b_name"]), Revision: revision, DesiredState: "disconnected", ObservedState: "disconnected"}, existing, nil
+			}
+		}
+		return domain.NetworkObjectLink{}, domain.OperationTask{}, err
+	}
+	if link.Revision != revision {
+		return domain.NetworkObjectLink{}, domain.OperationTask{}, domain.Problem{Code: "revision_conflict", Message: fmt.Sprintf("expected revision %d, current revision is %d", revision, link.Revision), ResourceType: "network_object_link", ResourceID: id, Phase: "delete_admission"}
+	}
+	input := map[string]any{"revision": int64(revision), "laboratory_id": link.LaboratoryID, "object_a_id": link.ObjectAID, "port_a_name": link.PortAName, "object_b_id": link.ObjectBID, "port_b_name": link.PortBName}
+	operation := networkObjectLinkOperation("network_object_link.delete", id, idempotencyKey, input)
+	queued, err := s.runner.EnqueueOrGet(ctx, operation)
+	if err != nil {
+		return domain.NetworkObjectLink{}, domain.OperationTask{}, err
+	}
+	if queued.ID != operation.ID {
+		link.ID = queued.ResourceID
+		link.Revision = domain.Revision(networkTaskInt64(queued.Input["revision"]))
+	}
+	link.DesiredState = "disconnected"
+	link.ObservedState = "disconnecting"
+	return link, queued, nil
 }
 
 func (s *NetworkObjectTaskService) CreateObjectLink(ctx context.Context, laboratoryID, objectAID domain.ID, portAName string, objectBID domain.ID, portBName, idempotencyKey string) (domain.NetworkObjectLink, domain.OperationTask, error) {
@@ -39,12 +71,20 @@ func (s *NetworkObjectTaskService) CreateObjectLink(ctx context.Context, laborat
 	if err := domain.ValidateNetworkObjectPortName(portBName); err != nil {
 		return domain.NetworkObjectLink{}, domain.OperationTask{}, err
 	}
-	if err := s.service.ValidateObjectLinkAdmission(ctx, laboratoryID, objectAID, portAName, objectBID, portBName); err != nil {
-		return domain.NetworkObjectLink{}, domain.OperationTask{}, err
-	}
 	link := domain.NetworkObjectLink{ID: domain.NewID(), LaboratoryID: laboratoryID, ObjectAID: objectAID, PortAName: portAName, ObjectBID: objectBID, PortBName: portBName, Revision: 1, DesiredState: "connected", ObservedState: "pending"}
 	input := map[string]any{"laboratory_id": laboratoryID, "object_a_id": objectAID, "port_a_name": portAName, "object_b_id": objectBID, "port_b_name": portBName}
 	operation := networkObjectLinkOperation("network_object_link.create", link.ID, idempotencyKey, input)
+	if idempotencyKey != "" {
+		if existing, lookupErr := s.runner.GetByIdempotency(ctx, operation.Kind, idempotencyKey); lookupErr == nil {
+			if existing.RequestFingerprint != operation.RequestFingerprint {
+				return domain.NetworkObjectLink{}, domain.OperationTask{}, domain.Problem{Code: "idempotency_conflict", Message: "idempotency key was already used with a different create request", ResourceType: "network_object_link", ResourceID: existing.ResourceID, TaskID: existing.ID, Phase: "task_admission"}
+			}
+			return domain.NetworkObjectLink{ID: existing.ResourceID, LaboratoryID: domain.ID(networkTaskText(existing.Input["laboratory_id"])), ObjectAID: domain.ID(networkTaskText(existing.Input["object_a_id"])), PortAName: networkTaskText(existing.Input["port_a_name"]), ObjectBID: domain.ID(networkTaskText(existing.Input["object_b_id"])), PortBName: networkTaskText(existing.Input["port_b_name"]), Revision: 1, DesiredState: "connected", ObservedState: "pending"}, existing, nil
+		}
+	}
+	if err := s.service.ValidateObjectLinkAdmission(ctx, laboratoryID, objectAID, portAName, objectBID, portBName); err != nil {
+		return domain.NetworkObjectLink{}, domain.OperationTask{}, err
+	}
 	queued, err := s.runner.EnqueueOrGet(ctx, operation)
 	if err != nil {
 		return domain.NetworkObjectLink{}, domain.OperationTask{}, err
@@ -77,6 +117,19 @@ func (s *NetworkObjectTaskService) handleObjectLinkCreate(ctx context.Context, v
 	}
 	value.ProgressCurrent = value.ProgressTotal
 	return map[string]any{"network_object_link": link}, nil
+}
+
+func (s *NetworkObjectTaskService) handleObjectLinkDelete(ctx context.Context, value *domain.OperationTask) (map[string]any, error) {
+	value.ProgressCurrent = 1
+	if err := s.runner.Checkpoint(ctx, value); err != nil {
+		return nil, err
+	}
+	err := s.service.DeleteObjectLinkRevision(ctx, value.ResourceID, domain.Revision(networkTaskInt64(value.Input["revision"])), value.ID)
+	if err != nil {
+		return nil, *command.NormalizeOperationProblem(err, domain.Problem{Code: "network_object_link_delete_failed", Message: "network object link deletion failed", Retryable: true, ResourceType: "network_object_link", ResourceID: value.ResourceID, TaskID: value.ID, Phase: "cleanup", Cleanup: "link remains authoritative until cleanup succeeds", OperatorHint: "inspect endpoint ownership and retry with the same idempotency key"}, true)
+	}
+	value.ProgressCurrent = value.ProgressTotal
+	return map[string]any{"network_object_link_id": value.ResourceID, "deleted": true}, nil
 }
 
 func (s *NetworkObjectTaskService) Update(ctx context.Context, id domain.ID, revision domain.Revision, name string, config map[string]any, idempotencyKey string) (domain.NetworkObject, domain.OperationTask, error) {

@@ -219,6 +219,21 @@ func TestTrafficFilterManagedCaptureStreamsRemainParentAndCaptureIsolated(t *tes
 	}
 }
 
+func TestTrafficFilterSuppressesObservationsAfterObjectLinkDeletion(t *testing.T) {
+	manager := NewTrafficFilterManager()
+	filter, err := manager.StartScopedAsWithObjectLinks("deleted-filter", "lab", captureRuntime.Match{Protocol: "udp"}, 100, nil, nil, []domain.ID{"deleted-link"}, "#22c55e")
+	if err != nil {
+		t.Fatal(err)
+	}
+	manager.ObserveManagedCapture("capture-before", filter.ID, "lab", "", "", "deleted-link", "egress", "pcap", udpDNSPacketCapture(), time.Now())
+	manager.StopNetworkObjectLink("deleted-link")
+	manager.ObserveManagedCapture("capture-after", filter.ID, "lab", "", "", "deleted-link", "ingress", "pcap", udpDNSPacketCapture(), time.Now().Add(time.Millisecond))
+	value, _, err := manager.Get(filter.ID)
+	if err != nil || value.State != "stopped" || len(value.Observations) != 1 || value.Observations[0].Direction != "a_to_b" {
+		t.Fatalf("filter=%+v err=%v", value, err)
+	}
+}
+
 func udpDNSPacketCapture() []byte {
 	frame := make([]byte, 14+20+8)
 	binary.BigEndian.PutUint16(frame[12:14], 0x0800)

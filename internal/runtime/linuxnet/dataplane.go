@@ -255,16 +255,22 @@ func (d *DataPlane) DeleteNetworkObjectLink(ctx context.Context, link domain.Net
 	if err != nil {
 		return err
 	}
-	if err = d.executor.Run(ctx, d.ip, "-n", namespaceA, "link", "delete", link.PortAName); err != nil && !missingLinkError(err) {
-		namespaceB, namespaceErr := networkObjectNamespace(objectB)
-		if namespaceErr != nil {
-			return err
-		}
-		if fallbackErr := d.executor.Run(ctx, d.ip, "-n", namespaceB, "link", "delete", link.PortBName); fallbackErr != nil && !missingLinkError(fallbackErr) {
-			return err
-		}
+	err = d.executor.Run(ctx, d.ip, "-n", namespaceA, "link", "delete", link.PortAName)
+	if err == nil {
+		return nil
 	}
-	return nil
+	namespaceB, namespaceErr := networkObjectNamespace(objectB)
+	if namespaceErr != nil {
+		return namespaceErr
+	}
+	fallbackErr := d.executor.Run(ctx, d.ip, "-n", namespaceB, "link", "delete", link.PortBName)
+	if fallbackErr == nil || missingLinkError(fallbackErr) {
+		return nil
+	}
+	if missingLinkError(err) {
+		return fallbackErr
+	}
+	return fmt.Errorf("delete endpoint A: %v; delete endpoint B: %w", err, fallbackErr)
 }
 
 func missingLinkError(err error) bool {

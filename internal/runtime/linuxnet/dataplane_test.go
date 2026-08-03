@@ -17,6 +17,24 @@ type dataPlaneExecutor struct {
 	existing     map[string]bool
 }
 
+type missingFirstEndpointExecutor struct {
+	commands []string
+	first    string
+}
+
+func (e *missingFirstEndpointExecutor) Run(_ context.Context, name string, args ...string) error {
+	command := strings.Join(append([]string{name}, args...), " ")
+	e.commands = append(e.commands, command)
+	if strings.Contains(command, e.first) {
+		return errors.New("Cannot find device")
+	}
+	return nil
+}
+
+func (e *missingFirstEndpointExecutor) Output(context.Context, string, ...string) ([]byte, error) {
+	return nil, errors.New("missing")
+}
+
 func (e *dataPlaneExecutor) Run(_ context.Context, name string, args ...string) error {
 	command := strings.Join(append([]string{name}, args...), " ")
 	e.commands = append(e.commands, command)
@@ -168,5 +186,21 @@ func TestDeleteNetworkObjectLinkDeletesNamespaceEndpoint(t *testing.T) {
 	commands := strings.Join(executor.commands, "\n")
 	if !strings.Contains(commands, "-n "+SwitchL2NamespaceName(objectA.ID)+" link delete swp1") {
 		t.Fatalf("missing direct pair cleanup in %s", commands)
+	}
+}
+
+func TestDeleteNetworkObjectLinkFallsBackToSurvivingEndpoint(t *testing.T) {
+	objectA := domain.NetworkObject{ID: "a", Kind: domain.NetworkSwitchL2}
+	objectB := domain.NetworkObject{ID: "b", Kind: domain.NetworkSwitchL2}
+	link := domain.NetworkObjectLink{ID: "partial-delete", PortAName: "swp1", PortBName: "swp2"}
+	first := "-n " + SwitchL2NamespaceName(objectA.ID) + " link delete swp1"
+	executor := &missingFirstEndpointExecutor{first: first}
+	runtime, _ := NewDataPlane(executor)
+	if err := runtime.DeleteNetworkObjectLink(context.Background(), link, objectA, objectB); err != nil {
+		t.Fatal(err)
+	}
+	commands := strings.Join(executor.commands, "\n")
+	if !strings.Contains(commands, first) || !strings.Contains(commands, "-n "+SwitchL2NamespaceName(objectB.ID)+" link delete swp2") {
+		t.Fatalf("missing fallback cleanup: %s", commands)
 	}
 }

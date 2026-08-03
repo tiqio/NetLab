@@ -390,6 +390,10 @@ func (r *Repositories) PublishNetworkObjectLinkRecovered(ctx context.Context, id
 }
 
 func (r *Repositories) DeleteNetworkObjectLink(ctx context.Context, id domain.ID) error {
+	return r.DeleteNetworkObjectLinkRevision(ctx, id, 0, "")
+}
+
+func (r *Repositories) DeleteNetworkObjectLinkRevision(ctx context.Context, id domain.ID, expectedRevision domain.Revision, taskID domain.ID) error {
 	return r.database.Write(ctx, func(tx *sql.Tx) error {
 		var laboratoryID domain.ID
 		var revision domain.Revision
@@ -399,12 +403,15 @@ func (r *Repositories) DeleteNetworkObjectLink(ctx context.Context, id domain.ID
 			}
 			return err
 		}
+		if expectedRevision > 0 && revision != expectedRevision {
+			return domain.Problem{Code: "revision_conflict", Message: fmt.Sprintf("expected revision %d, current revision is %d", expectedRevision, revision), ResourceType: "network_object_link", ResourceID: id, TaskID: taskID, Phase: "delete_commit"}
+		}
 		if _, err := tx.ExecContext(ctx, `DELETE FROM network_object_links WHERE id=?`, id); err != nil {
 			return err
 		}
 		if _, err := tx.ExecContext(ctx, `DELETE FROM topology_endpoint_reservations WHERE resource_type='network_object_link' AND resource_id=?`, id); err != nil {
 			return err
 		}
-		return appendEvent(ctx, tx, "network_object_link.deleted", laboratoryID, "network_object_link", id, revision.Next(), "", nil)
+		return appendEvent(ctx, tx, "network_object_link.deleted", laboratoryID, "network_object_link", id, revision.Next(), taskID, nil)
 	})
 }

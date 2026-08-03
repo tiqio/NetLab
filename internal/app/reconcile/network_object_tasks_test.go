@@ -18,6 +18,23 @@ type networkTaskRuntimeFake struct {
 	blockConfigure bool
 }
 
+type objectLinkDeleteRuntimeFake struct {
+	calls *[]string
+}
+
+func (r objectLinkDeleteRuntimeFake) DeleteNetworkObjectLink(context.Context, domain.NetworkObjectLink, domain.NetworkObject, domain.NetworkObject) error {
+	*r.calls = append(*r.calls, "runtime")
+	return nil
+}
+
+type objectLinkObserverCleanupFake struct {
+	calls *[]string
+}
+
+func (c objectLinkObserverCleanupFake) StopNetworkObjectLink(domain.ID) {
+	*c.calls = append(*c.calls, "observer")
+}
+
 func (r *networkTaskRuntimeFake) Configure(ctx context.Context, value domain.NetworkObject) error {
 	if r.blockConfigure {
 		<-ctx.Done()
@@ -228,5 +245,72 @@ func TestNetworkObjectLinkCreateIsDurableIdempotentAndObservable(t *testing.T) {
 	}
 	if _, _, err = operations.CreateObjectLink(ctx, lab.ID, "switch-a", "swp1", "switch-b", "swp2", "occupied-key"); err == nil {
 		t.Fatal("expected occupied port conflict")
+	}
+}
+
+func TestNetworkObjectLinkDeleteIsRevisionedIdempotentOrderedAndReleasesPorts(t *testing.T) {
+	ctx, database, repositories, operations, runner, lab := newNetworkTaskFixture(t, &networkTaskRuntimeFake{configured: map[domain.ID]bool{}})
+	defer database.Close()
+	defer runner.Close()
+	now := time.Now().UTC()
+	for _, object := range []domain.NetworkObject{{ID: "delete-a", LaboratoryID: lab.ID, Name: "A", Kind: domain.NetworkSwitchL2, Revision: 1, DesiredState: "active", ObservedState: "active", Config: map[string]any{}, CreatedAt: now, UpdatedAt: now}, {ID: "delete-b", LaboratoryID: lab.ID, Name: "B", Kind: domain.NetworkSwitchL2, Revision: 1, DesiredState: "active", ObservedState: "active", Config: map[string]any{}, CreatedAt: now, UpdatedAt: now}} {
+		if err := repositories.CreateNetworkObject(ctx, object); err != nil {
+			t.Fatal(err)
+		}
+	}
+	link, createTask, err := operations.CreateObjectLink(ctx, lab.ID, "delete-a", "swp1", "delete-b", "swp1", "delete-create")
+	if err != nil {
+		t.Fatal(err)
+	}
+	waitForNetworkTask(t, repositories, createTask.ID, func(value domain.OperationTask) bool { return value.State == domain.TaskSucceeded })
+	if _, _, err = operations.DeleteObjectLink(ctx, link.ID, 2, "delete-key"); err == nil {
+		t.Fatal("expected revision conflict")
+	}
+	calls := []string{}
+	operations.service.SetObjectLinkRuntime(objectLinkDeleteRuntimeFake{calls: &calls})
+	operations.service.AddObjectLinkObserverCleanup(objectLinkObserverCleanupFake{calls: &calls})
+	predicted, queued, err := operations.DeleteObjectLink(ctx, link.ID, 1, "delete-key")
+	if err != nil || predicted.ObservedState != "disconnecting" || predicted.DesiredState != "disconnected" {
+		t.Fatalf("predicted=%+v task=%+v err=%v", predicted, queued, err)
+	}
+	completed := waitForNetworkTask(t, repositories, queued.ID, func(value domain.OperationTask) bool { return value.State == domain.TaskSucceeded })
+	if len(calls) != 2 || calls[0] != "observer" || calls[1] != "runtime" {
+		t.Fatalf("cleanup order=%v", calls)
+	}
+	if _, err = repositories.GetNetworkObjectLink(ctx, link.ID); err == nil {
+		t.Fatal("deleted link still exists")
+	}
+	replayed, replayedTask, err := operations.DeleteObjectLink(ctx, link.ID, 1, "delete-key")
+	if err != nil || replayedTask.ID != queued.ID || replayed.ID != link.ID {
+		t.Fatalf("replayed=%+v task=%+v err=%v", replayed, replayedTask, err)
+	}
+	reused, reuseTask, err := operations.CreateObjectLink(ctx, lab.ID, "delete-a", "swp1", "delete-b", "swp1", "reuse-ports")
+	if err != nil {
+		t.Fatal(err)
+	}
+	waitForNetworkTask(t, repositories, reuseTask.ID, func(value domain.OperationTask) bool { return value.State == domain.TaskSucceeded })
+	if reused.ID == link.ID {
+		t.Fatal("port reuse unexpectedly resurrected deleted link identity")
+	}
+	var disconnectingSequence, deletedSequence, finalTaskSequence int64
+	if err = database.DB.QueryRowContext(ctx, `SELECT MIN(sequence) FROM outbox_events WHERE event_type='network_object_link.state_changed' AND resource_id=?`, link.ID).Scan(&disconnectingSequence); err != nil {
+		t.Fatal(err)
+	}
+	if err = database.DB.QueryRowContext(ctx, `SELECT sequence FROM outbox_events WHERE event_type='network_object_link.deleted' AND resource_id=? AND task_id=?`, link.ID, queued.ID).Scan(&deletedSequence); err != nil {
+		t.Fatal(err)
+	}
+	if err = database.DB.QueryRowContext(ctx, `SELECT MAX(sequence) FROM outbox_events WHERE event_type='task.updated' AND resource_id=?`, completed.ID).Scan(&finalTaskSequence); err != nil {
+		t.Fatal(err)
+	}
+	if !(disconnectingSequence < deletedSequence && deletedSequence < finalTaskSequence) {
+		t.Fatalf("event order disconnecting=%d deleted=%d task=%d", disconnectingSequence, deletedSequence, finalTaskSequence)
+	}
+	cascadeTask, err := operations.Delete(ctx, "delete-a", 1, "cascade-object")
+	if err != nil {
+		t.Fatal(err)
+	}
+	waitForNetworkTask(t, repositories, cascadeTask.ID, func(value domain.OperationTask) bool { return value.State == domain.TaskSucceeded })
+	if _, err = repositories.GetNetworkObjectLink(ctx, reused.ID); err == nil {
+		t.Fatal("network object deletion left its object link behind")
 	}
 }

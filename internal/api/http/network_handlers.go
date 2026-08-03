@@ -87,11 +87,20 @@ func (h *NetworkHandlers) getObjectLink(c *gin.Context) {
 }
 
 func (h *NetworkHandlers) deleteObjectLink(c *gin.Context) {
-	if err := h.service.DeleteObjectLink(c, domain.ID(c.Param("linkId"))); err != nil {
+	if h.operations == nil {
+		handleError(c, domain.Problem{Code: "operation_unavailable", Message: "network object link automation unavailable"})
+		return
+	}
+	revision, ok := RevisionFromRequest(c)
+	if !ok {
+		return
+	}
+	link, taskValue, err := h.operations.DeleteObjectLink(c, domain.ID(c.Param("linkId")), revision, c.GetHeader("Idempotency-Key"))
+	if err != nil {
 		handleError(c, err)
 		return
 	}
-	c.Status(http.StatusNoContent)
+	c.JSON(http.StatusAccepted, gin.H{"network_object_link": link, "task": taskValue})
 }
 
 func (h *NetworkHandlers) update(c *gin.Context) {

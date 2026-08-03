@@ -48,6 +48,20 @@ func NetworkTools(service *reconcile.NetworkObjectService, operations *reconcile
 			}
 			return service.GetObjectLink(c, domain.ID(id))
 		}},
+		{Name: "netlab.network_object_links.delete", Description: "Delete a network-object link through a revisioned durable task.", InputSchema: mutationSchema(map[string]any{"link_id": stringProperty("Network object link ID")}, "link_id", "expected_revision"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
+			if operations == nil {
+				return unavailable("network object link delete")
+			}
+			id, err := argumentString(args, "link_id")
+			if err != nil {
+				return nil, err
+			}
+			link, taskValue, err := operations.DeleteObjectLink(c, domain.ID(id), revisionArgument(args), optionalString(args, "idempotency_key"))
+			if err != nil {
+				return nil, err
+			}
+			return map[string]any{"network_object_link": link, "task": taskValue}, nil
+		}},
 		{Name: "netlab.network_objects.create", Description: "Create a PC, switch, bridge, or NAT network object.", InputSchema: mutationSchema(map[string]any{"lab_id": stringProperty("Laboratory ID"), "name": stringProperty("Object name"), "kind": map[string]any{"type": "string", "enum": []string{"pc", "switch_l2", "switch_l3", "bridge", "nat_bridge"}}, "config": map[string]any{"type": "object"}}, "lab_id", "name", "kind"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
 			if operations == nil {
 				return unavailable("network object create")

@@ -107,3 +107,48 @@ func TestNetworkObjectLinkCreatePublishesRevisionedEvent(t *testing.T) {
 		t.Fatalf("task_id=%q", recoveredTaskID)
 	}
 }
+
+func TestNetworkObjectLinkDeleteChecksRevisionReleasesEndpointsAndPublishesTask(t *testing.T) {
+	ctx := context.Background()
+	database, err := Open(ctx, "file:"+string(domain.NewID())+"?mode=memory&cache=shared")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer database.Close()
+	now := time.Now().UTC()
+	topology := NewTopologyRepository(database)
+	lab := domain.Laboratory{ID: domain.NewID(), Name: "delete", Revision: 1, RecoveryPolicy: domain.RecoveryRemainStopped, LifecycleState: "active", CreatedAt: now, UpdatedAt: now}
+	if err = topology.CreateLaboratory(ctx, lab); err != nil {
+		t.Fatal(err)
+	}
+	repositories := NewRepositories(database)
+	for _, object := range []domain.NetworkObject{{ID: "delete-a", LaboratoryID: lab.ID, Name: "A", Kind: domain.NetworkSwitchL2, Revision: 1, DesiredState: "active", ObservedState: "active", Config: map[string]any{}, CreatedAt: now, UpdatedAt: now}, {ID: "delete-b", LaboratoryID: lab.ID, Name: "B", Kind: domain.NetworkSwitchL2, Revision: 1, DesiredState: "active", ObservedState: "active", Config: map[string]any{}, CreatedAt: now, UpdatedAt: now}} {
+		if err = repositories.CreateNetworkObject(ctx, object); err != nil {
+			t.Fatal(err)
+		}
+	}
+	link := domain.NetworkObjectLink{ID: "delete-link", LaboratoryID: lab.ID, ObjectAID: "delete-a", PortAName: "swp1", ObjectBID: "delete-b", PortBName: "swp1", Revision: 1, DesiredState: "connected", ObservedState: "connected"}
+	if err = repositories.CreateNetworkObjectLink(ctx, link); err != nil {
+		t.Fatal(err)
+	}
+	if err = repositories.DeleteNetworkObjectLinkRevision(ctx, link.ID, 2, "delete-task"); err == nil {
+		t.Fatal("expected revision conflict")
+	}
+	if _, err = repositories.GetNetworkObjectLink(ctx, link.ID); err != nil {
+		t.Fatalf("revision conflict removed link: %v", err)
+	}
+	if err = repositories.DeleteNetworkObjectLinkRevision(ctx, link.ID, 1, "delete-task"); err != nil {
+		t.Fatal(err)
+	}
+	if err = repositories.CreateNetworkObjectLink(ctx, domain.NetworkObjectLink{ID: "replacement", LaboratoryID: lab.ID, ObjectAID: "delete-a", PortAName: "swp1", ObjectBID: "delete-b", PortBName: "swp1", Revision: 1, DesiredState: "connected", ObservedState: "pending"}); err != nil {
+		t.Fatalf("released endpoints were not reusable: %v", err)
+	}
+	var taskID string
+	var revision int
+	if err = database.DB.QueryRowContext(ctx, `SELECT task_id,revision FROM outbox_events WHERE event_type='network_object_link.deleted' AND resource_id=?`, link.ID).Scan(&taskID, &revision); err != nil {
+		t.Fatal(err)
+	}
+	if taskID != "delete-task" || revision != 2 {
+		t.Fatalf("task=%q revision=%d", taskID, revision)
+	}
+}

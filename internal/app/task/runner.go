@@ -49,6 +49,17 @@ func NewRunner(store Store, workers, queueSize int) *Runner {
 
 func (r *Runner) Register(kind string, handler Handler) { r.handlers[kind] = handler }
 
+func (r *Runner) GetByIdempotency(ctx context.Context, kind, key string) (domain.OperationTask, error) {
+	if key == "" {
+		return domain.OperationTask{}, fmt.Errorf("idempotency key is required")
+	}
+	store, ok := r.store.(IdempotentStore)
+	if !ok {
+		return domain.OperationTask{}, fmt.Errorf("task store does not support idempotency lookup")
+	}
+	return store.GetTaskByIdempotency(ctx, kind, key)
+}
+
 func (r *Runner) Checkpoint(ctx context.Context, task *domain.OperationTask) error {
 	if task == nil {
 		return fmt.Errorf("task is required")

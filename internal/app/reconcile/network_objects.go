@@ -212,6 +212,19 @@ func (s *NetworkObjectService) Delete(ctx context.Context, id domain.ID, revisio
 		}
 		return err
 	}
+	if repository, ok := s.repository.(interface {
+		ListNetworkObjectLinksByObject(context.Context, domain.ID) ([]domain.NetworkObjectLink, error)
+	}); ok {
+		links, listErr := repository.ListNetworkObjectLinksByObject(ctx, id)
+		if listErr != nil {
+			return listErr
+		}
+		for _, link := range links {
+			if deleteErr := s.DeleteObjectLinkRevision(ctx, link.ID, link.Revision, ""); deleteErr != nil {
+				return deleteErr
+			}
+		}
+	}
 	if runtime := s.runtime(value.Kind); runtime != nil {
 		if err = runtime.Delete(ctx, id); err != nil {
 			return err
@@ -277,10 +290,28 @@ func (s *NetworkObjectService) DeleteObjectLink(ctx context.Context, id domain.I
 	if err != nil {
 		return err
 	}
-	if s.objectLinks != nil {
-		for _, cleaner := range s.objectLinkObservers {
-			cleaner.StopNetworkObjectLink(id)
+	return s.DeleteObjectLinkRevision(ctx, id, link.Revision, "")
+}
+
+func (s *NetworkObjectService) DeleteObjectLinkRevision(ctx context.Context, id domain.ID, expectedRevision domain.Revision, taskID domain.ID) error {
+	link, err := s.repository.GetNetworkObjectLink(ctx, id)
+	if err != nil {
+		return err
+	}
+	if link.Revision != expectedRevision {
+		return domain.Problem{Code: "revision_conflict", Message: fmt.Sprintf("expected revision %d, current revision is %d", expectedRevision, link.Revision), ResourceType: "network_object_link", ResourceID: id, TaskID: taskID, Phase: "cleanup"}
+	}
+	if setter, ok := s.repository.(interface {
+		SetNetworkObjectLinkState(context.Context, domain.ID, string, *domain.Problem) error
+	}); ok {
+		if err := setter.SetNetworkObjectLinkState(ctx, id, "disconnecting", nil); err != nil {
+			return err
 		}
+	}
+	for _, cleaner := range s.objectLinkObservers {
+		cleaner.StopNetworkObjectLink(id)
+	}
+	if s.objectLinks != nil {
 		objectA, err := s.repository.GetNetworkObject(ctx, link.ObjectAID)
 		if err != nil {
 			return err
@@ -292,6 +323,11 @@ func (s *NetworkObjectService) DeleteObjectLink(ctx context.Context, id domain.I
 		if err := s.objectLinks.DeleteNetworkObjectLink(ctx, link, objectA, objectB); err != nil {
 			return err
 		}
+	}
+	if deleter, ok := s.repository.(interface {
+		DeleteNetworkObjectLinkRevision(context.Context, domain.ID, domain.Revision, domain.ID) error
+	}); ok {
+		return deleter.DeleteNetworkObjectLinkRevision(ctx, id, expectedRevision, taskID)
 	}
 	return s.repository.DeleteNetworkObjectLink(ctx, id)
 }
