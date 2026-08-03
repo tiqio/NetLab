@@ -9,7 +9,7 @@ import (
 	"github.com/netlab/netlab/internal/domain"
 )
 
-func (r *TopologyRepository) ImportTopology(ctx context.Context, lab domain.Laboratory, nodes []domain.Node, interfaces []domain.Interface, links []domain.Link, networkObjects []domain.NetworkObject) error {
+func (r *TopologyRepository) ImportTopology(ctx context.Context, lab domain.Laboratory, nodes []domain.Node, interfaces []domain.Interface, links []domain.Link, networkObjects []domain.NetworkObject, networkObjectLinks []domain.NetworkObjectLink) error {
 	return r.database.Write(ctx, func(tx *sql.Tx) error {
 		if _, err := tx.ExecContext(ctx, `INSERT INTO laboratories(id,name,description,revision,recovery_policy,lifecycle_state,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)`, lab.ID, lab.Name, lab.Description, lab.Revision, lab.RecoveryPolicy, lab.LifecycleState, lab.CreatedAt.Format(time.RFC3339Nano), lab.UpdatedAt.Format(time.RFC3339Nano)); err != nil {
 			return err
@@ -39,6 +39,22 @@ func (r *TopologyRepository) ImportTopology(ctx context.Context, lab domain.Labo
 				return err
 			}
 		}
-		return appendEvent(ctx, tx, "laboratory.imported", lab.ID, "laboratory", lab.ID, lab.Revision, "", map[string]any{"nodes": len(nodes), "links": len(links), "network_objects": len(networkObjects)})
+		for _, link := range networkObjectLinks {
+			if _, err := tx.ExecContext(ctx, `INSERT INTO network_object_links(id,laboratory_id,object_a_id,port_a_name,object_b_id,port_b_name,revision,desired_state,observed_state,last_error_json) VALUES(?,?,?,?,?,?,?,?,?,?)`, link.ID, link.LaboratoryID, link.ObjectAID, link.PortAName, link.ObjectBID, link.PortBName, link.Revision, link.DesiredState, link.ObservedState, nil); err != nil {
+				return err
+			}
+			if link.DesiredState == "deleted" {
+				continue
+			}
+			for _, endpoint := range []struct {
+				objectID domain.ID
+				portName string
+			}{{link.ObjectAID, link.PortAName}, {link.ObjectBID, link.PortBName}} {
+				if _, err := tx.ExecContext(ctx, `INSERT INTO topology_endpoint_reservations(laboratory_id,owner_type,owner_id,port_name,resource_type,resource_id) VALUES(?,?,?,?,?,?)`, lab.ID, "network_object", endpoint.objectID, endpoint.portName, "network_object_link", link.ID); err != nil {
+					return err
+				}
+			}
+		}
+		return appendEvent(ctx, tx, "laboratory.imported", lab.ID, "laboratory", lab.ID, lab.Revision, "", map[string]any{"nodes": len(nodes), "links": len(links), "network_objects": len(networkObjects), "network_object_links": len(networkObjectLinks)})
 	})
 }

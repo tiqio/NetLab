@@ -43,7 +43,7 @@ func (r *automationRepositoryFake) GetLaboratory(_ context.Context, id domain.ID
 	return value, nil
 }
 
-func (r *automationRepositoryFake) ImportTopology(ctx context.Context, lab domain.Laboratory, _ []domain.Node, _ []domain.Interface, _ []domain.Link, _ []domain.NetworkObject) error {
+func (r *automationRepositoryFake) ImportTopology(ctx context.Context, lab domain.Laboratory, _ []domain.Node, _ []domain.Interface, _ []domain.Link, _ []domain.NetworkObject, _ []domain.NetworkObjectLink) error {
 	if r.blockImport {
 		<-ctx.Done()
 		return ctx.Err()

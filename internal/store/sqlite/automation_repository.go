@@ -9,6 +9,32 @@ import (
 	"github.com/netlab/netlab/internal/domain"
 )
 
+func (r *Repositories) CompleteLinkDeletedCapture(ctx context.Context, capture domain.Capture, task domain.OperationTask, audit domain.AuditEvent, event domain.OutboxEvent) error {
+	return r.database.Write(ctx, func(tx *sql.Tx) error {
+		if err := saveCaptureObservation(ctx, tx, capture); err != nil {
+			return err
+		}
+		input, _ := json.Marshal(task.Input)
+		result, _ := json.Marshal(task.Result)
+		errorJSON, _ := json.Marshal(task.Error)
+		updated, err := tx.ExecContext(ctx, `UPDATE operation_tasks SET state=?,progress_current=?,progress_total=?,input_json=?,result_json=?,error_json=?,started_at=?,finished_at=? WHERE id=?`, task.State, task.ProgressCurrent, task.ProgressTotal, input, nullableBytes(result, task.Result != nil), nullableBytes(errorJSON, task.Error != nil), formatTime(task.StartedAt), formatTime(task.FinishedAt), task.ID)
+		if err != nil {
+			return err
+		}
+		if affected, _ := updated.RowsAffected(); affected != 1 {
+			return ErrNotFound
+		}
+		if err := appendEvent(ctx, tx, "task.updated", "", "operation_task", task.ID, 0, task.ID, eventData(task)); err != nil {
+			return err
+		}
+		details, _ := json.Marshal(audit.Details)
+		if _, err := tx.ExecContext(ctx, `INSERT INTO audit_events(id,actor_class,action,resource_type,resource_id,task_id,outcome,correlation_id,details_json,occurred_at) VALUES(?,?,?,?,?,?,?,?,?,?)`, audit.ID, audit.ActorClass, audit.Action, audit.ResourceType, audit.ResourceID, nullable(string(audit.TaskID)), audit.Outcome, audit.CorrelationID, details, audit.OccurredAt.Format(time.RFC3339Nano)); err != nil {
+			return err
+		}
+		return appendEvent(ctx, tx, event.Type, event.LaboratoryID, event.ResourceType, event.ResourceID, event.Revision, event.TaskID, event.Data)
+	})
+}
+
 func (r *Repositories) GetIdempotency(ctx context.Context, scope, key string) (domain.IdempotencyRecord, error) {
 	var record domain.IdempotencyRecord
 	var createdAt, expiresAt string

@@ -29,3 +29,15 @@ func TestExportPreservesDockerStaticRoutes(t *testing.T) {
 		t.Fatalf("config=%s", body)
 	}
 }
+
+func TestExportPreservesNetworkObjectLinkIntentWithoutRuntimeLocators(t *testing.T) {
+	snapshot := domain.TopologySnapshot{Laboratory: domain.Laboratory{Name: "lab", RecoveryPolicy: domain.RecoveryRemainStopped}, NetworkObjects: []domain.NetworkObject{{ID: "a", Name: "A", Kind: domain.NetworkSwitchL2, Config: map[string]any{}}, {ID: "b", Name: "B", Kind: domain.NetworkSwitchL2, Config: map[string]any{}}}, NetworkObjectLinks: []domain.NetworkObjectLink{{ID: "link", ObjectAID: "a", PortAName: "swp1", ObjectBID: "b", PortBName: "swp2", DesiredState: "connected"}}}
+	bundle, err := NewExportService(routeExportReader{snapshot: snapshot}, nil).Build(context.Background(), "lab")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := json.Marshal(bundle)
+	if len(bundle.NetworkObjectLinks) != 1 || bundle.NetworkObjectLinks[0].ObjectAExportID != "a" || !strings.Contains(string(body), `"port_a_name":"swp1"`) || strings.Contains(string(body), "namespace_name") || strings.Contains(string(body), "interface_name") || strings.Contains(string(body), "packet_payload") {
+		t.Fatalf("bundle=%s", body)
+	}
+}

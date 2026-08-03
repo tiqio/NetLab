@@ -11,7 +11,7 @@ import (
 )
 
 type ImportRepository interface {
-	ImportTopology(context.Context, domain.Laboratory, []domain.Node, []domain.Interface, []domain.Link, []domain.NetworkObject) error
+	ImportTopology(context.Context, domain.Laboratory, []domain.Node, []domain.Interface, []domain.Link, []domain.NetworkObject, []domain.NetworkObjectLink) error
 }
 
 type ImportLaboratoryReader interface {
@@ -137,16 +137,53 @@ func (s *ImportService) ImportAs(ctx context.Context, laboratoryID domain.ID, bu
 		links = append(links, domain.Link{ID: domain.NewID(), LaboratoryID: lab.ID, EndpointAID: interfaceIDs[exported.EndpointA], EndpointBID: interfaceIDs[exported.EndpointB], Revision: 1, DesiredState: "connected", ObservedState: "pending"})
 	}
 	var networkObjects []domain.NetworkObject
+	networkObjectIDs := make(map[string]domain.ID, len(bundle.NetworkObjects))
 	for _, exported := range bundle.NetworkObjects {
+		exportID := exportedText(exported["export_id"])
 		name, _ := exported["name"].(string)
 		kind, _ := exported["kind"].(string)
 		config, _ := exported["config"].(map[string]any)
-		if name == "" || domain.ValidateNetworkKind(kind) != nil {
+		if exportID == "" || name == "" || domain.ValidateNetworkKind(kind) != nil {
 			return domain.Laboratory{}, fmt.Errorf("invalid exported network object")
 		}
-		networkObjects = append(networkObjects, domain.NetworkObject{ID: domain.NewID(), LaboratoryID: lab.ID, Name: name, Kind: kind, Revision: 1, DesiredState: "active", ObservedState: "pending", Config: config, CreatedAt: now, UpdatedAt: now})
+		if _, exists := networkObjectIDs[exportID]; exists {
+			return domain.Laboratory{}, fmt.Errorf("duplicate network object export_id %s", exportID)
+		}
+		objectID := domain.NewID()
+		networkObjectIDs[exportID] = objectID
+		networkObjects = append(networkObjects, domain.NetworkObject{ID: objectID, LaboratoryID: lab.ID, Name: name, Kind: kind, Revision: 1, DesiredState: "active", ObservedState: "pending", Config: config, CreatedAt: now, UpdatedAt: now})
 	}
-	return lab, s.repository.ImportTopology(ctx, lab, nodes, interfaces, links, networkObjects)
+	var networkObjectLinks []domain.NetworkObjectLink
+	for _, exported := range bundle.NetworkObjectLinks {
+		objectAID, objectAExists := networkObjectIDs[exported.ObjectAExportID]
+		objectBID, objectBExists := networkObjectIDs[exported.ObjectBExportID]
+		if !objectAExists || !objectBExists || objectAID == objectBID {
+			return domain.Laboratory{}, fmt.Errorf("network object link references invalid endpoints")
+		}
+		if err := domain.ValidateNetworkObjectPortName(exported.PortAName); err != nil {
+			return domain.Laboratory{}, err
+		}
+		if err := domain.ValidateNetworkObjectPortName(exported.PortBName); err != nil {
+			return domain.Laboratory{}, err
+		}
+		desiredState := exported.DesiredState
+		if desiredState != "deleted" {
+			desiredState = "connected"
+		}
+		networkObjectLinks = append(networkObjectLinks, domain.NetworkObjectLink{ID: domain.NewID(), LaboratoryID: lab.ID, ObjectAID: objectAID, PortAName: exported.PortAName, ObjectBID: objectBID, PortBName: exported.PortBName, Revision: 1, DesiredState: desiredState, ObservedState: "pending"})
+	}
+	return lab, s.repository.ImportTopology(ctx, lab, nodes, interfaces, links, networkObjects, networkObjectLinks)
+}
+
+func exportedText(value any) string {
+	switch typed := value.(type) {
+	case string:
+		return typed
+	case domain.ID:
+		return string(typed)
+	default:
+		return ""
+	}
 }
 
 func parseExportEndpoint(value string) (string, int, error) {

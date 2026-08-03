@@ -101,6 +101,13 @@ type SwitchL3Config struct {
 
 var networkInterfaceNamePattern = regexp.MustCompile(`^[A-Za-z0-9_.-]{1,15}$`)
 
+func ValidateNetworkObjectPortName(name string) error {
+	if !networkInterfaceNamePattern.MatchString(name) {
+		return networkConfigError("invalid_port_name", "invalid network object port name %q", name)
+	}
+	return nil
+}
+
 func ValidateNetworkKind(kind string) error {
 	switch kind {
 	case NetworkBridge, NetworkNAT, NetworkPC, NetworkSwitchL2, NetworkSwitchL3:

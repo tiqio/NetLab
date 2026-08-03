@@ -48,15 +48,24 @@ type ExportLink struct {
 	EndpointB string `json:"endpoint_b"`
 }
 
+type ExportNetworkObjectLink struct {
+	ObjectAExportID string `json:"object_a_export_id"`
+	PortAName       string `json:"port_a_name"`
+	ObjectBExportID string `json:"object_b_export_id"`
+	PortBName       string `json:"port_b_name"`
+	DesiredState    string `json:"desired_state"`
+}
+
 type LaboratoryExport struct {
-	SchemaVersion    int                     `json:"schema_version"`
-	ExportedAt       time.Time               `json:"exported_at"`
-	Laboratory       ExportLaboratory        `json:"laboratory"`
-	TemplateVersions []ExportTemplateVersion `json:"template_versions"`
-	Nodes            []ExportNode            `json:"nodes"`
-	Links            []ExportLink            `json:"links"`
-	NetworkObjects   []map[string]any        `json:"network_objects"`
-	Redaction        ExportRedaction         `json:"redaction"`
+	SchemaVersion      int                       `json:"schema_version"`
+	ExportedAt         time.Time                 `json:"exported_at"`
+	Laboratory         ExportLaboratory          `json:"laboratory"`
+	TemplateVersions   []ExportTemplateVersion   `json:"template_versions"`
+	Nodes              []ExportNode              `json:"nodes"`
+	Links              []ExportLink              `json:"links"`
+	NetworkObjects     []map[string]any          `json:"network_objects"`
+	NetworkObjectLinks []ExportNetworkObjectLink `json:"network_object_links,omitempty"`
+	Redaction          ExportRedaction           `json:"redaction"`
 }
 
 type ExportSnapshotReader interface {
@@ -130,6 +139,9 @@ func (s *ExportService) Build(ctx context.Context, labID domain.ID) (LaboratoryE
 			"kind":      networkObject.Kind,
 			"config":    audit.Redact(networkObject.Config),
 		})
+	}
+	for _, link := range snapshot.NetworkObjectLinks {
+		value.NetworkObjectLinks = append(value.NetworkObjectLinks, ExportNetworkObjectLink{ObjectAExportID: string(link.ObjectAID), PortAName: link.PortAName, ObjectBExportID: string(link.ObjectBID), PortBName: link.PortBName, DesiredState: link.DesiredState})
 	}
 	for _, dependency := range dependencies {
 		value.TemplateVersions = append(value.TemplateVersions, dependency)
