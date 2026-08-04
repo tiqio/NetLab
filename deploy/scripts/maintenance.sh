@@ -178,16 +178,45 @@ cleanup_owned_runtime() {
 }
 
 reset_labs() {
-  local mode=${1:-}
+  local mode=${1:-} database_mode=${NETLAB_RESET_DATABASE_MODE:-fresh}
   inventory
   [[ "$mode" == "--execute" ]] || { echo "dry run only; rerun with --execute and NETLAB_RESET_CONFIRM=DELETE-ALL-NETLAB-LABORATORIES" >&2; return 0; }
   [[ ${NETLAB_RESET_CONFIRM:-} == DELETE-ALL-NETLAB-LABORATORIES ]] || { echo "set NETLAB_RESET_CONFIRM=DELETE-ALL-NETLAB-LABORATORIES" >&2; exit 1; }
   require_stopped
   io_preflight
-  local backup
-  backup=$(backup_database)
+  local backup=${NETLAB_RESET_BACKUP:-}
+  if [[ -n "$backup" ]]; then
+    test -f "$backup" || { echo "reset backup not found: $backup" >&2; exit 1; }
+    verify_checksum "$backup"
+    integrity_check "$backup"
+  else
+    backup=$(backup_database)
+  fi
   cleanup_owned_runtime
-  sqlite3 -batch "$database" <<'SQL'
+  if [[ "$database_mode" == "fresh" ]]; then
+    local staged schema
+    staged="$(dirname "$database")/.netlab.reset.$$.db"
+    schema="$(dirname "$database")/.netlab.reset.$$.schema"
+    rm -f "$staged" "$schema"
+    sqlite3 -batch "$database" ".schema --nosys" >"$schema"
+    sqlite3 -batch "$staged" <"$schema"
+    rm -f "$schema"
+    sqlite3 -batch "$staged" <<SQL
+.timeout 30000
+PRAGMA foreign_keys=ON;
+ATTACH DATABASE $(sqlite_literal "$database") AS source;
+BEGIN IMMEDIATE;
+INSERT INTO schema_migrations SELECT * FROM source.schema_migrations;
+INSERT INTO image_versions SELECT * FROM source.image_versions;
+INSERT INTO device_templates SELECT * FROM source.device_templates;
+INSERT INTO template_versions SELECT * FROM source.template_versions;
+COMMIT;
+DETACH DATABASE source;
+SQL
+    integrity_check "$staged"
+    atomic_replace "$staged" >/dev/null
+  elif [[ "$database_mode" == "in-place" ]]; then
+    sqlite3 -batch "$database" <<'SQL'
 .timeout 30000
 PRAGMA foreign_keys=ON;
 BEGIN IMMEDIATE;
@@ -215,8 +244,12 @@ DELETE FROM artifacts;
 DELETE FROM runtime_ownership WHERE COALESCE(json_extract(metadata_json,'$.ownership_class'),'managed') <> 'foreign_observed';
 COMMIT;
 SQL
+  else
+    echo "NETLAB_RESET_DATABASE_MODE must be fresh or in-place" >&2
+    exit 1
+  fi
   integrity_check "$database"
-  echo "reset completed; backup=$backup"
+  echo "reset completed; mode=$database_mode backup=$backup"
 }
 
 prune_history() {

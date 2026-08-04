@@ -29,6 +29,9 @@ func TestMaintenanceScriptUsesAtomicSQLiteSafetyAndExplicitReset(t *testing.T) {
 		"startswith(\"netlab:\")",
 		"foreign_observed",
 		"VACUUM INTO",
+		"NETLAB_RESET_DATABASE_MODE:-fresh",
+		"INSERT INTO image_versions SELECT * FROM source.image_versions",
+		"NETLAB_RESET_BACKUP",
 	} {
 		if !strings.Contains(text, required) {
 			t.Fatalf("maintenance script missing %q", required)
