@@ -30,6 +30,13 @@ export interface EnvironmentSnapshot {
   base_url: string;
   target_kind: "local-disposable" | "remote-privileged";
   service_version?: string;
+  release?: {
+    version: string;
+    candidate_id: string;
+    binary_digest?: string;
+    contract_digest: string;
+    built_at?: string;
+  };
   capabilities: Record<string, boolean>;
   capability_decisions: CapabilityDecision[];
   templates: TemplateObservation[];
@@ -45,6 +52,7 @@ export interface RuntimeOwnershipObservation {
   object_kind: string;
   object_name: string;
   cleanup_state: string;
+  ownership_class?: "managed" | "acceptance_owned" | "foreign_observed";
 }
 
 export interface TemplateObservation {

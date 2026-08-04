@@ -4,6 +4,10 @@ import { resolve } from "node:path";
 import { request, type FullConfig } from "@playwright/test";
 import { discoverEnvironment } from "./preflight";
 import { timeoutScale } from "./timeoutScale";
+import {
+  validateTargetAcceptance,
+  type TargetBaselineMode,
+} from "./targetPolicy";
 
 export default async function globalSetup(config: FullConfig) {
   timeoutScale();
@@ -34,12 +38,13 @@ export default async function globalSetup(config: FullConfig) {
         ? "remote-privileged"
         : "local-disposable",
     );
-    if (
-      environment.target_kind === "remote-privileged" &&
-      !environment.baseline_clean
-    ) {
-      throw new Error("Target-host acceptance requires a clean baseline");
-    }
+    if (process.env.NETLAB_ACCEPTANCE_PROFILE === "target-host")
+      validateTargetAcceptance(environment, {
+        profile: process.env.NETLAB_ACCEPTANCE_PROFILE,
+        baselineMode: (process.env.NETLAB_ACCEPTANCE_BASELINE_MODE ||
+          "clean") as TargetBaselineMode,
+        expectedHost: process.env.NETLAB_ACCEPTANCE_TARGET_HOST,
+      });
     await writeFile(
       resolve(output, "environment.json"),
       `${JSON.stringify(environment, null, 2)}\n`,

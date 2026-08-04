@@ -37,10 +37,11 @@ func (s *discoveryStore) UpsertRuntimeOwnership(_ context.Context, resourceType 
 		if s.records[index].ResourceType == resourceType && s.records[index].ResourceID == resourceID && s.records[index].ObjectKind == objectKind && s.records[index].ObjectName == objectName {
 			s.records[index].Metadata = cloneMetadata(metadata)
 			s.records[index].CleanupState = cleanupState
+			s.records[index].OwnershipClass = ownership.Classify(resourceType, metadata)
 			return nil
 		}
 	}
-	s.records = append(s.records, ownership.Record{ResourceType: resourceType, ResourceID: resourceID, ObjectKind: objectKind, ObjectName: objectName, Metadata: cloneMetadata(metadata), CleanupState: cleanupState})
+	s.records = append(s.records, ownership.Record{ResourceType: resourceType, ResourceID: resourceID, ObjectKind: objectKind, ObjectName: objectName, Metadata: cloneMetadata(metadata), CleanupState: cleanupState, OwnershipClass: ownership.Classify(resourceType, metadata)})
 	return nil
 }
 
@@ -168,6 +169,9 @@ func TestOwnershipDiscoveryOnlyAuditsUnknownHostObject(t *testing.T) {
 	}
 	if store.records[0].CleanupState != "unknown_observed" || audit.actions[0] != "ownership.resource.discovered" {
 		t.Fatalf("records=%+v audit=%v", store.records, audit.actions)
+	}
+	if store.records[0].OwnershipClass != ownership.ClassForeignObserved {
+		t.Fatalf("ownership class=%q", store.records[0].OwnershipClass)
 	}
 	if err := NewOwnershipDiscoveryReconciler(store, audit, scanner).Reconcile(context.Background()); err != nil {
 		t.Fatal(err)

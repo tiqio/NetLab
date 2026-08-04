@@ -159,6 +159,7 @@ func (r *OwnershipDiscoveryReconciler) Reconcile(ctx context.Context) (err error
 				unknownID = domain.ID(value.ObjectName)
 			}
 			metadata := withDiscoveryMetadata(value.Metadata, scanner.Name())
+			metadata["ownership_class"] = ownership.ClassForeignObserved
 			if quarantinedPath != "" {
 				metadata["quarantine_path"] = quarantinedPath
 			}

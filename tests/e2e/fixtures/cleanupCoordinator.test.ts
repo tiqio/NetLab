@@ -12,6 +12,46 @@ function response(body: unknown, status = 200) {
 }
 
 describe("cleanup coordinator", () => {
+  it("ignores foreign observations while enforcing managed ownership", async () => {
+    const ledger = new ResourceLedger("run-foreign");
+    const request = {
+      get: vi.fn(async (path: string) =>
+        path === "/api/v1/labs"
+          ? response([])
+          : response([
+              {
+                resource_type: "unknown",
+                resource_id: "foreign-2",
+                object_kind: "linux_link",
+                object_name: "eth999",
+                cleanup_state: "unknown_observed",
+                ownership_class: "foreign_observed",
+              },
+            ]),
+      ),
+    } as unknown as APIRequestContext;
+
+    const cleanup = await cleanupOwnedResources(
+      request,
+      ledger,
+      [],
+      "success",
+      { timeoutMs: 1 },
+      [
+        {
+          resource_type: "unknown",
+          resource_id: "foreign-1",
+          object_kind: "linux_link",
+          object_name: "eth998",
+          cleanup_state: "unknown_observed",
+          ownership_class: "foreign_observed",
+        },
+      ],
+    );
+
+    expect(cleanup.baseline_restored).toBe(true);
+  });
+
   it("does not silently delete an unsupported resource", async () => {
     const ledger = new ResourceLedger("run-unsupported");
     await ledger.add({

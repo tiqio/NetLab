@@ -21,12 +21,29 @@ type Manifest struct {
 }
 
 type Record struct {
-	ResourceType string            `json:"resource_type"`
-	ResourceID   domain.ID         `json:"resource_id"`
-	ObjectKind   string            `json:"object_kind"`
-	ObjectName   string            `json:"object_name"`
-	Metadata     map[string]string `json:"metadata,omitempty"`
-	CleanupState string            `json:"cleanup_state"`
+	ResourceType   string            `json:"resource_type"`
+	ResourceID     domain.ID         `json:"resource_id"`
+	ObjectKind     string            `json:"object_kind"`
+	ObjectName     string            `json:"object_name"`
+	Metadata       map[string]string `json:"metadata,omitempty"`
+	CleanupState   string            `json:"cleanup_state"`
+	OwnershipClass string            `json:"ownership_class"`
+}
+
+const (
+	ClassManaged         = "managed"
+	ClassAcceptanceOwned = "acceptance_owned"
+	ClassForeignObserved = "foreign_observed"
+)
+
+func Classify(resourceType string, metadata map[string]string) string {
+	if metadata["acceptance_run_id"] != "" {
+		return ClassAcceptanceOwned
+	}
+	if resourceType == "unknown" || metadata["ownership_class"] == ClassForeignObserved {
+		return ClassForeignObserved
+	}
+	return ClassManaged
 }
 
 func DirectVethPairManifest(resourceID domain.ID, namespaceA, portA, namespaceB, portB string) Manifest {

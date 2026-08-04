@@ -124,6 +124,14 @@ function ownershipKey(record: RuntimeOwnershipObservation) {
   ].join(":");
 }
 
+function enforcedOwnership(records: RuntimeOwnershipObservation[]) {
+  return records.filter(
+    (record) =>
+      record.ownership_class !== "foreign_observed" &&
+      !(record.resource_type === "unknown" && !record.ownership_class),
+  );
+}
+
 export async function cleanupOwnedResources(
   request: APIRequestContext,
   ledger: ResourceLedger,
@@ -174,7 +182,9 @@ export async function cleanupOwnedResources(
 
   let baselineRestored = false;
   let ownershipRestored = false;
-  const baselineOwnership = baselineRuntimeOwnership.map(ownershipKey).sort();
+  const baselineOwnership = enforcedOwnership(baselineRuntimeOwnership)
+    .map(ownershipKey)
+    .sort();
   try {
     while (Date.now() <= deadline) {
       const [labsResponse, ownershipResponse] = await Promise.all([
@@ -195,7 +205,9 @@ export async function cleanupOwnedResources(
           ? rawOwnership
           : []) as RuntimeOwnershipObservation[];
         ownershipRestored =
-          JSON.stringify(currentOwnership.map(ownershipKey).sort()) ===
+          JSON.stringify(
+            enforcedOwnership(currentOwnership).map(ownershipKey).sort(),
+          ) ===
           JSON.stringify(baselineOwnership);
         if (baselineRestored && ownershipRestored) break;
       }

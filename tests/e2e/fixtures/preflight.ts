@@ -69,6 +69,7 @@ export async function discoverEnvironment(
     console_modes?: string[];
     features?: string[];
     api_version?: string;
+    release?: EnvironmentSnapshot["release"];
   };
   const available = new Set([
     ...(rawCapabilities.runtimes || []),
@@ -142,6 +143,10 @@ export async function discoverEnvironment(
         object_kind: String(record.object_kind || ""),
         object_name: String(record.object_name || ""),
         cleanup_state: String(record.cleanup_state || ""),
+        ownership_class: String(record.ownership_class || "foreign_observed") as
+          | "managed"
+          | "acceptance_owned"
+          | "foreign_observed",
       }),
     );
   const capabilities = Object.fromEntries(
@@ -151,6 +156,7 @@ export async function discoverEnvironment(
     base_url: baseUrl,
     target_kind: targetKind,
     service_version: rawCapabilities.api_version,
+    release: rawCapabilities.release,
     capabilities,
     capability_decisions: decisions,
     templates: templateObservations,

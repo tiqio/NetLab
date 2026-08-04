@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"net"
 	"strings"
 )
 
@@ -43,4 +44,39 @@ func ParseSocketListeners(reader io.Reader) []Listener {
 		listeners = append(listeners, Listener{Address: fields[3], Process: strings.Join(fields[5:], " ")})
 	}
 	return listeners
+}
+
+func ValidateRuntimeAuthority(listeners []Listener, authoritativePort string) error {
+	external := make([]Listener, 0, 1)
+	for _, listener := range listeners {
+		if !strings.Contains(strings.ToLower(listener.Process), "netlabd") || isLoopbackListener(listener.Address) {
+			continue
+		}
+		external = append(external, listener)
+	}
+	if len(external) != 1 {
+		return fmt.Errorf("runtime authority invariant: expected one external netlabd listener, got %d", len(external))
+	}
+	if listenerPort(external[0].Address) != authoritativePort {
+		return fmt.Errorf("runtime authority invariant: external netlabd listens on %s instead of port %s", external[0].Address, authoritativePort)
+	}
+	return nil
+}
+
+func isLoopbackListener(address string) bool {
+	host := strings.TrimSpace(strings.TrimSuffix(address, ":"+listenerPort(address)))
+	host = strings.Trim(host, "[]")
+	if host == "localhost" {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
+}
+
+func listenerPort(address string) string {
+	index := strings.LastIndex(address, ":")
+	if index < 0 || index == len(address)-1 {
+		return ""
+	}
+	return address[index+1:]
 }

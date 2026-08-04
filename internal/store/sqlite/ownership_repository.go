@@ -41,6 +41,7 @@ func (r *Repositories) ListRuntimeOwnership(ctx context.Context) ([]ownership.Re
 			return nil, err
 		}
 		_ = json.Unmarshal(metadata, &value.Metadata)
+		value.OwnershipClass = ownership.Classify(value.ResourceType, value.Metadata)
 		values = append(values, value)
 	}
 	return values, rows.Err()

@@ -365,3 +365,18 @@
 - The feature acceptance conclusion is `passed`. The broader constitution ledger remains `not_ready`
   because unrelated operator-owned credential rotation and genuine VyOS/FancyWAN/FortiGate media gates
   remain blocked; those items are outside this feature's implementation scope.
+
+## Phase 8 Authority and Acceptance Milestone
+
+- On August 4, 2026, the convergence implementation added a runtime listener invariant and an install/
+  systemd authority guard that rejects a second externally reachable `netlabd`, while allowing a
+  loopback-only validation instance and providing an explicit retirement path for the known legacy
+  `/opt/netlab/netlabd` process.
+- Target browser acceptance now requires the real `target-host` profile, validates immutable release
+  identity and the expected host, and supports an explicit `preserve` baseline mode for production hosts
+  that already contain laboratories and runtime ownership records.
+- Runtime ownership responses now classify managed, acceptance-tagged, and foreign-observed records.
+  Acceptance cleanup and constitution leak snapshots enforce managed ownership stability without treating
+  persistent foreign EVE-NG resources as NetLab-owned baseline resources.
+- Focused gates: `go test ./internal/compliance ./internal/app/reconcile ./internal/store/sqlite`,
+  `go test ./tests/security -run Authority`, and the target-policy/cleanup acceptance-unit tests passed.

@@ -24,7 +24,7 @@ resource_snapshot() {
     --argjson namespaces "$(count_lines bash -c "ip netns list | awk '\$1 ~ /^(nlpc|nlsw|nlr)-/ {print \$1}'")" \
     --argjson links "$(count_lines bash -c "ip -j -d link show | jq -r '.[] | select((.ifalias // \"\") | startswith(\"netlab:\")) | .ifname'")" \
     --argjson ownership "$ownership" \
-    '{qemu_runtime_directories:$qemu,nat_runtime_directories:$nat,capture_files:$captures,network_namespaces:$namespaces,owned_links:$links,runtime_ownership_records:($ownership|length),unknown_ownership_records:([$ownership[]|select(.cleanup_state=="unknown_observed")]|length)}'
+    '{qemu_runtime_directories:$qemu,nat_runtime_directories:$nat,capture_files:$captures,network_namespaces:$namespaces,owned_links:$links,runtime_ownership_records:([$ownership[]|select((.ownership_class // (if .resource_type=="unknown" then "foreign_observed" else "managed" end))!="foreign_observed")]|length),foreign_observation_records:([$ownership[]|select((.ownership_class // (if .resource_type=="unknown" then "foreign_observed" else "managed" end))=="foreign_observed")]|length)}'
 }
 baseline_digest() { printf '%s' "$1" | jq -S -c . | sha256sum | awk '{print "sha256:"$1}'; }
 BASELINE_RESOURCES=$(resource_snapshot); BASELINE=$(baseline_digest "$BASELINE_RESOURCES")
