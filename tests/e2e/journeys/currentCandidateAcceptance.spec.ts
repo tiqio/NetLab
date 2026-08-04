@@ -71,7 +71,7 @@ async function consoleCommand(
   nodeId: string,
   command: string,
 ) {
-  await page.evaluate(
+  const result = await page.evaluate(
     async ({ nodeId, command }) => {
       const descriptors = await fetch(`/api/v1/nodes/${nodeId}/consoles`).then(
         (response) => response.json(),
@@ -83,28 +83,54 @@ async function consoleCommand(
         throw new Error(`No Telnet console for ${nodeId}`);
       const url = new URL(descriptor.stream_url, window.location.origin);
       url.protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      await new Promise<void>((resolve, reject) => {
-        const socket = new WebSocket(url);
-        const timeout = window.setTimeout(() => {
-          socket.close();
-          reject(new Error(`Console command timed out for ${nodeId}`));
-        }, 5000);
-        socket.onopen = () => {
-          socket.send(new TextEncoder().encode(`${command}\n`));
-          window.setTimeout(() => {
-            window.clearTimeout(timeout);
+      const marker = `__NETLAB_COMMAND_${crypto.randomUUID().replaceAll("-", "")}__`;
+      return new Promise<{ output: string; exitCode: number }>(
+        (resolve, reject) => {
+          const socket = new WebSocket(url);
+          socket.binaryType = "arraybuffer";
+          const decoder = new TextDecoder();
+          let output = "";
+          const timeout = window.setTimeout(() => {
             socket.close();
-            resolve();
-          }, 600);
-        };
-        socket.onerror = () => {
-          window.clearTimeout(timeout);
-          reject(new Error(`Console WebSocket failed for ${nodeId}`));
-        };
-      });
+            reject(
+              new Error(
+                `Console command timed out for ${nodeId}: ${command}\n${output}`,
+              ),
+            );
+          }, 15_000);
+          socket.onopen = () => {
+            socket.send(
+              new TextEncoder().encode(
+                `(${command}); printf '\\n${marker}:%s\\n' "$?"\n`,
+              ),
+            );
+          };
+          socket.onmessage = async (event) => {
+            const chunk =
+              typeof event.data === "string"
+                ? event.data
+                : event.data instanceof Blob
+                  ? await event.data.text()
+                  : decoder.decode(event.data, { stream: true });
+            output += chunk;
+            const match = output.match(new RegExp(`${marker}:(\\d+)`));
+            if (match) {
+              window.clearTimeout(timeout);
+              socket.close();
+              resolve({ output, exitCode: Number(match[1]) });
+            }
+          };
+          socket.onerror = () => {
+            window.clearTimeout(timeout);
+            reject(new Error(`Console WebSocket failed for ${nodeId}`));
+          };
+        },
+      );
     },
     { nodeId, command },
   );
+  expect(result.exitCode, result.output).toBe(0);
+  return result.output;
 }
 
 test("current candidate shares browser HTTP and MCP state without stale resurrection", async ({
@@ -322,6 +348,20 @@ test("target candidate validates console capture filter and live rewire", async 
     page,
     first.node.id,
     "printf udp | nc -u -w 1 10.77.0.2 19002",
+  );
+  await consoleCommand(page, first.node.id, "ping -c 1 -W 1 10.77.0.2");
+  await waitForCondition(
+    async () =>
+      (
+        await automation.get(
+          `/api/v1/traffic-filters/${filter.traffic_filter.id}`,
+        )
+      ).json(),
+    (value: { observations?: unknown[] }) =>
+      Boolean(value.observations?.length),
+    "traffic filter observation",
+    5_000,
+    50,
   );
   const canvas = page.getByLabel("Topology canvas keyboard area");
   await expect(canvas).toHaveAttribute("data-traffic-recent", /[1-9]\d*/, {

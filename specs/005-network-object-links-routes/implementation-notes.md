@@ -432,3 +432,19 @@
   Frontend production build, embedded artifact hygiene, and release identity checks passed locally. This
   candidate was deliberately not installed while the target storage path remained unhealthy; the target
   binary digest is still the previously accepted `ca072b6` candidate.
+
+## Phase 9 Traffic Generation Correction
+
+- The focused clean-target journey initially started Traffic Filter successfully but reported no matching
+  observations. A direct target-host reproduction on August 4, 2026 proved that the BusyBox node's
+  `ip addr replace` command failed with `RTNETLINK answers: Operation not permitted`; the browser helper
+  had previously closed each Telnet WebSocket after 600 ms without reading output or checking command
+  completion, so the acceptance run silently continued without configured IPv4 addresses or generated
+  ICMP/TCP/UDP traffic.
+- Docker network nodes now receive only `NET_ADMIN` and `NET_RAW` in addition to Docker's default
+  capability set and remain non-privileged. This permits users and automation to configure interfaces,
+  routes, ICMP, and packet generators inside the node while avoiding unrestricted host privileges.
+- The target acceptance console helper now waits for a unique shell completion marker, preserves command
+  output, rejects non-zero exit status, and waits for the first authoritative Traffic Filter observation
+  before measuring the 500 ms browser update requirement. Local `go vet ./...`, `go test ./... -count=1`,
+  the 17-test acceptance-unit suite, frontend production build, Prettier, and ESLint with zero errors passed.

@@ -207,6 +207,29 @@ func TestStartCompensatesNewContainerWhenEndpointSetupFails(t *testing.T) {
 	}
 }
 
+func TestStartGrantsOnlyRequiredNetworkCapabilities(t *testing.T) {
+	engine := &fakeEngine{}
+	adapter := NewAdapterWithEngine(engine)
+	node := domain.Node{ID: "node-network-admin", LaboratoryID: "lab-1", Config: map[string]any{
+		"image":   "busybox:latest",
+		"command": []any{"sleep", "86400"},
+	}}
+
+	if err := adapter.Start(context.Background(), node); err != nil {
+		t.Fatal(err)
+	}
+	if engine.created.HostConfig == nil {
+		t.Fatal("host config was not created")
+	}
+	want := []string{"NET_ADMIN", "NET_RAW"}
+	if !reflect.DeepEqual([]string(engine.created.HostConfig.CapAdd), want) {
+		t.Fatalf("cap add=%v want=%v", engine.created.HostConfig.CapAdd, want)
+	}
+	if engine.created.HostConfig.Privileged {
+		t.Fatal("network nodes must not run privileged")
+	}
+}
+
 func TestContainerCommandRejectsNonStringArguments(t *testing.T) {
 	if _, err := containerCommand([]any{"sleep", 10}); err == nil {
 		t.Fatal("expected invalid command argument to fail")

@@ -194,7 +194,27 @@ func (a *Adapter) Start(ctx context.Context, node domain.Node) error {
 		if node.StorageGiB > 0 {
 			storage["size"] = fmt.Sprintf("%dG", node.StorageGiB)
 		}
-		result, err := a.engine.ContainerCreate(ctx, dockerclient.ContainerCreateOptions{Image: image, Name: a.name(node.ID), Config: &container.Config{Cmd: command, Labels: map[string]string{"io.netlab.node_id": string(node.ID), "io.netlab.laboratory_id": string(node.LaboratoryID)}}, HostConfig: &container.HostConfig{NetworkMode: "none", StorageOpt: storage, Resources: container.Resources{Memory: int64(node.MemoryMiB) << 20, NanoCPUs: quotaToNano(node.CPUQuotaMicros), PidsLimit: &pidsLimit}}})
+		result, err := a.engine.ContainerCreate(ctx, dockerclient.ContainerCreateOptions{
+			Image: image,
+			Name:  a.name(node.ID),
+			Config: &container.Config{
+				Cmd: command,
+				Labels: map[string]string{
+					"io.netlab.node_id":       string(node.ID),
+					"io.netlab.laboratory_id": string(node.LaboratoryID),
+				},
+			},
+			HostConfig: &container.HostConfig{
+				NetworkMode: "none",
+				CapAdd:      []string{"NET_ADMIN", "NET_RAW"},
+				StorageOpt:  storage,
+				Resources: container.Resources{
+					Memory:    int64(node.MemoryMiB) << 20,
+					NanoCPUs:  quotaToNano(node.CPUQuotaMicros),
+					PidsLimit: &pidsLimit,
+				},
+			},
+		})
 		if err != nil {
 			return err
 		}
