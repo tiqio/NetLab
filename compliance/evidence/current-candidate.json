@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "id": "acceptance-clean-target-7406e9a-20260804",
   "candidate_id": "clean-target-7406e9a-20260804",
-  "status": "accepted",
+  "status": "blocked",
   "gate_results": {
     "format": {
       "status": "passed",
@@ -33,8 +33,8 @@
       "details": "interrupted object-link deletion, namespace adoption, host-policy tests, and an authoritative netlab.service stop/start recovery completed successfully on 10.72.1.7"
     },
     "security": {
-      "status": "passed",
-      "details": "redacted evidence, single authority, disabled preview, SQLite integrity ok"
+      "status": "blocked",
+      "reason": "previously exposed target credential still requires out-of-band rotation attestation"
     },
     "leak": {
       "status": "passed",
@@ -89,7 +89,7 @@
     "passed": true,
     "prohibited_content_count": 0
   },
-  "conclusion": "accepted 0.5.17+7406e9a sha256:8d3c011a1a9671968bce20479adbdc07381f27b3b537208dbf344f04b2607046 at 2026-08-04T05:19:29Z",
+  "conclusion": "blocked",
   "started_at": "2026-08-03T11:58:09Z",
   "finished_at": "2026-08-03T12:02:33Z"
 }

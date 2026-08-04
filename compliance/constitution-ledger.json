@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
   "constitution_version": "1.0.0",
-  "candidate_id": "object-links-routes-ca072b6-20260803",
-  "generated_at": "2026-08-03T12:02:33Z",
+  "candidate_id": "clean-target-7406e9a-20260804",
+  "generated_at": "2026-08-04T05:19:29Z",
   "findings": [
     {
       "id": "CONST-BASELINE-01",
@@ -11,14 +11,10 @@
       "severity": "critical",
       "status": "partial",
       "owner": "project-owner",
-      "requirement_ids": [
-        "FR-001",
-        "FR-003",
-        "FR-027"
-      ],
+      "requirement_ids": ["FR-001", "FR-003", "FR-027"],
       "evidence_ids": [],
       "next_action": "Remove the two residual network namespaces and 26 unknown ownership records, complete the remaining browser coverage, and rerun the single candidate-wide aggregate.",
-      "candidate_id": "object-links-routes-ca072b6-20260803",
+      "candidate_id": "clean-target-7406e9a-20260804",
       "last_reviewed_at": "2026-07-29T05:13:21Z"
     },
     {
@@ -28,15 +24,10 @@
       "severity": "critical",
       "status": "stale",
       "owner": "release-reviewer",
-      "requirement_ids": [
-        "FR-002",
-        "FR-025",
-        "FR-026",
-        "FR-028"
-      ],
+      "requirement_ids": ["FR-002", "FR-025", "FR-026", "FR-028"],
       "evidence_ids": [],
       "next_action": "Produce accepted metadata-only scenario records after the failed current-candidate aggregate is corrected; do not promote the existing failed run to verified evidence.",
-      "candidate_id": "object-links-routes-ca072b6-20260803",
+      "candidate_id": "clean-target-7406e9a-20260804",
       "last_reviewed_at": "2026-07-29T05:13:21Z"
     },
     {
@@ -46,13 +37,10 @@
       "severity": "critical",
       "status": "verified",
       "owner": "operator",
-      "requirement_ids": [
-        "FR-005",
-        "FR-006"
-      ],
+      "requirement_ids": ["FR-005", "FR-006"],
       "evidence_ids": ["deployment-boundary-workspace-2026-07-29"],
       "next_action": null,
-      "candidate_id": "object-links-routes-ca072b6-20260803",
+      "candidate_id": "clean-target-7406e9a-20260804",
       "last_reviewed_at": "2026-07-29T05:13:21Z"
     },
     {
@@ -62,12 +50,10 @@
       "severity": "critical",
       "status": "verified",
       "owner": "operator",
-      "requirement_ids": [
-        "FR-007"
-      ],
+      "requirement_ids": ["FR-007"],
       "evidence_ids": ["deployment-boundary-workspace-2026-07-29"],
       "next_action": null,
-      "candidate_id": "object-links-routes-ca072b6-20260803",
+      "candidate_id": "clean-target-7406e9a-20260804",
       "last_reviewed_at": "2026-07-29T05:13:21Z"
     },
     {
@@ -77,12 +63,10 @@
       "severity": "critical",
       "status": "blocked",
       "owner": "operator",
-      "requirement_ids": [
-        "FR-008"
-      ],
+      "requirement_ids": ["FR-008"],
       "evidence_ids": [],
       "next_action": "Rotate the previously exposed host credential out of band and add a non-secret attestation.",
-      "candidate_id": "object-links-routes-ca072b6-20260803",
+      "candidate_id": "clean-target-7406e9a-20260804",
       "last_reviewed_at": "2026-07-29T05:13:21Z"
     },
     {
@@ -92,15 +76,10 @@
       "severity": "high",
       "status": "partial",
       "owner": "runtime-maintainer",
-      "requirement_ids": [
-        "FR-009",
-        "FR-010",
-        "FR-012",
-        "FR-014"
-      ],
+      "requirement_ids": ["FR-009", "FR-010", "FR-012", "FR-014"],
       "evidence_ids": [],
       "next_action": "Fix ownership discovery retention and the two leaked namespaces, then rerun the already passing multi-browser runtime-truth journey with a restored cleanup baseline.",
-      "candidate_id": "object-links-routes-ca072b6-20260803",
+      "candidate_id": "clean-target-7406e9a-20260804",
       "last_reviewed_at": "2026-07-29T05:13:21Z"
     },
     {
@@ -110,13 +89,10 @@
       "severity": "high",
       "status": "partial",
       "owner": "runtime-maintainer",
-      "requirement_ids": [
-        "FR-011",
-        "FR-013"
-      ],
+      "requirement_ids": ["FR-011", "FR-013"],
       "evidence_ids": [],
       "next_action": "Attach accepted metadata-only failure-injection evidence after candidate cleanup is restored; privileged failure and focused browser cleanup tests already pass.",
-      "candidate_id": "object-links-routes-ca072b6-20260803",
+      "candidate_id": "clean-target-7406e9a-20260804",
       "last_reviewed_at": "2026-07-29T05:13:21Z"
     },
     {
@@ -126,15 +102,10 @@
       "severity": "high",
       "status": "blocked",
       "owner": "operator",
-      "requirement_ids": [
-        "FR-015",
-        "FR-016",
-        "FR-017",
-        "FR-018"
-      ],
+      "requirement_ids": ["FR-015", "FR-016", "FR-017", "FR-018"],
       "evidence_ids": [],
       "next_action": "Supply genuine VyOS and FancyWAN media and complete FortiGate license review before claiming support.",
-      "candidate_id": "object-links-routes-ca072b6-20260803",
+      "candidate_id": "clean-target-7406e9a-20260804",
       "last_reviewed_at": "2026-07-29T05:13:21Z"
     },
     {
@@ -144,15 +115,10 @@
       "severity": "high",
       "status": "partial",
       "owner": "runtime-maintainer",
-      "requirement_ids": [
-        "FR-019",
-        "FR-020",
-        "FR-021",
-        "FR-022"
-      ],
+      "requirement_ids": ["FR-019", "FR-020", "FR-021", "FR-022"],
       "evidence_ids": [],
       "next_action": "Complete genuine VyOS and FancyWAN media validation plus automatic DHCPv4/DHCPv6/SLAAC acceptance; Ubuntu QEMU runs under the explicitly reported TCG fallback on this host.",
-      "candidate_id": "object-links-routes-ca072b6-20260803",
+      "candidate_id": "clean-target-7406e9a-20260804",
       "last_reviewed_at": "2026-07-29T05:13:21Z"
     },
     {
@@ -162,15 +128,10 @@
       "severity": "high",
       "status": "verified",
       "owner": "release-reviewer",
-      "requirement_ids": [
-        "FR-023",
-        "FR-024",
-        "FR-025",
-        "FR-026"
-      ],
+      "requirement_ids": ["FR-023", "FR-024", "FR-025", "FR-026"],
       "evidence_ids": ["target-object-links-routes-ca072b6-20260803"],
       "next_action": null,
-      "candidate_id": "object-links-routes-ca072b6-20260803",
+      "candidate_id": "clean-target-7406e9a-20260804",
       "last_reviewed_at": "2026-08-03T12:02:33Z"
     },
     {
@@ -180,17 +141,14 @@
       "severity": "medium",
       "status": "blocked",
       "owner": "project-owner",
-      "requirement_ids": [
-        "FR-027",
-        "FR-028"
-      ],
+      "requirement_ids": ["FR-027", "FR-028"],
       "evidence_ids": [],
       "next_action": "Record reviewer identity and approval after all mandatory gates pass for this candidate.",
-      "candidate_id": "object-links-routes-ca072b6-20260803",
+      "candidate_id": "clean-target-7406e9a-20260804",
       "last_reviewed_at": "2026-07-29T05:13:21Z"
     }
   ],
   "exceptions": [],
-  "acceptance_run_id": "acceptance-object-links-routes-ca072b6-20260803",
+  "acceptance_run_id": "acceptance-clean-target-7406e9a-20260804",
   "release_conclusion": "not_ready"
 }
