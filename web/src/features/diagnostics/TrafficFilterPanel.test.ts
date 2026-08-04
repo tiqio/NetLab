@@ -342,13 +342,9 @@ describe("TrafficFilterPanel interactions", () => {
       });
     vi.spyOn(api, "getTask").mockImplementation(async (id) => ({
       id,
-      kind:
-        id === "task-stop"
-          ? "traffic_filter.stop"
-          : "traffic_filter.start",
+      kind: id === "task-stop" ? "traffic_filter.stop" : "traffic_filter.start",
       resource_type: "traffic_filter",
-      resource_id:
-        id === "task-stop" ? "filter-running" : "filter-replacement",
+      resource_id: id === "task-stop" ? "filter-running" : "filter-replacement",
       state: "succeeded",
       progress_current: 2,
       progress_total: 2,
@@ -392,9 +388,9 @@ describe("TrafficFilterPanel interactions", () => {
         interface_ids: ["if-a", "if-b"],
       }),
     );
-    expect(
-      stopTrafficFilter.mock.invocationCallOrder[0],
-    ).toBeLessThan(startTrafficFilter.mock.invocationCallOrder[0]);
+    expect(stopTrafficFilter.mock.invocationCallOrder[0]).toBeLessThan(
+      startTrafficFilter.mock.invocationCallOrder[0],
+    );
     expect(wrapper.text()).toContain("旧会话已自动停止");
   });
 
@@ -490,13 +486,138 @@ describe("TrafficFilterPanel interactions", () => {
       .trigger("click");
     await flushPromises();
 
+    expect(document.body.textContent).toContain("删除 Traffic Filter 会话");
+    expect(document.body.textContent).toContain("filter-running");
+    expect(stopTrafficFilter).not.toHaveBeenCalled();
+    Array.from(document.body.querySelectorAll("button"))
+      .find((button) => button.textContent?.trim() === "确认删除")!
+      .click();
+    await flushPromises();
+
     expect(stopTrafficFilter).toHaveBeenCalledWith("filter-running");
     expect(deleteTrafficFilterHistory).toHaveBeenCalledWith("filter-running");
-    expect(
-      stopTrafficFilter.mock.invocationCallOrder[0],
-    ).toBeLessThan(deleteTrafficFilterHistory.mock.invocationCallOrder[0]);
-    expect(wrapper.text()).toContain("filter-running 已删除");
+    expect(stopTrafficFilter.mock.invocationCallOrder[0]).toBeLessThan(
+      deleteTrafficFilterHistory.mock.invocationCallOrder[0],
+    );
+    expect(wrapper.text()).toContain("已删除 1 条 Traffic Filter 会话");
     expect(wrapper.text()).toContain("没有匹配的 Traffic Filter 会话");
+    wrapper.unmount();
+  });
+
+  it("confirms and deletes all sessions while stopping active sessions", async () => {
+    const trafficFilters = [
+      {
+        ambiguous: false,
+        traffic_filter: {
+          id: "filter-running",
+          laboratory_id: "lab",
+          expression: "tcp dst port 443",
+          color: "#a855f7",
+          state: "running",
+          max_observations: 1000,
+          interface_ids: ["if-a"],
+          link_ids: [],
+          network_object_link_ids: [],
+          observations: [],
+          created_at: "2026-08-04T00:00:02Z",
+        },
+      },
+      {
+        ambiguous: false,
+        traffic_filter: {
+          id: "filter-stopped",
+          laboratory_id: "lab",
+          expression: "icmp",
+          color: "#22c55e",
+          state: "stopped",
+          max_observations: 1000,
+          interface_ids: ["if-b"],
+          link_ids: [],
+          network_object_link_ids: [],
+          observations: [],
+          created_at: "2026-08-04T00:00:01Z",
+        },
+      },
+    ];
+    vi.mocked(api.listTrafficFilters).mockResolvedValue(trafficFilters);
+    const stopTrafficFilter = vi
+      .spyOn(api, "stopTrafficFilter")
+      .mockResolvedValue({
+        task: {
+          id: "task-delete-all-stop",
+          kind: "traffic_filter.stop",
+          resource_type: "traffic_filter",
+          resource_id: "filter-running",
+          state: "queued",
+          progress_current: 0,
+          progress_total: 2,
+          created_at: "2026-08-04T00:00:03Z",
+        },
+      });
+    vi.spyOn(api, "getTask").mockResolvedValue({
+      id: "task-delete-all-stop",
+      kind: "traffic_filter.stop",
+      resource_type: "traffic_filter",
+      resource_id: "filter-running",
+      state: "succeeded",
+      progress_current: 2,
+      progress_total: 2,
+      created_at: "2026-08-04T00:00:03Z",
+    });
+    const deleteTrafficFilterHistory = vi
+      .spyOn(api, "deleteTrafficFilterHistory")
+      .mockImplementation(async (filterId) => ({
+        traffic_filter: {
+          ...trafficFilters.find(
+            (entry) => entry.traffic_filter.id === filterId,
+          )!.traffic_filter,
+          state: "stopped",
+        },
+      }));
+    const wrapper = mount(TrafficFilterPanel, {
+      props: { laboratoryId: "lab", nodes, interfaces, links },
+    });
+    await flushPromises();
+
+    await wrapper
+      .find('button[aria-label="删除全部 Traffic Filter 会话"]')
+      .trigger("click");
+    await flushPromises();
+    expect(document.body.textContent).toContain(
+      "当前实验室的 2 条 Traffic Filter 会话",
+    );
+    expect(document.body.textContent).toContain("1 条运行中会话会先停止");
+    Array.from(document.body.querySelectorAll("button"))
+      .find((button) => button.textContent?.trim() === "取消")!
+      .click();
+    await flushPromises();
+    expect(deleteTrafficFilterHistory).not.toHaveBeenCalled();
+
+    await wrapper
+      .find('button[aria-label="删除全部 Traffic Filter 会话"]')
+      .trigger("click");
+    Array.from(document.body.querySelectorAll("button"))
+      .find((button) => button.textContent?.trim() === "确认全部删除")!
+      .click();
+    await flushPromises();
+
+    expect(stopTrafficFilter).toHaveBeenCalledTimes(1);
+    expect(deleteTrafficFilterHistory).toHaveBeenCalledTimes(2);
+    expect(deleteTrafficFilterHistory).toHaveBeenNthCalledWith(
+      1,
+      "filter-running",
+    );
+    expect(deleteTrafficFilterHistory).toHaveBeenNthCalledWith(
+      2,
+      "filter-stopped",
+    );
+    expect(wrapper.text()).toContain("已删除 2 条 Traffic Filter 会话");
+    expect(
+      wrapper
+        .find('button[aria-label="删除全部 Traffic Filter 会话"]')
+        .attributes("disabled"),
+    ).toBeDefined();
+    wrapper.unmount();
   });
 
   it("starts multiple connected interfaces and follows the durable task", async () => {

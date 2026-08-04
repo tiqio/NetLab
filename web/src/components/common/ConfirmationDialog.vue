@@ -8,6 +8,7 @@ defineProps<{
   description: string;
   impact?: string;
   confirmLabel?: string;
+  cancelLabel?: string;
 }>();
 defineEmits<{ confirm: [] }>();
 </script>
@@ -21,7 +22,9 @@ defineEmits<{ confirm: [] }>();
       </p>
       <p v-if="impact" class="text-xs text-muted-foreground">{{ impact }}</p>
       <div class="flex justify-end gap-2">
-        <Button variant="secondary" @click="open = false">Cancel</Button>
+        <Button variant="secondary" @click="open = false">{{
+          cancelLabel || "Cancel"
+        }}</Button>
         <Button variant="destructive" @click="$emit('confirm')">{{
           confirmLabel || "Confirm"
         }}</Button>

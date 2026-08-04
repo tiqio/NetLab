@@ -21,6 +21,7 @@ import {
   type TrafficObservation,
 } from "@/api";
 import { Button, FormField, Input, Select } from "@/components/ui";
+import ConfirmationDialog from "@/components/common/ConfirmationDialog.vue";
 import StatusBadge from "@/components/common/StatusBadge.vue";
 import { linkDisplayName } from "@/features/topology/linkPresentation";
 import { parseTrafficFilterMatch } from "./trafficFilterMatch";
@@ -63,6 +64,8 @@ const taskId = ref("");
 const taskState = ref("");
 const status = ref("");
 const busy = ref(false);
+const deleteConfirmOpen = ref(false);
+const pendingDelete = ref<{ mode: "single" | "all"; filterId?: string }>();
 let refreshTimer: ReturnType<typeof setTimeout> | undefined;
 const ACTIVE_REFRESH_INTERVAL_MS = 100;
 const filterExamples = [
@@ -107,6 +110,27 @@ const filter = computed(() => currentEntry.value?.traffic_filter);
 const active = computed(() =>
   ["starting", "running", "stopping"].includes(filter.value?.state || ""),
 );
+const pendingDeleteEntries = computed(() =>
+  pendingDelete.value?.mode === "all"
+    ? entries.value
+    : entries.value.filter(
+        (entry) => entry.traffic_filter.id === pendingDelete.value?.filterId,
+      ),
+);
+const pendingDeleteActiveCount = computed(
+  () =>
+    pendingDeleteEntries.value.filter((entry) =>
+      ["starting", "running", "stopping"].includes(entry.traffic_filter.state),
+    ).length,
+);
+const deleteConfirmationResource = computed(() => {
+  if (pendingDelete.value?.mode === "all")
+    return `当前实验室的 ${pendingDeleteEntries.value.length} 条 Traffic Filter 会话`;
+  const value = pendingDeleteEntries.value[0]?.traffic_filter;
+  return value
+    ? `${value.expression || "全部流量"} · ${value.id}`
+    : "Traffic Filter 会话";
+});
 const selectedScopeCount = computed(
   () =>
     selectedInterfaceIds.value.length +
@@ -306,33 +330,69 @@ async function stop() {
   }
 }
 
-async function deleteSession(entry: FilterEntry) {
+function requestDeleteSession(entry: FilterEntry) {
   if (busy.value) return;
+  pendingDelete.value = {
+    mode: "single",
+    filterId: entry.traffic_filter.id,
+  };
+  deleteConfirmOpen.value = true;
+}
+
+function requestDeleteAllSessions() {
+  if (busy.value || !entries.value.length) return;
+  pendingDelete.value = { mode: "all" };
+  deleteConfirmOpen.value = true;
+}
+
+async function deleteSessions(targets: FilterEntry[]) {
+  if (busy.value || !targets.length) return;
   busy.value = true;
   clearTimeout(refreshTimer);
-  const value = entry.traffic_filter;
+  let deleted = 0;
+  const failures: string[] = [];
   try {
-    if (["starting", "running", "stopping"].includes(value.state)) {
-      const stopped = await api.stopTrafficFilter(value.id);
-      taskId.value = stopped.task.id;
-      taskState.value = stopped.task.state;
-      status.value = `正在停止会话 ${value.id}，停止后将删除记录`;
-      await waitForTask(stopped.task.id);
+    for (const entry of targets) {
+      const value = entry.traffic_filter;
+      try {
+        if (["starting", "running", "stopping"].includes(value.state)) {
+          const stopped = await api.stopTrafficFilter(value.id);
+          taskId.value = stopped.task.id;
+          taskState.value = stopped.task.state;
+          status.value = `正在停止会话 ${value.id}，停止后将删除记录`;
+          await waitForTask(stopped.task.id);
+        }
+        await api.deleteTrafficFilterHistory(value.id);
+        entries.value = entries.value.filter(
+          (item) => item.traffic_filter.id !== value.id,
+        );
+        deleted++;
+        status.value = `正在删除 Traffic Filter 会话 ${deleted}/${targets.length}`;
+      } catch (error) {
+        failures.push(`${value.id}: ${errorMessage(error)}`);
+      }
     }
-    await api.deleteTrafficFilterHistory(value.id);
-    entries.value = entries.value.filter(
-      (item) => item.traffic_filter.id !== value.id,
-    );
-    if (selectedFilterId.value === value.id)
+    if (
+      !entries.value.some(
+        (entry) => entry.traffic_filter.id === selectedFilterId.value,
+      )
+    )
       selectedFilterId.value = entries.value[0]?.traffic_filter.id || "";
-    status.value = `Traffic Filter 会话 ${value.id} 已删除`;
-  } catch (error) {
-    status.value = errorMessage(error);
-    await discover();
+    status.value = failures.length
+      ? `已删除 ${deleted} 条会话，${failures.length} 条失败：${failures.join("；")}`
+      : `已删除 ${deleted} 条 Traffic Filter 会话`;
+    if (failures.length) await discover();
   } finally {
     busy.value = false;
     scheduleRefresh();
   }
+}
+
+async function confirmDeleteSessions() {
+  const targets = [...pendingDeleteEntries.value];
+  deleteConfirmOpen.value = false;
+  pendingDelete.value = undefined;
+  await deleteSessions(targets);
 }
 
 function toggleInterface(id: string, checked: boolean) {
@@ -516,12 +576,23 @@ function applyExample(value: string | number | undefined) {
         aria-label="Traffic Filter 会话列表"
         class="grid gap-2 rounded border border-border bg-background/40 p-2"
       >
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
           <strong class="text-xs">Traffic Filter 会话</strong>
           <span class="text-xs text-muted-foreground">
             {{ filteredEntries.length }} / {{ entries.length }} 条
           </span>
-          <div class="relative ml-auto w-full max-w-sm">
+          <Button
+            size="sm"
+            variant="destructive"
+            class="ml-auto"
+            :disabled="busy || !entries.length"
+            aria-label="删除全部 Traffic Filter 会话"
+            title="删除当前实验室的全部 Traffic Filter 会话"
+            @click="requestDeleteAllSessions"
+          >
+            <Trash2 :size="14" /> 全部删除
+          </Button>
+          <div class="relative w-full max-w-sm">
             <Search
               :size="14"
               class="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground"
@@ -556,7 +627,9 @@ function applyExample(value: string | number | undefined) {
               <span class="block truncate text-xs font-medium">
                 {{ entry.traffic_filter.expression || "全部流量" }}
               </span>
-              <span class="block truncate font-mono text-[10px] text-muted-foreground">
+              <span
+                class="block truncate font-mono text-[10px] text-muted-foreground"
+              >
                 {{ entry.traffic_filter.state }} ·
                 {{ new Date(entry.traffic_filter.created_at).toLocaleString() }}
                 · {{ entry.traffic_filter.id }}
@@ -574,7 +647,7 @@ function applyExample(value: string | number | undefined) {
                   ? '停止并删除会话'
                   : '删除会话记录'
               "
-              @click="deleteSession(entry)"
+              @click="requestDeleteSession(entry)"
             >
               <Trash2 :size="14" />
             </Button>
@@ -603,7 +676,8 @@ function applyExample(value: string | number | undefined) {
           <span class="text-xs text-muted-foreground">
             已选择
             {{ selectedScopeCount }} 个监听源，预计占用
-            {{ selectedCaptureSlots }} 个抓包槽位；普通接口/链路占 1 个，对象链路为区分方向占 2 个。
+            {{ selectedCaptureSlots }} 个抓包槽位；普通接口/链路占 1
+            个，对象链路为区分方向占 2 个。
           </span>
           <Button
             size="sm"
@@ -827,5 +901,25 @@ function applyExample(value: string | number | undefined) {
         条记录
       </span>
     </footer>
+    <ConfirmationDialog
+      v-model="deleteConfirmOpen"
+      :title="
+        pendingDelete?.mode === 'all'
+          ? '删除全部 Traffic Filter 会话'
+          : '删除 Traffic Filter 会话'
+      "
+      :resource="deleteConfirmationResource"
+      description="删除后会话历史和观察记录将无法恢复。"
+      :impact="
+        pendingDeleteActiveCount
+          ? `${pendingDeleteActiveCount} 条运行中会话会先停止并释放抓包资源，然后再删除。`
+          : '所选会话均已停止，将直接删除其历史记录。'
+      "
+      cancel-label="取消"
+      :confirm-label="
+        pendingDelete?.mode === 'all' ? '确认全部删除' : '确认删除'
+      "
+      @confirm="confirmDeleteSessions"
+    />
   </div>
 </template>
