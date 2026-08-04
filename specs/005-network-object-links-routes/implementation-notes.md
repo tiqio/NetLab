@@ -472,3 +472,8 @@
   therefore valid inside the service mount view but appear as invalid handles to an unrelated host shell.
   Restart acceptance now runs namespace checks through the current `netlab.service` MainPID with `nsenter
   --mount`, including after the MainPID changes across restart.
+- The genuine restart journey then exposed a unit regression: `KillMode=control-group` terminated the QEMU
+  child with the service main process, making owned-runtime adoption impossible despite a successful
+  recovery task. The unit is restored to the previously validated `KillMode=process`; capture and console
+  workers remain application-context managed, while QEMU survives for manifest/QMP adoption. A security
+  regression test now locks this service-restart invariant.

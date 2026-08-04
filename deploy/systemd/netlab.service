@@ -11,7 +11,7 @@ ExecStart=/usr/local/bin/netlabd -config /etc/netlab/netlab.yaml
 Environment=NETLAB_DEPLOYMENT_ROLE=authoritative
 Restart=on-failure
 RestartSec=3
-KillMode=control-group
+KillMode=process
 TimeoutStopSec=30s
 TimeoutStartSec=180s
 User=root

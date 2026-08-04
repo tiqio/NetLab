@@ -77,4 +77,7 @@ func TestSystemdCaptureCapabilitiesRemainBounded(t *testing.T) {
 	if !strings.Contains(unit, "ReadWritePaths=/var/lib/netlab /run/netlab /run/netns") {
 		t.Fatal("network namespace mount directory must remain writable")
 	}
+	if !strings.Contains(unit, "KillMode=process") {
+		t.Fatal("service restart must preserve managed QEMU processes for adoption")
+	}
 }
