@@ -32,7 +32,7 @@ func (r *TopologyRepository) ListLaboratories(ctx context.Context) ([]domain.Lab
 		return nil, err
 	}
 	defer rows.Close()
-	var labs []domain.Laboratory
+	labs := make([]domain.Laboratory, 0)
 	for rows.Next() {
 		lab, err := scanLaboratory(rows)
 		if err != nil {

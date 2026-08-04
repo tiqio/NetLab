@@ -33,7 +33,7 @@ func (r *Repositories) ListRuntimeOwnership(ctx context.Context) ([]ownership.Re
 		return nil, err
 	}
 	defer rows.Close()
-	var values []ownership.Record
+	values := make([]ownership.Record, 0)
 	for rows.Next() {
 		var value ownership.Record
 		var metadata []byte
