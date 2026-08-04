@@ -33,6 +33,7 @@ import (
 	storesqlite "github.com/netlab/netlab/internal/store/sqlite"
 	"github.com/netlab/netlab/internal/support/config"
 	"github.com/netlab/netlab/internal/support/observability"
+	"github.com/netlab/netlab/internal/support/readiness"
 )
 
 var (
@@ -144,6 +145,10 @@ func main() {
 		}
 	}
 	if err = templateQueries.LoadReadinessForCandidate(readinessPath, releaseIdentity.CandidateID); err != nil {
+		if cfg.Deployment.Role == "authoritative" {
+			logger.Error("template readiness validation failed", "error", err)
+			os.Exit(1)
+		}
 		logger.Warn("template readiness unavailable", "error", err)
 	}
 	nodeCommands.SetTemplateReadinessResolver(templateQueries)
@@ -328,7 +333,12 @@ func main() {
 		logger.Error("recover durable tasks", "error", err)
 	}
 	go func() {
-		if err := server.Start(); err != nil {
+		if err := server.StartReady(func() error {
+			if notifyErr := readiness.Notify("database migrated, recovery reconciled, and authoritative listener bound"); notifyErr != nil {
+				return fmt.Errorf("%w: %v", readiness.ErrNotReady, notifyErr)
+			}
+			return nil
+		}); err != nil {
 			logger.Error("server stopped", "error", err)
 			stop()
 		}

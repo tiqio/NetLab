@@ -78,4 +78,35 @@ func TestInstallerWaitsForAuthorityAndRetiresPreviewUnit(t *testing.T) {
 	if !strings.Contains(string(guard), "systemctl disable --now netlab-preview.service") {
 		t.Fatal("authority guard does not retire the known preview unit")
 	}
+	for _, required := range []string{"deploy/scripts/maintenance.sh", "rollback service failed to reach application readiness", "check-authority.sh verify"} {
+		if !strings.Contains(string(installer), required) {
+			t.Fatalf("installer missing %q", required)
+		}
+	}
+}
+
+func TestSystemdAuthorityRequiresApplicationReadiness(t *testing.T) {
+	body, err := os.ReadFile("../../deploy/systemd/netlab.service")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(body)
+	for _, required := range []string{"Type=notify", "NotifyAccess=main", "TimeoutStartSec=180s"} {
+		if !strings.Contains(text, required) {
+			t.Fatalf("systemd unit missing %q", required)
+		}
+	}
+}
+
+func TestAuthoritativeStartupRejectsMissingTemplateReadiness(t *testing.T) {
+	body, err := os.ReadFile("../../cmd/netlabd/main.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(body)
+	for _, required := range []string{`cfg.Deployment.Role == "authoritative"`, `template readiness validation failed`, `os.Exit(1)`} {
+		if !strings.Contains(text, required) {
+			t.Fatalf("authoritative startup guard missing %q", required)
+		}
+	}
 }

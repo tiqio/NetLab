@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -47,10 +48,23 @@ func NewServer(address string, logger *slog.Logger, metrics *observability.Metri
 }
 func (s *Server) Engine() *gin.Engine { return s.engine }
 func (s *Server) Start() error {
+	return s.StartReady(nil)
+}
+func (s *Server) StartReady(ready func() error) error {
 	if s.logger != nil {
 		s.logger.Info("http server starting", "address", s.server.Addr)
 	}
-	err := s.server.ListenAndServe()
+	listener, err := net.Listen("tcp", s.server.Addr)
+	if err != nil {
+		return err
+	}
+	if ready != nil {
+		if err = ready(); err != nil {
+			_ = listener.Close()
+			return err
+		}
+	}
+	err = s.server.Serve(listener)
 	if err == http.ErrServerClosed {
 		return nil
 	}

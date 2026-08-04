@@ -10,6 +10,7 @@ test -e /dev/kvm || { echo "/dev/kvm is unavailable" >&2; exit 1; }
 case "${1:-install}" in
   install)
     install -Dm0755 deploy/scripts/check-authority.sh /usr/local/libexec/netlab/check-authority.sh
+    install -Dm0755 deploy/scripts/maintenance.sh /usr/local/libexec/netlab/maintenance.sh
     NETLAB_RETIRE_LEGACY=${NETLAB_RETIRE_LEGACY:-0} /usr/local/libexec/netlab/check-authority.sh preflight
     if [[ -n "${NETLAB_PREBUILT_BINARY:-}" ]]; then
       test -x "$NETLAB_PREBUILT_BINARY" || { echo "prebuilt binary is not executable: $NETLAB_PREBUILT_BINARY" >&2; exit 1; }
@@ -42,7 +43,11 @@ case "${1:-install}" in
           [[ -e "$backup/netlab.yaml" ]] && install -m0600 "$backup/netlab.yaml" /etc/netlab/netlab.yaml
           [[ -e "$backup/template-readiness.json" ]] && install -m0644 "$backup/template-readiness.json" /etc/netlab/template-readiness.json
           systemctl daemon-reload || true
-          systemctl restart netlab || true
+          if systemctl restart netlab; then
+            /usr/local/libexec/netlab/check-authority.sh verify || echo "rollback service restarted but did not become healthy" >&2
+          else
+            echo "rollback service failed to reach application readiness" >&2
+          fi
         fi
         rm -rf "$work"
         exit "$status"

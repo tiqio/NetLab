@@ -4,7 +4,8 @@ After=network-online.target docker.service
 Wants=network-online.target docker.service
 
 [Service]
-Type=simple
+Type=notify
+NotifyAccess=main
 ExecStartPre=/usr/local/libexec/netlab/check-authority.sh preflight
 ExecStart=/usr/local/bin/netlabd -config /etc/netlab/netlab.yaml
 Environment=NETLAB_DEPLOYMENT_ROLE=authoritative
@@ -12,6 +13,7 @@ Restart=on-failure
 RestartSec=3
 KillMode=control-group
 TimeoutStopSec=30s
+TimeoutStartSec=180s
 User=root
 Group=root
 RuntimeDirectory=netlab
