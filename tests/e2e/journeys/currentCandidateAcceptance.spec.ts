@@ -226,7 +226,7 @@ test("target candidate validates console capture filter and live rewire", async 
 
   await new TopologyPage(page, automation).openSelectedTerminal();
   await expect(
-    page.getByRole("button", { name: "TELNET 1", exact: true }),
+    page.getByRole("button", { name: "SERIAL 1", exact: true }),
   ).toBeVisible();
 
   const captureResponse = await automation.post("/api/v1/captures", {
