@@ -14,7 +14,7 @@ test("Ubuntu QEMU receives cloud-init credentials and stable interface overlays"
 }) => {
   const ubuntuAvailable = environment.templates.some(
     (template) =>
-      template.template_key === "ubuntu-qemu" &&
+      template.device_family === "ubuntu-qemu" &&
       template.versions.some((version) => version.available),
   );
   test.skip(!ubuntuAvailable, "requires an available Ubuntu QEMU image");
