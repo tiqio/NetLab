@@ -16,13 +16,29 @@ templates:
     display_name: Ubuntu
     runtime_kind: qemu
     versions:
+      - version: "22.04"
+        manifest_version: 1
+        defaults: {cpu_count: 2, memory_mib: 4096, disk_gib: 30, interfaces: 2, interface_name_format: "ens%d"}
+        nic_drivers: [virtio-net-pci, e1000, rtl8139]
+        console_modes: [telnet, vnc]
+        capabilities: [cloud_init, guest_exec, nic_hotplug]
+        runtime_options: {machine: q35, cpu: host, recommended_image_name: ubuntu, recommended_image_version: "22.04-official-20260802"}
+        enabled: true
       - version: "24.04"
         manifest_version: 1
         defaults: {cpu_count: 2, memory_mib: 4096, disk_gib: 30, interfaces: 2, interface_name_format: "ens%d"}
         nic_drivers: [virtio-net-pci, e1000, rtl8139]
         console_modes: [telnet, vnc]
         capabilities: [cloud_init, guest_exec, nic_hotplug]
-        runtime_options: {machine: q35, cpu: host}
+        runtime_options: {machine: q35, cpu: host, recommended_image_name: ubuntu, recommended_image_version: "24.04-qga-acceptance"}
+        enabled: true
+      - version: "26.04"
+        manifest_version: 1
+        defaults: {cpu_count: 2, memory_mib: 4096, disk_gib: 30, interfaces: 2, interface_name_format: "ens%d"}
+        nic_drivers: [virtio-net-pci, e1000, rtl8139]
+        console_modes: [telnet, vnc]
+        capabilities: [cloud_init, guest_exec, nic_hotplug]
+        runtime_options: {machine: q35, cpu: host, recommended_image_name: ubuntu, recommended_image_version: "26.04-official-20260720"}
         enabled: true
   - key: fortigate
     display_name: FortiGate

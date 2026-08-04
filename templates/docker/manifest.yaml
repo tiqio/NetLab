@@ -4,6 +4,30 @@ templates:
     display_name: BusyBox
     runtime_kind: docker
     versions:
+      - version: "1.36.1"
+        manifest_version: 1
+        defaults: {cpu_count: 1, memory_mib: 128, interfaces: 1, interface_name_format: "eth%d"}
+        nic_drivers: [veth]
+        console_modes: []
+        capabilities: []
+        runtime_options: {command: ["sleep", "infinity"], recommended_image_name: busybox, recommended_image_version: "1.36.1"}
+        enabled: true
+      - version: "1.37.0"
+        manifest_version: 1
+        defaults: {cpu_count: 1, memory_mib: 128, interfaces: 1, interface_name_format: "eth%d"}
+        nic_drivers: [veth]
+        console_modes: []
+        capabilities: []
+        runtime_options: {command: ["sleep", "infinity"], recommended_image_name: busybox, recommended_image_version: "1.37.0"}
+        enabled: true
+      - version: "1.38.0"
+        manifest_version: 1
+        defaults: {cpu_count: 1, memory_mib: 128, interfaces: 1, interface_name_format: "eth%d"}
+        nic_drivers: [veth]
+        console_modes: []
+        capabilities: []
+        runtime_options: {command: ["sleep", "infinity"], recommended_image_name: busybox, recommended_image_version: "1.38.0"}
+        enabled: true
       - version: latest
         manifest_version: 1
         defaults: {cpu_count: 1, memory_mib: 128, interfaces: 1, interface_name_format: "eth%d"}
@@ -16,11 +40,27 @@ templates:
     display_name: Ubuntu
     runtime_kind: docker
     versions:
+      - version: "22.04"
+        manifest_version: 1
+        defaults: {cpu_count: 1, memory_mib: 512, interfaces: 1, interface_name_format: "eth%d"}
+        nic_drivers: [veth]
+        console_modes: []
+        capabilities: []
+        runtime_options: {command: ["sleep", "infinity"], recommended_image_name: ubuntu, recommended_image_version: "22.04"}
+        enabled: true
       - version: "24.04"
         manifest_version: 1
         defaults: {cpu_count: 1, memory_mib: 512, interfaces: 1, interface_name_format: "eth%d"}
         nic_drivers: [veth]
         console_modes: []
         capabilities: []
-        runtime_options: {command: ["sleep", "infinity"]}
+        runtime_options: {command: ["sleep", "infinity"], recommended_image_name: ubuntu, recommended_image_version: "24.04"}
+        enabled: true
+      - version: "26.04"
+        manifest_version: 1
+        defaults: {cpu_count: 1, memory_mib: 512, interfaces: 1, interface_name_format: "eth%d"}
+        nic_drivers: [veth]
+        console_modes: []
+        capabilities: []
+        runtime_options: {command: ["sleep", "infinity"], recommended_image_name: ubuntu, recommended_image_version: "26.04"}
         enabled: true
