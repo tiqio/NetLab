@@ -176,4 +176,45 @@ PY
   jq -nc --arg kind qemu --arg family ubuntu-qemu --arg version "$version" --arg node "$node" --arg output "$output" --arg rfb "$rfb" '{runtime_kind:$kind,template_key:$family,version:$version,node_id:$node,guest:$output,vnc_protocol:$rfb,checks:["start","cloud_init","dhcp","qmp","qga","guest_exec","telnet","vnc","interface_state","stop"],status:"passed"}' >>"$RESULTS"
 done
 
+for specification in \
+  'fancywan|v1-stable' \
+  'fancywan|2025.02.20-165226' \
+  'fortigate|7.2.0-build1157' \
+  'ruijie-router|V1.06' \
+  'ruijie-switch|V1.06'; do
+  IFS='|' read -r template_key version <<<"$specification"
+  row=$(jq -r --arg key "$template_key" --arg version "$version" '.[] | select(.template_key==$key) | .versions[] | select(.version==$version and .enabled==true and (.image_version_id // "")!="") | [.id,.image_version_id] | @tsv' <<<"$catalog")
+  if [[ -z $row ]]; then
+    jq -nc --arg kind qemu --arg family "$template_key" --arg version "$version" '{runtime_kind:$kind,template_key:$family,version:$version,checks:[],status:"skipped",reason:"no recommended reviewed image is registered"}' >>"$RESULTS"
+    continue
+  fi
+  IFS=$'\t' read -r node interface < <(create_node "$template_key" "$version" "$template_key-$version")
+  set_state "$node" running
+  wait_capability "$node" qmp
+  consoles=$(api GET "/nodes/$node/consoles")
+  jq -e 'length > 0 and (map(.mode) | index("telnet"))' <<<"$consoles" >/dev/null
+  checks='["start","qmp","telnet","stop"]'
+  rfb=""
+  if jq -e 'map(.mode) | index("vnc")' <<<"$consoles" >/dev/null; then
+    rfb=$(python3 - "$node" <<'PY'
+import socket
+import sys
+
+path = f"/var/lib/netlab/runtime/qemu/{sys.argv[1]}/vnc.sock"
+client = socket.socket(socket.AF_UNIX)
+client.settimeout(5)
+client.connect(path)
+print(client.recv(12).decode("ascii", "replace").strip())
+client.close()
+PY
+)
+    [[ $rfb == RFB* ]]
+    checks='["start","qmp","telnet","vnc","stop"]'
+  fi
+  sleep 10
+  [[ $(api GET "/nodes/$node" | jq -r .observed_state) == running ]]
+  set_state "$node" stopped
+  jq -nc --arg kind qemu --arg family "$template_key" --arg version "$version" --arg node "$node" --arg rfb "$rfb" --argjson checks "$checks" '{runtime_kind:$kind,template_key:$family,version:$version,node_id:$node,vnc_protocol:(if $rfb=="" then null else $rfb end),checks:$checks,status:"passed"}' >>"$RESULTS"
+done
+
 jq -s --arg lab "$LAB_ID" '{schema_version:"1.0",laboratory_id:$lab,generated_at:(now|todate),results:.}' "$RESULTS"
