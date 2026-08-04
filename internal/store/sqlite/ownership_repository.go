@@ -62,6 +62,8 @@ func (r *Repositories) RuntimeOwnerExists(ctx context.Context, resourceType stri
 		query = `SELECT 1 FROM laboratories WHERE id=?`
 	case "network_attachment":
 		query = `SELECT 1 FROM network_attachments WHERE id=?`
+	case "network_object_link":
+		query = `SELECT 1 FROM network_object_links WHERE id=?`
 	case "capture":
 		query = `SELECT 1 FROM operation_tasks WHERE resource_type='capture' AND resource_id=? LIMIT 1`
 	default:
