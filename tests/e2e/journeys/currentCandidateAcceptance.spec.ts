@@ -324,12 +324,12 @@ test("target candidate validates console capture filter and live rewire", async 
   await consoleCommand(
     page,
     first.node.id,
-    `ip addr replace 10.77.0.1/30 dev ${first.interface.name}; ip link set ${first.interface.name} up`,
+    `ip addr flush dev ${first.interface.name}; ip addr add 10.77.0.1/30 dev ${first.interface.name}; ip link set ${first.interface.name} up`,
   );
   await consoleCommand(
     page,
     second.id,
-    `ip addr replace 10.77.0.2/30 dev ${secondInterfaceRecord.name}; ip link set ${secondInterfaceRecord.name} up`,
+    `ip addr flush dev ${secondInterfaceRecord.name}; ip addr add 10.77.0.2/30 dev ${secondInterfaceRecord.name}; ip link set ${secondInterfaceRecord.name} up`,
   );
   await page.getByRole("tab", { name: "Traffic Filter" }).click();
   await page

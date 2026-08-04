@@ -448,3 +448,6 @@
   output, rejects non-zero exit status, and waits for the first authoritative Traffic Filter observation
   before measuring the 500 ms browser update requirement. Local `go vet ./...`, `go test ./... -count=1`,
   the 17-test acceptance-unit suite, frontend production build, Prettier, and ESLint with zero errors passed.
+- The first capability-enabled target reproduction then exposed a separate command-compatibility error:
+  BusyBox 1.36 supports `ip addr add` and `ip addr flush` but not `ip addr replace`. The acceptance traffic
+  setup now uses the portable flush/add sequence rather than relying on the fuller iproute2 syntax.
