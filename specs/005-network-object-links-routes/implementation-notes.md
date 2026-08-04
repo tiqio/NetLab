@@ -492,3 +492,38 @@ TestNetworkObjectLinkCreateIsDurableIdempotentAndObservable -count=1` all passed
 - Immutable candidate `clean-target-7406e9a-20260804` (`0.5.17+7406e9a`, binary `sha256:8d3c011a1a9671968bce20479adbdc07381f27b3b537208dbf344f04b2607046`) is the single healthy authority on `10.72.1.7:18082`; `KillMode=process` is active and the preview service is disabled.
 - Browser run `533321f0-1606-4936-99d7-920f8577aec3` passed all 244 recorded interactions across 1920×1080 and 1024×768, covered all six target-available image/version journeys, and restored a zero-resource baseline.
 - Final target checks reported zero laboratories, zero runtime ownership rows, SQLite `integrity_check=ok`, and no prohibited binary/capture payload in committed evidence. Earlier same-runtime privileged ICMP/TCP/UDP, parallel-link capture/Traffic Filter, Docker IPv4/IPv6 route, restart/recovery, and 100-cycle leak gates remain passing.
+
+## Retained Multi-Hop Demonstration — August 4, 2026
+
+- Created and retained laboratory `traffic-multihop-l2-l3`
+  (`019fcb6bcc30-736e9657ac94267962dd`) on the authoritative target with the path
+  `docker-a -> access-left -> core-router -> access-right -> docker-b`. The endpoints use
+  `10.60.1.10/24` and `10.60.2.10/24`; the L3 object routes through `10.60.1.1/24` and
+  `10.60.2.1/24`. Both Docker route declarations were applied automatically.
+- Target traffic passed bidirectionally with ICMP TTL 63 and zero loss. TCP destination port 19001
+  and UDP destination port 19002 payloads crossed both first-class object links and arrived at
+  `docker-b`.
+- Dynamic validation exposed an ownership gap: `RuntimeOwnerExists` did not recognize persisted
+  `network_object_link` rows. The ownership reconciler therefore classified both veth endpoints as
+  foreign on one pass, deleted them on the next pass, and the data-plane reconciler recreated them.
+  This periodic churn interrupted every object-link capture and left Traffic Filter metadata reporting
+  `running` without observations.
+- Milestone `f23d453` adds the missing SQLite owner lookup and a repository regression test. Focused
+  SQLite, reconciliation, Linux networking, and capture tests passed; `go vet ./...` passed. The full
+  `go test ./...` run passed all completed packages except the unrelated established integration case
+  `TestFrontendNodeOperationsExposeTasksReplayCancellationAndProblems`, which timed out after 120 seconds
+  while waiting for its conflict task.
+- Candidate `multihop-ownership-f23d453-20260804` (`0.5.20+f23d453`) was deployed to
+  `10.72.1.7:18082`. The installed binary SHA-256 is
+  `77b220b5d03e681424ebbc9ebc49dcbc4df615b615ad103850388a32657dbe67`; the previous binary,
+  configuration, and SQLite database were retained under
+  `/var/lib/netlab/backups/pre-f23d453-20260804T063951Z`.
+- After deployment, all four object-link endpoint ifindexes remained unchanged throughout a 12-second
+  observation window spanning multiple two-second reconciliation cycles. Runtime ownership contains
+  four active `network_object_link_endpoint` records with no unknown duplicates.
+- Separate `tcp and dst port 19001` and `udp and dst port 19002` Traffic Filters each attributed
+  `10.60.1.10 -> 10.60.2.10` as `a_to_b` on both object links. A retained combined filter
+  `(icmp) or (tcp and dst port 19001) or (udp and dst port 19002)` is running for browser testing.
+- A headless Chromium smoke check confirmed the laboratory, all five topology resources, and the
+  retained Traffic Filter are visible. Placements were normalized into a centered horizontal path so
+  both Docker endpoints and all intermediate devices remain inside the initial canvas viewport.
