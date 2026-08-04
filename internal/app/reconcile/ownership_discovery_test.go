@@ -64,10 +64,20 @@ type staticOwnershipScanner struct {
 
 type blockingOwnershipScanner struct{ name string }
 
+type nonCooperativeOwnershipScanner struct {
+	name    string
+	release <-chan struct{}
+}
+
 func (s blockingOwnershipScanner) Name() string { return s.name }
 func (s blockingOwnershipScanner) Discover(ctx context.Context) ([]DiscoveredOwnership, error) {
 	<-ctx.Done()
 	return nil, ctx.Err()
+}
+func (s nonCooperativeOwnershipScanner) Name() string { return s.name }
+func (s nonCooperativeOwnershipScanner) Discover(context.Context) ([]DiscoveredOwnership, error) {
+	<-s.release
+	return nil, nil
 }
 
 func (s staticOwnershipScanner) Name() string { return s.name }
@@ -218,6 +228,26 @@ func TestOwnershipDiscoveryTimesOutScannerAndContinues(t *testing.T) {
 		store,
 		audit,
 		blockingOwnershipScanner{name: "blocked"},
+		staticOwnershipScanner{name: "working", values: []DiscoveredOwnership{{ObjectKind: "helper", ObjectName: "netlab-helper"}}},
+	)
+	reconciler.scannerTimeout = 10 * time.Millisecond
+	if err := reconciler.Reconcile(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if len(store.records) != 1 || len(audit.actions) != 2 || audit.actions[0] != "ownership.discovery.failed" {
+		t.Fatalf("records=%+v audit=%v", store.records, audit.actions)
+	}
+}
+
+func TestOwnershipDiscoveryTimesOutNonCooperativeScanner(t *testing.T) {
+	store := &discoveryStore{owners: map[string]bool{}}
+	audit := &discoveryAudit{}
+	release := make(chan struct{})
+	t.Cleanup(func() { close(release) })
+	reconciler := NewOwnershipDiscoveryReconciler(
+		store,
+		audit,
+		nonCooperativeOwnershipScanner{name: "blocked", release: release},
 		staticOwnershipScanner{name: "working", values: []DiscoveredOwnership{{ObjectKind: "helper", ObjectName: "netlab-helper"}}},
 	)
 	reconciler.scannerTimeout = 10 * time.Millisecond

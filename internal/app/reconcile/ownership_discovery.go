@@ -94,9 +94,7 @@ func (r *OwnershipDiscoveryReconciler) Reconcile(ctx context.Context) (err error
 		knownByObject[ownershipKey(value.ObjectKind, value.ObjectName)] = value
 	}
 	for _, scanner := range r.scanners {
-		scanCtx, cancel := context.WithTimeout(ctx, r.scannerTimeout)
-		values, scanErr := scanner.Discover(scanCtx)
-		cancel()
+		values, scanErr := discoverOwnershipWithTimeout(ctx, scanner, r.scannerTimeout)
 		if scanErr != nil {
 			r.record(ctx, "ownership.discovery.failed", "host", domain.ID(scanner.Name()), "failed", map[string]any{"scanner": scanner.Name(), "error": scanErr.Error()})
 			continue
@@ -190,6 +188,27 @@ func (r *OwnershipDiscoveryReconciler) Reconcile(ctx context.Context) (err error
 		}
 	}
 	return nil
+}
+
+type ownershipScanResult struct {
+	values []DiscoveredOwnership
+	err    error
+}
+
+func discoverOwnershipWithTimeout(ctx context.Context, scanner OwnershipScanner, timeout time.Duration) ([]DiscoveredOwnership, error) {
+	scanCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	result := make(chan ownershipScanResult, 1)
+	go func() {
+		values, err := scanner.Discover(scanCtx)
+		result <- ownershipScanResult{values: values, err: err}
+	}()
+	select {
+	case value := <-result:
+		return value.values, value.err
+	case <-scanCtx.Done():
+		return nil, scanCtx.Err()
+	}
 }
 
 func cloneMetadata(input map[string]string) map[string]string {
