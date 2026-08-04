@@ -264,7 +264,6 @@ test("target candidate validates console capture filter and live rewire", async 
       laboratory_id: first.laboratory.id,
       match: {},
       max_observations: 100,
-      interface_ids: [first.interface.id, secondInterface, thirdInterface],
       link_ids: [link.id],
     },
   });
