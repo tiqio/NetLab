@@ -451,3 +451,7 @@
 - The first capability-enabled target reproduction then exposed a separate command-compatibility error:
   BusyBox 1.36 supports `ip addr add` and `ip addr flush` but not `ip addr replace`. The acceptance traffic
   setup now uses the portable flush/add sequence rather than relying on the fuller iproute2 syntax.
+- The target Traffic Filter read endpoint returns an envelope whose live observations are under
+  `traffic_filter.observations`; the focused polling predicate now follows that contract instead of looking
+  for an unwrapped top-level collection. Direct target traffic delivered ICMP successfully and delivered
+  the `tcpudp` payloads to the peer container before the expected two-second observation decay.

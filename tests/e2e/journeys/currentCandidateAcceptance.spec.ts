@@ -357,8 +357,8 @@ test("target candidate validates console capture filter and live rewire", async 
           `/api/v1/traffic-filters/${filter.traffic_filter.id}`,
         )
       ).json(),
-    (value: { observations?: unknown[] }) =>
-      Boolean(value.observations?.length),
+    (value: { traffic_filter?: { observations?: unknown[] } }) =>
+      Boolean(value.traffic_filter?.observations?.length),
     "traffic filter observation",
     5_000,
     50,
