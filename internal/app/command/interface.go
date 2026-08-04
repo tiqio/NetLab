@@ -18,6 +18,7 @@ type InterfaceRepository interface {
 }
 
 type InterfaceHotplugger interface {
+	InterfaceTapName(domain.Interface) string
 	HotAddInterface(context.Context, domain.Node, domain.Interface, string) error
 	HotRemoveInterface(context.Context, domain.Node, domain.Interface) error
 }
@@ -76,7 +77,7 @@ func (s *InterfaceService) Add(ctx context.Context, nodeID domain.ID, driver, id
 	if node.ObservedState != domain.ObservedRunning {
 		return iface, nil, nil
 	}
-	taskValue := domain.OperationTask{ID: domain.NewID(), Kind: "interface.hot_add", ResourceType: "interface", ResourceID: iface.ID, IdempotencyKey: idempotencyKey, State: domain.TaskQueued, ProgressTotal: 3, Input: map[string]any{"node_id": string(nodeID), "interface_id": string(iface.ID), "tap_name": tapName(iface.ID)}, CreatedAt: time.Now().UTC()}
+	taskValue := domain.OperationTask{ID: domain.NewID(), Kind: "interface.hot_add", ResourceType: "interface", ResourceID: iface.ID, IdempotencyKey: idempotencyKey, State: domain.TaskQueued, ProgressTotal: 3, Input: map[string]any{"node_id": string(nodeID), "interface_id": string(iface.ID), "tap_name": s.hotplugger.InterfaceTapName(iface)}, CreatedAt: time.Now().UTC()}
 	if err = s.runner.Enqueue(ctx, taskValue); err != nil {
 		_ = s.repository.DeleteInterface(ctx, iface.ID, iface.Revision)
 		return domain.Interface{}, nil, err
@@ -109,7 +110,7 @@ func (s *InterfaceService) Remove(ctx context.Context, interfaceID domain.ID, re
 	if node.ObservedState != domain.ObservedRunning {
 		return domain.OperationTask{}, s.repository.DeleteInterface(ctx, interfaceID, revision)
 	}
-	value := domain.OperationTask{ID: domain.NewID(), Kind: "interface.hot_remove", ResourceType: "interface", ResourceID: interfaceID, IdempotencyKey: idempotencyKey, RequestedRevision: revision, ProgressTotal: 3, Input: map[string]any{"node_id": string(node.ID), "interface_id": string(interfaceID), "revision": int64(revision), "tap_name": tapName(interfaceID)}, CreatedAt: time.Now().UTC()}
+	value := domain.OperationTask{ID: domain.NewID(), Kind: "interface.hot_remove", ResourceType: "interface", ResourceID: interfaceID, IdempotencyKey: idempotencyKey, RequestedRevision: revision, ProgressTotal: 3, Input: map[string]any{"node_id": string(node.ID), "interface_id": string(interfaceID), "revision": int64(revision), "tap_name": s.hotplugger.InterfaceTapName(iface)}, CreatedAt: time.Now().UTC()}
 	return value, s.runner.Enqueue(ctx, value)
 }
 
@@ -170,12 +171,22 @@ func (s *InterfaceService) handleRemove(ctx context.Context, value *domain.Opera
 		return nil, err
 	}
 	value.ProgressCurrent = 2
-	if err = s.taps.Delete(ctx, tap); err != nil {
-		return nil, domain.Problem{Code: "interface_hot_remove_cleanup_failed", Message: err.Error(), Retryable: true, ResourceType: "interface", ResourceID: iface.ID, Phase: "hot_remove", Cleanup: "QMP device removed but owned TAP cleanup failed", OperatorHint: "remove the owned TAP and retry deletion"}
+	tapNames := []string{tap}
+	if legacy := legacyTapName(iface.ID); legacy != tap {
+		tapNames = append(tapNames, legacy)
+	}
+	for _, name := range tapNames {
+		if err = s.taps.Delete(ctx, name); err != nil {
+			return nil, domain.Problem{Code: "interface_hot_remove_cleanup_failed", Message: err.Error(), Retryable: true, ResourceType: "interface", ResourceID: iface.ID, Phase: "hot_remove", Cleanup: "QMP device removed but owned TAP cleanup failed", OperatorHint: "remove the owned TAP and retry deletion"}
+		}
 	}
 	if ownershipWriter, ok := s.repository.(RuntimeOwnershipWriter); ok {
-		if err = ownershipWriter.DeleteRuntimeOwnership(ctx, "interface", iface.ID, "tap", tap); err != nil {
-			return nil, domain.Problem{Code: "interface_hot_remove_cleanup_failed", Message: err.Error(), Retryable: true, ResourceType: "interface", ResourceID: iface.ID, Phase: "hot_remove", Cleanup: "QMP device and TAP removed but ownership cleanup failed", OperatorHint: "remove the stale runtime ownership record and retry deletion"}
+		for _, name := range tapNames {
+			for _, kind := range []string{"tap", "linux_link"} {
+				if err = ownershipWriter.DeleteRuntimeOwnership(ctx, "interface", iface.ID, kind, name); err != nil {
+					return nil, domain.Problem{Code: "interface_hot_remove_cleanup_failed", Message: err.Error(), Retryable: true, ResourceType: "interface", ResourceID: iface.ID, Phase: "hot_remove", Cleanup: "QMP device and TAP removed but ownership cleanup failed", OperatorHint: "remove the stale runtime ownership record and retry deletion"}
+				}
+			}
 		}
 	}
 	revision := domain.Revision(number(value.Input["revision"]))
@@ -195,7 +206,7 @@ func (s *InterfaceService) resolve(value *domain.OperationTask) (domain.Node, do
 	return node, iface, text(value.Input["tap_name"]), err
 }
 
-func tapName(id domain.ID) string {
+func legacyTapName(id domain.ID) string {
 	value := "nlt" + string(id)
 	if len(value) > 15 {
 		value = value[:15]

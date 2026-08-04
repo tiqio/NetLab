@@ -97,6 +97,7 @@ func TestInterfaceAddRejectsUnsupportedQEMULimit(t *testing.T) {
 
 type failingHotplugger struct{ err error }
 
+func (h failingHotplugger) InterfaceTapName(domain.Interface) string { return "nli-canonical" }
 func (h failingHotplugger) HotAddInterface(context.Context, domain.Node, domain.Interface, string) error {
 	return h.err
 }
@@ -104,10 +105,16 @@ func (h failingHotplugger) HotRemoveInterface(context.Context, domain.Node, doma
 	return nil
 }
 
-type tapRecorder struct{ created, deleted int }
+type tapRecorder struct {
+	created int
+	deleted []string
+}
 
 func (t *tapRecorder) CreateTap(context.Context, string, string) error { t.created++; return nil }
-func (t *tapRecorder) Delete(context.Context, string) error            { t.deleted++; return nil }
+func (t *tapRecorder) Delete(_ context.Context, name string) error {
+	t.deleted = append(t.deleted, name)
+	return nil
+}
 
 func TestInterfaceHotAddFailureRollsBackPersistenceAndTap(t *testing.T) {
 	iface := domain.Interface{ID: "iface", NodeID: "node", Revision: 1}
@@ -121,8 +128,8 @@ func TestInterfaceHotAddFailureRollsBackPersistenceAndTap(t *testing.T) {
 	if !ok || problem.Code != "interface_hot_add_failed" || problem.Cleanup != "interface row and TAP removed" {
 		t.Fatalf("problem=%+v err=%v", problem, err)
 	}
-	if taps.created != 1 || taps.deleted != 1 || repository.deleted != 1 {
-		t.Fatalf("created=%d tap_deleted=%d row_deleted=%d", taps.created, taps.deleted, repository.deleted)
+	if taps.created != 1 || len(taps.deleted) != 1 || repository.deleted != 1 {
+		t.Fatalf("created=%d tap_deleted=%v row_deleted=%d", taps.created, taps.deleted, repository.deleted)
 	}
 	if repository.owned != 1 || repository.unowned != 1 {
 		t.Fatalf("owned=%d unowned=%d", repository.owned, repository.unowned)
@@ -141,7 +148,7 @@ func TestInterfaceOwnershipFailureRollsBackTapAndRow(t *testing.T) {
 	if !ok || problem.Code != "interface_hot_add_failed" {
 		t.Fatalf("problem=%+v err=%v", problem, err)
 	}
-	if taps.created != 1 || taps.deleted != 1 || repository.deleted != 1 || repository.owned != 1 || repository.unowned != 1 {
+	if taps.created != 1 || len(taps.deleted) != 1 || repository.deleted != 1 || repository.owned != 1 || repository.unowned != 1 {
 		t.Fatalf("taps=%+v repository=%+v", taps, repository)
 	}
 }
@@ -171,7 +178,7 @@ func TestInterfaceHotRemoveDeletesTapOwnership(t *testing.T) {
 	if _, err := service.handleRemove(context.Background(), taskValue); err != nil {
 		t.Fatal(err)
 	}
-	if taps.deleted != 1 || repository.unowned != 1 || repository.deleted != 1 {
+	if len(taps.deleted) != 2 || taps.deleted[0] != "nltap" || taps.deleted[1] != legacyTapName(iface.ID) || repository.unowned != 4 || repository.deleted != 1 {
 		t.Fatalf("taps=%+v repository=%+v", taps, repository)
 	}
 }

@@ -10,15 +10,27 @@ import (
 type recordingRunner struct {
 	commands     []string
 	failContains string
+	failError    error
 }
 
 func (r *recordingRunner) Run(_ context.Context, name string, args ...string) error {
 	command := name + " " + strings.Join(args, " ")
 	r.commands = append(r.commands, command)
 	if r.failContains != "" && strings.Contains(command, r.failContains) {
+		if r.failError != nil {
+			return r.failError
+		}
 		return errors.New("injected")
 	}
 	return nil
+}
+
+func TestDeleteIsIdempotentWhenInterfaceIsMissing(t *testing.T) {
+	runner := &recordingRunner{failContains: "link delete dev missing0", failError: errors.New("Cannot find device missing0")}
+	runtime, _ := NewLinkRuntime(runner)
+	if err := runtime.Delete(context.Background(), "missing0"); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestLiveBridgeMoveRollsBackOnFailure(t *testing.T) {

@@ -356,6 +356,10 @@ func (a *Adapter) HotAddInterface(ctx context.Context, node domain.Node, iface d
 	return AddNIC(ctx, monitor, HotplugNIC{ID: "nic-" + string(iface.ID), NetdevID: "net-" + string(iface.ID), TapName: tapName, Driver: iface.Driver, MACAddress: iface.MACAddress, Bus: hotplugBus(node, iface.Slot)})
 }
 
+func (a *Adapter) InterfaceTapName(iface domain.Interface) string {
+	return linuxnet.HostInterfaceName(iface.ID)
+}
+
 func hotplugBus(node domain.Node, slot int) string {
 	if qemuConfigOption(node, "machine", "q35", "pc", "q35") == "pc" {
 		return ""
