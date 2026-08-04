@@ -1,11 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE="${NETLAB_BASE_URL:-http://127.0.0.1:8088}/api/v1"
+BASE_URL="${NETLAB_BASE_URL:-http://127.0.0.1:8088}"
+BASE_URL="${BASE_URL%/}"
+BASE="$BASE_URL/api/v1"
 DB="${NETLAB_DB:-/var/lib/netlab/netlab.db}"
 STATE="${NETLAB_STATE_DIR:-/var/lib/netlab}"
 LAB_ID=""
 CONSOLE_PID=""
+read -r EVENT_HOST EVENT_PORT < <(python3 - "$BASE_URL" <<'PY'
+import sys
+from urllib.parse import urlsplit
+
+url = urlsplit(sys.argv[1])
+if url.scheme != "http" or not url.hostname:
+    raise SystemExit("NETLAB_BASE_URL must be an http URL for raw WebSocket recovery checks")
+print(url.hostname, url.port or 80)
+PY
+)
 
 api() {
   local method=$1 path=$2 body=${3:-} revision=${4:-}
@@ -107,12 +119,14 @@ done
 capture=$(api POST /captures "$(jq -nc --arg laboratory "$LAB_ID" --arg source "$LINK_ID" '{laboratory_id:$laboratory,source_type:"link",source_id:$source,format:"pcap",retain:true,duration_seconds:180,max_bytes:1048576}')")
 CAPTURE_ID=$(jq -r .capture.id <<<"$capture")
 
-python3 - "$QEMU_NODE" <<'PY' &
+python3 - "$QEMU_NODE" "$EVENT_HOST" "$EVENT_PORT" <<'PY' &
 import base64, os, socket, sys, time
 node = sys.argv[1]
+host = sys.argv[2]
+port = int(sys.argv[3])
 key = base64.b64encode(os.urandom(16)).decode()
-sock = socket.create_connection(("127.0.0.1", 8088))
-request = f"GET /api/v1/nodes/{node}/consoles/telnet/stream HTTP/1.1\r\nHost: 127.0.0.1:8088\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\n\r\n"
+sock = socket.create_connection((host, port))
+request = f"GET /api/v1/nodes/{node}/consoles/telnet/stream HTTP/1.1\r\nHost: {host}:{port}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\n\r\n"
 sock.sendall(request.encode())
 response = sock.recv(4096)
 if b" 101 " not in response:
@@ -172,12 +186,14 @@ jq -e --arg id "$QEMU_NODE" --arg runtime "$QEMU_PID" '.result.resource_outcomes
 jq -e --arg id "$DOCKER_NODE" --arg runtime "$DOCKER_ID" '.result.resource_outcomes | any(.resource_type=="node" and .resource_id==$id and .runtime_id==$runtime)' <<<"$RECOVERY" >/dev/null
 jq -e --arg id "$NAMESPACE_NODE" --arg runtime "$NAMESPACE_NAME" '.result.resource_outcomes | any(.resource_type=="node" and .resource_id==$id and .runtime_id==$runtime)' <<<"$RECOVERY" >/dev/null
 
-python3 - "$BEFORE_SEQUENCE" <<'PY'
+python3 - "$BEFORE_SEQUENCE" "$EVENT_HOST" "$EVENT_PORT" <<'PY'
 import base64, json, os, socket, struct, sys
 sequence = int(sys.argv[1])
+host = sys.argv[2]
+port = int(sys.argv[3])
 key = base64.b64encode(os.urandom(16)).decode()
-sock = socket.create_connection(("127.0.0.1", 8088))
-request = f"GET /api/v1/events?after={sequence} HTTP/1.1\r\nHost: 127.0.0.1:8088\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\n\r\n"
+sock = socket.create_connection((host, port))
+request = f"GET /api/v1/events?after={sequence} HTTP/1.1\r\nHost: {host}:{port}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\n\r\n"
 sock.sendall(request.encode())
 response = b""
 while b"\r\n\r\n" not in response:
