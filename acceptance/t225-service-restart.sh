@@ -50,14 +50,18 @@ wait_task() {
 }
 
 wait_node() {
-  local id=$1 expected=$2 deadline=$((SECONDS + 240)) value state
+  local id=$1 expected=$2 deadline=$((SECONDS + 240)) value state retryable
   while ((SECONDS < deadline)); do
     value=$(api GET "/nodes/$id")
     state=$(jq -r .observed_state <<<"$value")
     [[ $state == "$expected" ]] && return
-    [[ $state == failed ]] && { echo "$value" >&2; return 1; }
+    if [[ $state == failed ]]; then
+      retryable=$(jq -r '.last_error.retryable // false' <<<"$value")
+      [[ $retryable == true ]] || { echo "$value" >&2; return 1; }
+    fi
     sleep 1
   done
+  echo "$value" >&2
   return 1
 }
 

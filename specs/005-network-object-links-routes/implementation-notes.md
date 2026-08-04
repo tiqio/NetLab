@@ -477,3 +477,7 @@
   recovery task. The unit is restored to the previously validated `KillMode=process`; capture and console
   workers remain application-context managed, while QEMU survives for manifest/QMP adoption. A security
   regression test now locks this service-restart invariant.
+- A lightweight namespace belongs to the service mount namespace and is restored, rather than adopted,
+  after service restart. During that bounded transition the node can report retryable `runtime_exited`
+  before reconciliation recreates it. The restart waiter now continues through retryable failures and
+  fails immediately only for non-retryable problems, matching the desired/observed lifecycle contract.
