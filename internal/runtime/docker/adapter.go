@@ -215,6 +215,30 @@ func (a *Adapter) Start(ctx context.Context, node domain.Node) error {
 				},
 			},
 		})
+		if err != nil && len(storage) > 0 && unsupportedStorageQuota(err) {
+			result, err = a.engine.ContainerCreate(ctx, dockerclient.ContainerCreateOptions{
+				Image: image,
+				Name:  a.name(node.ID),
+				Config: &container.Config{
+					Cmd: command,
+					Labels: map[string]string{
+						"io.netlab.node_id":               string(node.ID),
+						"io.netlab.laboratory_id":         string(node.LaboratoryID),
+						"io.netlab.storage_quota":         "unsupported",
+						"io.netlab.storage_requested_gib": strconv.Itoa(node.StorageGiB),
+					},
+				},
+				HostConfig: &container.HostConfig{
+					NetworkMode: "none",
+					CapAdd:      []string{"NET_ADMIN", "NET_RAW"},
+					Resources: container.Resources{
+						Memory:    int64(node.MemoryMiB) << 20,
+						NanoCPUs:  quotaToNano(node.CPUQuotaMicros),
+						PidsLimit: &pidsLimit,
+					},
+				},
+			})
+		}
 		if err != nil {
 			return err
 		}
@@ -228,6 +252,11 @@ func (a *Adapter) Start(ctx context.Context, node domain.Node) error {
 		return errors.Join(err, a.compensateStart(node, id, created))
 	}
 	return nil
+}
+
+func unsupportedStorageQuota(err error) bool {
+	message := strings.ToLower(err.Error())
+	return strings.Contains(message, "storage-opt") && strings.Contains(message, "pquota")
 }
 
 func (a *Adapter) ensureEndpoints(ctx context.Context, node domain.Node, id string) error {

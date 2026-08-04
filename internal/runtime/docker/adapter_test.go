@@ -24,10 +24,24 @@ type fakeEngine struct {
 	removeCalls int
 	execOptions dockerclient.ExecCreateOptions
 	attachConn  net.Conn
+	createCalls int
+	createErrs  []error
+	sawStorage  bool
 }
 
 func (f *fakeEngine) ContainerCreate(_ context.Context, options dockerclient.ContainerCreateOptions) (dockerclient.ContainerCreateResult, error) {
+	f.createCalls++
+	if options.HostConfig != nil && len(options.HostConfig.StorageOpt) > 0 {
+		f.sawStorage = true
+	}
 	f.created = options
+	if len(f.createErrs) > 0 {
+		err := f.createErrs[0]
+		f.createErrs = f.createErrs[1:]
+		if err != nil {
+			return dockerclient.ContainerCreateResult{}, err
+		}
+	}
 	return dockerclient.ContainerCreateResult{ID: "created-container"}, nil
 }
 func (f *fakeEngine) ContainerStart(context.Context, string, dockerclient.ContainerStartOptions) (dockerclient.ContainerStartResult, error) {
@@ -227,6 +241,25 @@ func TestStartGrantsOnlyRequiredNetworkCapabilities(t *testing.T) {
 	}
 	if engine.created.HostConfig.Privileged {
 		t.Fatal("network nodes must not run privileged")
+	}
+}
+
+func TestStartRetriesWithoutStorageQuotaWhenDockerDriverRejectsIt(t *testing.T) {
+	engine := &fakeEngine{createErrs: []error{errors.New("daemon: --storage-opt is supported only for overlay over xfs with 'pquota' mount option"), nil}}
+	adapter := NewAdapterWithEngine(engine)
+	node := domain.Node{ID: "node-storage", LaboratoryID: "lab-1", StorageGiB: 8, Config: map[string]any{"image": "busybox:latest"}}
+
+	if err := adapter.Start(context.Background(), node); err != nil {
+		t.Fatal(err)
+	}
+	if engine.createCalls != 2 || !engine.sawStorage {
+		t.Fatalf("create calls=%d saw storage=%t", engine.createCalls, engine.sawStorage)
+	}
+	if len(engine.created.HostConfig.StorageOpt) != 0 {
+		t.Fatalf("fallback storage options=%v", engine.created.HostConfig.StorageOpt)
+	}
+	if engine.created.Config.Labels["io.netlab.storage_quota"] != "unsupported" || engine.created.Config.Labels["io.netlab.storage_requested_gib"] != "8" {
+		t.Fatalf("fallback labels=%v", engine.created.Config.Labels)
 	}
 }
 

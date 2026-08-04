@@ -183,6 +183,13 @@ func (s *NodeService) CreateConfigured(ctx context.Context, labID domain.ID, req
 	}
 	now := time.Now().UTC()
 	node := domain.Node{ID: domain.NewID(), LaboratoryID: labID, Name: name, Kind: kind, TemplateVersionID: request.TemplateVersionID, Revision: 1, DesiredState: domain.DesiredStopped, ObservedState: domain.ObservedStopped, CPUCount: cpuCount, CPUQuotaMicros: cpuQuota, MemoryMiB: memoryMiB, StorageGiB: storageGiB, InterfaceLimit: interfaceLimit, ProcessLimit: processLimit, Config: config, CreatedAt: now, UpdatedAt: now}
+	interfaceNameFormat := templateVersion.Defaults.InterfaceNameFormat
+	if configured, ok := config["interface_name_format"].(string); ok && strings.TrimSpace(configured) != "" {
+		interfaceNameFormat = configured
+	}
+	if interfaceNameFormat != "" {
+		config["interface_name_format"] = interfaceNameFormat
+	}
 	interfaces := make([]domain.Interface, interfaceCount)
 	sequentialMACPrefix := [3]byte{}
 	sequentialMACs, _ := config["mac_address_mode"].(string)
@@ -191,7 +198,7 @@ func (s *NodeService) CreateConfigured(ctx context.Context, labID domain.ID, req
 		_, _ = rand.Read(sequentialMACPrefix[:])
 	}
 	for i := range interfaces {
-		interfaceName, internalInterface := templateInterfaceName(templateVersion.Defaults.InterfaceNameFormat, i, internalInterfaceCount)
+		interfaceName, internalInterface := templateInterfaceName(interfaceNameFormat, i, internalInterfaceCount)
 		driver := ""
 		if len(templateVersion.NICDrivers) > 0 {
 			driver = templateVersion.NICDrivers[0]

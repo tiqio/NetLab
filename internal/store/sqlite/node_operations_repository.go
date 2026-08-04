@@ -5,6 +5,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"regexp"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -42,9 +45,11 @@ func (r *TopologyRepository) ReserveInterface(ctx context.Context, value domain.
 	}
 	err := r.database.Write(ctx, func(tx *sql.Tx) error {
 		var labID domain.ID
-		if err := tx.QueryRowContext(ctx, `SELECT laboratory_id FROM nodes WHERE id=?`, value.NodeID).Scan(&labID); err != nil {
+		var configBody []byte
+		if err := tx.QueryRowContext(ctx, `SELECT laboratory_id,config_json FROM nodes WHERE id=?`, value.NodeID).Scan(&labID, &configBody); err != nil {
 			return err
 		}
+		config := decodeNodeConfig(configBody)
 		rows, err := tx.QueryContext(ctx, `SELECT slot FROM interfaces WHERE node_id=? AND slot>=0 AND slot<? ORDER BY slot`, value.NodeID, limit)
 		if err != nil {
 			return err
@@ -71,8 +76,12 @@ func (r *TopologyRepository) ReserveInterface(ctx context.Context, value domain.
 		if value.Slot < 0 {
 			return domain.Problem{Code: "resource_exhausted", Message: fmt.Sprintf("node interface capacity of %d has been reached", limit), ResourceType: "node", ResourceID: value.NodeID, Phase: "interface_admission", Cleanup: "no side effects created", OperatorHint: "remove an interface before adding another", Details: map[string]any{"interface_limit": limit}}
 		}
-		value.Name = fmt.Sprintf("eth%d", value.Slot)
+		value.Name = reservedInterfaceName(config, value.Slot)
 		if _, err = tx.ExecContext(ctx, `INSERT INTO interfaces(id,node_id,slot,name,driver,mac_address,oper_state,revision) VALUES(?,?,?,?,?,?,?,?)`, value.ID, value.NodeID, value.Slot, value.Name, nullable(value.Driver), value.MACAddress, value.OperationalState, value.Revision); err != nil {
+			return err
+		}
+		appendInterfaceConfig(config, value)
+		if err = updateNodeInterfaceConfig(ctx, tx, value.NodeID, config); err != nil {
 			return err
 		}
 		return appendEvent(ctx, tx, "interface.created", labID, "interface", value.ID, value.Revision, "", eventData(value))
@@ -85,7 +94,10 @@ func (r *TopologyRepository) DeleteInterface(ctx context.Context, id domain.ID, 
 		var revision domain.Revision
 		var labID domain.ID
 		var desiredLink sql.NullString
-		if err := tx.QueryRowContext(ctx, `SELECT i.revision,i.desired_link_id,n.laboratory_id FROM interfaces i JOIN nodes n ON n.id=i.node_id WHERE i.id=?`, id).Scan(&revision, &desiredLink, &labID); err != nil {
+		var nodeID domain.ID
+		var interfaceName string
+		var configBody []byte
+		if err := tx.QueryRowContext(ctx, `SELECT i.revision,i.desired_link_id,n.laboratory_id,n.id,i.name,n.config_json FROM interfaces i JOIN nodes n ON n.id=i.node_id WHERE i.id=?`, id).Scan(&revision, &desiredLink, &labID, &nodeID, &interfaceName, &configBody); err != nil {
 			return err
 		}
 		if revision != expected {
@@ -97,8 +109,142 @@ func (r *TopologyRepository) DeleteInterface(ctx context.Context, id domain.ID, 
 		if _, err := tx.ExecContext(ctx, `DELETE FROM interfaces WHERE id=?`, id); err != nil {
 			return err
 		}
+		config := decodeNodeConfig(configBody)
+		removeInterfaceConfig(config, id, interfaceName)
+		if err := updateNodeInterfaceConfig(ctx, tx, nodeID, config); err != nil {
+			return err
+		}
 		return appendEvent(ctx, tx, "interface.deleted", labID, "interface", id, revision.Next(), "", nil)
 	})
+}
+
+var interfaceSuffixPattern = regexp.MustCompile(`^(.*?)(\d+)$`)
+
+func decodeNodeConfig(body []byte) map[string]any {
+	var config map[string]any
+	_ = json.Unmarshal(body, &config)
+	if config == nil {
+		config = map[string]any{}
+	}
+	return config
+}
+
+func reservedInterfaceName(config map[string]any, slot int) string {
+	internalCount := intFromConfig(config["internal_interface_count"])
+	if slot < internalCount {
+		return fmt.Sprintf("internal%d", slot)
+	}
+	externalSlot := slot - internalCount
+	if format, ok := config["interface_name_format"].(string); ok && strings.TrimSpace(format) != "" {
+		name := fmt.Sprintf(format, externalSlot)
+		if !strings.Contains(name, "%!") {
+			return name
+		}
+	}
+	for _, descriptor := range configMaps(config["interfaces"]) {
+		name, _ := descriptor["name"].(string)
+		matches := interfaceSuffixPattern.FindStringSubmatch(name)
+		if len(matches) != 3 || strings.HasPrefix(name, "internal") {
+			continue
+		}
+		existingSlot := intFromConfig(descriptor["slot"])
+		number, err := strconv.Atoi(matches[2])
+		if err != nil {
+			continue
+		}
+		return matches[1] + strconv.Itoa(externalSlot+number-(existingSlot-internalCount))
+	}
+	return fmt.Sprintf("eth%d", externalSlot)
+}
+
+func appendInterfaceConfig(config map[string]any, value domain.Interface) {
+	descriptors := configMaps(config["interfaces"])
+	descriptors = append(descriptors, map[string]any{
+		"id": string(value.ID), "slot": value.Slot, "name": value.Name, "driver": value.Driver,
+		"mac_address": value.MACAddress, "internal": strings.HasPrefix(value.Name, "internal"),
+	})
+	sort.Slice(descriptors, func(left, right int) bool {
+		return intFromConfig(descriptors[left]["slot"]) < intFromConfig(descriptors[right]["slot"])
+	})
+	config["interfaces"] = descriptors
+
+	network := configMaps(config["network_interfaces"])
+	for _, configured := range network {
+		if configured["name"] == value.Name {
+			config["network_interfaces"] = network
+			return
+		}
+	}
+	network = append(network, map[string]any{"name": value.Name, "modes": []string{}, "addresses": []string{}, "routes": []domain.RouteConfig{}})
+	order := make(map[string]int, len(descriptors))
+	for index, descriptor := range descriptors {
+		order[fmt.Sprint(descriptor["name"])] = index
+	}
+	sort.SliceStable(network, func(left, right int) bool {
+		return order[fmt.Sprint(network[left]["name"])] < order[fmt.Sprint(network[right]["name"])]
+	})
+	config["network_interfaces"] = network
+}
+
+func removeInterfaceConfig(config map[string]any, id domain.ID, name string) {
+	descriptors := configMaps(config["interfaces"])
+	keptDescriptors := descriptors[:0]
+	for _, descriptor := range descriptors {
+		if fmt.Sprint(descriptor["id"]) != string(id) {
+			keptDescriptors = append(keptDescriptors, descriptor)
+		}
+	}
+	config["interfaces"] = keptDescriptors
+	network := configMaps(config["network_interfaces"])
+	keptNetwork := network[:0]
+	for _, configured := range network {
+		if fmt.Sprint(configured["name"]) != name {
+			keptNetwork = append(keptNetwork, configured)
+		}
+	}
+	config["network_interfaces"] = keptNetwork
+}
+
+func configMaps(value any) []map[string]any {
+	switch values := value.(type) {
+	case []map[string]any:
+		return append([]map[string]any(nil), values...)
+	case []any:
+		result := make([]map[string]any, 0, len(values))
+		for _, raw := range values {
+			if item, ok := raw.(map[string]any); ok {
+				result = append(result, item)
+			}
+		}
+		return result
+	default:
+		return nil
+	}
+}
+
+func intFromConfig(value any) int {
+	switch number := value.(type) {
+	case int:
+		return number
+	case int64:
+		return int(number)
+	case float64:
+		return int(number)
+	case json.Number:
+		parsed, _ := strconv.Atoi(number.String())
+		return parsed
+	default:
+		return 0
+	}
+}
+
+func updateNodeInterfaceConfig(ctx context.Context, tx *sql.Tx, nodeID domain.ID, config map[string]any) error {
+	body, err := json.Marshal(config)
+	if err != nil {
+		return err
+	}
+	_, err = tx.ExecContext(ctx, `UPDATE nodes SET config_json=?,revision=revision+1,updated_at=? WHERE id=?`, body, time.Now().UTC().Format(time.RFC3339Nano), nodeID)
+	return err
 }
 
 func (r *TopologyRepository) UpdateNodeResources(ctx context.Context, id domain.ID, expected domain.Revision, cpuCount int, quota int64, memoryMiB int) (domain.Node, error) {

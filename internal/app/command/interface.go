@@ -14,6 +14,7 @@ type InterfaceRepository interface {
 	GetInterface(context.Context, domain.ID) (domain.Interface, error)
 	ReserveInterface(context.Context, domain.Interface, int) (domain.Interface, error)
 	DeleteInterface(context.Context, domain.ID, domain.Revision) error
+	SetInterfaceOperationalState(context.Context, domain.ID, string) error
 }
 
 type InterfaceHotplugger interface {
@@ -130,6 +131,14 @@ func (s *InterfaceService) handleAdd(ctx context.Context, value *domain.Operatio
 	value.ProgressCurrent = 2
 	if err = s.hotplugger.HotAddInterface(ctx, node, iface, tap); err != nil {
 		return nil, s.rollbackAdd(iface, tap, err, true)
+	}
+	if err = s.repository.SetInterfaceOperationalState(ctx, iface.ID, "down"); err != nil {
+		removeErr := s.hotplugger.HotRemoveInterface(context.Background(), node, iface)
+		rollbackErr := s.rollbackAdd(iface, tap, err, true)
+		if removeErr != nil {
+			return nil, domain.Problem{Code: "interface_hot_add_cleanup_failed", Message: err.Error(), Retryable: true, ResourceType: "interface", ResourceID: iface.ID, Phase: "hot_add", Cleanup: fmt.Sprintf("QMP rollback: %v; persistence cleanup: %v", removeErr, rollbackErr), OperatorHint: "inspect the node QMP state and remove the stale device before retrying"}
+		}
+		return nil, rollbackErr
 	}
 	value.ProgressCurrent = 3
 	return map[string]any{"interface_id": iface.ID, "tap": tap}, nil

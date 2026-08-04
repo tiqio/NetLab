@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"sync"
@@ -111,6 +112,104 @@ func TestReserveInterfaceSerializesConcurrentRequests(t *testing.T) {
 	}
 	if succeeded != 1 || exhausted != 1 {
 		t.Fatalf("succeeded=%d exhausted=%d", succeeded, exhausted)
+	}
+}
+
+func TestReserveAndDeleteInterfaceKeepNodeConfigSynchronized(t *testing.T) {
+	database, repository, node, interfaces := newInterfaceReservationNodeWithConfig(t, map[string]any{
+		"interface_name_format": "ens%d",
+		"network_interfaces": []any{
+			map[string]any{"name": "ens0", "modes": []any{"dhcpv4"}, "addresses": []any{}},
+		},
+	})
+	defer database.Close()
+	ctx := context.Background()
+
+	reserved, err := repository.ReserveInterface(ctx, reservationCandidate(node.ID, "66"), 64)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if reserved.Name != "ens1" || reserved.Slot != 1 {
+		t.Fatalf("reserved=%+v", reserved)
+	}
+
+	updated, err := repository.GetNode(ctx, node.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updated.Revision != node.Revision.Next() {
+		t.Fatalf("revision=%d want=%d", updated.Revision, node.Revision.Next())
+	}
+	assertNodeConfigInterfaceCount(t, updated, 2)
+
+	settings := domain.NodeSettings{
+		Name: updated.Name, CPUCount: updated.CPUCount, CPUQuotaMicros: updated.CPUQuotaMicros,
+		MemoryMiB: updated.MemoryMiB, InterfaceLimit: updated.InterfaceLimit, ProcessLimit: updated.ProcessLimit,
+		NetworkInterfaces: []domain.NodeNetworkInterfaceSettings{
+			{ID: interfaces[0].ID, Name: "ens0", Driver: interfaces[0].Driver, Modes: []string{"dhcpv4"}},
+			{ID: reserved.ID, Name: "ens1", Driver: reserved.Driver},
+		},
+	}
+	updated, err = repository.UpdateNodeSettings(ctx, node.ID, updated.Revision, settings)
+	if err != nil {
+		t.Fatalf("settings after reserve: %v", err)
+	}
+	reserved, err = repository.GetInterface(ctx, reserved.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = repository.DeleteInterface(ctx, reserved.ID, reserved.Revision); err != nil {
+		t.Fatal(err)
+	}
+	updated, err = repository.GetNode(ctx, node.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertNodeConfigInterfaceCount(t, updated, 1)
+	encoded, _ := json.Marshal(updated.Config["network_interfaces"])
+	if string(encoded) == "" || string(encoded) == "null" || string(encoded) == "[]" {
+		t.Fatalf("network_interfaces=%s", encoded)
+	}
+}
+
+func newInterfaceReservationNodeWithConfig(t *testing.T, config map[string]any) (*Database, *TopologyRepository, domain.Node, []domain.Interface) {
+	t.Helper()
+	ctx := context.Background()
+	database, err := Open(ctx, filepath.Join(t.TempDir(), "netlab.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	repository := NewTopologyRepository(database)
+	lab, err := command.NewLaboratoryService(repository).Create(ctx, "reservation-config", "", domain.RecoveryAutoRestore)
+	if err != nil {
+		database.Close()
+		t.Fatal(err)
+	}
+	node, interfaces, err := command.NewNodeService(repository).CreateConfigured(ctx, lab.ID, command.CreateNodeRequest{
+		Name: "qemu", Kind: "qemu", CPUCount: 1, MemoryMiB: 512, ProcessLimit: 4096,
+		InterfaceCount: 1, InterfaceLimit: 64, Config: config,
+	})
+	if err != nil {
+		database.Close()
+		t.Fatal(err)
+	}
+	return database, repository, node, interfaces
+}
+
+func assertNodeConfigInterfaceCount(t *testing.T, node domain.Node, expected int) {
+	t.Helper()
+	for _, key := range []string{"interfaces", "network_interfaces"} {
+		body, err := json.Marshal(node.Config[key])
+		if err != nil {
+			t.Fatal(err)
+		}
+		var values []any
+		if err = json.Unmarshal(body, &values); err != nil {
+			t.Fatalf("%s=%s: %v", key, body, err)
+		}
+		if len(values) != expected {
+			t.Fatalf("%s count=%d want=%d body=%s", key, len(values), expected, body)
+		}
 	}
 }
 

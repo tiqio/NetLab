@@ -19,6 +19,8 @@ type interfaceMemory struct {
 	owned      int
 	unowned    int
 	ownerErr   error
+	state      string
+	stateErr   error
 }
 
 func (m *interfaceMemory) GetNode(context.Context, domain.ID) (domain.Node, error) {
@@ -49,6 +51,11 @@ func (m *interfaceMemory) ReserveInterface(_ context.Context, value domain.Inter
 func (m *interfaceMemory) DeleteInterface(context.Context, domain.ID, domain.Revision) error {
 	m.deleted++
 	return nil
+}
+
+func (m *interfaceMemory) SetInterfaceOperationalState(_ context.Context, _ domain.ID, state string) error {
+	m.state = state
+	return m.stateErr
 }
 
 func (m *interfaceMemory) UpsertRuntimeOwnership(context.Context, string, domain.ID, string, string, map[string]string, string) error {
@@ -136,6 +143,21 @@ func TestInterfaceOwnershipFailureRollsBackTapAndRow(t *testing.T) {
 	}
 	if taps.created != 1 || taps.deleted != 1 || repository.deleted != 1 || repository.owned != 1 || repository.unowned != 1 {
 		t.Fatalf("taps=%+v repository=%+v", taps, repository)
+	}
+}
+
+func TestInterfaceHotAddMarksUnconnectedInterfaceDown(t *testing.T) {
+	iface := domain.Interface{ID: "iface", NodeID: "node", Revision: 1, OperationalState: "pending"}
+	repository := &interfaceMemory{node: domain.Node{ID: "node", Kind: "qemu", ObservedState: domain.ObservedRunning}, iface: iface}
+	taps := &tapRecorder{}
+	service := &InterfaceService{repository: repository, hotplugger: failingHotplugger{}, taps: taps}
+	taskValue := &domain.OperationTask{Input: map[string]any{"node_id": "node", "interface_id": "iface", "tap_name": "nltap"}}
+
+	if _, err := service.handleAdd(context.Background(), taskValue); err != nil {
+		t.Fatal(err)
+	}
+	if repository.state != "down" {
+		t.Fatalf("operational state=%q", repository.state)
 	}
 }
 

@@ -66,13 +66,15 @@ wait_node() {
 }
 
 wait_capability() {
-  local id=$1 capability=$2 deadline=$((SECONDS + POLL_SECONDS)) observations state
+  local id=$1 capability=$2 deadline=$((SECONDS + POLL_SECONDS)) observations state retryable
   while (( SECONDS < deadline )); do
     observations=$(api GET "/nodes/$id/capabilities")
     state=$(jq -r --arg capability "$capability" 'first(.observations[] | select(.capability==$capability)) | .state // "unknown"' <<<"$observations")
+    retryable=$(jq -r --arg capability "$capability" 'first(.observations[] | select(.capability==$capability)) | .problem.retryable // false' <<<"$observations")
     case $state in
       ready) printf '%s\n' "$observations"; return 0 ;;
-      unavailable|failed) printf '%s\n' "$observations" >&2; return 1 ;;
+      failed) printf '%s\n' "$observations" >&2; return 1 ;;
+      unavailable) [[ $retryable == true ]] || { printf '%s\n' "$observations" >&2; return 1; } ;;
     esac
     sleep 1
   done
