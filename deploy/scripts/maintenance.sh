@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -Eeuo pipefail
 
 config_file=${NETLAB_CONFIG:-/etc/netlab/netlab.yaml}
 state_dir=${NETLAB_STATE_DIR:-/var/lib/netlab}
@@ -9,6 +9,7 @@ retention_days=${NETLAB_RETENTION_DAYS:-30}
 batch_size=${NETLAB_RETENTION_BATCH_SIZE:-10000}
 lock_file=${NETLAB_MAINTENANCE_LOCK:-$state_dir/.maintenance.lock}
 max_io_pressure=${NETLAB_MAX_IO_PRESSURE:-80}
+sync_bin=${NETLAB_SYNC_BIN:-sync}
 
 usage() {
   echo "usage: $0 {inventory|backup [DESTINATION]|cleanup|verify|restore BACKUP|vacuum|reset-labs [--execute]|prune [--execute]}" >&2
@@ -17,7 +18,7 @@ usage() {
 
 require_tools() {
   local tool
-  for tool in sqlite3 sha256sum awk df stat flock sync; do
+  for tool in sqlite3 sha256sum awk df stat flock "$sync_bin"; do
     command -v "$tool" >/dev/null || { echo "missing required command: $tool" >&2; exit 1; }
   done
 }
@@ -41,8 +42,8 @@ integrity_check() {
 }
 
 fsync_path() {
-  sync -f "$1"
-  sync -f "$(dirname "$1")"
+  "$sync_bin" -f "$1"
+  "$sync_bin" -f "$(dirname "$1")"
 }
 
 io_preflight() {
@@ -103,7 +104,7 @@ atomic_replace() {
       for name in netlab.db netlab.db-wal netlab.db-shm; do
         [[ -e "$rollback_dir/$name" ]] && mv -f "$rollback_dir/$name" "$(dirname "$database")/$name"
       done
-      sync -f "$(dirname "$database")" || true
+      "$sync_bin" -f "$(dirname "$database")" || true
     fi
     exit "$status"
   }

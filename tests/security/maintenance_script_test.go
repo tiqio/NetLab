@@ -23,8 +23,9 @@ func TestMaintenanceScriptUsesAtomicSQLiteSafetyAndExplicitReset(t *testing.T) {
 		"PRAGMA integrity_check",
 		"PRAGMA foreign_key_check",
 		"flock -n",
+		"set -Eeuo pipefail",
 		"atomic_replace",
-		"sync -f",
+		`"$sync_bin" -f`,
 		"io.netlab.node_id",
 		"startswith(\"netlab:\")",
 		"foreign_observed",
@@ -45,6 +46,46 @@ func TestMaintenanceScriptUsesAtomicSQLiteSafetyAndExplicitReset(t *testing.T) {
 	command := exec.Command("bash", "-n", "../../deploy/scripts/maintenance.sh")
 	if output, err := command.CombinedOutput(); err != nil {
 		t.Fatalf("maintenance syntax: %v: %s", err, output)
+	}
+}
+
+func TestMaintenanceAtomicReplacementRollsBackOnFsyncFailure(t *testing.T) {
+	if _, err := exec.LookPath("sqlite3"); err != nil {
+		t.Skip("sqlite3 CLI unavailable")
+	}
+	stateDirectory := t.TempDir()
+	databasePath := filepath.Join(stateDirectory, "netlab.db")
+	database, err := storesqlite.Open(context.Background(), databasePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+	if _, err = database.DB.Exec(`INSERT INTO laboratories(id,name,created_at,updated_at) VALUES('keep','Keep',?,?)`, now, now); err != nil {
+		database.Close()
+		t.Fatal(err)
+	}
+	if err = database.Close(); err != nil {
+		t.Fatal(err)
+	}
+	failingSync := filepath.Join(stateDirectory, "sync-fail")
+	if err = os.WriteFile(failingSync, []byte("#!/bin/sh\nexit 74\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	command := exec.Command("bash", "../../deploy/scripts/maintenance.sh", "vacuum")
+	command.Env = append(os.Environ(),
+		"NETLAB_STATE_DIR="+stateDirectory,
+		"NETLAB_DATABASE="+databasePath,
+		"NETLAB_SKIP_SERVICE_CHECK=1",
+		"NETLAB_SKIP_IO_HEALTH_CHECK=1",
+		"NETLAB_SYNC_BIN="+failingSync,
+	)
+	if output, runErr := command.CombinedOutput(); runErr == nil {
+		t.Fatalf("vacuum unexpectedly succeeded: %s", output)
+	}
+	query := exec.Command("sqlite3", databasePath, `SELECT count(*) FROM laboratories WHERE id='keep'`)
+	body, queryErr := query.CombinedOutput()
+	if queryErr != nil || strings.TrimSpace(string(body)) != "1" {
+		t.Fatalf("original database was not restored after fsync failure: %v: %s", queryErr, body)
 	}
 }
 
