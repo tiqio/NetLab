@@ -415,3 +415,8 @@
   verification ran before the HTTP listener became ready. Target inspection also identified
   `netlab-preview.service` as the parent that restarted the legacy process. The local fix adds a bounded
   listener wait and explicitly disables that known preview unit when legacy retirement is requested.
+- The second target attempt disabled the preview unit but encountered host storage distress: an older
+  `netlabd` remained in uninterruptible `D` state, the replacement waited on the 7.1 GiB SQLite state,
+  `vmstat` reported sustained blocked I/O, and kernel history contained `sda`/EXT4 write errors from July
+  30, 2026. Deployment verification now allows the documented 180-second recovery window and fails fast
+  when systemd becomes inactive, but further target replacement is suspended until host I/O recovers.
