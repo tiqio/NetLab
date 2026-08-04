@@ -7,6 +7,9 @@ import (
 
 func TestDefaultsWarnAndValidate(t *testing.T) {
 	c := Defaults()
+	if c.Captures.Concurrent != 16 {
+		t.Fatalf("capture concurrency=%d", c.Captures.Concurrent)
+	}
 	if err := c.Validate(); err != nil {
 		t.Fatal(err)
 	}

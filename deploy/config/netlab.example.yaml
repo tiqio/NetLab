@@ -19,7 +19,7 @@ startup_concurrency:
   qemu: 2
   other: 4
 captures:
-  concurrent: 4
+  concurrent: 16
   duration: "15m"
   max_bytes: 268435456
   retention: "24h"

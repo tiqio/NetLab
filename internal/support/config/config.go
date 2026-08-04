@@ -58,7 +58,7 @@ func Defaults() Config {
 	c.Deployment.Role = "development"
 	c.StartupConcurrency.QEMU = 2
 	c.StartupConcurrency.Other = 4
-	c.Captures.Concurrent = 4
+	c.Captures.Concurrent = 16
 	c.Captures.Duration = 15 * time.Minute
 	c.Captures.MaxBytes = 256 << 20
 	c.Captures.Retention = 24 * time.Hour

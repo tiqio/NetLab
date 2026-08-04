@@ -67,7 +67,7 @@ type CaptureManager struct {
 
 func NewCaptureManager(stateDir string, concurrent int, globalMaxBytes int64, retention time.Duration, artifacts ...CaptureArtifactService) *CaptureManager {
 	if concurrent < 1 {
-		concurrent = 4
+		concurrent = 16
 	}
 	if globalMaxBytes < 1 {
 		globalMaxBytes = 10 << 30

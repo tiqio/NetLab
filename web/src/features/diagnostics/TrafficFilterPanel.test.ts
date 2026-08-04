@@ -257,6 +257,29 @@ describe("TrafficFilterPanel interactions", () => {
     );
   });
 
+  it("reports two capture slots for each directional object link", async () => {
+    const wrapper = mount(TrafficFilterPanel, {
+      props: {
+        laboratoryId: "lab",
+        nodes,
+        interfaces,
+        links: [],
+        attachments,
+        networkObjects,
+        networkObjectLinks: [...networkObjectLinks],
+      },
+    });
+    await flushPromises();
+
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("已连接链路"))!
+      .trigger("click");
+
+    expect(wrapper.text()).toContain("2 个监听源，预计占用 3 个抓包槽位");
+    expect(wrapper.text()).toContain("对象链路为区分方向占 2 个");
+  });
+
   it("starts multiple connected interfaces and follows the durable task", async () => {
     const startTrafficFilter = vi
       .spyOn(api, "startTrafficFilter")

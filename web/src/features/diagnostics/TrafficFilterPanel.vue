@@ -88,6 +88,12 @@ const selectedScopeCount = computed(
     selectedLinkIds.value.length +
     selectedObjectLinkIds.value.length,
 );
+const selectedCaptureSlots = computed(
+  () =>
+    selectedInterfaceIds.value.length +
+    selectedLinkIds.value.length +
+    selectedObjectLinkIds.value.length * 2,
+);
 const colorValid = computed(() => /^#[0-9a-fA-F]{6}$/.test(color.value));
 const interfacesByNode = computed(() =>
   (props.nodes || [])
@@ -472,7 +478,8 @@ function applyExample(value: string | number | undefined) {
           <strong class="text-xs">监听范围</strong>
           <span class="text-xs text-muted-foreground">
             已选择
-            {{ selectedScopeCount }} 个监听源；每个接口或链路占用一个抓包槽位。
+            {{ selectedScopeCount }} 个监听源，预计占用
+            {{ selectedCaptureSlots }} 个抓包槽位；普通接口/链路占 1 个，对象链路为区分方向占 2 个。
           </span>
           <Button
             size="sm"
