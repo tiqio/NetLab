@@ -81,10 +81,12 @@ trap cleanup EXIT
 
 name="t225-restart-$(date -u +%Y%m%dT%H%M%SZ)"
 LAB_ID=$(api POST /labs "$(jq -nc --arg name "$name" '{name:$name,recovery_policy:"auto_restore"}')" | jq -r .id)
-qemu_version=$(api GET /templates | jq -r 'first(.[] | select(.template_key=="ubuntu-qemu") | .versions[] | select(.enabled and .image_version_id!=null) | .id)')
-[[ -n $qemu_version && $qemu_version != null ]] || { echo 'no enabled ubuntu-qemu image binding' >&2; exit 77; }
+qemu_version=$(api GET /templates | jq -r 'first(.[] | select(.template_key=="ubuntu-qemu") | .versions[] | select(.enabled) | .id)')
+qemu_image=$(api GET /images | jq -r 'first(.[] | select(.runtime_kind=="qemu" and .availability=="available" and (.name | ascii_downcase)=="ubuntu") | .id)')
+[[ -n $qemu_version && $qemu_version != null ]] || { echo 'no enabled ubuntu-qemu template version' >&2; exit 77; }
+[[ -n $qemu_image && $qemu_image != null ]] || { echo 'no available Ubuntu QEMU image' >&2; exit 77; }
 
-qemu=$(api POST "/labs/$LAB_ID/nodes" "$(jq -nc --arg version "$qemu_version" '{name:"qemu",template_version_id:$version,cpu_count:2,memory_mib:1024,storage_gib:8,interface_count:2,interface_limit:4}')")
+qemu=$(api POST "/labs/$LAB_ID/nodes" "$(jq -nc --arg version "$qemu_version" --arg image "$qemu_image" '{name:"qemu",template_version_id:$version,image_version_id:$image,cpu_count:2,memory_mib:1024,storage_gib:8,interface_count:2,interface_limit:4}')")
 QEMU_NODE=$(jq -r .node.id <<<"$qemu")
 QEMU_IF0=$(jq -r '.interfaces[0].id' <<<"$qemu")
 QEMU_IF1=$(jq -r '.interfaces[1].id' <<<"$qemu")

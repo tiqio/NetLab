@@ -463,3 +463,7 @@
   hard-coded port 8088 for its raw console and event WebSockets. Both socket checks now derive host and
   port from the same validated HTTP base URL, so the script exercises the actual `10.72.1.7:18082`
   authority rather than a stale development endpoint.
+- Fresh-reset template data keeps enabled template versions and image versions as separate selectable
+  resources. The restart journey no longer requires `template_versions.image_version_id`; it selects an
+  enabled `ubuntu-qemu` version plus an available Ubuntu QEMU image and sends both IDs during node create,
+  matching the production API and browser workflow.
