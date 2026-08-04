@@ -51,10 +51,10 @@ func (r *SwitchL3Runtime) Configure(ctx context.Context, object domain.NetworkOb
 	if err := ensureNamespace(ctx, r.executor, r.ip, namespace); err != nil {
 		return err
 	}
-	if err := r.executor.Run(ctx, r.ip, "-n", namespace, "route", "flush", "table", "main"); err != nil {
+	if err := r.executor.Run(ctx, r.ip, "-n", namespace, "route", "flush", "table", "main"); err != nil && !missingFIBTable(err) {
 		return err
 	}
-	if err := r.executor.Run(ctx, r.ip, "-n", namespace, "-6", "route", "flush", "table", "main"); err != nil {
+	if err := r.executor.Run(ctx, r.ip, "-n", namespace, "-6", "route", "flush", "table", "main"); err != nil && !missingFIBTable(err) {
 		return err
 	}
 	for _, iface := range config.Interfaces {
@@ -103,6 +103,10 @@ func (r *SwitchL3Runtime) Configure(ctx context.Context, object domain.NetworkOb
 	_ = r.executor.Run(ctx, r.ip, "netns", "exec", namespace, "sysctl", "-w", "net.ipv4.ip_forward="+forwardIPv4)
 	_ = r.executor.Run(ctx, r.ip, "netns", "exec", namespace, "sysctl", "-w", "net.ipv6.conf.all.forwarding="+forwardIPv6)
 	return nil
+}
+
+func missingFIBTable(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "FIB table does not exist")
 }
 func (r *SwitchL3Runtime) Delete(ctx context.Context, id domain.ID) error {
 	return deleteNamespace(ctx, r.executor, r.ip, ownership.Name("nlr", id, 15))

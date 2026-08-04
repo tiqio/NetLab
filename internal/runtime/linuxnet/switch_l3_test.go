@@ -59,3 +59,28 @@ func TestL3RetriesRouteAfterTransientGatewayFailure(t *testing.T) {
 		t.Fatalf("route attempts=%d, want 2", executor.routeAttempts)
 	}
 }
+
+type missingFIBExecutor struct {
+	scriptExecutor
+}
+
+func (e *missingFIBExecutor) Run(ctx context.Context, name string, args ...string) error {
+	command := name + " " + strings.Join(args, " ")
+	e.commands = append(e.commands, command)
+	if strings.Contains(command, "route flush table main") {
+		return errors.New("ipv4: FIB table does not exist")
+	}
+	return nil
+}
+
+func TestL3AllowsAnInitiallyEmptyFIBTable(t *testing.T) {
+	executor := &missingFIBExecutor{}
+	runtime, _ := NewSwitchL3Runtime(executor)
+	object := domain.NetworkObject{ID: "r-empty", Config: map[string]any{
+		"interfaces":   []any{map[string]any{"name": "eth0", "addresses": []any{"192.0.2.1/24"}}},
+		"forward_ipv4": true,
+	}}
+	if err := runtime.Configure(context.Background(), object); err != nil {
+		t.Fatal(err)
+	}
+}
