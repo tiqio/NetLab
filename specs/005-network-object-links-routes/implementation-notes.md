@@ -542,3 +542,17 @@ TestNetworkObjectLinkCreateIsDurableIdempotentAndObservable -count=1` all passed
   `10.72.1.7:18082`, with target `captures.concurrent: 16`. A real six-slot ICMP filter covering the two
   Docker interfaces and two object links started successfully; all six workers remain `running` without
   errors and produced observations on all four selected resources in both traffic directions.
+
+## Running Filter Replacement Follow-Up — August 4, 2026
+
+- Milestone `3ee28d3` changes the active-session action to `应用并重启`. The panel validates the edited
+  expression first, waits for the durable stop task to release all workers, then starts a replacement with
+  the same edited expression, color, maximum, and observation scope. The UI selects the replacement and
+  reports that the old session was stopped automatically.
+- The same milestone fixes directional-port parsing so `udp dst port 19002` no longer produces a bogus
+  destination address named `port`. Thirteen focused parser and panel interaction tests, the production
+  Vue build, and frontend artifact hygiene passed locally.
+- Candidate `traffic-replace-3ee28d3-20260804` (`0.5.22+3ee28d3`) is deployed on the target. A headless
+  Chromium journey replaced a running six-slot ICMP session with UDP 19002 and then replaced that running
+  UDP session with TCP 19001. Each old session reached `stopped`; each replacement reached `running` with
+  the original four-source, six-slot scope and no manual Stop action.
