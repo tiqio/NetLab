@@ -38,6 +38,13 @@ describe("parseTrafficFilterMatch", () => {
     });
   });
 
+  it("does not treat the port keyword as a destination address", () => {
+    expect(parseTrafficFilterMatch("udp dst port 19002")).toEqual({
+      protocol: "udp",
+      destination_port: 19002,
+    });
+  });
+
   it("rejects unsupported logical text instead of silently changing it", () => {
     expect(() =>
       parseTrafficFilterMatch("tcp port 443 or udp port 53"),

@@ -280,6 +280,124 @@ describe("TrafficFilterPanel interactions", () => {
     expect(wrapper.text()).toContain("对象链路为区分方向占 2 个");
   });
 
+  it("stops the active filter before applying a changed expression", async () => {
+    vi.mocked(api.listTrafficFilters).mockResolvedValue([
+      {
+        ambiguous: false,
+        traffic_filter: {
+          id: "filter-running",
+          laboratory_id: "lab",
+          expression: "icmp",
+          color: "#22c55e",
+          state: "running",
+          max_observations: 1000,
+          interface_ids: ["if-a", "if-b"],
+          link_ids: [],
+          network_object_link_ids: [],
+          observations: [],
+          created_at: "2026-08-04T00:00:00Z",
+        },
+      },
+    ]);
+    const stopTrafficFilter = vi
+      .spyOn(api, "stopTrafficFilter")
+      .mockResolvedValue({
+        task: {
+          id: "task-stop",
+          kind: "traffic_filter.stop",
+          resource_type: "traffic_filter",
+          resource_id: "filter-running",
+          state: "queued",
+          progress_current: 0,
+          progress_total: 2,
+          created_at: "2026-08-04T00:00:01Z",
+        },
+      });
+    const startTrafficFilter = vi
+      .spyOn(api, "startTrafficFilter")
+      .mockResolvedValue({
+        task: {
+          id: "task-start-replacement",
+          kind: "traffic_filter.start",
+          resource_type: "traffic_filter",
+          resource_id: "filter-replacement",
+          state: "queued",
+          progress_current: 0,
+          progress_total: 2,
+          created_at: "2026-08-04T00:00:02Z",
+        },
+        traffic_filter: {
+          id: "filter-replacement",
+          laboratory_id: "lab",
+          expression: "udp and dst port 19002",
+          color: "#22c55e",
+          state: "starting",
+          max_observations: 1000,
+          interface_ids: ["if-a", "if-b"],
+          link_ids: [],
+          network_object_link_ids: [],
+          observations: [],
+          created_at: "2026-08-04T00:00:02Z",
+        },
+      });
+    vi.spyOn(api, "getTask").mockImplementation(async (id) => ({
+      id,
+      kind:
+        id === "task-stop"
+          ? "traffic_filter.stop"
+          : "traffic_filter.start",
+      resource_type: "traffic_filter",
+      resource_id:
+        id === "task-stop" ? "filter-running" : "filter-replacement",
+      state: "succeeded",
+      progress_current: 2,
+      progress_total: 2,
+      created_at: "2026-08-04T00:00:03Z",
+    }));
+    vi.spyOn(api, "getTrafficFilter").mockResolvedValue({
+      ambiguous: false,
+      traffic_filter: {
+        id: "filter-replacement",
+        laboratory_id: "lab",
+        expression: "udp and dst port 19002",
+        color: "#22c55e",
+        state: "running",
+        max_observations: 1000,
+        interface_ids: ["if-a", "if-b"],
+        link_ids: [],
+        network_object_link_ids: [],
+        observations: [],
+        created_at: "2026-08-04T00:00:02Z",
+      },
+    });
+    const wrapper = mount(TrafficFilterPanel, {
+      props: { laboratoryId: "lab", nodes, interfaces, links },
+    });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("应用并重启");
+    await wrapper
+      .find('input[aria-label="pcap 过滤表达式"]')
+      .setValue("udp dst port 19002");
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("应用并重启"))!
+      .trigger("click");
+    await flushPromises();
+
+    expect(stopTrafficFilter).toHaveBeenCalledWith("filter-running");
+    expect(startTrafficFilter).toHaveBeenCalledWith(
+      expect.objectContaining({
+        match: { protocol: "udp", destination_port: 19002 },
+        interface_ids: ["if-a", "if-b"],
+      }),
+    );
+    expect(
+      stopTrafficFilter.mock.invocationCallOrder[0],
+    ).toBeLessThan(startTrafficFilter.mock.invocationCallOrder[0]);
+    expect(wrapper.text()).toContain("旧会话已自动停止");
+  });
+
   it("starts multiple connected interfaces and follows the durable task", async () => {
     const startTrafficFilter = vi
       .spyOn(api, "startTrafficFilter")

@@ -204,6 +204,14 @@ async function start() {
   taskState.value = "queued";
   try {
     const match = parseTrafficFilterMatch(expression.value);
+    const replacedFilterId = active.value ? filter.value?.id : undefined;
+    if (replacedFilterId) {
+      const stopped = await api.stopTrafficFilter(replacedFilterId);
+      taskId.value = stopped.task.id;
+      taskState.value = stopped.task.state;
+      status.value = `正在停止旧 Traffic Filter 会话 ${replacedFilterId}`;
+      await waitForTask(stopped.task.id);
+    }
     const value = await api.startTrafficFilter({
       laboratory_id: props.laboratoryId,
       match,
@@ -219,7 +227,9 @@ async function start() {
     status.value = `正在启动 Traffic Filter 任务 ${value.task.id}`;
     await waitForTask(value.task.id);
     await refresh(false);
-    status.value = "Traffic Filter 已运行，并会自动刷新匹配结果。";
+    status.value = replacedFilterId
+      ? "旧会话已自动停止，新表达式已经开始监听。"
+      : "Traffic Filter 已运行，并会自动刷新匹配结果。";
   } catch (error) {
     status.value = errorMessage(error);
     await discover();
@@ -601,11 +611,13 @@ function applyExample(value: string | number | undefined) {
               ? '请至少选择一个接口或链路'
               : !colorValid
                 ? '请先修正高亮颜色'
-                : '启动 Traffic Filter'
+                : active
+                  ? '停止当前会话并应用新的监听配置'
+                  : '启动 Traffic Filter'
           "
           @click="start"
         >
-          <Activity :size="14" /> 启动
+          <Activity :size="14" /> {{ active ? "应用并重启" : "启动" }}
         </Button>
         <Button
           size="sm"
@@ -628,6 +640,9 @@ function applyExample(value: string | number | undefined) {
           任务 {{ taskId }} · {{ taskState }}
         </span>
       </div>
+      <p v-if="active" class="text-xs text-muted-foreground">
+        可以直接修改表达式、颜色或监听范围，然后点击“应用并重启”；系统会先停止当前会话，释放抓包槽位，再启动新会话。
+      </p>
       <p
         v-if="status"
         role="status"

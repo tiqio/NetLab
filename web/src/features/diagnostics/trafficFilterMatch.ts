@@ -31,10 +31,10 @@ export function parseTrafficFilterMatch(value: string): TrafficFilterMatch {
     );
   const match: TrafficFilterMatch = {};
   const sourceAddress = expression.match(
-    /\bsrc(?:\s+(?:host|net))?\s+([^\s]+)/i,
+    /\bsrc\s+(?:(?:host|net)\s+)?(?!port\b)([^\s]+)/i,
   );
   const destinationAddress = expression.match(
-    /\bdst(?:\s+(?:host|net))?\s+([^\s]+)/i,
+    /\bdst\s+(?:(?:host|net)\s+)?(?!port\b)([^\s]+)/i,
   );
   const sourcePort = expression.match(/\bsrc\s+port\s+(\d+)/i);
   const destinationPort = expression.match(/\bdst\s+port\s+(\d+)/i);
