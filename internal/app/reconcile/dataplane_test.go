@@ -13,6 +13,7 @@ type dataPlaneStoreFake struct {
 	linkState         string
 	interfaceStates   map[domain.ID]string
 	deleted           bool
+	attachments       []domain.NetworkAttachment
 	attachmentState   string
 	attachmentError   *domain.Problem
 	objectLinkState   string
@@ -26,7 +27,7 @@ func (s *dataPlaneStoreFake) Snapshot(context.Context, domain.ID) (domain.Topolo
 	return s.snapshot, nil
 }
 func (s *dataPlaneStoreFake) ListNetworkAttachments(context.Context, domain.ID) ([]domain.NetworkAttachment, error) {
-	return nil, nil
+	return s.attachments, nil
 }
 func (s *dataPlaneStoreFake) SetLinkObservedState(_ context.Context, _ domain.ID, state string) error {
 	s.linkState = state
@@ -109,6 +110,24 @@ func TestDataPlaneKeepsStoppedNodeLinksPending(t *testing.T) {
 	}
 	if store.linkState != "pending" || runtime.ensureCalls != 0 {
 		t.Fatalf("state=%s ensure_calls=%d", store.linkState, runtime.ensureCalls)
+	}
+}
+
+func TestDataPlaneMarksAttachedInterfaceUp(t *testing.T) {
+	store := &dataPlaneStoreFake{
+		lab:             domain.Laboratory{ID: "lab", LifecycleState: "active"},
+		interfaceStates: map[domain.ID]string{},
+		attachments:     []domain.NetworkAttachment{{ID: "attachment", InterfaceID: "interface", NetworkObjectID: "nat"}},
+	}
+	store.snapshot = domain.TopologySnapshot{
+		Interfaces:     []domain.Interface{{ID: "interface", NodeID: "node"}},
+		NetworkObjects: []domain.NetworkObject{{ID: "nat", Kind: domain.NetworkNAT}},
+	}
+	if err := NewDataPlaneReconciler(store, &dataPlaneRuntimeFake{}).Reconcile(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if store.attachmentState != "active" || store.interfaceStates["interface"] != "up" {
+		t.Fatalf("attachment=%s interfaces=%v", store.attachmentState, store.interfaceStates)
 	}
 }
 

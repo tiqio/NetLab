@@ -113,6 +113,7 @@ func (r *DataPlaneReconciler) Reconcile(ctx context.Context) (err error) {
 					continue
 				}
 				_ = r.store.SetNetworkAttachmentState(ctx, attachment.ID, "active", nil)
+				_ = r.store.SetInterfaceOperationalState(ctx, attachment.InterfaceID, "up")
 			}
 		}
 		for _, link := range snapshot.NetworkObjectLinks {

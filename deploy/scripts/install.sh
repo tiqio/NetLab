@@ -63,7 +63,7 @@ case "${1:-install}" in
     systemctl enable netlab
     systemctl restart netlab
     verified=0
-    for _ in {1..900}; do
+    for _ in {1..3000}; do
       if /usr/local/libexec/netlab/check-authority.sh verify >/dev/null 2>&1; then
         verified=1
         break
@@ -71,7 +71,7 @@ case "${1:-install}" in
       systemctl is-active --quiet netlab.service || break
       sleep 0.2
     done
-    ((verified == 1)) || { echo "authoritative listener did not become ready within 180 seconds" >&2; /usr/local/libexec/netlab/check-authority.sh verify || true; exit 1; }
+    ((verified == 1)) || { echo "authoritative listener did not become ready within 600 seconds" >&2; /usr/local/libexec/netlab/check-authority.sh verify || true; exit 1; }
     trap - EXIT
     [[ -n "${work:-}" ]] && rm -rf "$work"
     ;;

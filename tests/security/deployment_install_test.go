@@ -72,7 +72,7 @@ func TestInstallerWaitsForAuthorityAndRetiresPreviewUnit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(installer), "for _ in {1..900}") || !strings.Contains(string(installer), "authoritative listener did not become ready within 180 seconds") {
+	if !strings.Contains(string(installer), "for _ in {1..3000}") || !strings.Contains(string(installer), "authoritative listener did not become ready within 600 seconds") {
 		t.Fatal("installer does not wait for the authoritative listener")
 	}
 	if !strings.Contains(string(guard), "systemctl disable --now netlab-preview.service") {
@@ -91,7 +91,7 @@ func TestSystemdAuthorityRequiresApplicationReadiness(t *testing.T) {
 		t.Fatal(err)
 	}
 	text := string(body)
-	for _, required := range []string{"Type=notify", "NotifyAccess=main", "TimeoutStartSec=180s"} {
+	for _, required := range []string{"Type=notify", "NotifyAccess=main", "TimeoutStartSec=600s"} {
 		if !strings.Contains(text, required) {
 			t.Fatalf("systemd unit missing %q", required)
 		}
