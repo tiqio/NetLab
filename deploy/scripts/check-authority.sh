@@ -6,6 +6,10 @@ expected_port=${NETLAB_AUTHORITY_PORT:-18082}
 fixture=${NETLAB_SS_FIXTURE:-}
 proc_root=${NETLAB_PROC_ROOT:-/proc}
 
+if [[ ${NETLAB_RETIRE_LEGACY:-0} == 1 && -z "${NETLAB_SS_FIXTURE:-}" ]] && systemctl is-active --quiet netlab-preview.service; then
+  systemctl disable --now netlab-preview.service
+fi
+
 listeners() {
   if [[ -n "$fixture" ]]; then
     cat "$fixture"

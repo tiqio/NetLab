@@ -57,7 +57,15 @@ case "${1:-install}" in
     systemctl daemon-reload
     systemctl enable netlab
     systemctl restart netlab
-    /usr/local/libexec/netlab/check-authority.sh verify
+    verified=0
+    for _ in {1..100}; do
+      if /usr/local/libexec/netlab/check-authority.sh verify; then
+        verified=1
+        break
+      fi
+      sleep 0.2
+    done
+    ((verified == 1)) || { echo "authoritative listener did not become ready within 20 seconds" >&2; exit 1; }
     trap - EXIT
     [[ -n "${work:-}" ]] && rm -rf "$work"
     ;;

@@ -62,3 +62,20 @@ func TestGeneratedReadinessCoversEightBuiltIns(t *testing.T) {
 		}
 	}
 }
+
+func TestInstallerWaitsForAuthorityAndRetiresPreviewUnit(t *testing.T) {
+	installer, err := os.ReadFile("../../deploy/scripts/install.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	guard, err := os.ReadFile("../../deploy/scripts/check-authority.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(installer), "for _ in {1..100}") || !strings.Contains(string(installer), "authoritative listener did not become ready") {
+		t.Fatal("installer does not wait for the authoritative listener")
+	}
+	if !strings.Contains(string(guard), "systemctl disable --now netlab-preview.service") {
+		t.Fatal("authority guard does not retire the known preview unit")
+	}
+}

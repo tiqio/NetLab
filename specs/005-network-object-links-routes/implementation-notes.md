@@ -411,3 +411,7 @@
 - The complete acceptance-unit gate additionally exposed missing operation-registry entries for
   first-class object-link create/delete and node settings update, plus incorrect handling of a composite
   capture/filter interaction. The registry and inventory validator now enforce each real operation.
+- The first target deployment attempt on August 4, 2026 rolled back cleanly because immediate authority
+  verification ran before the HTTP listener became ready. Target inspection also identified
+  `netlab-preview.service` as the parent that restarted the legacy process. The local fix adds a bounded
+  listener wait and explicitly disables that known preview unit when legacy retirement is requested.
