@@ -270,6 +270,22 @@ test("target candidate validates console capture filter and live rewire", async 
   });
   expect(filterResponse.ok()).toBeTruthy();
   const filter = await filterResponse.json();
+  if (filter.task?.id)
+    expect((await waitTask(automation, filter.task.id)).state).toBe(
+      "succeeded",
+    );
+  await waitForCondition(
+    async () =>
+      (
+        await automation.get(
+          `/api/v1/traffic-filters/${filter.traffic_filter.id}`,
+        )
+      ).json(),
+    (value: { state?: string; traffic_filter?: { state?: string } }) =>
+      (value.traffic_filter?.state || value.state) === "running",
+    "traffic filter running",
+    30_000,
+  );
   await ledger.add({
     resource_type: "traffic_filter",
     resource_id: filter.traffic_filter.id,
