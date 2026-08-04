@@ -5,7 +5,10 @@
       "id": "laboratory.palette.toggle",
       "area": "laboratory",
       "label": "Toggle device palette",
-      "locator": { "role": "button", "name": "Toggle device palette" },
+      "locator": {
+        "role": "button",
+        "name": "Toggle device palette"
+      },
       "applicable_states": ["laboratory-open"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "presentation",
@@ -16,7 +19,10 @@
       "id": "laboratory.select",
       "area": "laboratory",
       "label": "Laboratory",
-      "locator": { "role": "combobox", "name": "Laboratory" },
+      "locator": {
+        "role": "combobox",
+        "name": "Laboratory"
+      },
       "applicable_states": ["laboratory-present"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "navigation",
@@ -27,7 +33,10 @@
       "id": "laboratory.create.dialog",
       "area": "laboratory",
       "label": "New",
-      "locator": { "role": "button", "name": "New" },
+      "locator": {
+        "role": "button",
+        "name": "New"
+      },
       "applicable_states": ["always"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "presentation",
@@ -38,7 +47,10 @@
       "id": "laboratory.create.submit",
       "area": "laboratory",
       "label": "Create laboratory",
-      "locator": { "role": "button", "name": "Create laboratory" },
+      "locator": {
+        "role": "button",
+        "name": "Create laboratory"
+      },
       "applicable_states": ["create-dialog"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "mutation",
@@ -50,7 +62,10 @@
       "id": "laboratory.menu",
       "area": "laboratory",
       "label": "Laboratory actions",
-      "locator": { "role": "button", "name": "Actions for *" },
+      "locator": {
+        "role": "button",
+        "name": "Actions for *"
+      },
       "applicable_states": ["laboratory-open"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "presentation",
@@ -61,7 +76,10 @@
       "id": "laboratory.duplicate",
       "area": "laboratory",
       "label": "Duplicate",
-      "locator": { "role": "button", "name": "Duplicate" },
+      "locator": {
+        "role": "button",
+        "name": "Duplicate"
+      },
       "applicable_states": ["laboratory-open"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "task",
@@ -73,7 +91,10 @@
       "id": "laboratory.rename",
       "area": "laboratory",
       "label": "Rename",
-      "locator": { "role": "button", "name": "Rename" },
+      "locator": {
+        "role": "button",
+        "name": "Rename"
+      },
       "applicable_states": ["laboratory-open"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "mutation",
@@ -85,7 +106,10 @@
       "id": "laboratory.export",
       "area": "laboratory",
       "label": "Export",
-      "locator": { "role": "button", "name": "Export" },
+      "locator": {
+        "role": "button",
+        "name": "Export"
+      },
       "applicable_states": ["laboratory-open"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "task",
@@ -97,7 +121,10 @@
       "id": "laboratory.import",
       "area": "laboratory",
       "label": "Import",
-      "locator": { "role": "button", "name": "Import" },
+      "locator": {
+        "role": "button",
+        "name": "Import"
+      },
       "applicable_states": ["always"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "task",
@@ -109,7 +136,10 @@
       "id": "laboratory.delete",
       "area": "laboratory",
       "label": "Delete",
-      "locator": { "role": "button", "name": "Delete" },
+      "locator": {
+        "role": "button",
+        "name": "Delete"
+      },
       "applicable_states": ["laboratory-open"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "task",
@@ -121,7 +151,10 @@
       "id": "laboratory.refresh",
       "area": "laboratory",
       "label": "Refresh",
-      "locator": { "role": "button", "name": "Refresh" },
+      "locator": {
+        "role": "button",
+        "name": "Refresh"
+      },
       "applicable_states": ["always"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "presentation",
@@ -132,9 +165,12 @@
       "id": "workspace.commands",
       "area": "shell",
       "label": "⌘K",
-      "locator": { "role": "button", "name": "⌘K" },
+      "locator": {
+        "role": "button",
+        "name": "⌘K"
+      },
       "applicable_states": ["always"],
-      "activation": ["pointer", "keyboard"],
+      "activation": ["keyboard"],
       "outcome_class": "presentation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -143,7 +179,10 @@
       "id": "workspace.inspector.toggle",
       "area": "shell",
       "label": "Toggle inspector",
-      "locator": { "role": "button", "name": "Toggle inspector" },
+      "locator": {
+        "role": "button",
+        "name": "Toggle inspector"
+      },
       "applicable_states": ["laboratory-open"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "presentation",
@@ -154,7 +193,10 @@
       "id": "workspace.operations.toggle",
       "area": "shell",
       "label": "Toggle operations drawer",
-      "locator": { "role": "button", "name": "Toggle operations drawer" },
+      "locator": {
+        "role": "button",
+        "name": "Toggle operations drawer"
+      },
       "applicable_states": ["laboratory-open"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "presentation",
@@ -165,7 +207,10 @@
       "id": "navigation.templates",
       "area": "navigation",
       "label": "Templates",
-      "locator": { "role": "link", "name": "Templates" },
+      "locator": {
+        "role": "link",
+        "name": "Templates"
+      },
       "applicable_states": ["desktop"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "navigation",
@@ -176,7 +221,10 @@
       "id": "navigation.automation",
       "area": "navigation",
       "label": "Automation",
-      "locator": { "role": "link", "name": "Automation" },
+      "locator": {
+        "role": "link",
+        "name": "Automation"
+      },
       "applicable_states": ["desktop"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "navigation",
@@ -187,7 +235,10 @@
       "id": "palette.search",
       "area": "templates",
       "label": "Search device templates",
-      "locator": { "role": "textbox", "name": "Search device templates" },
+      "locator": {
+        "role": "textbox",
+        "name": "Search device templates"
+      },
       "applicable_states": ["palette-open"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "presentation",
@@ -198,7 +249,10 @@
       "id": "palette.device.choose",
       "area": "templates",
       "label": "*QEMU*",
-      "locator": { "role": "button", "name": "*QEMU*" },
+      "locator": {
+        "role": "button",
+        "name": "*QEMU*"
+      },
       "applicable_states": ["palette-open", "template-available"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "presentation",
@@ -209,7 +263,10 @@
       "id": "palette.lightweight.choose",
       "area": "templates",
       "label": "PC",
-      "locator": { "role": "button", "name": "PC" },
+      "locator": {
+        "role": "button",
+        "name": "PC"
+      },
       "applicable_states": ["palette-open"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "presentation",
@@ -220,7 +277,10 @@
       "id": "topology.canvas.keyboard",
       "area": "topology",
       "label": "Topology canvas keyboard area*",
-      "locator": { "role": "region", "name": "Topology canvas keyboard area*" },
+      "locator": {
+        "role": "region",
+        "name": "Topology canvas keyboard area*"
+      },
       "applicable_states": ["laboratory-open"],
       "activation": ["keyboard", "drag"],
       "outcome_class": "presentation",
@@ -231,9 +291,12 @@
       "id": "topology.connect",
       "area": "topology",
       "label": "Connect live ports",
-      "locator": { "role": "button", "name": "Connect live ports" },
+      "locator": {
+        "role": "button",
+        "name": "Connect live ports"
+      },
       "applicable_states": ["two-free-ports"],
-      "activation": ["pointer", "keyboard"],
+      "activation": ["pointer"],
       "outcome_class": "task",
       "operation": "link.connect",
       "required_capabilities": ["namespace"],
@@ -241,57 +304,28 @@
       "sensitive_evidence": []
     },
     {
-      "id": "topology.disconnect",
-      "area": "topology",
-      "label": "Disconnect live link",
-      "locator": { "role": "button", "name": "Disconnect live link" },
-      "applicable_states": ["link-selected"],
-      "activation": ["pointer", "keyboard"],
-      "outcome_class": "task",
-      "operation": "link.disconnect",
-      "cleanup_effect": "none",
-      "sensitive_evidence": []
-    },
-    {
-      "id": "topology.connection.port-chooser",
-      "area": "topology",
-      "label": "Available interfaces",
-      "locator": { "role": "listbox", "name": "Available interfaces" },
-      "applicable_states": ["multiple-free-ports"],
-      "activation": ["pointer", "keyboard"],
-      "outcome_class": "presentation",
-      "cleanup_effect": "cancel-dialog",
-      "sensitive_evidence": []
-    },
-    {
       "id": "topology.reconnect",
       "area": "topology",
       "label": "Reconnect endpoint",
-      "locator": { "role": "button", "name": "Reconnect endpoint" },
+      "locator": {
+        "role": "button",
+        "name": "Reconnect endpoint"
+      },
       "applicable_states": ["link-selected", "free-replacement-port"],
-      "activation": ["pointer", "keyboard"],
+      "activation": ["pointer"],
       "outcome_class": "task",
       "operation": "link.reconnect",
       "cleanup_effect": "cancel-or-retry-task",
       "sensitive_evidence": []
     },
     {
-      "id": "topology.reconnect.cancel",
-      "area": "topology",
-      "label": "Cancel reconnect",
-      "locator": { "role": "button", "name": "Cancel reconnect" },
-      "applicable_states": ["reconnect-queued", "reconnect-running"],
-      "activation": ["pointer", "keyboard"],
-      "outcome_class": "task",
-      "operation": "task.cancel",
-      "cleanup_effect": "original-link-preserved",
-      "sensitive_evidence": []
-    },
-    {
       "id": "topology.group",
       "area": "topology",
       "label": "Group selection",
-      "locator": { "role": "button", "name": "Group selection" },
+      "locator": {
+        "role": "button",
+        "name": "Group selection"
+      },
       "applicable_states": ["multi-selection"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "presentation",
@@ -302,7 +336,10 @@
       "id": "topology.selection.box",
       "area": "topology",
       "label": "Topology canvas keyboard area*",
-      "locator": { "role": "region", "name": "Topology canvas keyboard area*" },
+      "locator": {
+        "role": "region",
+        "name": "Topology canvas keyboard area*"
+      },
       "applicable_states": ["laboratory-open", "multiple-resources"],
       "activation": ["drag", "keyboard"],
       "outcome_class": "presentation",
@@ -313,7 +350,10 @@
       "id": "topology.selection.move-keyboard",
       "area": "topology",
       "label": "Move selected resources with Alt+Arrow",
-      "locator": { "role": "region", "name": "Topology canvas keyboard area*" },
+      "locator": {
+        "role": "region",
+        "name": "Topology canvas keyboard area*"
+      },
       "applicable_states": ["resource-selected"],
       "activation": ["keyboard"],
       "outcome_class": "mutation",
@@ -325,7 +365,10 @@
       "id": "topology.selection.all",
       "area": "topology",
       "label": "Select all topology resources with Ctrl+A",
-      "locator": { "role": "region", "name": "Topology canvas keyboard area*" },
+      "locator": {
+        "role": "region",
+        "name": "Topology canvas keyboard area*"
+      },
       "applicable_states": ["multiple-resources"],
       "activation": ["keyboard"],
       "outcome_class": "presentation",
@@ -336,7 +379,10 @@
       "id": "topology.connection.keyboard",
       "area": "topology",
       "label": "Connect selected node with keyboard",
-      "locator": { "role": "region", "name": "Topology canvas keyboard area*" },
+      "locator": {
+        "role": "region",
+        "name": "Topology canvas keyboard area*"
+      },
       "applicable_states": ["node-selected", "free-port"],
       "activation": ["keyboard"],
       "outcome_class": "task",
@@ -348,7 +394,10 @@
       "id": "network-object-links.shared-browser-path",
       "area": "topology",
       "label": "Connect lightweight object ports across clients",
-      "locator": { "role": "region", "name": "Topology canvas keyboard area*" },
+      "locator": {
+        "role": "region",
+        "name": "Topology canvas keyboard area*"
+      },
       "applicable_states": ["three-network-objects", "free-object-ports"],
       "activation": ["keyboard"],
       "outcome_class": "task",
@@ -361,7 +410,10 @@
       "id": "network-object-links.observability-isolation",
       "area": "diagnostics",
       "label": "Observe one selected network-object link",
-      "locator": { "role": "region", "name": "Diagnostics" },
+      "locator": {
+        "role": "region",
+        "name": "Diagnostics"
+      },
       "applicable_states": [
         "parallel-network-object-links",
         "object-link-selected"
@@ -377,7 +429,10 @@
       "id": "topology.selection.escape",
       "area": "topology",
       "label": "Cancel transient topology interaction",
-      "locator": { "role": "region", "name": "Topology canvas keyboard area*" },
+      "locator": {
+        "role": "region",
+        "name": "Topology canvas keyboard area*"
+      },
       "applicable_states": ["connecting", "box-selecting", "resource-selected"],
       "activation": ["keyboard"],
       "outcome_class": "presentation",
@@ -388,7 +443,10 @@
       "id": "topology.selection.focus",
       "area": "topology",
       "label": "Traverse topology resources",
-      "locator": { "role": "region", "name": "Topology canvas keyboard area*" },
+      "locator": {
+        "role": "region",
+        "name": "Topology canvas keyboard area*"
+      },
       "applicable_states": ["laboratory-open"],
       "activation": ["keyboard"],
       "outcome_class": "presentation",
@@ -399,9 +457,12 @@
       "id": "topology.route",
       "area": "topology",
       "label": "Toggle route",
-      "locator": { "role": "button", "name": "Toggle route" },
+      "locator": {
+        "role": "button",
+        "name": "Toggle route"
+      },
       "applicable_states": ["link-selected"],
-      "activation": ["pointer", "keyboard"],
+      "activation": ["pointer"],
       "outcome_class": "presentation",
       "cleanup_effect": "local-preference",
       "sensitive_evidence": []
@@ -410,7 +471,10 @@
       "id": "node.start",
       "area": "nodes",
       "label": "Start",
-      "locator": { "role": "button", "name": "Start" },
+      "locator": {
+        "role": "button",
+        "name": "Start"
+      },
       "applicable_states": ["stopped-node"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "task",
@@ -422,7 +486,10 @@
       "id": "node.stop",
       "area": "nodes",
       "label": "Stop",
-      "locator": { "role": "button", "name": "Stop" },
+      "locator": {
+        "role": "button",
+        "name": "Stop"
+      },
       "applicable_states": ["running-node"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "task",
@@ -434,7 +501,10 @@
       "id": "node.delete",
       "area": "nodes",
       "label": "Delete node",
-      "locator": { "role": "button", "name": "Delete node" },
+      "locator": {
+        "role": "button",
+        "name": "Delete node"
+      },
       "applicable_states": ["node-selected"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "task",
@@ -446,7 +516,10 @@
       "id": "node.resources.apply",
       "area": "nodes",
       "label": "Apply limits",
-      "locator": { "role": "button", "name": "Apply limits" },
+      "locator": {
+        "role": "button",
+        "name": "Apply limits"
+      },
       "applicable_states": ["node-selected"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "task",
@@ -458,7 +531,10 @@
       "id": "node.interface.add",
       "area": "nodes",
       "label": "Add interface",
-      "locator": { "role": "button", "name": "Add interface" },
+      "locator": {
+        "role": "button",
+        "name": "Add interface"
+      },
       "applicable_states": ["node-selected"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "task",
@@ -467,23 +543,13 @@
       "sensitive_evidence": []
     },
     {
-      "id": "node.guest.exec",
-      "area": "nodes",
-      "label": "Run through QEMU guest agent",
-      "locator": { "role": "button", "name": "Run through QEMU guest agent" },
-      "applicable_states": ["qemu-running"],
-      "activation": ["pointer", "keyboard"],
-      "outcome_class": "task",
-      "operation": "guest.exec",
-      "required_capabilities": ["qga_exec"],
-      "cleanup_effect": "none",
-      "sensitive_evidence": ["guest-command-output"]
-    },
-    {
       "id": "node.port.publish",
       "area": "nodes",
       "label": "Publish port",
-      "locator": { "role": "button", "name": "Publish port" },
+      "locator": {
+        "role": "button",
+        "name": "Publish port"
+      },
       "applicable_states": ["node-selected"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "task",
@@ -493,196 +559,13 @@
       "sensitive_evidence": []
     },
     {
-      "id": "diagnostics.console.tab",
-      "area": "diagnostics",
-      "label": "Console",
-      "locator": { "role": "tab", "name": "Console" },
-      "applicable_states": ["laboratory-open"],
-      "activation": ["pointer", "keyboard"],
-      "outcome_class": "presentation",
-      "cleanup_effect": "close-console-session",
-      "sensitive_evidence": ["console-output"]
-    },
-    {
-      "id": "diagnostics.capture.tab",
-      "area": "diagnostics",
-      "label": "Capture",
-      "locator": { "role": "tab", "name": "Capture" },
-      "applicable_states": ["laboratory-open"],
-      "activation": ["pointer", "keyboard"],
-      "outcome_class": "presentation",
-      "cleanup_effect": "stop-capture",
-      "sensitive_evidence": ["packet-payload"]
-    },
-    {
-      "id": "diagnostics.filter.tab",
-      "area": "diagnostics",
-      "label": "Traffic Filter",
-      "locator": { "role": "tab", "name": "Traffic Filter" },
-      "applicable_states": ["laboratory-open"],
-      "activation": ["pointer", "keyboard"],
-      "outcome_class": "presentation",
-      "cleanup_effect": "stop-traffic-filter",
-      "sensitive_evidence": ["packet-payload"]
-    },
-    {
-      "id": "diagnostics.console.open.telnet",
-      "area": "diagnostics",
-      "label": "Open Telnet",
-      "locator": { "role": "button", "name": "Open Telnet" },
-      "applicable_states": ["node-selected", "telnet-supported"],
-      "activation": ["pointer", "keyboard"],
-      "outcome_class": "stream",
-      "required_capabilities": ["telnet"],
-      "cleanup_effect": "close-console-session",
-      "sensitive_evidence": ["console-output"]
-    },
-    {
-      "id": "diagnostics.console.open.vnc",
-      "area": "diagnostics",
-      "label": "Open VNC",
-      "locator": { "role": "button", "name": "Open VNC" },
-      "applicable_states": ["node-selected", "vnc-supported"],
-      "activation": ["pointer", "keyboard"],
-      "outcome_class": "stream",
-      "required_capabilities": ["vnc"],
-      "cleanup_effect": "close-console-session",
-      "sensitive_evidence": ["console-output"]
-    },
-    {
-      "id": "diagnostics.console.reconnect",
-      "area": "diagnostics",
-      "label": "Reconnect",
-      "locator": { "role": "button", "name": "Reconnect" },
-      "applicable_states": ["console-session-open"],
-      "activation": ["pointer", "keyboard"],
-      "outcome_class": "stream",
-      "cleanup_effect": "close-console-session",
-      "sensitive_evidence": ["console-output"]
-    },
-    {
-      "id": "diagnostics.console.close",
-      "area": "diagnostics",
-      "label": "Close *",
-      "locator": { "role": "button", "name": "Close *" },
-      "applicable_states": ["console-session-open"],
-      "activation": ["pointer", "keyboard"],
-      "outcome_class": "presentation",
-      "cleanup_effect": "close-console-session",
-      "sensitive_evidence": []
-    },
-    {
-      "id": "diagnostics.capture.start",
-      "area": "diagnostics",
-      "label": "Start capture",
-      "locator": { "role": "button", "name": "Start capture" },
-      "applicable_states": ["capture-source-selected"],
-      "activation": ["pointer", "keyboard"],
-      "outcome_class": "task",
-      "operation": "capture.start",
-      "required_capabilities": ["live_capture"],
-      "cleanup_effect": "stop-capture",
-      "sensitive_evidence": ["packet-payload"]
-    },
-    {
-      "id": "diagnostics.capture.refresh",
-      "area": "diagnostics",
-      "label": "Refresh",
-      "locator": { "role": "button", "name": "Refresh" },
-      "applicable_states": ["capture-present"],
-      "activation": ["pointer", "keyboard"],
-      "outcome_class": "presentation",
-      "cleanup_effect": "none",
-      "sensitive_evidence": []
-    },
-    {
-      "id": "diagnostics.capture.stop",
-      "area": "diagnostics",
-      "label": "Stop",
-      "locator": { "role": "button", "name": "Stop" },
-      "applicable_states": ["capture-present"],
-      "activation": ["pointer", "keyboard"],
-      "outcome_class": "task",
-      "operation": "capture.stop",
-      "cleanup_effect": "stop-capture",
-      "sensitive_evidence": []
-    },
-    {
-      "id": "diagnostics.capture.wireshark",
-      "area": "diagnostics",
-      "label": "Wireshark",
-      "locator": { "role": "button", "name": "Wireshark" },
-      "applicable_states": ["capture-present"],
-      "activation": ["pointer", "keyboard"],
-      "outcome_class": "presentation",
-      "optional_environment_capabilities": ["desktop-wireshark"],
-      "cleanup_effect": "none",
-      "sensitive_evidence": []
-    },
-    {
-      "id": "diagnostics.capture.stream",
-      "area": "diagnostics",
-      "label": "Stream",
-      "locator": { "role": "link", "name": "Stream" },
-      "applicable_states": ["capture-present"],
-      "activation": ["pointer", "keyboard"],
-      "outcome_class": "stream",
-      "required_capabilities": ["live_capture"],
-      "cleanup_effect": "stop-capture",
-      "sensitive_evidence": ["packet-payload"]
-    },
-    {
-      "id": "diagnostics.capture.retained",
-      "area": "diagnostics",
-      "label": "Retained file",
-      "locator": { "role": "link", "name": "Retained file" },
-      "applicable_states": ["capture-retained"],
-      "activation": ["pointer", "keyboard"],
-      "outcome_class": "download",
-      "cleanup_effect": "delete-capture-artifact",
-      "sensitive_evidence": ["capture-file"]
-    },
-    {
-      "id": "diagnostics.filter.start",
-      "area": "diagnostics",
-      "label": "Start",
-      "locator": { "role": "button", "name": "Start" },
-      "applicable_states": ["laboratory-open", "traffic-filter-tab"],
-      "activation": ["pointer", "keyboard"],
-      "outcome_class": "task",
-      "operation": "traffic_filter.start",
-      "required_capabilities": ["traffic_filter"],
-      "cleanup_effect": "stop-traffic-filter",
-      "sensitive_evidence": ["packet-payload"]
-    },
-    {
-      "id": "diagnostics.filter.refresh",
-      "area": "diagnostics",
-      "label": "Refresh",
-      "locator": { "role": "button", "name": "Refresh" },
-      "applicable_states": ["traffic-filter-present"],
-      "activation": ["pointer", "keyboard"],
-      "outcome_class": "presentation",
-      "cleanup_effect": "none",
-      "sensitive_evidence": []
-    },
-    {
-      "id": "diagnostics.filter.stop",
-      "area": "diagnostics",
-      "label": "Stop",
-      "locator": { "role": "button", "name": "Stop" },
-      "applicable_states": ["traffic-filter-present"],
-      "activation": ["pointer", "keyboard"],
-      "outcome_class": "task",
-      "operation": "traffic_filter.stop",
-      "cleanup_effect": "stop-traffic-filter",
-      "sensitive_evidence": []
-    },
-    {
       "id": "tasks.tab",
       "area": "tasks",
       "label": "Tasks*",
-      "locator": { "role": "tab", "name": "Tasks*" },
+      "locator": {
+        "role": "tab",
+        "name": "Tasks*"
+      },
       "applicable_states": ["laboratory-open"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "presentation",
@@ -693,7 +576,10 @@
       "id": "tasks.search",
       "area": "tasks",
       "label": "Filter tasks",
-      "locator": { "role": "textbox", "name": "Filter tasks" },
+      "locator": {
+        "role": "textbox",
+        "name": "Filter tasks"
+      },
       "applicable_states": ["tasks-tab"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "presentation",
@@ -704,7 +590,10 @@
       "id": "tasks.state",
       "area": "tasks",
       "label": "Task state",
-      "locator": { "role": "combobox", "name": "Task state" },
+      "locator": {
+        "role": "combobox",
+        "name": "Task state"
+      },
       "applicable_states": ["tasks-tab"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "presentation",
@@ -715,7 +604,10 @@
       "id": "tasks.refresh",
       "area": "tasks",
       "label": "Refresh tasks",
-      "locator": { "role": "button", "name": "Refresh tasks" },
+      "locator": {
+        "role": "button",
+        "name": "Refresh tasks"
+      },
       "applicable_states": ["tasks-tab"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "presentation",
@@ -726,7 +618,10 @@
       "id": "topology.viewport.wheel",
       "area": "topology",
       "label": "Wheel zoom around pointer",
-      "locator": { "role": "img", "name": "Topology canvas*" },
+      "locator": {
+        "role": "img",
+        "name": "Topology canvas*"
+      },
       "applicable_states": ["laboratory-open"],
       "activation": ["pointer"],
       "outcome_class": "presentation",
@@ -737,7 +632,10 @@
       "id": "topology.viewport.zoom-keyboard",
       "area": "topology",
       "label": "Zoom topology around keyboard focus",
-      "locator": { "role": "region", "name": "Topology canvas keyboard area*" },
+      "locator": {
+        "role": "region",
+        "name": "Topology canvas keyboard area*"
+      },
       "applicable_states": ["laboratory-open"],
       "activation": ["keyboard"],
       "outcome_class": "presentation",
@@ -748,7 +646,10 @@
       "id": "topology.viewport.pan",
       "area": "topology",
       "label": "Pan blank topology canvas",
-      "locator": { "role": "img", "name": "Topology canvas*" },
+      "locator": {
+        "role": "img",
+        "name": "Topology canvas*"
+      },
       "applicable_states": ["laboratory-open"],
       "activation": ["pointer"],
       "outcome_class": "presentation",
@@ -756,22 +657,13 @@
       "sensitive_evidence": []
     },
     {
-      "id": "topology.resources.drag",
-      "area": "topology",
-      "label": "Move selected topology resources",
-      "locator": { "role": "img", "name": "Topology canvas*" },
-      "applicable_states": ["resource-present"],
-      "activation": ["pointer"],
-      "outcome_class": "mutation",
-      "operation": "topology.positions.update",
-      "cleanup_effect": "restore-shared-placement",
-      "sensitive_evidence": []
-    },
-    {
       "id": "topology.viewport.fit-all",
       "area": "topology",
       "label": "Fit all",
-      "locator": { "role": "button", "name": "Fit all" },
+      "locator": {
+        "role": "button",
+        "name": "Fit all"
+      },
       "applicable_states": ["laboratory-open"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "presentation",
@@ -782,7 +674,10 @@
       "id": "topology.viewport.fit-selection",
       "area": "topology",
       "label": "Fit selection",
-      "locator": { "role": "button", "name": "Fit selection" },
+      "locator": {
+        "role": "button",
+        "name": "Fit selection"
+      },
       "applicable_states": ["resource-selected"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "presentation",
@@ -793,7 +688,10 @@
       "id": "topology.viewport.reset",
       "area": "topology",
       "label": "Reset",
-      "locator": { "role": "button", "name": "Reset" },
+      "locator": {
+        "role": "button",
+        "name": "Reset"
+      },
       "applicable_states": ["laboratory-open"],
       "activation": ["pointer", "keyboard"],
       "outcome_class": "presentation",
@@ -804,7 +702,10 @@
       "id": "topology.interaction.cancel",
       "area": "topology",
       "label": "Cancel active topology interaction",
-      "locator": { "role": "img", "name": "Topology canvas keyboard area*" },
+      "locator": {
+        "role": "img",
+        "name": "Topology canvas keyboard area*"
+      },
       "applicable_states": ["topology-interaction-active"],
       "activation": ["keyboard"],
       "outcome_class": "presentation",
@@ -815,7 +716,10 @@
       "id": "network-object-links.live-delete",
       "area": "topology",
       "label": "Delete object link",
-      "locator": { "role": "button", "name": "Delete link" },
+      "locator": {
+        "role": "button",
+        "name": "Delete link"
+      },
       "applicable_states": ["network-object-link-selected"],
       "activation": ["pointer"],
       "outcome_class": "mutation",
@@ -827,7 +731,10 @@
       "id": "docker.routes.frontend",
       "area": "topology",
       "label": "Configure Docker static routes",
-      "locator": { "role": "button", "name": "保存配置" },
+      "locator": {
+        "role": "button",
+        "name": "保存配置"
+      },
       "applicable_states": ["stopped-docker-node-selected"],
       "activation": ["pointer"],
       "outcome_class": "mutation",

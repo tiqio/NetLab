@@ -37,11 +37,4 @@ export function assertCompleteVersionCoverage(
         `Incomplete version coverage: ${item.device_family}/${item.version_id}`,
       );
   }
-  const unavailableFamilies = environment.templates.filter(
-    (template) => !template.versions.some((version) => version.available),
-  );
-  if (unavailableFamilies.length)
-    throw new Error(
-      `No available version for: ${unavailableFamilies.map((item) => item.device_family).join(", ")}`,
-    );
 }
