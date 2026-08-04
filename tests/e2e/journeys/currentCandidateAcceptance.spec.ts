@@ -71,8 +71,9 @@ async function consoleCommand(
   nodeId: string,
   command: string,
 ) {
+  const marker = `__NETLAB_COMMAND_${crypto.randomUUID().replaceAll("-", "")}__`;
   const result = await page.evaluate(
-    async ({ nodeId, command }) => {
+    async ({ nodeId, command, marker }) => {
       const descriptors = await fetch(`/api/v1/nodes/${nodeId}/consoles`).then(
         (response) => response.json(),
       );
@@ -83,7 +84,6 @@ async function consoleCommand(
         throw new Error(`No Telnet console for ${nodeId}`);
       const url = new URL(descriptor.stream_url, window.location.origin);
       url.protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const marker = `__NETLAB_COMMAND_${crypto.randomUUID().replaceAll("-", "")}__`;
       return new Promise<{ output: string; exitCode: number }>(
         (resolve, reject) => {
           const socket = new WebSocket(url);
@@ -127,7 +127,7 @@ async function consoleCommand(
         },
       );
     },
-    { nodeId, command },
+    { nodeId, command, marker },
   );
   expect(result.exitCode, result.output).toBe(0);
   return result.output;
