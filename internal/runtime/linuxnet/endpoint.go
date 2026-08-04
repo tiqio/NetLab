@@ -48,7 +48,7 @@ func (r *EndpointRuntime) Start(ctx context.Context, node domain.Node) error {
 		} else if err := r.executor.Run(ctx, r.ipPath, "link", "set", peer, "netns", r.namespace(node)); err != nil {
 			return err
 		}
-		_ = r.executor.Run(ctx, r.ipPath, "link", "set", host, "alias", "netlab:"+string(node.ID))
+		_ = r.executor.Run(ctx, r.ipPath, "link", "set", host, "alias", ownership.Marker("netlab", string(node.ID)))
 		_ = r.executor.Run(ctx, r.ipPath, "link", "set", host, "up")
 		if _, err := r.executor.Output(ctx, r.ipPath, "-n", r.namespace(node), "link", "show", iface.Name); err != nil {
 			_ = r.executor.Run(ctx, r.ipPath, "-n", r.namespace(node), "link", "set", peer, "name", iface.Name)

@@ -392,3 +392,19 @@
   server rejects readiness evidence from another candidate instead of silently publishing stale truth.
 - Focused gates: netlabd/config/template query tests, deployment security tests, script syntax checks, and
   release-configuration/readiness generation tests passed locally on August 4, 2026.
+
+## Phase 8 UX and Isolated Traffic Validation Milestone
+
+- The laboratory switcher remains mounted while open state and live laboratory props change, so a click
+  no longer destroys its own option/button DOM. The Playwright-only retry workaround was removed.
+- Task Center renders the newest 30 matching tasks initially and expands in bounded batches, preserving
+  responsive interaction with the target's 100-record task history.
+- Privileged test runs now receive a separate ownership domain. Namespace/interface names and link aliases
+  no longer match the authoritative reconciler's production prefixes, while production naming remains
+  byte-compatible when no validation domain is configured.
+- The target candidate browser journey configures two BusyBox interfaces through their real Telnet
+  WebSockets, generates ICMP, TCP, and UDP, verifies directional Traffic Filter particles within 500 ms,
+  and verifies particle and direction-guide decay. Existing privileged object-link tests retain exact
+  parallel-link isolation and bidirectional attribution coverage.
+- Focused gates: ownership/linuxnet tests, topology/laboratory/task Vitest, acceptance policy/cleanup unit
+  tests, and Prettier passed locally on August 4, 2026.

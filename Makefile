@@ -39,13 +39,13 @@ test-frontend-acceptance:
 	./acceptance/frontend-acceptance.sh
 
 test-integration:
-	NETLAB_PRIVILEGED=$${NETLAB_PRIVILEGED:-0} go test ./tests/integration/... -count=1
+	NETLAB_OWNERSHIP_DOMAIN=$${NETLAB_OWNERSHIP_DOMAIN:-local-integration} NETLAB_PRIVILEGED=$${NETLAB_PRIVILEGED:-0} go test ./tests/integration/... -count=1
 
 test-recovery:
 	NETLAB_PRIVILEGED=$${NETLAB_PRIVILEGED:-0} go test ./tests/recovery/... -count=1
 
 test-leaks:
-	NETLAB_PRIVILEGED=$${NETLAB_PRIVILEGED:-0} CYCLES=$${CYCLES:-100} go test ./tests/integration/... -run Leak -count=1
+	NETLAB_OWNERSHIP_DOMAIN=$${NETLAB_OWNERSHIP_DOMAIN:-local-leak} NETLAB_PRIVILEGED=$${NETLAB_PRIVILEGED:-0} CYCLES=$${CYCLES:-100} go test ./tests/integration/... -run Leak -count=1
 
 test-security:
 	go test ./tests/security/... -count=1

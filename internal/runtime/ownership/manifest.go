@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/netlab/netlab/internal/domain"
@@ -58,6 +59,9 @@ func DirectVethPairManifest(resourceID domain.ID, namespaceA, portA, namespaceB,
 }
 
 func Name(prefix string, id domain.ID, max int) string {
+	if scope := validationScope(); scope != "" {
+		prefix = "v" + scope + prefix
+	}
 	sum := sha256.Sum256([]byte(id))
 	suffix := hex.EncodeToString(sum[:6])
 	clean := strings.Map(func(r rune) rune {
@@ -71,6 +75,22 @@ func Name(prefix string, id domain.ID, max int) string {
 		return value[:max]
 	}
 	return value
+}
+
+func Marker(namespace, owner string) string {
+	if scope := validationScope(); scope != "" {
+		return namespace + "-" + scope + ":" + owner
+	}
+	return namespace + ":" + owner
+}
+
+func validationScope() string {
+	value := strings.TrimSpace(os.Getenv("NETLAB_OWNERSHIP_DOMAIN"))
+	if value == "" {
+		return ""
+	}
+	sum := sha256.Sum256([]byte(value))
+	return hex.EncodeToString(sum[:2])
 }
 func (m Manifest) Owns(kind, name string) bool {
 	for _, object := range m.Objects {

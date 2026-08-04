@@ -35,7 +35,7 @@ func (d *DataPlane) EnsureLink(ctx context.Context, link domain.Link, endpointA,
 			return err
 		}
 	}
-	_ = d.executor.Run(ctx, d.ip, "link", "set", "dev", bridge, "alias", "netlab:"+string(link.ID))
+	_ = d.executor.Run(ctx, d.ip, "link", "set", "dev", bridge, "alias", ownership.Marker("netlab", string(link.ID)))
 	if err := d.executor.Run(ctx, d.ip, "link", "set", bridge, "up"); err != nil {
 		return err
 	}
@@ -103,8 +103,8 @@ func (d *DataPlane) EnsureNetworkObjectLink(ctx context.Context, link domain.Net
 			return err
 		}
 	}
-	_ = d.executor.Run(ctx, d.ip, "link", "set", "dev", endA, "alias", "netlab:"+string(link.ID)+":a")
-	_ = d.executor.Run(ctx, d.ip, "link", "set", "dev", endB, "alias", "netlab:"+string(link.ID)+":b")
+	_ = d.executor.Run(ctx, d.ip, "link", "set", "dev", endA, "alias", ownership.Marker("netlab", string(link.ID)+":a"))
+	_ = d.executor.Run(ctx, d.ip, "link", "set", "dev", endB, "alias", ownership.Marker("netlab", string(link.ID)+":b"))
 	if err = d.executor.Run(ctx, d.ip, "link", "set", endA, "netns", namespaceA); err != nil {
 		return err
 	}
@@ -200,7 +200,7 @@ func (d *DataPlane) AttachNamespace(ctx context.Context, attachment domain.Netwo
 			return err
 		}
 	}
-	_ = d.executor.Run(ctx, d.ip, "link", "set", "dev", bridge, "alias", "netlab:"+string(attachment.ID))
+	_ = d.executor.Run(ctx, d.ip, "link", "set", "dev", bridge, "alias", ownership.Marker("netlab", string(attachment.ID)))
 	if err := d.executor.Run(ctx, d.ip, "link", "set", bridge, "up"); err != nil {
 		return err
 	}
@@ -210,8 +210,8 @@ func (d *DataPlane) AttachNamespace(ctx context.Context, attachment domain.Netwo
 			return err
 		}
 	}
-	_ = d.executor.Run(ctx, d.ip, "link", "set", "dev", host, "alias", "netlab:"+string(attachment.ID))
-	_ = d.executor.Run(ctx, d.ip, "link", "set", "dev", peer, "alias", "netlab:"+string(attachment.ID))
+	_ = d.executor.Run(ctx, d.ip, "link", "set", "dev", host, "alias", ownership.Marker("netlab", string(attachment.ID)))
+	_ = d.executor.Run(ctx, d.ip, "link", "set", "dev", peer, "alias", ownership.Marker("netlab", string(attachment.ID)))
 	if err := d.executor.Run(ctx, d.ip, "link", "set", host, "master", bridge); err != nil {
 		return err
 	}

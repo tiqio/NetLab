@@ -3,6 +3,7 @@ set -uo pipefail
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$ROOT"
 CANDIDATE_ID=${CANDIDATE_ID:-candidate-$(date -u +%Y%m%dT%H%M%SZ)}
+export NETLAB_OWNERSHIP_DOMAIN=${NETLAB_OWNERSHIP_DOMAIN:-acceptance-$CANDIDATE_ID}
 OUTPUT=${NETLAB_ACCEPTANCE_OUTPUT:-compliance/evidence/current-candidate.json}
 BASE_URL=${NETLAB_BASE_URL:-}
 STARTED=$(date -u +%Y-%m-%dT%H:%M:%SZ)

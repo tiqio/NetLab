@@ -66,6 +66,47 @@ async function createLink(
   return body.link as { id: string; revision: number };
 }
 
+async function consoleCommand(
+  page: import("@playwright/test").Page,
+  nodeId: string,
+  command: string,
+) {
+  await page.evaluate(
+    async ({ nodeId, command }) => {
+      const descriptors = await fetch(`/api/v1/nodes/${nodeId}/consoles`).then(
+        (response) => response.json(),
+      );
+      const descriptor = descriptors.find(
+        (item: { mode?: string }) => item.mode === "telnet",
+      );
+      if (!descriptor?.stream_url)
+        throw new Error(`No Telnet console for ${nodeId}`);
+      const url = new URL(descriptor.stream_url, window.location.origin);
+      url.protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      await new Promise<void>((resolve, reject) => {
+        const socket = new WebSocket(url);
+        const timeout = window.setTimeout(() => {
+          socket.close();
+          reject(new Error(`Console command timed out for ${nodeId}`));
+        }, 5000);
+        socket.onopen = () => {
+          socket.send(new TextEncoder().encode(`${command}\n`));
+          window.setTimeout(() => {
+            window.clearTimeout(timeout);
+            socket.close();
+            resolve();
+          }, 600);
+        };
+        socket.onerror = () => {
+          window.clearTimeout(timeout);
+          reject(new Error(`Console WebSocket failed for ${nodeId}`));
+        };
+      });
+    },
+    { nodeId, command },
+  );
+}
+
 test("current candidate shares browser HTTP and MCP state without stale resurrection", async ({
   page,
   secondPage,
@@ -221,7 +262,7 @@ test("target candidate validates console capture filter and live rewire", async 
     },
     data: {
       laboratory_id: first.laboratory.id,
-      match: { protocol: "icmp" },
+      match: {},
       max_observations: 100,
       interface_ids: [first.interface.id, secondInterface, thirdInterface],
       link_ids: [link.id],
@@ -234,6 +275,51 @@ test("target candidate validates console capture filter and live rewire", async 
     resource_id: filter.traffic_filter.id,
     laboratory_id: first.laboratory.id,
     cleanup_method: "traffic-filter-delete",
+  });
+
+  const secondInterfaceRecord = snapshot.interfaces.find(
+    (item: { node_id: string }) => item.node_id === second.id,
+  ) as { id: string; name: string };
+  await consoleCommand(
+    page,
+    first.node.id,
+    `ip addr replace 10.77.0.1/30 dev ${first.interface.name}; ip link set ${first.interface.name} up`,
+  );
+  await consoleCommand(
+    page,
+    second.id,
+    `ip addr replace 10.77.0.2/30 dev ${secondInterfaceRecord.name}; ip link set ${secondInterfaceRecord.name} up`,
+  );
+  await page.getByRole("tab", { name: "Traffic Filter" }).click();
+  await page
+    .getByRole("region", { name: "Diagnostics" })
+    .getByRole("button", { name: "Refresh", exact: true })
+    .click();
+  await consoleCommand(page, first.node.id, "ping -c 1 -W 1 10.77.0.2");
+  await consoleCommand(page, second.id, "nc -l -p 19001 >/dev/null 2>&1 &");
+  await consoleCommand(
+    page,
+    first.node.id,
+    "printf tcp | nc -w 1 10.77.0.2 19001",
+  );
+  await consoleCommand(page, second.id, "nc -u -l -p 19002 >/dev/null 2>&1 &");
+  await consoleCommand(
+    page,
+    first.node.id,
+    "printf udp | nc -u -w 1 10.77.0.2 19002",
+  );
+  const canvas = page.getByLabel("Topology canvas keyboard area");
+  await expect(canvas).toHaveAttribute("data-traffic-recent", /[1-9]\d*/, {
+    timeout: 500,
+  });
+  await expect(
+    page.locator(`[data-traffic-path-id="traffic:${link.id}"]`),
+  ).toHaveAttribute("data-traffic-direction", /single|bidirectional/);
+  await expect(canvas).toHaveAttribute("data-traffic-recent", "0", {
+    timeout: 2000,
+  });
+  await expect(canvas).toHaveAttribute("data-traffic-lingering", "0", {
+    timeout: 6000,
   });
 
   const reconnect = await automation.post(

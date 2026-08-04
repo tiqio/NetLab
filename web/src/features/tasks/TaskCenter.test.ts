@@ -3,6 +3,19 @@ import { describe, expect, it } from "vitest";
 import { taskFactory } from "@/test/factories";
 import TaskCenter from "./TaskCenter.vue";
 describe("TaskCenter", () => {
+  it("renders large task histories incrementally", async () => {
+    const wrapper = mount(TaskCenter, {
+      props: {
+        tasks: Array.from({ length: 100 }, (_, index) =>
+          taskFactory({ id: `task-${index}`, kind: `task.${index}` }),
+        ),
+      },
+    });
+    expect(wrapper.findAll("article")).toHaveLength(30);
+    await wrapper.get('button[aria-label="Show more tasks"]').trigger("click");
+    expect(wrapper.findAll("article")).toHaveLength(60);
+  });
+
   it("filters tasks and keeps resource navigation context", async () => {
     const wrapper = mount(TaskCenter, {
       props: {

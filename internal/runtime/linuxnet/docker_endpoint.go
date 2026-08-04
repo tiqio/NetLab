@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/netlab/netlab/internal/domain"
+	"github.com/netlab/netlab/internal/runtime/ownership"
 )
 
 var dockerInterfaceNamePattern = regexp.MustCompile(`^[A-Za-z0-9_.-]{1,15}$`)
@@ -121,7 +122,7 @@ func (r *DockerEndpointRuntime) Ensure(ctx context.Context, node domain.Node, pi
 				return err
 			}
 			created = append(created, host)
-			_ = r.executor.Run(ctx, r.ip, "link", "set", host, "alias", "netlab:"+string(node.ID))
+			_ = r.executor.Run(ctx, r.ip, "link", "set", host, "alias", ownership.Marker("netlab", string(node.ID)))
 			if err = r.executor.Run(ctx, r.ip, "link", "set", peer, "netns", strconv.Itoa(pid)); err != nil {
 				r.rollback(ctx, created)
 				return err

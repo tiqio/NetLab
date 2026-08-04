@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import {
   Ban,
   ExternalLink,
@@ -25,6 +25,7 @@ const resourceType = ref("all");
 const scope = ref("laboratory");
 const timeRange = ref("all");
 const query = ref("");
+const visibleLimit = ref(30);
 const cancelling = ref("");
 const replaying = ref("");
 const refreshed = ref<Record<string, OperationTask>>({});
@@ -60,6 +61,12 @@ const filtered = computed(() =>
           .includes(query.value.toLowerCase()),
     ),
 );
+const visibleTasks = computed(() =>
+  filtered.value.slice(0, visibleLimit.value),
+);
+watch([state, kind, resourceType, scope, timeRange, query], () => {
+  visibleLimit.value = 30;
+});
 
 async function cancel(task: OperationTask) {
   cancelling.value = task.id;
@@ -160,7 +167,7 @@ const percent = (task: OperationTask) =>
         No tasks match the current filter.
       </div>
       <article
-        v-for="task in filtered"
+        v-for="task in visibleTasks"
         :key="task.id"
         class="mb-2 grid gap-2 rounded-md border border-border bg-background/40 p-2"
       >
@@ -246,6 +253,15 @@ const percent = (task: OperationTask) =>
         </details>
         <StructuredProblem v-if="task.error" :problem="task.error" />
       </article>
+      <Button
+        v-if="visibleTasks.length < filtered.length"
+        variant="secondary"
+        class="mb-2 w-full"
+        aria-label="Show more tasks"
+        @click="visibleLimit += 30"
+      >
+        Show {{ Math.min(30, filtered.length - visibleTasks.length) }} more
+      </Button>
     </div>
   </div>
 </template>

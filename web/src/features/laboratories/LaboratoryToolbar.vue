@@ -283,7 +283,7 @@ function openDelete() {
         </span>
       </Button>
       <section
-        v-if="switcherOpen"
+        v-show="switcherOpen"
         class="absolute left-0 top-full z-40 mt-1 w-[min(24rem,calc(100vw-1rem))] overflow-hidden rounded-md border border-border bg-popover shadow-2xl"
         aria-label="Laboratory switcher"
       >

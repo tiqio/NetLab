@@ -35,6 +35,25 @@ function render(active = laboratoryFactory()) {
 }
 
 describe("LaboratoryToolbar", () => {
+  it("keeps the switcher DOM stable while live laboratory props change", async () => {
+    const wrapper = render(laboratoryFactory({ id: "lab-1", name: "One" }));
+    await wrapper.get('[data-testid="laboratory-switcher"]').trigger("click");
+    const switcher = wrapper.get('[aria-label="Laboratory switcher"]').element;
+    await wrapper.setProps({
+      labs: [
+        laboratoryFactory({ id: "lab-1", name: "One", revision: 2 }),
+        laboratoryFactory({ id: "lab-2", name: "Two" }),
+      ],
+    });
+    expect(wrapper.get('[aria-label="Laboratory switcher"]').element).toBe(
+      switcher,
+    );
+    await wrapper.get('[data-testid="new-laboratory"]').trigger("click");
+    expect(wrapper.get('[aria-label="Laboratory switcher"]').element).toBe(
+      switcher,
+    );
+  });
+
   it("uses one searchable vertical laboratory switcher", async () => {
     const wrapper = render();
     expect(wrapper.find('[aria-label="Open laboratories"]').exists()).toBe(
@@ -48,7 +67,7 @@ describe("LaboratoryToolbar", () => {
     expect(options[0].text()).toContain("Branch validation");
     await options[0].trigger("click");
     expect(wrapper.emitted("select")?.[0]).toEqual(["lab-2"]);
-    expect(wrapper.find('[role="listbox"]').exists()).toBe(false);
+    expect(wrapper.get('[role="listbox"]').isVisible()).toBe(false);
   });
 
   it("opens contextual management for a non-active laboratory", async () => {
@@ -71,7 +90,7 @@ describe("LaboratoryToolbar", () => {
     await wrapper.get('[data-testid="laboratory-switcher"]').trigger("click");
     await wrapper.get('[data-testid="new-laboratory"]').trigger("click");
     expect(document.body.textContent).toContain("Create laboratory");
-    expect(wrapper.find('[role="listbox"]').exists()).toBe(false);
+    expect(wrapper.get('[role="listbox"]').isVisible()).toBe(false);
   });
 
   it("deletes the context target without selecting it first", async () => {
