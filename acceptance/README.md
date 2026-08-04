@@ -14,6 +14,10 @@ NETLAB_ACCEPTANCE_BASE_URL=http://10.72.1.7:8088 \
   ./acceptance/frontend-acceptance.sh
 ```
 
+For an explicitly focused diagnostic rerun, set `NETLAB_ACCEPTANCE_SCOPE=focused`. This preserves
+schema, cleanup, release-identity, and unknown-interaction validation while deferring complete
+interaction and template-version coverage to the subsequent full target-host run.
+
 Use `NETLAB_ACCEPTANCE_FAILURE_INJECTION=after-runtime-create` for the controlled cleanup proof. Evidence is
 written below ignored `web/test-results/acceptance/`; the artifact check rejects captures, images, credentials,
 console payloads, guest output, and other prohibited runtime data.

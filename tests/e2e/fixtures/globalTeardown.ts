@@ -78,9 +78,7 @@ export default async function globalTeardown(config: FullConfig) {
         { width: 1920, height: 1080 },
         { width: 1024, height: 768 },
       ],
-      interaction_results: evidence.flatMap(
-        (item) => item.interaction_results,
-      ),
+      interaction_results: evidence.flatMap((item) => item.interaction_results),
       version_coverage: evidence.flatMap((item) => item.version_coverage),
       cleanup,
       client_observations: evidence.flatMap(
@@ -88,16 +86,17 @@ export default async function globalTeardown(config: FullConfig) {
       ),
     };
     const gateErrors: string[] = [];
+    const focused = process.env.NETLAB_ACCEPTANCE_SCOPE === "focused";
     try {
       assertCompleteInteractionCoverage(
         inventoryDocument.interactions,
         aggregate,
-        environment.target_kind === "remote-privileged",
+        environment.target_kind === "remote-privileged" && !focused,
       );
     } catch (error) {
       gateErrors.push(error instanceof Error ? error.message : String(error));
     }
-    if (environment.target_kind === "remote-privileged") {
+    if (environment.target_kind === "remote-privileged" && !focused) {
       try {
         assertCompleteVersionCoverage(environment, aggregate.version_coverage);
       } catch (error) {
@@ -136,7 +135,9 @@ export default async function globalTeardown(config: FullConfig) {
     );
     await enforceAcceptanceArtifactPolicy(output);
     if (gateErrors.length) {
-      throw new Error(`Acceptance coverage gate failed: ${gateErrors.join("; ")}`);
+      throw new Error(
+        `Acceptance coverage gate failed: ${gateErrors.join("; ")}`,
+      );
     }
   } finally {
     await context.dispose();

@@ -12,7 +12,10 @@ export class NodeOperationsPage extends BasePage {
     });
     await expect(button).toBeVisible();
     await button.click();
-    await expect(this.page.getByRole("status")).toContainText(
+    const lifecycleSection = this.page.locator("section").filter({
+      has: this.page.getByRole("heading", { name: "运行控制" }),
+    });
+    await expect(lifecycleSection.getByRole("status")).toContainText(
       action === "Start" ? /运行中/ : /已停止/,
       { timeout: 120_000 },
     );
