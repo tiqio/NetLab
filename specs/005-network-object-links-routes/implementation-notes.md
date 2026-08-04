@@ -467,3 +467,8 @@
   resources. The restart journey no longer requires `template_versions.image_version_id`; it selects an
   enabled `ubuntu-qemu` version plus an available Ubuntu QEMU image and sends both IDs during node create,
   matching the production API and browser workflow.
+- The production systemd sandbox gives `netlabd` its own mount namespace because of the configured writable
+  path protections, even though `PrivateMounts` reports `no`. Named network-namespace bind mounts are
+  therefore valid inside the service mount view but appear as invalid handles to an unrelated host shell.
+  Restart acceptance now runs namespace checks through the current `netlab.service` MainPID with `nsenter
+  --mount`, including after the MainPID changes across restart.

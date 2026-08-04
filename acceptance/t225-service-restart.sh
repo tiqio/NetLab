@@ -28,6 +28,13 @@ api() {
   curl "${args[@]}" "$BASE$path"
 }
 
+netlab_mount_exec() {
+  local pid
+  pid=$(systemctl show --property MainPID --value netlab.service)
+  [[ $pid =~ ^[1-9][0-9]*$ ]] || { echo "netlab.service has no main PID" >&2; return 1; }
+  nsenter --target "$pid" --mount -- "$@"
+}
+
 wait_task() {
   local id=$1 deadline=$((SECONDS + 240)) value state
   while ((SECONDS < deadline)); do
@@ -144,7 +151,7 @@ DOCKER_SHORT_ID=$(docker ps -q --filter "label=io.netlab.node_id=$DOCKER_NODE")
 DOCKER_ID=$(docker inspect --format '{{.Id}}' "$DOCKER_SHORT_ID")
 NAMESPACE_NAME="nl-$(printf %s "$NAMESPACE_NODE" | sha256sum | cut -c1-12)"
 [[ -n $QEMU_PID && -n $DOCKER_ID && -n $NAMESPACE_NAME ]]
-ip -n "$NAMESPACE_NAME" link show lo >/dev/null
+netlab_mount_exec ip -n "$NAMESPACE_NAME" link show lo >/dev/null
 
 RESUME_TASK=$(python3 - <<'PY'
 import secrets, time
@@ -220,7 +227,7 @@ cleanup
 LAB_ID=""
 [[ ! -e $QEMU_DIRECTORY ]]
 [[ -z $(docker ps -aq --filter "id=$DOCKER_ID") ]]
-! ip -n "$NAMESPACE_NAME" link show lo >/dev/null 2>&1
+! netlab_mount_exec ip -n "$NAMESPACE_NAME" link show lo >/dev/null 2>&1
 ! ip link show "$LINK_NAME" >/dev/null 2>&1
 ! ip link show "$ATTACHMENT_NAME" >/dev/null 2>&1
 OWNERSHIP_COUNT=$(sqlite3 "$DB" "select count(*) from runtime_ownership where resource_id in ('$QEMU_NODE','$DOCKER_NODE','$NAMESPACE_NODE','$LINK_ID','$ATTACHMENT_ID','$NETWORK_OBJECT_ID','$CAPTURE_ID');")
