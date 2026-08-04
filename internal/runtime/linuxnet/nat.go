@@ -146,10 +146,15 @@ func (r *NATRuntime) Configure(ctx context.Context, object domain.NetworkObject)
 	}
 	_ = r.executor.Run(ctx, r.nft, "add", "table", "inet", "netlab_nat")
 	_ = r.executor.Run(ctx, r.nft, "add", "chain", "inet", "netlab_nat", "postrouting", "{", "type", "nat", "hook", "postrouting", "priority", "srcnat", ";", "}")
-	if body, err := r.executor.Output(ctx, r.nft, "list", "chain", "inet", "netlab_nat", "postrouting"); err != nil || !strings.Contains(string(body), "netlab:"+string(object.ID)) {
-		if err := r.executor.Run(ctx, r.nft, "add", "rule", "inet", "netlab_nat", "postrouting", "ip", "saddr", config.IPv4Prefix, "oifname", uplink, "masquerade", "comment", `"netlab:`+string(object.ID)+`"`); err != nil {
-			return err
-		}
+	if body, inspectErr := r.executor.Output(ctx, r.nft, "-a", "list", "chain", "inet", "netlab_nat", "postrouting"); inspectErr == nil {
+		r.deleteOwnedRules(ctx, body, "netlab:"+string(object.ID), "inet", "netlab_nat", "postrouting")
+	}
+	if body, inspectErr := r.executor.Output(ctx, r.nft, "-a", "list", "chain", "ip", "filter", "FORWARD"); inspectErr == nil {
+		r.deleteOwnedRules(ctx, body, "netlab-forward-out:"+string(object.ID), "ip", "filter", "FORWARD")
+		r.deleteOwnedRules(ctx, body, "netlab-forward-in:"+string(object.ID), "ip", "filter", "FORWARD")
+	}
+	if err := r.executor.Run(ctx, r.nft, "add", "rule", "inet", "netlab_nat", "postrouting", "ip", "saddr", config.IPv4Prefix, "oifname", uplink, "masquerade", "comment", `"netlab:`+string(object.ID)+`"`); err != nil {
+		return err
 	}
 	if err := r.ensureForwardRules(ctx, object.ID, bridge, uplink); err != nil {
 		return err

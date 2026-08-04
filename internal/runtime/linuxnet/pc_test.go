@@ -13,6 +13,7 @@ import (
 type scriptExecutor struct {
 	commands     []string
 	output       []byte
+	outputFor    func(string, ...string) []byte
 	failContains string
 	activeUnits  map[string]bool
 }
@@ -41,6 +42,9 @@ func (e *scriptExecutor) Run(_ context.Context, name string, args ...string) err
 
 func (e *scriptExecutor) Output(_ context.Context, name string, args ...string) ([]byte, error) {
 	e.commands = append(e.commands, name+" "+strings.Join(args, " "))
+	if e.outputFor != nil {
+		return e.outputFor(name, args...), nil
+	}
 	if name == "systemctl" && len(args) > 0 && args[0] == "show" {
 		unit := args[len(args)-1]
 		if e.activeUnits != nil && e.activeUnits[unit] {

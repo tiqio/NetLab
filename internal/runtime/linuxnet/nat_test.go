@@ -53,6 +53,41 @@ func TestNATAutoUplinkUsesDefaultRouteDevice(t *testing.T) {
 	}
 }
 
+func TestNATReconfigureReplacesOwnedRulesWithCurrentUplink(t *testing.T) {
+	executor := &scriptExecutor{outputFor: func(name string, args ...string) []byte {
+		command := name + " " + strings.Join(args, " ")
+		switch {
+		case strings.Contains(command, "ip route show default"):
+			return []byte("default via 10.72.1.231 dev pnet0\n")
+		case strings.Contains(command, "nft -a list chain inet netlab_nat postrouting"):
+			return []byte(`ip saddr 10.20.0.0/24 oifname "eth0" masquerade comment "netlab:nat-auto" # handle 10`)
+		case strings.Contains(command, "nft -a list chain ip filter FORWARD"):
+			return []byte("iifname nlnat-old oifname eth0 accept comment \"netlab-forward-out:nat-auto\" # handle 11\niifname eth0 oifname nlnat-old accept comment \"netlab-forward-in:nat-auto\" # handle 12\n")
+		default:
+			return nil
+		}
+	}}
+	runtime, _ := NewNATRuntime(executor)
+	object := domain.NetworkObject{ID: "nat-auto", Kind: domain.NetworkNAT, Config: map[string]any{"ipv4_prefix": "10.21.0.0/24", "uplink": "auto"}}
+	if err := runtime.Configure(context.Background(), object); err != nil {
+		t.Fatal(err)
+	}
+	commands := strings.Join(executor.commands, "\n")
+	for _, fragment := range []string{
+		"delete rule inet netlab_nat postrouting handle 10",
+		"delete rule ip filter FORWARD handle 11",
+		"delete rule ip filter FORWARD handle 12",
+		"ip saddr 10.21.0.0/24 oifname pnet0 masquerade",
+		"iifname nlnat",
+		"oifname pnet0 accept",
+		"iifname pnet0 oifname nlnat",
+	} {
+		if !strings.Contains(commands, fragment) {
+			t.Fatalf("missing %q in\n%s", fragment, commands)
+		}
+	}
+}
+
 func TestNATOverlapAndValidation(t *testing.T) {
 	if !domain.PrefixesOverlap("10.0.0.0/24", "10.0.0.128/25") {
 		t.Fatal("overlap not detected")
