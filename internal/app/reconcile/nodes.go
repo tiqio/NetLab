@@ -118,7 +118,7 @@ func (r *NodeReconciler) ReconcileWithCheckpoints(ctx context.Context, checkpoin
 	r.nodes = nodes
 	var failures []string
 	for _, node := range nodes {
-		reconcileErr := r.reconcileNode(ctx, node)
+		reconcileErr := r.reconcileNodeWithRecovery(ctx, node, true)
 		outcome := RecoveryResourceOutcome{ResourceType: "node", ResourceID: node.ID, State: "recovered"}
 		if reconcileErr != nil {
 			outcome.State = "failed"
@@ -150,6 +150,10 @@ func stableRuntimeID(owner map[string]string) string {
 }
 
 func (r *NodeReconciler) reconcileNode(ctx context.Context, node domain.Node) error {
+	return r.reconcileNodeWithRecovery(ctx, node, false)
+}
+
+func (r *NodeReconciler) reconcileNodeWithRecovery(ctx context.Context, node domain.Node, restoreMissingRuntime bool) error {
 	runtime, err := r.dispatch.For(node)
 	if err != nil {
 		problem := structuredProblem(err, nodeProblem(node, "runtime_unavailable", "runtime_selection", "no runtime resources created", "enable the required runtime and retry", 5))
@@ -176,7 +180,9 @@ func (r *NodeReconciler) reconcileNode(ctx context.Context, node domain.Node) er
 		if node.ObservedState == domain.ObservedRunning {
 			problem := nodeProblem(node, "runtime_exited", "monitoring", "runtime already exited; owned resources retained for reconciliation", "inspect runtime logs and retry or stop the node", 2)
 			problem.Message = "managed runtime is no longer running"
-			return r.transition(ctx, &node, domain.ObservedFailed, &problem)
+			if err = r.transition(ctx, &node, domain.ObservedFailed, &problem); err != nil || !restoreMissingRuntime {
+				return err
+			}
 		}
 		if r.resources != nil {
 			if err = r.resources.Admit(ctx, node, r.nodes); err != nil {

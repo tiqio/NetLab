@@ -46,6 +46,27 @@ type countingDockerRuntime struct {
 	startErr   error
 }
 
+type restoringNamespaceRuntime struct {
+	running bool
+}
+
+func (r *restoringNamespaceRuntime) Inspect(context.Context, domain.Node) (ports.ActualNode, error) {
+	if !r.running {
+		return ports.ActualNode{State: domain.ObservedStopped}, nil
+	}
+	return ports.ActualNode{State: domain.ObservedRunning, Owner: map[string]string{"netns": "nl-restored"}}, nil
+}
+
+func (r *restoringNamespaceRuntime) Start(context.Context, domain.Node) error {
+	r.running = true
+	return nil
+}
+
+func (r *restoringNamespaceRuntime) Stop(context.Context, domain.Node) error { return nil }
+func (r *restoringNamespaceRuntime) Delete(context.Context, domain.Node) error {
+	return nil
+}
+
 func (r *countingDockerRuntime) Inspect(context.Context, domain.Node) (ports.ActualNode, error) {
 	return ports.ActualNode{State: r.state, Owner: map[string]string{"container_id": "container-1", "pid": "4242"}}, nil
 }
@@ -73,6 +94,26 @@ func TestNodeRecoveryCheckpointIncludesStableRuntimeID(t *testing.T) {
 	}
 	if len(outcomes) != 1 || outcomes[0].RuntimeID != "4242" || outcomes[0].Details["qmp"] != "/run/qmp.sock" {
 		t.Fatalf("outcomes=%+v", outcomes)
+	}
+}
+
+func TestNodeRecoveryRestoresMissingRuntimeBeforeCheckpoint(t *testing.T) {
+	store := &lifecycleStore{node: domain.Node{ID: "node", Kind: "pc", DesiredState: domain.DesiredRunning, ObservedState: domain.ObservedRunning}}
+	runtime := &restoringNamespaceRuntime{}
+	reconciler := NewNodeReconciler(store, RuntimeDispatch{Lightweight: runtime})
+	var outcomes []RecoveryResourceOutcome
+	if err := reconciler.ReconcileWithCheckpoints(context.Background(), func(outcome RecoveryResourceOutcome) error {
+		outcomes = append(outcomes, outcome)
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if len(outcomes) != 1 || outcomes[0].State != "recovered" || outcomes[0].RuntimeID != "nl-restored" {
+		t.Fatalf("outcomes=%+v", outcomes)
+	}
+	expected := []domain.ObservedState{domain.ObservedFailed, domain.ObservedProvisioning, domain.ObservedStarting, domain.ObservedRunning}
+	if !reflect.DeepEqual(store.transitions, expected) {
+		t.Fatalf("transitions=%v want=%v", store.transitions, expected)
 	}
 }
 func (r lifecycleRuntime) Provision(context.Context, domain.Node) error { return r.provisionErr }

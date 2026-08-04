@@ -481,3 +481,8 @@
   after service restart. During that bounded transition the node can report retryable `runtime_exited`
   before reconciliation recreates it. The restart waiter now continues through retryable failures and
   fails immediately only for non-retryable problems, matching the desired/observed lifecycle contract.
+- Recovery checkpoints previously completed after recording `runtime_exited` but before the next periodic
+  reconciliation restored a missing lightweight runtime, so the recovery task misleadingly reported a
+  recovered node without `runtime_id`. Startup recovery now records the retryable failure and continues
+  through provision/start in the same pass; ordinary periodic reconciliation retains its existing
+  crash-visibility behavior. A focused test proves the restored netns identity is included in the checkpoint.
