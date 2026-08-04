@@ -299,3 +299,14 @@ Setup -> Foundations -> US1 (MVP) -> US2 -> US3 -> Polish
 - Direct object links use one owned veth pair and leave no host bridge or leaked resources.
 - Docker routes converge to the exact declared managed set before readiness and survive recovery.
 - The deployed target artifact is traceable to a clean local commit and has a recorded rollback path.
+
+## Phase 8: Convergence
+
+- [ ] T092 **CRITICAL** Enforce one externally reachable authoritative NetLab control plane on `10.72.1.7`, retire or loopback-isolate preview instances such as the current `*:18080` dev service, and add deployment/startup checks that reject conflicting authorities per Constitution I/VIII and T089-T091 (contradicts)
+- [ ] T093 **CRITICAL** Add a production-safe `remote-privileged` browser acceptance mode that preserves and restores an existing non-clean laboratory/runtime baseline, proves the endpoint release identity, and prevents target evidence from being generated under `local-disposable` classification per Constitution VIII and T090-T091 (contradicts)
+- [ ] T094 Classify runtime discovery records as NetLab-owned, acceptance-owned, or foreign-observed; converge or expire stale `unknown_observed` records; and make leak evidence reject ownership-count growth instead of normalizing a later snapshot as the baseline per Constitution V, FR-016, and SC-005 (partial)
+- [ ] T095 Make `deploy/scripts/install.sh` atomically install or merge immutable release metadata, listen/deployment settings, and rollback state before restarting the authoritative service, with tests for preserved operator settings, invalid metadata, restart failure, and rollback per Constitution VIII and plan: deployment decision (partial)
+- [ ] T096 Install and validate the configured template readiness artifact on the target, or explicitly disable the readiness path when unavailable, so startup capability truth has no persistent `template readiness unavailable` warning per plan: capability truth and T089-T091 (partial)
+- [ ] T097 Stabilize the product laboratory switcher and task-heavy live-update path so menus and options retain identity while ordered events arrive, remove reliance on Playwright-only retry loops, and cover two-client operation with at least 100 historical tasks in both required viewports per FR-006, SC-002, and SC-010 (partial)
+- [ ] T098 Isolate privileged target validation with a dedicated ownership domain, resource-name prefix, runtime/state directories, and cleanup boundary so tests coexist with the authoritative reconciler without stopping production except explicit restart scenarios per Constitution V/VI/VIII and SC-006 (partial)
+- [ ] T099 Extend target browser acceptance to generate real ICMP, TCP, and UDP traffic on selected and parallel object links, assert correct directional particles within 500 ms, assert idle-link isolation, and assert particle/direction decay after traffic stops per FR-011, SC-003, and T090 (partial)
