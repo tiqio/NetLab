@@ -262,6 +262,11 @@ export const generatedApi = {
     ),
   stopTrafficFilter: (filterId: string) =>
     request<TaskEnvelope>(`/traffic-filters/${filterId}`, "DELETE"),
+  deleteTrafficFilterHistory: (filterId: string) =>
+    request<{ traffic_filter: TrafficFilter }>(
+      `/traffic-filters/${filterId}/history`,
+      "DELETE",
+    ),
   listTasks: (limit = 100) =>
     request<OperationTask[]>(`/tasks?limit=${encodeURIComponent(limit)}`),
   getTask: (taskId: string) => request<OperationTask>(`/tasks/${taskId}`),

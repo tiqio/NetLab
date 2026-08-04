@@ -90,6 +90,10 @@ func (s *CaptureTaskService) StopFilter(ctx context.Context, id domain.ID, idemp
 	return s.runner.EnqueueOrGet(ctx, operation)
 }
 
+func (s *CaptureTaskService) DeleteFilterHistory(id domain.ID) (domain.TrafficFilter, error) {
+	return s.filters.DeleteHistory(id)
+}
+
 func runtimeOperation(kind, resourceType string, resourceID domain.ID, idempotencyKey string, total int, input map[string]any) domain.OperationTask {
 	body, _ := json.Marshal(input)
 	sum := sha256.Sum256(body)

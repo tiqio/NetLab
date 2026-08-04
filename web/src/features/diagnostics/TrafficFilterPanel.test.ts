@@ -398,6 +398,107 @@ describe("TrafficFilterPanel interactions", () => {
     expect(wrapper.text()).toContain("旧会话已自动停止");
   });
 
+  it("searches sessions and stops an active session before deleting it", async () => {
+    vi.mocked(api.listTrafficFilters).mockResolvedValue([
+      {
+        ambiguous: false,
+        traffic_filter: {
+          id: "filter-running",
+          laboratory_id: "lab",
+          expression: "udp and dst port 19002",
+          color: "#a855f7",
+          state: "running",
+          max_observations: 1000,
+          interface_ids: ["if-a"],
+          link_ids: [],
+          network_object_link_ids: [],
+          observations: [],
+          created_at: "2026-08-04T00:00:02Z",
+        },
+      },
+      {
+        ambiguous: false,
+        traffic_filter: {
+          id: "filter-stopped",
+          laboratory_id: "lab",
+          expression: "icmp",
+          color: "#22c55e",
+          state: "stopped",
+          max_observations: 1000,
+          interface_ids: ["if-b"],
+          link_ids: [],
+          network_object_link_ids: [],
+          observations: [],
+          created_at: "2026-08-04T00:00:01Z",
+        },
+      },
+    ]);
+    const stopTrafficFilter = vi
+      .spyOn(api, "stopTrafficFilter")
+      .mockResolvedValue({
+        task: {
+          id: "task-delete-stop",
+          kind: "traffic_filter.stop",
+          resource_type: "traffic_filter",
+          resource_id: "filter-running",
+          state: "queued",
+          progress_current: 0,
+          progress_total: 2,
+          created_at: "2026-08-04T00:00:03Z",
+        },
+      });
+    vi.spyOn(api, "getTask").mockResolvedValue({
+      id: "task-delete-stop",
+      kind: "traffic_filter.stop",
+      resource_type: "traffic_filter",
+      resource_id: "filter-running",
+      state: "succeeded",
+      progress_current: 2,
+      progress_total: 2,
+      created_at: "2026-08-04T00:00:03Z",
+    });
+    const deleteTrafficFilterHistory = vi
+      .spyOn(api, "deleteTrafficFilterHistory")
+      .mockResolvedValue({
+        traffic_filter: {
+          id: "filter-running",
+          laboratory_id: "lab",
+          expression: "udp and dst port 19002",
+          color: "#a855f7",
+          state: "stopped",
+          max_observations: 1000,
+          interface_ids: ["if-a"],
+          link_ids: [],
+          network_object_link_ids: [],
+          observations: [],
+          created_at: "2026-08-04T00:00:02Z",
+        },
+      });
+    const wrapper = mount(TrafficFilterPanel, {
+      props: { laboratoryId: "lab", nodes, interfaces, links },
+    });
+    await flushPromises();
+
+    await wrapper
+      .find('input[aria-label="搜索 Traffic Filter 会话"]')
+      .setValue("udp 19002");
+    expect(
+      wrapper.findAll('button[aria-label^="选择 Traffic Filter 会话"]'),
+    ).toHaveLength(1);
+    await wrapper
+      .find('button[aria-label="删除 Traffic Filter 会话 filter-running"]')
+      .trigger("click");
+    await flushPromises();
+
+    expect(stopTrafficFilter).toHaveBeenCalledWith("filter-running");
+    expect(deleteTrafficFilterHistory).toHaveBeenCalledWith("filter-running");
+    expect(
+      stopTrafficFilter.mock.invocationCallOrder[0],
+    ).toBeLessThan(deleteTrafficFilterHistory.mock.invocationCallOrder[0]);
+    expect(wrapper.text()).toContain("filter-running 已删除");
+    expect(wrapper.text()).toContain("没有匹配的 Traffic Filter 会话");
+  });
+
   it("starts multiple connected interfaces and follows the durable task", async () => {
     const startTrafficFilter = vi
       .spyOn(api, "startTrafficFilter")

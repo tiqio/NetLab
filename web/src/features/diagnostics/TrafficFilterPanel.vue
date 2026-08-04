@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from "vue";
-import { Activity, CheckCheck, RefreshCw, Square, X } from "lucide-vue-next";
+import {
+  Activity,
+  CheckCheck,
+  RefreshCw,
+  Search,
+  Square,
+  Trash2,
+  X,
+} from "lucide-vue-next";
 import {
   api,
   type Link,
@@ -47,6 +55,7 @@ const color = ref("#f59e0b");
 const maximum = ref(1000);
 const entries = ref<FilterEntry[]>([]);
 const selectedFilterId = ref("");
+const sessionSearch = ref("");
 const selectedInterfaceIds = ref<string[]>([]);
 const selectedLinkIds = ref<string[]>([]);
 const selectedObjectLinkIds = ref<string[]>([]);
@@ -78,6 +87,22 @@ const currentEntry = computed(() =>
     (entry) => entry.traffic_filter.id === selectedFilterId.value,
   ),
 );
+const filteredEntries = computed(() => {
+  const query = sessionSearch.value.trim().toLowerCase();
+  if (!query) return entries.value;
+  const terms = query.split(/\s+/).filter(Boolean);
+  return entries.value.filter(({ traffic_filter: value }) => {
+    const searchable = [
+      value.id,
+      value.state,
+      value.expression,
+      value.created_at,
+    ]
+      .join(" ")
+      .toLowerCase();
+    return terms.every((term) => searchable.includes(term));
+  });
+});
 const filter = computed(() => currentEntry.value?.traffic_filter);
 const active = computed(() =>
   ["starting", "running", "stopping"].includes(filter.value?.state || ""),
@@ -281,6 +306,35 @@ async function stop() {
   }
 }
 
+async function deleteSession(entry: FilterEntry) {
+  if (busy.value) return;
+  busy.value = true;
+  clearTimeout(refreshTimer);
+  const value = entry.traffic_filter;
+  try {
+    if (["starting", "running", "stopping"].includes(value.state)) {
+      const stopped = await api.stopTrafficFilter(value.id);
+      taskId.value = stopped.task.id;
+      taskState.value = stopped.task.state;
+      status.value = `正在停止会话 ${value.id}，停止后将删除记录`;
+      await waitForTask(stopped.task.id);
+    }
+    await api.deleteTrafficFilterHistory(value.id);
+    entries.value = entries.value.filter(
+      (item) => item.traffic_filter.id !== value.id,
+    );
+    if (selectedFilterId.value === value.id)
+      selectedFilterId.value = entries.value[0]?.traffic_filter.id || "";
+    status.value = `Traffic Filter 会话 ${value.id} 已删除`;
+  } catch (error) {
+    status.value = errorMessage(error);
+    await discover();
+  } finally {
+    busy.value = false;
+    scheduleRefresh();
+  }
+}
+
 function toggleInterface(id: string, checked: boolean) {
   selectedInterfaceIds.value = checked
     ? [...new Set([...selectedInterfaceIds.value, id])]
@@ -339,6 +393,7 @@ watch(
     selectedLinkIds.value = [];
     selectedObjectLinkIds.value = [];
     selectedFilterId.value = "";
+    sessionSearch.value = "";
     void discover();
   },
   { immediate: true },
@@ -456,23 +511,82 @@ function applyExample(value: string | number | undefined) {
         <FormField label="最大记录数">
           <Input v-model="maximum" type="number" min="1" max="10000" />
         </FormField>
-        <FormField label="Traffic Filter 会话" class="xl:col-span-2">
-          <Select v-model="selectedFilterId">
-            <option value="">未选择会话</option>
-            <option
-              v-for="entry in entries"
-              :key="entry.traffic_filter.id"
-              :value="entry.traffic_filter.id"
-            >
-              {{ entry.traffic_filter.state }} ·
-              {{ entry.traffic_filter.expression }} ·
-              {{
-                new Date(entry.traffic_filter.created_at).toLocaleTimeString()
-              }}
-            </option>
-          </Select>
-        </FormField>
       </div>
+      <section
+        aria-label="Traffic Filter 会话列表"
+        class="grid gap-2 rounded border border-border bg-background/40 p-2"
+      >
+        <div class="flex items-center gap-2">
+          <strong class="text-xs">Traffic Filter 会话</strong>
+          <span class="text-xs text-muted-foreground">
+            {{ filteredEntries.length }} / {{ entries.length }} 条
+          </span>
+          <div class="relative ml-auto w-full max-w-sm">
+            <Search
+              :size="14"
+              class="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              v-model="sessionSearch"
+              aria-label="搜索 Traffic Filter 会话"
+              placeholder="搜索表达式、状态或会话 ID"
+              class="pl-7"
+            />
+          </div>
+        </div>
+        <div
+          class="max-h-36 overflow-y-auto overscroll-contain rounded border border-border"
+        >
+          <div
+            v-for="entry in filteredEntries"
+            :key="entry.traffic_filter.id"
+            class="flex items-center gap-2 border-b border-border px-2 py-1 last:border-b-0"
+            :class="
+              selectedFilterId === entry.traffic_filter.id
+                ? 'bg-accent'
+                : 'hover:bg-accent/50'
+            "
+          >
+            <button
+              type="button"
+              class="min-w-0 flex-1 text-left"
+              :aria-label="`选择 Traffic Filter 会话 ${entry.traffic_filter.id}`"
+              @click="selectedFilterId = entry.traffic_filter.id"
+            >
+              <span class="block truncate text-xs font-medium">
+                {{ entry.traffic_filter.expression || "全部流量" }}
+              </span>
+              <span class="block truncate font-mono text-[10px] text-muted-foreground">
+                {{ entry.traffic_filter.state }} ·
+                {{ new Date(entry.traffic_filter.created_at).toLocaleString() }}
+                · {{ entry.traffic_filter.id }}
+              </span>
+            </button>
+            <Button
+              size="icon"
+              variant="ghost"
+              :disabled="busy"
+              :aria-label="`删除 Traffic Filter 会话 ${entry.traffic_filter.id}`"
+              :title="
+                ['starting', 'running', 'stopping'].includes(
+                  entry.traffic_filter.state,
+                )
+                  ? '停止并删除会话'
+                  : '删除会话记录'
+              "
+              @click="deleteSession(entry)"
+            >
+              <Trash2 :size="14" />
+            </Button>
+          </div>
+          <p
+            v-if="!filteredEntries.length"
+            class="px-3 py-4 text-center text-xs text-muted-foreground"
+          >
+            没有匹配的 Traffic Filter 会话
+          </p>
+        </div>
+      </section>
       <p class="text-xs text-muted-foreground">
         使用 pcap/tcpdump 风格：协议可写
         <code>icmp</code>、<code>tcp</code>、<code>udp</code>；端口可写

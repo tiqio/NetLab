@@ -433,6 +433,20 @@ func Tools(services Services) []Tool {
 			}
 			return map[string]any{"task": value}, nil
 		}},
+		{Name: "netlab.traffic_filters.delete_history", Description: "Delete a stopped traffic filter history record.", InputSchema: mutationSchema(map[string]any{"filter_id": stringProperty("Traffic filter ID")}, "filter_id"), Handler: func(_ *gin.Context, args map[string]any) (any, error) {
+			if services.CaptureOps == nil {
+				return unavailable("traffic filter")
+			}
+			id, err := argumentString(args, "filter_id")
+			if err != nil {
+				return nil, err
+			}
+			value, err := services.CaptureOps.DeleteFilterHistory(domain.ID(id))
+			if err != nil {
+				return nil, err
+			}
+			return map[string]any{"traffic_filter": value}, nil
+		}},
 		{Name: "netlab.tasks.get", Description: "Read durable operation status.", InputSchema: requiredObject(map[string]any{"task_id": stringProperty("Task ID")}, "task_id"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
 			id, err := argumentString(args, "task_id")
 			if err != nil {

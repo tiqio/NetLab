@@ -342,6 +342,23 @@ func (m *TrafficFilterManager) Stop(id domain.ID) (domain.TrafficFilter, error) 
 	return value.metadata, nil
 }
 
+func (m *TrafficFilterManager) DeleteHistory(id domain.ID) (domain.TrafficFilter, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	value := m.values[id]
+	if value == nil {
+		return domain.TrafficFilter{}, fmt.Errorf("traffic filter not found")
+	}
+	if value.metadata.State == "starting" || value.metadata.State == "running" || value.metadata.State == "stopping" {
+		return domain.TrafficFilter{}, domain.Problem{Code: "traffic_filter_active", Message: "stop the traffic filter before deleting its history", Retryable: true, ResourceType: "traffic_filter", ResourceID: id, Phase: "history_delete", Cleanup: "active filter and capture workers remain unchanged", OperatorHint: "stop the active session and retry deletion", RetryAfterSeconds: 1}
+	}
+	metadata := value.metadata
+	delete(m.values, id)
+	delete(m.pending, id)
+	m.persistLocked()
+	return metadata, nil
+}
+
 func (m *TrafficFilterManager) StopNetworkObjectLink(linkID domain.ID) {
 	m.mu.RLock()
 	ids := make([]domain.ID, 0)

@@ -144,6 +144,9 @@ func durableTaskMutation(method, path string) bool {
 	if len(parts) == 4 && method == http.MethodDelete && (parts[2] == "captures" || parts[2] == "traffic-filters") {
 		return true
 	}
+	if len(parts) == 5 && method == http.MethodDelete && parts[2] == "traffic-filters" && parts[4] == "history" {
+		return true
+	}
 	return method == http.MethodPost && len(parts) == 5 && parts[2] == "nodes" && (parts[4] == "interfaces" || parts[4] == "guest-exec" || parts[4] == "port-mappings")
 }
 

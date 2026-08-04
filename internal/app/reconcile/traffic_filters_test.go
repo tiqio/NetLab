@@ -79,6 +79,27 @@ func TestTrafficFilterListIsNewestFirst(t *testing.T) {
 	}
 }
 
+func TestTrafficFilterHistoryDeleteRequiresStoppedSession(t *testing.T) {
+	manager := NewTrafficFilterManager()
+	filter, err := manager.StartScoped("lab", captureRuntime.Match{Protocol: "icmp"}, 100, []domain.ID{"if-a"}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = manager.DeleteHistory(filter.ID); err == nil || !strings.Contains(err.Error(), "stop the traffic filter") {
+		t.Fatalf("active delete err=%v", err)
+	}
+	if _, err = manager.Stop(filter.ID); err != nil {
+		t.Fatal(err)
+	}
+	deleted, err := manager.DeleteHistory(filter.ID)
+	if err != nil || deleted.ID != filter.ID {
+		t.Fatalf("deleted=%+v err=%v", deleted, err)
+	}
+	if _, _, err = manager.Get(filter.ID); err == nil {
+		t.Fatal("deleted traffic filter remained readable")
+	}
+}
+
 func TestTrafficFilterDecodesPacketsAndHonorsScope(t *testing.T) {
 	manager := NewTrafficFilterManager()
 	filter, err := manager.StartScoped("lab", captureRuntime.Match{Protocol: "udp", DestinationPort: 53}, 100, []domain.ID{"if-a"}, nil)

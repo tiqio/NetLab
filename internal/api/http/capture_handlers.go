@@ -32,6 +32,7 @@ func (h *CaptureHandlers) Register(engine *gin.Engine) {
 	api.POST("/traffic-filters", h.startTrafficFilter)
 	api.GET("/traffic-filters/:filterId", h.getTrafficFilter)
 	api.DELETE("/traffic-filters/:filterId", h.stopTrafficFilter)
+	api.DELETE("/traffic-filters/:filterId/history", h.deleteTrafficFilterHistory)
 }
 
 func (h *CaptureHandlers) listCaptures(c *gin.Context) {
@@ -186,4 +187,17 @@ func (h *CaptureHandlers) stopTrafficFilter(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusAccepted, gin.H{"task": value})
+}
+
+func (h *CaptureHandlers) deleteTrafficFilterHistory(c *gin.Context) {
+	if h.operations == nil {
+		handleError(c, domain.Problem{Code: "operation_unavailable", Message: "traffic filter automation unavailable"})
+		return
+	}
+	value, err := h.operations.DeleteFilterHistory(domain.ID(c.Param("filterId")))
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"traffic_filter": value})
 }
