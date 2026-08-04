@@ -64,6 +64,24 @@
         },
         "target_kind": { "enum": ["local-disposable", "remote-privileged"] },
         "service_version": { "type": "string" },
+        "release": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["version", "candidate_id", "contract_digest"],
+          "properties": {
+            "version": { "type": "string", "minLength": 1 },
+            "candidate_id": { "type": "string", "minLength": 1 },
+            "binary_digest": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "contract_digest": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "built_at": { "type": "string", "format": "date-time" }
+          }
+        },
         "capabilities": {
           "type": "object",
           "additionalProperties": { "type": "boolean" }
@@ -96,7 +114,10 @@
               "resource_id": { "type": "string" },
               "object_kind": { "type": "string" },
               "object_name": { "type": "string" },
-              "cleanup_state": { "type": "string" }
+              "cleanup_state": { "type": "string" },
+              "ownership_class": {
+                "enum": ["managed", "acceptance_owned", "foreign_observed"]
+              }
             }
           }
         }

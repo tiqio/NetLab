@@ -7,12 +7,15 @@ export class NodeOperationsPage extends BasePage {
   }
 
   async setLifecycle(action: "Start" | "Stop") {
-    const button = this.page.getByRole("button", { name: action, exact: true });
+    const button = this.page.getByRole("button", {
+      name: action === "Start" ? /^(Start|启动)$/ : /^(Stop|停止)$/,
+    });
     await expect(button).toBeVisible();
     await button.click();
-    await expect(
-      this.page.getByRole("status").filter({ hasText: /accepted/i }),
-    ).toBeVisible();
+    await expect(this.page.getByRole("status")).toContainText(
+      action === "Start" ? /运行中/ : /已停止/,
+      { timeout: 120_000 },
+    );
   }
 
   async applyResources(cpu: number, quota: number, memory: number) {
