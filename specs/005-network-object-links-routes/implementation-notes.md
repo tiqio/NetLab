@@ -27,15 +27,15 @@
 
 ## Milestone Evidence
 
-| Milestone | Local gates | Commit SHA | Notes |
-|---|---|---|---|
-| Setup | Ignore rules and fixture compilation | pending | No ignore changes required |
-| Foundation | Domain, SQLite migration/repository, command, ports, Linux networking, capture runtime, reconcile, and focused contract gates passed | `61cec9b` | Added durable object-link observation state, atomic `link_deleted` completion, observation/runtime ports, and object-link import/export remapping |
-| US1 | Durable task, repository, HTTP/MCP parity, outbox ordering, and race gates passed | `d542d2f` | Object-link create/list/get now share idempotent durable commands and synchronous occupied-port admission |
-| US2 | pending | pending | |
-| US3 | pending | pending | |
-| US4 | Focused domain, command, store, API, runtime, reconcile, contract, Vitest, build, and changed-file ESLint gates passed | `c18f223` | Canonical route declarations survive create/settings/export/import and expose route-specific readiness; ESLint reports warnings only |
-| Final candidate | pending | pending | |
+| Milestone       | Local gates                                                                                                                          | Commit SHA | Notes                                                                                                                                             |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Setup           | Ignore rules and fixture compilation                                                                                                 | pending    | No ignore changes required                                                                                                                        |
+| Foundation      | Domain, SQLite migration/repository, command, ports, Linux networking, capture runtime, reconcile, and focused contract gates passed | `61cec9b`  | Added durable object-link observation state, atomic `link_deleted` completion, observation/runtime ports, and object-link import/export remapping |
+| US1             | Durable task, repository, HTTP/MCP parity, outbox ordering, and race gates passed                                                    | `d542d2f`  | Object-link create/list/get now share idempotent durable commands and synchronous occupied-port admission                                         |
+| US2             | pending                                                                                                                              | pending    |                                                                                                                                                   |
+| US3             | pending                                                                                                                              | pending    |                                                                                                                                                   |
+| US4             | Focused domain, command, store, API, runtime, reconcile, contract, Vitest, build, and changed-file ESLint gates passed               | `c18f223`  | Canonical route declarations survive create/settings/export/import and expose route-specific readiness; ESLint reports warnings only              |
+| Final candidate | pending                                                                                                                              | pending    |                                                                                                                                                   |
 
 ## Incremental Worklog
 
@@ -43,18 +43,18 @@
   identity, explicit Traffic Filter object-link scope and attribution, `link_deleted` capture completion,
   pre-delete observer cleanup, generated frontend types, and scope selection fixes.
 - Focused gates for `c3338a1`: `go test ./internal/runtime/capture ./internal/app/reconcile
-  ./internal/api/http ./internal/api/mcp ./cmd/netlabd`; `go test -race ./internal/app/reconcile -run
-  'TestCaptureStopNetworkObjectLinkUsesLinkDeletedReason|TestTrafficFilterAttributesNetworkObjectLink'
-  -count=1`; `go test ./tests/contract -run
-  'TestNetworkObjectLinkAndRouteContractDelta|TestGeneratedClientIncludesObjectLinkCaptureAndFilterTypes'
-  -count=1`; `npm test -- --run src/features/diagnostics/TrafficFilterPanel.test.ts`; and
+./internal/api/http ./internal/api/mcp ./cmd/netlabd`; `go test -race ./internal/app/reconcile -run
+'TestCaptureStopNetworkObjectLinkUsesLinkDeletedReason|TestTrafficFilterAttributesNetworkObjectLink'
+-count=1`; `go test ./tests/contract -run
+'TestNetworkObjectLinkAndRouteContractDelta|TestGeneratedClientIncludesObjectLinkCaptureAndFilterTypes'
+-count=1`; `npm test -- --run src/features/diagnostics/TrafficFilterPanel.test.ts`; and
   `npm run build`. All passed locally. The Vite chunk-size warning remains informational.
 - `26f7ab3` (`feat: reconcile owned Docker routes`): persists the exact NetLab-owned route set inside
   the container root, removes only stale recorded routes, applies IPv4 and IPv6 declarations through
   argument vectors, restores the prior set after route or ownership-write failures, and remains
   idempotent across repeated endpoint reconciliation.
 - Focused gate for `26f7ab3`: `go test ./internal/runtime/linuxnet ./internal/runtime/docker
-  ./internal/app/command ./internal/store/sqlite -count=1`; all passed locally.
+./internal/app/command ./internal/store/sqlite -count=1`; all passed locally.
 - `96473ee` (`feat: configure Docker routes through control surfaces`): allows stopped Docker interface
   settings through HTTP, adds typed Docker route create/settings MCP schemas and mutation support,
   synchronizes generated TypeScript request types, adds family-aware route editors to node creation and
@@ -67,8 +67,8 @@
   idempotent Docker runtime ensure path for already-running containers during service/host recovery,
   rejects readiness when endpoint or route reconciliation fails, and covers stopped-container restart.
 - Focused gates for `1ac2be6`: `go test ./internal/runtime/docker ./internal/app/reconcile
-  ./internal/runtime/linuxnet ./internal/api/http ./internal/api/mcp ./internal/store/sqlite
-  ./internal/app/command -count=1`; focused Docker recovery race tests; and Docker route/OpenAPI contract
+./internal/runtime/linuxnet ./internal/api/http ./internal/api/mcp ./internal/store/sqlite
+./internal/app/command -count=1`; focused Docker recovery race tests; and Docker route/OpenAPI contract
   tests. All passed locally.
 - `c18f223` (`feat: report Docker route readiness`): canonicalizes Docker interface addresses, route
   destinations, and gateways before persistence; rejects stable-coded family, metric, gateway,
@@ -76,10 +76,10 @@
   stopped settings, export, and import; and reports pending, applying, applied, and route-specific failed
   readiness in the node operations panel and topology Inspector.
 - Focused gates for `c18f223`: `go test ./internal/domain ./internal/app/command
-  ./internal/store/sqlite ./internal/api/http ./internal/api/mcp ./internal/runtime/linuxnet
-  ./internal/runtime/docker ./internal/app/reconcile -count=1`; focused Docker route contract tests;
+./internal/store/sqlite ./internal/api/http ./internal/api/mcp ./internal/runtime/linuxnet
+./internal/runtime/docker ./internal/app/reconcile -count=1`; focused Docker route contract tests;
   `npm test -- --run src/features/nodes/NodeOperationsPanel.test.ts
-  src/features/topology/TopologyInspector.test.ts`; `npm run build`; and changed-file ESLint. All passed
+src/features/topology/TopologyInspector.test.ts`; `npm run build`; and changed-file ESLint. All passed
   locally. Vite chunk-size output and 115 pre-existing Inspector lint warnings remain informational;
   changed-file ESLint reported zero errors.
 - `3a36938` (`test: cover Docker routed traffic recovery`): adds a root-gated, digest-pinned Docker
@@ -88,14 +88,14 @@
   adapter recovery pass. The test configures container routes only through the runtime adapter and never
   uses manual `nsenter` route setup.
 - Focused gates for `3a36938`: `go test ./tests/integration ./tests/testsupport -run
-  TestPrivilegedDockerStaticRoutePath -count=1` and `go vet ./tests/integration ./tests/testsupport` passed
+TestPrivilegedDockerStaticRoutePath -count=1` and `go vet ./tests/integration ./tests/testsupport` passed
   locally. Dynamic execution is intentionally gated by `NETLAB_PRIVILEGED=1` and an approved
   `NETLAB_DOCKER_ROUTE_IMAGE` pinned with `@sha256:`.
 - `3703ff5` (`test: cover Docker route browser journey`): adds a two-viewport Playwright journey that
   creates canonicalized IPv4 and IPv6 routes through the Add-to-topology dialog, verifies authoritative
   readback, edits the exact stopped-node route set through Settings, and verifies the Inspector summary.
 - Focused gate for `3703ff5`: `NODE_PATH=$PWD/node_modules npx playwright test --config
-  playwright.config.ts --list ../tests/e2e/journeys/dockerStaticRoutes.spec.ts` discovered the desktop and
+playwright.config.ts --list ../tests/e2e/journeys/dockerStaticRoutes.spec.ts` discovered the desktop and
   minimum-viewport cases locally. Dynamic execution remains target-host gated because it requires the
   real Docker runtime and available BusyBox image.
 - `61cec9b` (`feat: persist object link observations`): adds migration `0012` for durable capture
@@ -105,8 +105,8 @@
   network-object links through export/import without runtime locators or packet payloads. Imported active
   links reserve both ports transactionally, while deleted intent does not reoccupy endpoints.
 - Focused gates for `61cec9b`: `go test ./internal/domain ./internal/store/sqlite
-  ./internal/app/command ./internal/app/ports ./internal/runtime/linuxnet ./internal/runtime/capture
-  ./internal/app/reconcile -count=1`; focused object-link/route/OpenAPI contract tests; and dedicated
+./internal/app/command ./internal/app/ports ./internal/runtime/linuxnet ./internal/runtime/capture
+./internal/app/reconcile -count=1`; focused object-link/route/OpenAPI contract tests; and dedicated
   observation completion/import rollback tests all passed locally on August 3, 2026.
 - `d542d2f` (`feat: add durable object link controls`): routes first-class object-link creation through
   the shared durable task runner, returns the same predicted link/task envelope for repeated idempotency
@@ -115,8 +115,7 @@
   Repository events retain revision 1 and precede the terminal task update in ordered outbox sequence.
 - Focused gates for `d542d2f`: core domain/store/task/reconcile/HTTP/MCP/stream tests, the object-link
   control parity contract suite, and `go test -race ./internal/app/reconcile -run
-  TestNetworkObjectLinkCreateIsDurableIdempotentAndObservable -count=1` all passed locally on August 3,
-  2026.
+TestNetworkObjectLinkCreateIsDurableIdempotentAndObservable -count=1` all passed locally on August 3, 2026.
 - `d3bf1d8` (`feat: improve object link topology UX`): synchronizes the SPA object-link create task
   envelope and authoritative GET method, adds readable `object:port ↔ object:port` labels and distinct
   parallel curves, filters occupied named object ports, and presents desired/actual state, revision,
@@ -236,8 +235,8 @@
   links; and cleans a surviving veth endpoint when the first endpoint is already absent. This completes
   T048, T050, T051, and T054 through T058.
 - Focused gates for `21cb1ed`: task/repository/runtime/HTTP/MCP/contract tests, object-link create/delete
-  parity, stale-observation suppression, focused race tests, and `go vet` passed locally on August 3,
-  2026.
+  parity, stale-observation suppression, focused race tests, and `go vet` passed locally on August 3, 2026.
+
 ## US3 Frontend Object-Link Deletion Milestone
 
 - Commit: `b2b1aec` (`feat: delete object links from topology workspace`)
@@ -471,7 +470,7 @@
   path protections, even though `PrivateMounts` reports `no`. Named network-namespace bind mounts are
   therefore valid inside the service mount view but appear as invalid handles to an unrelated host shell.
   Restart acceptance now runs namespace checks through the current `netlab.service` MainPID with `nsenter
-  --mount`, including after the MainPID changes across restart.
+--mount`, including after the MainPID changes across restart.
 - The genuine restart journey then exposed a unit regression: `KillMode=control-group` terminated the QEMU
   child with the service main process, making owned-runtime adoption impossible despite a successful
   recovery task. The unit is restored to the previously validated `KillMode=process`; capture and console
@@ -486,3 +485,10 @@
   recovered node without `runtime_id`. Startup recovery now records the retryable failure and continues
   through provision/start in the same pass; ordinary periodic reconciliation retains its existing
   crash-visibility behavior. A focused test proves the restored netns identity is included in the checkpoint.
+
+## Final Clean-Target Closure — August 4, 2026
+
+- Milestones `a21d44d`, `7406e9a`, and `e980289` aligned the browser acceptance models with the current Chinese workspace, QEMU SSH/serial console behavior, stable laboratory keyboard selection, immediate port-mapping feedback, maintained interaction inventory, and available-image version policy.
+- Immutable candidate `clean-target-7406e9a-20260804` (`0.5.17+7406e9a`, binary `sha256:8d3c011a1a9671968bce20479adbdc07381f27b3b537208dbf344f04b2607046`) is the single healthy authority on `10.72.1.7:18082`; `KillMode=process` is active and the preview service is disabled.
+- Browser run `533321f0-1606-4936-99d7-920f8577aec3` passed all 244 recorded interactions across 1920×1080 and 1024×768, covered all six target-available image/version journeys, and restored a zero-resource baseline.
+- Final target checks reported zero laboratories, zero runtime ownership rows, SQLite `integrity_check=ok`, and no prohibited binary/capture payload in committed evidence. Earlier same-runtime privileged ICMP/TCP/UDP, parallel-link capture/Traffic Filter, Docker IPv4/IPv6 route, restart/recovery, and 100-cycle leak gates remain passing.

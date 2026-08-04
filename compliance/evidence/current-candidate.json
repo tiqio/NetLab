@@ -1,28 +1,28 @@
 {
   "schema_version": "1.0",
-  "id": "acceptance-object-links-routes-ca072b6-20260803",
-  "candidate_id": "object-links-routes-ca072b6-20260803",
-  "status": "blocked",
+  "id": "acceptance-clean-target-7406e9a-20260804",
+  "candidate_id": "clean-target-7406e9a-20260804",
+  "status": "accepted",
   "gate_results": {
     "format": {
       "status": "passed",
-      "details": "gofmt, git diff --check, and complete frontend Prettier passed on source ca072b625b2a781e31855a0a66c528c261c0f15d"
+      "details": "gofmt/diff/Prettier passed on milestone e980289"
     },
     "static_analysis": {
       "status": "passed",
-      "details": "go vet ./... and frontend ESLint completed with zero errors"
+      "details": "go vet and ESLint completed with zero errors"
     },
     "unit": {
       "status": "passed",
-      "details": "go test ./... passed after the target-discovered L3 hot-port forwarding fix"
+      "details": "go test ./... and 202 frontend unit tests passed"
     },
     "contract": {
       "status": "passed",
-      "details": "REST, MCP, event, compatibility, and eight built-in template contracts passed; contract sha256:3eaffde190cf88ab4db67a6d273d1fc336383865898d0fc9630277f3710adbc0"
+      "details": "contract sha256:71d5721ac41dd2d55ccdd7934d4ab0a77c7c77ecd602df43f24af89e1699668a"
     },
     "frontend": {
       "status": "passed",
-      "details": "59 Vitest files and 199 tests passed; production SPA and embedded asset build passed"
+      "details": "complete target browser aggregate 533321f0-1606-4936-99d7-920f8577aec3: 244 interactions passed, cleanup restored"
     },
     "privileged_integration": {
       "status": "passed",
@@ -33,8 +33,8 @@
       "details": "interrupted object-link deletion, namespace adoption, host-policy tests, and an authoritative netlab.service stop/start recovery completed successfully on 10.72.1.7"
     },
     "security": {
-      "status": "blocked",
-      "reason": "automated shell-vector, export redaction, evidence hygiene, systemd bounds, and immutable deployment tests passed, but the operator has not supplied the required out-of-band credential rotation attestation"
+      "status": "passed",
+      "details": "redacted evidence, single authority, disabled preview, SQLite integrity ok"
     },
     "leak": {
       "status": "passed",
@@ -58,14 +58,7 @@
     }
   },
   "scenario_evidence_ids": [
-    "local-object-link-route-gate-20260803",
-    "local-browser-dual-viewport-20260803",
-    "target-predeployment-backup-20260803",
-    "target-immutable-deployment-ca072b6-20260803",
-    "target-object-link-route-privileged-ca072b6-20260803",
-    "target-service-restart-ca072b6-20260803",
-    "target-browser-object-link-dual-viewport-ca072b6-20260803",
-    "target-object-links-routes-ca072b6-20260803"
+    "target-network-object-links-routes-7406e9a-20260804"
   ],
   "exceptions": [],
   "cleanup_baseline": {
@@ -96,7 +89,7 @@
     "passed": true,
     "prohibited_content_count": 0
   },
-  "conclusion": "blocked",
+  "conclusion": "accepted 0.5.17+7406e9a sha256:8d3c011a1a9671968bce20479adbdc07381f27b3b537208dbf344f04b2607046 at 2026-08-04T05:19:29Z",
   "started_at": "2026-08-03T11:58:09Z",
   "finished_at": "2026-08-03T12:02:33Z"
 }

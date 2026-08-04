@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "id": "target-network-object-links-routes-7406e9a-20260804",
+  "kind": "integration",
+  "status": "accepted",
+  "candidate_id": "clean-target-7406e9a-20260804",
+  "release_version": "0.5.17+7406e9a",
+  "binary_digest": "sha256:8d3c011a1a9671968bce20479adbdc07381f27b3b537208dbf344f04b2607046",
+  "contract_digest": "sha256:71d5721ac41dd2d55ccdd7934d4ab0a77c7c77ecd602df43f24af89e1699668a",
+  "finding_ids": [
+    "T104",
+    "SC-001",
+    "SC-002",
+    "SC-003",
+    "SC-004",
+    "SC-005",
+    "SC-006",
+    "SC-007",
+    "SC-008",
+    "SC-009"
+  ],
+  "procedure": "Clean-baseline target deployment followed by privileged runtime, recovery, leak, and complete two-viewport browser acceptance; browser run 533321f0-1606-4936-99d7-920f8577aec3 aggregated 244 passed interactions and six available-version journeys.",
+  "target": {
+    "host_id": "netlab-target-host",
+    "authoritative_endpoint": "10.72.1.7:18082",
+    "service_name": "netlab.service",
+    "preview_service": "disabled",
+    "browser_viewports": ["1920x1080", "1024x768"]
+  },
+  "started_at": "2026-08-04T04:57:57Z",
+  "finished_at": "2026-08-04T05:19:29Z",
+  "outcome": "passed",
+  "cleanup": {
+    "baseline_restored": true,
+    "remaining_count": 0
+  },
+  "redaction": {
+    "passed": true,
+    "prohibited_content_count": 0
+  },
+  "artifacts": [
+    {
+      "kind": "browser-evidence",
+      "path": "web/test-results/acceptance/533321f0-1606-4936-99d7-920f8577aec3/evidence.json",
+      "contains_binary_payload": false,
+      "digest": "sha256:fe370c0b44a45cc62137ee8d164e74ce988d01608bb05358bac38964b5dea79e"
+    },
+    {
+      "kind": "acceptance-procedure",
+      "path": "specs/005-network-object-links-routes/quickstart.md",
+      "contains_binary_payload": false,
+      "digest": "sha256:864493f4d73337b6dd0535c26f293b98d7ac129dd581afa5aa22adfc1908d8ca"
+    }
+  ],
+  "scope_digest": "sha256:864493f4d73337b6dd0535c26f293b98d7ac129dd581afa5aa22adfc1908d8ca"
+}

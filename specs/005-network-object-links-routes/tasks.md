@@ -24,9 +24,9 @@ commits. Source changes must be completed locally before any deployment to `10.7
 **Purpose**: Establish compatibility notes and reusable test support before modifying established runtime
 and persistence behavior.
 
-- [X] T001 Inspect `git log` and `git blame` for the existing object-link, capture, Traffic Filter, Docker endpoint, and topology UI implementations and record compatibility constraints in `specs/005-network-object-links-routes/implementation-notes.md`
-- [X] T002 [P] Add reusable three-network-object, parallel-link, traffic-generator, and namespace cleanup fixtures in `tests/testsupport/network_object_link_fixtures.go`
-- [X] T003 [P] Add reusable Docker dual-stack route fixtures and exact-route assertions in `tests/testsupport/docker_route_fixtures.go`
+- [x] T001 Inspect `git log` and `git blame` for the existing object-link, capture, Traffic Filter, Docker endpoint, and topology UI implementations and record compatibility constraints in `specs/005-network-object-links-routes/implementation-notes.md`
+- [x] T002 [P] Add reusable three-network-object, parallel-link, traffic-generator, and namespace cleanup fixtures in `tests/testsupport/network_object_link_fixtures.go`
+- [x] T003 [P] Add reusable Docker dual-stack route fixtures and exact-route assertions in `tests/testsupport/docker_route_fixtures.go`
 
 ---
 
@@ -39,20 +39,20 @@ all four user stories.
 
 ### Tests for Shared Foundations
 
-- [X] T004 [P] Add failing domain tests for canonical object-link endpoint orientation, observation resource identity, and Docker IPv4/IPv6 route declarations in `internal/domain/operations_test.go` and `internal/domain/models_test.go`
-- [X] T005 [P] Add failing migration and repository tests for cross-side endpoint collisions, attachment collisions, backfill conflicts, reservation release, and transaction rollback in `internal/store/sqlite/interface_reservation_test.go` and `internal/store/sqlite/network_state_repository_test.go`
-- [X] T006 [P] Add failing schema tests for object-link task envelopes, capture source types, Traffic Filter object-link scopes, directional observations, and Docker routes in `tests/contract/network_object_link_route_schema_test.go`
+- [x] T004 [P] Add failing domain tests for canonical object-link endpoint orientation, observation resource identity, and Docker IPv4/IPv6 route declarations in `internal/domain/operations_test.go` and `internal/domain/models_test.go`
+- [x] T005 [P] Add failing migration and repository tests for cross-side endpoint collisions, attachment collisions, backfill conflicts, reservation release, and transaction rollback in `internal/store/sqlite/interface_reservation_test.go` and `internal/store/sqlite/network_state_repository_test.go`
+- [x] T006 [P] Add failing schema tests for object-link task envelopes, capture source types, Traffic Filter object-link scopes, directional observations, and Docker routes in `tests/contract/network_object_link_route_schema_test.go`
 
 ### Shared Implementation
 
-- [X] T007 Add typed `DockerStaticRoute`, observation resource type/direction, and object-link endpoint helpers in `internal/domain/models.go` and `internal/domain/operations.go`
-- [X] T008 Add canonical route and endpoint validation with stable problem codes in `internal/domain/network_object.go` and `internal/domain/models.go`
-- [X] T009 Add the endpoint-reservation, object-link lifecycle, Traffic Filter scope, observation attribution, and managed-route migration in `internal/store/sqlite/migrations/0011_network_object_link_endpoints_routes.sql`
-- [X] T010 Implement transactional endpoint reservation, collision detection across endpoint sides and attachment types, object-link revision updates, and safe reservation release in `internal/store/sqlite/network_repository.go`
-- [X] T011 Create durable capture/filter observation persistence for object-link attribution and extend task, audit, and outbox storage for `link_deleted` completion in `internal/store/sqlite/runtime_observation_repository.go` and `internal/store/sqlite/automation_repository.go`
-- [X] T012 Define namespace-aware observation locator and exact managed-route runtime interfaces in `internal/app/ports/topology.go`
-- [X] T013 Update topology export/import DTOs to preserve object-link endpoint intent and Docker route declarations while excluding runtime locators and packet payloads in `internal/app/command/export.go` and `internal/app/command/import.go`
-- [X] T014 Run the foundational domain, migration, repository, and contract tests and record commands/results plus the focused milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
+- [x] T007 Add typed `DockerStaticRoute`, observation resource type/direction, and object-link endpoint helpers in `internal/domain/models.go` and `internal/domain/operations.go`
+- [x] T008 Add canonical route and endpoint validation with stable problem codes in `internal/domain/network_object.go` and `internal/domain/models.go`
+- [x] T009 Add the endpoint-reservation, object-link lifecycle, Traffic Filter scope, observation attribution, and managed-route migration in `internal/store/sqlite/migrations/0011_network_object_link_endpoints_routes.sql`
+- [x] T010 Implement transactional endpoint reservation, collision detection across endpoint sides and attachment types, object-link revision updates, and safe reservation release in `internal/store/sqlite/network_repository.go`
+- [x] T011 Create durable capture/filter observation persistence for object-link attribution and extend task, audit, and outbox storage for `link_deleted` completion in `internal/store/sqlite/runtime_observation_repository.go` and `internal/store/sqlite/automation_repository.go`
+- [x] T012 Define namespace-aware observation locator and exact managed-route runtime interfaces in `internal/app/ports/topology.go`
+- [x] T013 Update topology export/import DTOs to preserve object-link endpoint intent and Docker route declarations while excluding runtime locators and packet payloads in `internal/app/command/export.go` and `internal/app/command/import.go`
+- [x] T014 Run the foundational domain, migration, repository, and contract tests and record commands/results plus the focused milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
 
 **Checkpoint**: Endpoint occupancy is enforceable across every connection type, shared contracts can carry
 object-link observations and Docker routes, and the first local milestone is committed.
@@ -70,26 +70,26 @@ service, and confirm the same path recovers.
 
 ### Tests for User Story 1
 
-- [X] T015 [P] [US1] Replace bridge-plus-two-veth expectations with failing direct-one-veth-pair, deterministic naming, idempotent ensure, and exact cleanup tests in `internal/runtime/linuxnet/dataplane_test.go`
-- [X] T016 [P] [US1] Add failing create/list/revision/idempotency/task/outbox tests for durable object links in `internal/app/reconcile/network_object_tasks_test.go` and `internal/store/sqlite/network_state_repository_test.go`
-- [X] T017 [P] [US1] Add failing HTTP and MCP parity tests for create/list/get object-link task envelopes and occupied-port errors in `tests/contract/network_object_link_control_parity_test.go`
-- [X] T018 [P] [US1] Add a failing privileged three-object path, parallel-link isolation, bidirectional ICMP/TCP/UDP, and service-restart recovery test in `tests/integration/network_object_link_path_test.go`
-- [X] T019 [P] [US1] Add failing frontend tests for connector port selection, parallel line identity, readable endpoint labels, shared state updates, and refresh recovery in `web/src/features/topology/topologyConnectionController.test.ts`, `web/src/features/topology/TopologyCanvas.test.ts`, and `web/src/features/topology/TopologyInspector.test.ts`
-- [X] T020 [P] [US1] Add a failing Playwright journey that creates a three-object path from the browser and observes the same links in a second client in `tests/e2e/journeys/networkObjectLinks.spec.ts`
+- [x] T015 [P] [US1] Replace bridge-plus-two-veth expectations with failing direct-one-veth-pair, deterministic naming, idempotent ensure, and exact cleanup tests in `internal/runtime/linuxnet/dataplane_test.go`
+- [x] T016 [P] [US1] Add failing create/list/revision/idempotency/task/outbox tests for durable object links in `internal/app/reconcile/network_object_tasks_test.go` and `internal/store/sqlite/network_state_repository_test.go`
+- [x] T017 [P] [US1] Add failing HTTP and MCP parity tests for create/list/get object-link task envelopes and occupied-port errors in `tests/contract/network_object_link_control_parity_test.go`
+- [x] T018 [P] [US1] Add a failing privileged three-object path, parallel-link isolation, bidirectional ICMP/TCP/UDP, and service-restart recovery test in `tests/integration/network_object_link_path_test.go`
+- [x] T019 [P] [US1] Add failing frontend tests for connector port selection, parallel line identity, readable endpoint labels, shared state updates, and refresh recovery in `web/src/features/topology/topologyConnectionController.test.ts`, `web/src/features/topology/TopologyCanvas.test.ts`, and `web/src/features/topology/TopologyInspector.test.ts`
+- [x] T020 [P] [US1] Add a failing Playwright journey that creates a three-object path from the browser and observes the same links in a second client in `tests/e2e/journeys/networkObjectLinks.spec.ts`
 
 ### Implementation for User Story 1
 
-- [X] T021 [US1] Replace the per-link host bridge and two veth pairs with one owned veth pair moved directly into endpoint A and B namespaces in `internal/runtime/linuxnet/dataplane.go`
-- [X] T022 [US1] Add deterministic object-link ownership discovery, partial-pair adoption, pending-create reconciliation, and orphan cleanup in `internal/app/reconcile/host_ownership_scanners.go`, `internal/app/reconcile/recovery_coordinator.go`, and `internal/runtime/ownership/manifest.go`
-- [X] T023 [US1] Implement revisioned and idempotent object-link create/list/get commands with durable tasks and ordered outbox events in `internal/app/reconcile/network_object_tasks.go` and `internal/app/reconcile/network_objects.go`
-- [X] T024 [US1] Upgrade object-link HTTP create/list/get routes to the task-envelope and structured-conflict contract in `internal/api/http/network_handlers.go` and `internal/api/http/mutation_middleware.go`
-- [X] T025 [US1] Add `netlab.network_object_links.create` and `netlab.network_object_links.get` with the shared application handlers in `internal/api/mcp/network_tools.go`
-- [X] T026 [US1] Publish ordered object-link create/state/recovery events through the shared event stream in `internal/api/stream/events.go` and `internal/app/events/outbox.go`
-- [X] T027 [US1] Synchronize object-link task, endpoint, state, and error types and API methods in `web/src/api/generated.ts` and `web/src/api/index.ts`
-- [X] T028 [US1] Implement object-to-object connector selection, occupied-port feedback, parallel-link rendering, and `object:port ↔ object:port` presentation in `web/src/features/topology/topologyConnectionController.ts`, `web/src/features/topology/TopologyCanvas.vue`, and `web/src/features/topology/linkPresentation.ts`
-- [X] T029 [US1] Display authoritative desired/actual state, revision, lifecycle task, and actionable failures for selected object links in `web/src/features/topology/TopologyInspector.vue` and `web/src/features/topology/TopologyWorkspace.vue`
-- [X] T030 [US1] Complete object-link export/import ID remapping and transactional endpoint reservation integration in `internal/store/sqlite/import_repository.go`, `internal/app/command/export.go`, and `internal/app/command/import.go`
-- [X] T031 [US1] Run US1 unit, contract, frontend, privileged integration, recovery, and browser tests and record the focused milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
+- [x] T021 [US1] Replace the per-link host bridge and two veth pairs with one owned veth pair moved directly into endpoint A and B namespaces in `internal/runtime/linuxnet/dataplane.go`
+- [x] T022 [US1] Add deterministic object-link ownership discovery, partial-pair adoption, pending-create reconciliation, and orphan cleanup in `internal/app/reconcile/host_ownership_scanners.go`, `internal/app/reconcile/recovery_coordinator.go`, and `internal/runtime/ownership/manifest.go`
+- [x] T023 [US1] Implement revisioned and idempotent object-link create/list/get commands with durable tasks and ordered outbox events in `internal/app/reconcile/network_object_tasks.go` and `internal/app/reconcile/network_objects.go`
+- [x] T024 [US1] Upgrade object-link HTTP create/list/get routes to the task-envelope and structured-conflict contract in `internal/api/http/network_handlers.go` and `internal/api/http/mutation_middleware.go`
+- [x] T025 [US1] Add `netlab.network_object_links.create` and `netlab.network_object_links.get` with the shared application handlers in `internal/api/mcp/network_tools.go`
+- [x] T026 [US1] Publish ordered object-link create/state/recovery events through the shared event stream in `internal/api/stream/events.go` and `internal/app/events/outbox.go`
+- [x] T027 [US1] Synchronize object-link task, endpoint, state, and error types and API methods in `web/src/api/generated.ts` and `web/src/api/index.ts`
+- [x] T028 [US1] Implement object-to-object connector selection, occupied-port feedback, parallel-link rendering, and `object:port ↔ object:port` presentation in `web/src/features/topology/topologyConnectionController.ts`, `web/src/features/topology/TopologyCanvas.vue`, and `web/src/features/topology/linkPresentation.ts`
+- [x] T029 [US1] Display authoritative desired/actual state, revision, lifecycle task, and actionable failures for selected object links in `web/src/features/topology/TopologyInspector.vue` and `web/src/features/topology/TopologyWorkspace.vue`
+- [x] T030 [US1] Complete object-link export/import ID remapping and transactional endpoint reservation integration in `internal/store/sqlite/import_repository.go`, `internal/app/command/export.go`, and `internal/app/command/import.go`
+- [x] T031 [US1] Run US1 unit, contract, frontend, privileged integration, recovery, and browser tests and record the focused milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
 
 **Checkpoint**: User Story 1 is independently usable as the MVP and has a committed local milestone.
 
@@ -106,25 +106,25 @@ metadata, direction, isolation, and activity decay.
 
 ### Tests for User Story 2
 
-- [X] T032 [P] [US2] Add failing capture-worker tests for namespace execution, cancellation, bounded output, and one-endpoint bidirectional accounting in `internal/runtime/capture/worker_test.go`
-- [X] T033 [P] [US2] Add failing capture-manager and task tests for `network_object_link` source resolution, retained metadata, stream handles, and restart behavior in `internal/app/reconcile/captures_test.go` and `internal/app/reconcile/capture_tasks_test.go`
-- [X] T034 [P] [US2] Add failing Traffic Filter tests for explicit object-link scope, endpoint-A-relative directions, ambiguity, parallel-link isolation, and decay in `internal/app/reconcile/traffic_filters_test.go` and `internal/runtime/capture/path_test.go`
-- [X] T035 [P] [US2] Add failing HTTP/MCP/event contract tests for object-link captures and observations in `tests/contract/network_object_link_observation_contract_test.go`
-- [X] T036 [P] [US2] Add a failing privileged capture/filter test covering ICMP, TCP, UDP, both directions, an unused parallel link, and sub-500 ms attribution in `tests/integration/network_object_link_observation_test.go`
-- [X] T037 [P] [US2] Add failing frontend tests for selected object-link capture, Traffic Filter scoping, inspector metadata, directional particles, and decay in `web/src/features/diagnostics/CapturePanel.test.ts`, `web/src/features/diagnostics/TrafficFilterPanel.test.ts`, `web/src/features/topology/TrafficPathOverlay.test.ts`, and `web/src/features/topology/TopologyInspector.test.ts`
-- [X] T038 [P] [US2] Add a failing Playwright journey for capture and Traffic Filter isolation across two parallel object links in `tests/e2e/journeys/networkObjectLinkObservability.spec.ts`
+- [x] T032 [P] [US2] Add failing capture-worker tests for namespace execution, cancellation, bounded output, and one-endpoint bidirectional accounting in `internal/runtime/capture/worker_test.go`
+- [x] T033 [P] [US2] Add failing capture-manager and task tests for `network_object_link` source resolution, retained metadata, stream handles, and restart behavior in `internal/app/reconcile/captures_test.go` and `internal/app/reconcile/capture_tasks_test.go`
+- [x] T034 [P] [US2] Add failing Traffic Filter tests for explicit object-link scope, endpoint-A-relative directions, ambiguity, parallel-link isolation, and decay in `internal/app/reconcile/traffic_filters_test.go` and `internal/runtime/capture/path_test.go`
+- [x] T035 [P] [US2] Add failing HTTP/MCP/event contract tests for object-link captures and observations in `tests/contract/network_object_link_observation_contract_test.go`
+- [x] T036 [P] [US2] Add a failing privileged capture/filter test covering ICMP, TCP, UDP, both directions, an unused parallel link, and sub-500 ms attribution in `tests/integration/network_object_link_observation_test.go`
+- [x] T037 [P] [US2] Add failing frontend tests for selected object-link capture, Traffic Filter scoping, inspector metadata, directional particles, and decay in `web/src/features/diagnostics/CapturePanel.test.ts`, `web/src/features/diagnostics/TrafficFilterPanel.test.ts`, `web/src/features/topology/TrafficPathOverlay.test.ts`, and `web/src/features/topology/TopologyInspector.test.ts`
+- [x] T038 [P] [US2] Add a failing Playwright journey for capture and Traffic Filter isolation across two parallel object links in `tests/e2e/journeys/networkObjectLinkObservability.spec.ts`
 
 ### Implementation for User Story 2
 
-- [X] T039 [US2] Change the capture worker to accept a structured host-or-namespace locator and execute packet capture without shell interpolation in `internal/runtime/capture/worker.go`
-- [X] T040 [US2] Resolve object-link captures to endpoint A's namespace interface and preserve stable source identity through start, recovery, stream, stop, and retention in `internal/app/reconcile/captures.go` and `internal/app/reconcile/capture_tasks.go`
-- [X] T041 [US2] Extend capture HTTP and MCP inputs with `source_type=network_object_link` while keeping namespace and interface resolution server-side in `internal/api/http/capture_handlers.go` and `internal/api/mcp/tools.go`
-- [X] T042 [US2] Add `network_object_link_ids`, resource-type/resource-ID attribution, endpoint-A-relative direction, and explicit ambiguity to Traffic Filter processing in `internal/app/reconcile/traffic_filters.go` and `internal/runtime/capture/path.go`
-- [X] T043 [US2] Publish ordered capture/filter observations for object links without duplicating standard-link events in `internal/api/stream/events.go` and `internal/app/events/outbox.go`
-- [X] T044 [US2] Extend frontend capture/filter API types and source selectors with object-link identities in `web/src/api/generated.ts`, `web/src/api/index.ts`, `web/src/features/diagnostics/CapturePanel.vue`, and `web/src/features/diagnostics/TrafficFilterPanel.vue`
-- [X] T045 [US2] Render object-link capture state, packet/byte counts, completion, stream/artifact handles, and human-readable endpoint identity in `web/src/features/diagnostics/GlobalCaptureWorkspace.vue` and `web/src/features/topology/TopologyInspector.vue`
-- [X] T046 [US2] Map object-link observations to the exact topology edge and render direction-aware particles with configured decay and ambiguity presentation in `web/src/features/topology/TrafficPathOverlay.vue`, `web/src/features/topology/trafficPathTypes.ts`, and `web/src/features/topology/TopologyCanvas.vue`
-- [X] T047 [US2] Run US2 capture, filter, contract, frontend, privileged integration, and browser tests and record the focused milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
+- [x] T039 [US2] Change the capture worker to accept a structured host-or-namespace locator and execute packet capture without shell interpolation in `internal/runtime/capture/worker.go`
+- [x] T040 [US2] Resolve object-link captures to endpoint A's namespace interface and preserve stable source identity through start, recovery, stream, stop, and retention in `internal/app/reconcile/captures.go` and `internal/app/reconcile/capture_tasks.go`
+- [x] T041 [US2] Extend capture HTTP and MCP inputs with `source_type=network_object_link` while keeping namespace and interface resolution server-side in `internal/api/http/capture_handlers.go` and `internal/api/mcp/tools.go`
+- [x] T042 [US2] Add `network_object_link_ids`, resource-type/resource-ID attribution, endpoint-A-relative direction, and explicit ambiguity to Traffic Filter processing in `internal/app/reconcile/traffic_filters.go` and `internal/runtime/capture/path.go`
+- [x] T043 [US2] Publish ordered capture/filter observations for object links without duplicating standard-link events in `internal/api/stream/events.go` and `internal/app/events/outbox.go`
+- [x] T044 [US2] Extend frontend capture/filter API types and source selectors with object-link identities in `web/src/api/generated.ts`, `web/src/api/index.ts`, `web/src/features/diagnostics/CapturePanel.vue`, and `web/src/features/diagnostics/TrafficFilterPanel.vue`
+- [x] T045 [US2] Render object-link capture state, packet/byte counts, completion, stream/artifact handles, and human-readable endpoint identity in `web/src/features/diagnostics/GlobalCaptureWorkspace.vue` and `web/src/features/topology/TopologyInspector.vue`
+- [x] T046 [US2] Map object-link observations to the exact topology edge and render direction-aware particles with configured decay and ambiguity presentation in `web/src/features/topology/TrafficPathOverlay.vue`, `web/src/features/topology/trafficPathTypes.ts`, and `web/src/features/topology/TopologyCanvas.vue`
+- [x] T047 [US2] Run US2 capture, filter, contract, frontend, privileged integration, and browser tests and record the focused milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
 
 **Checkpoint**: User Story 2 provides first-class troubleshooting for one selected object link without
 false activity on parallel links.
@@ -142,23 +142,23 @@ successful retry after an injected partial cleanup failure.
 
 ### Tests for User Story 3
 
-- [X] T048 [P] [US3] Add failing service/repository tests for expected revision, idempotent delete, capture-stop ordering, endpoint release, object cascade, and ordered deletion events in `internal/app/reconcile/network_object_tasks_test.go` and `internal/store/sqlite/network_state_repository_test.go`
-- [X] T049 [P] [US3] Add failing dataplane and recovery tests for live pair deletion, missing-end tolerance, partial cleanup retry, and protection of unrelated host resources in `internal/runtime/linuxnet/dataplane_test.go` and `tests/recovery/network_object_link_recovery_test.go`
-- [X] T050 [P] [US3] Add failing capture tests for `link_deleted` completion, retained packet metadata, worker cancellation timeout, and stale observation suppression in `internal/app/reconcile/captures_test.go` and `internal/app/reconcile/traffic_filters_test.go`
-- [X] T051 [P] [US3] Add failing HTTP/MCP parity tests for revisioned delete task envelopes and retries in `tests/contract/network_object_link_delete_parity_test.go`
-- [X] T052 [P] [US3] Add failing frontend tests for object-link context deletion, pending/failed state, immediate shared removal, selection clearing, and no ghost restoration in `web/src/features/topology/LinkContextMenu.test.ts`, `web/src/features/topology/TopologyWorkspace.test.ts`, and `web/src/features/topology/TopologyCanvas.test.ts`
-- [X] T053 [P] [US3] Add a failing two-browser Playwright journey for live deletion, active capture completion, port reuse, object cascade, and refresh consistency in `tests/e2e/journeys/networkObjectLinkDeletion.spec.ts`
+- [x] T048 [P] [US3] Add failing service/repository tests for expected revision, idempotent delete, capture-stop ordering, endpoint release, object cascade, and ordered deletion events in `internal/app/reconcile/network_object_tasks_test.go` and `internal/store/sqlite/network_state_repository_test.go`
+- [x] T049 [P] [US3] Add failing dataplane and recovery tests for live pair deletion, missing-end tolerance, partial cleanup retry, and protection of unrelated host resources in `internal/runtime/linuxnet/dataplane_test.go` and `tests/recovery/network_object_link_recovery_test.go`
+- [x] T050 [P] [US3] Add failing capture tests for `link_deleted` completion, retained packet metadata, worker cancellation timeout, and stale observation suppression in `internal/app/reconcile/captures_test.go` and `internal/app/reconcile/traffic_filters_test.go`
+- [x] T051 [P] [US3] Add failing HTTP/MCP parity tests for revisioned delete task envelopes and retries in `tests/contract/network_object_link_delete_parity_test.go`
+- [x] T052 [P] [US3] Add failing frontend tests for object-link context deletion, pending/failed state, immediate shared removal, selection clearing, and no ghost restoration in `web/src/features/topology/LinkContextMenu.test.ts`, `web/src/features/topology/TopologyWorkspace.test.ts`, and `web/src/features/topology/TopologyCanvas.test.ts`
+- [x] T053 [P] [US3] Add a failing two-browser Playwright journey for live deletion, active capture completion, port reuse, object cascade, and refresh consistency in `tests/e2e/journeys/networkObjectLinkDeletion.spec.ts`
 
 ### Implementation for User Story 3
 
-- [X] T054 [US3] Implement revisioned/idempotent object-link deletion tasks that mark disconnecting, stop dependent capture/filter workers, delete runtime resources, release reservations, and commit the final event in `internal/app/reconcile/network_object_tasks.go` and `internal/app/reconcile/network_objects.go`
-- [X] T055 [US3] Make direct-veth deletion idempotent and recovery-safe for absent, half-moved, or partially deleted endpoints in `internal/runtime/linuxnet/dataplane.go`
-- [X] T056 [US3] Complete active object-link captures with `link_deleted`, preserve retained metadata/artifacts, and suppress post-delete filter observations in `internal/app/reconcile/captures.go`, `internal/app/reconcile/capture_tasks.go`, and `internal/app/reconcile/traffic_filters.go`
-- [X] T057 [US3] Cascade network-object deletion through object-link tasks and endpoint reservations without stale resources in `internal/app/reconcile/network_objects.go` and `internal/store/sqlite/network_repository.go`
-- [X] T058 [US3] Expose revisioned delete task envelopes and structured failures through HTTP and MCP in `internal/api/http/network_handlers.go` and `internal/api/mcp/network_tools.go`
-- [X] T059 [US3] Publish deletion and capture-completion events in non-resurrecting order and reconcile interrupted deletion on startup in `internal/api/stream/events.go`, `internal/app/events/outbox.go`, and `internal/app/reconcile/recovery_coordinator.go`
-- [X] T060 [US3] Add object-link right-click delete, task progress, retryable failure, selection clearing, and shared event removal in `web/src/features/topology/LinkContextMenu.vue`, `web/src/features/topology/TopologyWorkspace.vue`, and `web/src/features/topology/TopologyCanvas.vue`
-- [X] T061 [US3] Run US3 unit, contract, frontend, privileged deletion, recovery, leak, and multi-client tests and record the focused milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
+- [x] T054 [US3] Implement revisioned/idempotent object-link deletion tasks that mark disconnecting, stop dependent capture/filter workers, delete runtime resources, release reservations, and commit the final event in `internal/app/reconcile/network_object_tasks.go` and `internal/app/reconcile/network_objects.go`
+- [x] T055 [US3] Make direct-veth deletion idempotent and recovery-safe for absent, half-moved, or partially deleted endpoints in `internal/runtime/linuxnet/dataplane.go`
+- [x] T056 [US3] Complete active object-link captures with `link_deleted`, preserve retained metadata/artifacts, and suppress post-delete filter observations in `internal/app/reconcile/captures.go`, `internal/app/reconcile/capture_tasks.go`, and `internal/app/reconcile/traffic_filters.go`
+- [x] T057 [US3] Cascade network-object deletion through object-link tasks and endpoint reservations without stale resources in `internal/app/reconcile/network_objects.go` and `internal/store/sqlite/network_repository.go`
+- [x] T058 [US3] Expose revisioned delete task envelopes and structured failures through HTTP and MCP in `internal/api/http/network_handlers.go` and `internal/api/mcp/network_tools.go`
+- [x] T059 [US3] Publish deletion and capture-completion events in non-resurrecting order and reconcile interrupted deletion on startup in `internal/api/stream/events.go`, `internal/app/events/outbox.go`, and `internal/app/reconcile/recovery_coordinator.go`
+- [x] T060 [US3] Add object-link right-click delete, task progress, retryable failure, selection clearing, and shared event removal in `web/src/features/topology/LinkContextMenu.vue`, `web/src/features/topology/TopologyWorkspace.vue`, and `web/src/features/topology/TopologyCanvas.vue`
+- [x] T061 [US3] Run US3 unit, contract, frontend, privileged deletion, recovery, leak, and multi-client tests and record the focused milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
 
 **Checkpoint**: User Story 3 supports observable live failure simulation and cleanup without stopping
 unrelated nodes or leaving ghost topology state.
@@ -176,26 +176,26 @@ and confirm exact-set convergence and actionable failures.
 
 ### Tests for User Story 4
 
-- [X] T062 [P] [US4] Add failing domain tests for canonical CIDRs, family consistency, duplicate/conflicting prefixes, known interface, gateway reachability, metric validation, and stable error codes in `internal/domain/models_test.go`
-- [X] T063 [P] [US4] Add failing node create/settings/export/import tests proving Docker `network_interfaces.routes` survive every control path in `internal/app/command/node_template_test.go`, `internal/app/command/export_test.go`, and `internal/app/command/import_test.go`
-- [X] T064 [P] [US4] Add failing Docker endpoint tests for exact managed-route replacement, stale managed-route removal, unmanaged-route preservation, idempotent ensure, dual-stack support, and route-specific rollback in `internal/runtime/linuxnet/docker_endpoint_test.go`
-- [X] T065 [P] [US4] Add failing Docker adapter tests proving route reconciliation runs for new, already-running, restarted, and recovered containers before readiness in `internal/runtime/docker/adapter_test.go`
-- [X] T066 [P] [US4] Add failing HTTP/MCP/generated-client contract tests for Docker route declarations and actionable validation errors in `tests/contract/docker_static_route_contract_test.go`
-- [X] T067 [P] [US4] Add a failing privileged multi-object L3 test for automatic IPv4/IPv6 routes, ICMP/TCP/UDP, stop/start, service recovery, and no manual `nsenter` setup in `tests/integration/docker_static_route_path_test.go`
-- [X] T068 [P] [US4] Add failing frontend tests for Docker route creation/editing, readback, stopped-node update, validation feedback, and immutable unrelated credentials in `web/src/features/nodes/NodeConfigurationPanel.test.ts` and `web/src/features/topology/CreateTopologyResourceDialog.test.ts`
-- [X] T069 [P] [US4] Add a failing Playwright journey that configures and verifies Docker routes entirely through the frontend in `tests/e2e/journeys/dockerStaticRoutes.spec.ts`
+- [x] T062 [P] [US4] Add failing domain tests for canonical CIDRs, family consistency, duplicate/conflicting prefixes, known interface, gateway reachability, metric validation, and stable error codes in `internal/domain/models_test.go`
+- [x] T063 [P] [US4] Add failing node create/settings/export/import tests proving Docker `network_interfaces.routes` survive every control path in `internal/app/command/node_template_test.go`, `internal/app/command/export_test.go`, and `internal/app/command/import_test.go`
+- [x] T064 [P] [US4] Add failing Docker endpoint tests for exact managed-route replacement, stale managed-route removal, unmanaged-route preservation, idempotent ensure, dual-stack support, and route-specific rollback in `internal/runtime/linuxnet/docker_endpoint_test.go`
+- [x] T065 [P] [US4] Add failing Docker adapter tests proving route reconciliation runs for new, already-running, restarted, and recovered containers before readiness in `internal/runtime/docker/adapter_test.go`
+- [x] T066 [P] [US4] Add failing HTTP/MCP/generated-client contract tests for Docker route declarations and actionable validation errors in `tests/contract/docker_static_route_contract_test.go`
+- [x] T067 [P] [US4] Add a failing privileged multi-object L3 test for automatic IPv4/IPv6 routes, ICMP/TCP/UDP, stop/start, service recovery, and no manual `nsenter` setup in `tests/integration/docker_static_route_path_test.go`
+- [x] T068 [P] [US4] Add failing frontend tests for Docker route creation/editing, readback, stopped-node update, validation feedback, and immutable unrelated credentials in `web/src/features/nodes/NodeConfigurationPanel.test.ts` and `web/src/features/topology/CreateTopologyResourceDialog.test.ts`
+- [x] T069 [P] [US4] Add a failing Playwright journey that configures and verifies Docker routes entirely through the frontend in `tests/e2e/journeys/dockerStaticRoutes.spec.ts`
 
 ### Implementation for User Story 4
 
-- [X] T070 [US4] Implement canonical Docker route validation and normalization on typed interface settings before persistence or readiness in `internal/domain/models.go` and `internal/app/command/node.go`
-- [X] T071 [US4] Preserve Docker network interface and route declarations through create, stopped-node settings, export, import, and generated task inputs in `internal/app/command/node.go`, `internal/app/command/export.go`, `internal/app/command/import.go`, and `internal/store/sqlite/node_operations_repository.go`
-- [X] T072 [US4] Reconcile the exact owned route set inside the container namespace using argument vectors, remove only stale NetLab-managed routes, and return route-specific errors in `internal/runtime/linuxnet/docker_endpoint.go`
-- [X] T073 [US4] Run endpoint and route reconciliation for created, already-running, restarted, recreated, service-recovered, and host-recovered containers before ready state in `internal/runtime/docker/adapter.go` and `internal/app/reconcile/recovery_coordinator.go`
-- [X] T074 [US4] Expose typed Docker routes and validation problems through HTTP and MCP node create/settings operations in `internal/api/http/node_operations_handlers.go` and `internal/api/mcp/tools.go`
-- [X] T075 [US4] Synchronize Docker route request/response types and API serialization in `web/src/api/generated.ts` and `web/src/api/nodeOperations.ts`
-- [X] T076 [US4] Add family-aware Docker route editors, defaults, stopped-node settings support, and backend problem presentation in `web/src/features/nodes/NodeConfigurationPanel.vue` and `web/src/features/topology/CreateTopologyResourceDialog.vue`
-- [X] T077 [US4] Surface route application progress and route-specific readiness failures in `web/src/features/nodes/NodeOperationsPanel.vue` and `web/src/features/topology/TopologyInspector.vue`
-- [X] T078 [US4] Run US4 domain, command, adapter, contract, frontend, privileged L3, recovery, and browser tests and record the focused milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
+- [x] T070 [US4] Implement canonical Docker route validation and normalization on typed interface settings before persistence or readiness in `internal/domain/models.go` and `internal/app/command/node.go`
+- [x] T071 [US4] Preserve Docker network interface and route declarations through create, stopped-node settings, export, import, and generated task inputs in `internal/app/command/node.go`, `internal/app/command/export.go`, `internal/app/command/import.go`, and `internal/store/sqlite/node_operations_repository.go`
+- [x] T072 [US4] Reconcile the exact owned route set inside the container namespace using argument vectors, remove only stale NetLab-managed routes, and return route-specific errors in `internal/runtime/linuxnet/docker_endpoint.go`
+- [x] T073 [US4] Run endpoint and route reconciliation for created, already-running, restarted, recreated, service-recovered, and host-recovered containers before ready state in `internal/runtime/docker/adapter.go` and `internal/app/reconcile/recovery_coordinator.go`
+- [x] T074 [US4] Expose typed Docker routes and validation problems through HTTP and MCP node create/settings operations in `internal/api/http/node_operations_handlers.go` and `internal/api/mcp/tools.go`
+- [x] T075 [US4] Synchronize Docker route request/response types and API serialization in `web/src/api/generated.ts` and `web/src/api/nodeOperations.ts`
+- [x] T076 [US4] Add family-aware Docker route editors, defaults, stopped-node settings support, and backend problem presentation in `web/src/features/nodes/NodeConfigurationPanel.vue` and `web/src/features/topology/CreateTopologyResourceDialog.vue`
+- [x] T077 [US4] Surface route application progress and route-specific readiness failures in `web/src/features/nodes/NodeOperationsPanel.vue` and `web/src/features/topology/TopologyInspector.vue`
+- [x] T078 [US4] Run US4 domain, command, adapter, contract, frontend, privileged L3, recovery, and browser tests and record the focused milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
 
 **Checkpoint**: User Story 4 makes Docker L3 configuration reproducible without manual host intervention.
 
@@ -206,19 +206,19 @@ and confirm exact-set convergence and actionable failures.
 **Purpose**: Prevent regressions, publish final contracts and operator guidance, validate a clean local
 candidate, then deploy and test the immutable artifact on `10.72.1.7`.
 
-- [X] T079 [P] Add regression tests proving standard node-interface links, attachments, NAT, host-interface capture, standard-link capture, and existing Traffic Filter scopes retain their semantics in `tests/integration/network_compatibility_regression_test.go`
-- [X] T080 [P] Add a 100-cycle create/capture/filter/delete/recreate leak test for direct object links and Docker managed routes in `tests/integration/network_object_link_route_leak_test.go`
-- [X] T081 [P] Add security tests proving endpoint names and route values never enter interpolated shell strings and exports/evidence omit runtime identifiers, credentials, packet payloads, and target secrets in `tests/security/network_object_link_route_security_test.go`
-- [X] T082 [P] Synchronize implemented REST schemas and operation IDs with `specs/005-network-object-links-routes/contracts/openapi-delta.yaml`
-- [X] T083 [P] Synchronize implemented MCP tool inputs, outputs, errors, and capture metadata with `specs/005-network-object-links-routes/contracts/mcp-tools.md`
-- [X] T084 [P] Synchronize ordered object-link, route, capture, and Traffic Filter event semantics with `specs/005-network-object-links-routes/contracts/events.md`
-- [X] T085 [P] Document object-link creation, live deletion, capture, Traffic Filter, Docker route configuration, recovery behavior, and limitations in `README.md`
-- [X] T086 Run formatting, static analysis, Go unit/contract/security tests, frontend Vitest/build/lint/format checks, privileged integration, recovery, Playwright, and leak gates from `specs/005-network-object-links-routes/quickstart.md`
-- [X] T087 Record the final clean local gate results and focused implementation milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
-- [X] T088 Build the candidate only from the clean commit and record source SHA, artifact SHA-256 digest, SQLite migration state, and rollback artifact in `compliance/evidence/current-candidate.json`
-- [X] T089 Deploy the immutable candidate without source edits using `deploy/scripts/install.sh` and record UTC deployment time and artifact identity in `compliance/deployment-authority.json`
-- [X] T090 Validate multi-switch forwarding, parallel links, live deletion, capture, Traffic Filter direction/decay, Docker IPv4/IPv6 routes, service restart, host recovery, and leak cleanup on `10.72.1.7` using `specs/005-network-object-links-routes/quickstart.md`
-- [X] T091 Record redacted target-host results and final acceptance conclusion in `compliance/evidence/current-candidate.json`; if any mandatory validation fails, execute the recorded rollback through `deploy/scripts/maintenance.sh`
+- [x] T079 [P] Add regression tests proving standard node-interface links, attachments, NAT, host-interface capture, standard-link capture, and existing Traffic Filter scopes retain their semantics in `tests/integration/network_compatibility_regression_test.go`
+- [x] T080 [P] Add a 100-cycle create/capture/filter/delete/recreate leak test for direct object links and Docker managed routes in `tests/integration/network_object_link_route_leak_test.go`
+- [x] T081 [P] Add security tests proving endpoint names and route values never enter interpolated shell strings and exports/evidence omit runtime identifiers, credentials, packet payloads, and target secrets in `tests/security/network_object_link_route_security_test.go`
+- [x] T082 [P] Synchronize implemented REST schemas and operation IDs with `specs/005-network-object-links-routes/contracts/openapi-delta.yaml`
+- [x] T083 [P] Synchronize implemented MCP tool inputs, outputs, errors, and capture metadata with `specs/005-network-object-links-routes/contracts/mcp-tools.md`
+- [x] T084 [P] Synchronize ordered object-link, route, capture, and Traffic Filter event semantics with `specs/005-network-object-links-routes/contracts/events.md`
+- [x] T085 [P] Document object-link creation, live deletion, capture, Traffic Filter, Docker route configuration, recovery behavior, and limitations in `README.md`
+- [x] T086 Run formatting, static analysis, Go unit/contract/security tests, frontend Vitest/build/lint/format checks, privileged integration, recovery, Playwright, and leak gates from `specs/005-network-object-links-routes/quickstart.md`
+- [x] T087 Record the final clean local gate results and focused implementation milestone commit SHA in `specs/005-network-object-links-routes/implementation-notes.md`
+- [x] T088 Build the candidate only from the clean commit and record source SHA, artifact SHA-256 digest, SQLite migration state, and rollback artifact in `compliance/evidence/current-candidate.json`
+- [x] T089 Deploy the immutable candidate without source edits using `deploy/scripts/install.sh` and record UTC deployment time and artifact identity in `compliance/deployment-authority.json`
+- [x] T090 Validate multi-switch forwarding, parallel links, live deletion, capture, Traffic Filter direction/decay, Docker IPv4/IPv6 routes, service restart, host recovery, and leak cleanup on `10.72.1.7` using `specs/005-network-object-links-routes/quickstart.md`
+- [x] T091 Record redacted target-host results and final acceptance conclusion in `compliance/evidence/current-candidate.json`; if any mandatory validation fails, execute the recorded rollback through `deploy/scripts/maintenance.sh`
 
 ---
 
@@ -302,19 +302,19 @@ Setup -> Foundations -> US1 (MVP) -> US2 -> US3 -> Polish
 
 ## Phase 8: Convergence
 
-- [X] T092 **CRITICAL** Enforce one externally reachable authoritative NetLab control plane on `10.72.1.7`, retire or loopback-isolate preview instances such as the current `*:18080` dev service, and add deployment/startup checks that reject conflicting authorities per Constitution I/VIII and T089-T091 (contradicts)
-- [X] T093 **CRITICAL** Add a production-safe `remote-privileged` browser acceptance mode that preserves and restores an existing non-clean laboratory/runtime baseline, proves the endpoint release identity, and prevents target evidence from being generated under `local-disposable` classification per Constitution VIII and T090-T091 (contradicts)
-- [X] T094 Classify runtime discovery records as NetLab-owned, acceptance-owned, or foreign-observed; converge or expire stale `unknown_observed` records; and make leak evidence reject ownership-count growth instead of normalizing a later snapshot as the baseline per Constitution V, FR-016, and SC-005 (partial)
-- [X] T095 Make `deploy/scripts/install.sh` atomically install or merge immutable release metadata, listen/deployment settings, and rollback state before restarting the authoritative service, with tests for preserved operator settings, invalid metadata, restart failure, and rollback per Constitution VIII and plan: deployment decision (partial)
-- [X] T096 Install and validate the configured template readiness artifact on the target, or explicitly disable the readiness path when unavailable, so startup capability truth has no persistent `template readiness unavailable` warning per plan: capability truth and T089-T091 (partial)
-- [X] T097 Stabilize the product laboratory switcher and task-heavy live-update path so menus and options retain identity while ordered events arrive, remove reliance on Playwright-only retry loops, and cover two-client operation with at least 100 historical tasks in both required viewports per FR-006, SC-002, and SC-010 (partial)
-- [X] T098 Isolate privileged target validation with a dedicated ownership domain, resource-name prefix, runtime/state directories, and cleanup boundary so tests coexist with the authoritative reconciler without stopping production except explicit restart scenarios per Constitution V/VI/VIII and SC-006 (partial)
-- [X] T099 Extend target browser acceptance to generate real ICMP, TCP, and UDP traffic on selected and parallel object links, assert correct directional particles within 500 ms, assert idle-link isolation, and assert particle/direction decay after traffic stops per FR-011, SC-003, and T090 (partial)
+- [x] T092 **CRITICAL** Enforce one externally reachable authoritative NetLab control plane on `10.72.1.7`, retire or loopback-isolate preview instances such as the current `*:18080` dev service, and add deployment/startup checks that reject conflicting authorities per Constitution I/VIII and T089-T091 (contradicts)
+- [x] T093 **CRITICAL** Add a production-safe `remote-privileged` browser acceptance mode that preserves and restores an existing non-clean laboratory/runtime baseline, proves the endpoint release identity, and prevents target evidence from being generated under `local-disposable` classification per Constitution VIII and T090-T091 (contradicts)
+- [x] T094 Classify runtime discovery records as NetLab-owned, acceptance-owned, or foreign-observed; converge or expire stale `unknown_observed` records; and make leak evidence reject ownership-count growth instead of normalizing a later snapshot as the baseline per Constitution V, FR-016, and SC-005 (partial)
+- [x] T095 Make `deploy/scripts/install.sh` atomically install or merge immutable release metadata, listen/deployment settings, and rollback state before restarting the authoritative service, with tests for preserved operator settings, invalid metadata, restart failure, and rollback per Constitution VIII and plan: deployment decision (partial)
+- [x] T096 Install and validate the configured template readiness artifact on the target, or explicitly disable the readiness path when unavailable, so startup capability truth has no persistent `template readiness unavailable` warning per plan: capability truth and T089-T091 (partial)
+- [x] T097 Stabilize the product laboratory switcher and task-heavy live-update path so menus and options retain identity while ordered events arrive, remove reliance on Playwright-only retry loops, and cover two-client operation with at least 100 historical tasks in both required viewports per FR-006, SC-002, and SC-010 (partial)
+- [x] T098 Isolate privileged target validation with a dedicated ownership domain, resource-name prefix, runtime/state directories, and cleanup boundary so tests coexist with the authoritative reconciler without stopping production except explicit restart scenarios per Constitution V/VI/VIII and SC-006 (partial)
+- [x] T099 Extend target browser acceptance to generate real ICMP, TCP, and UDP traffic on selected and parallel object links, assert correct directional particles within 500 ms, assert idle-link isolation, and assert particle/direction decay after traffic stops per FR-011, SC-003, and T090 (partial)
 
 ## Phase 9: Convergence
 
-- [X] T100 **CRITICAL** Replace large-file `cp`/`install` database restore and unguarded vacuum behavior with a crash-safe SQLite maintenance transaction that uses checksum and integrity validation, bounded lock/I/O and free-space preflight, coordinated service stop, WAL/SHM handling, same-filesystem atomic replacement, directory fsync, automatic rollback, and failure-path tests per Constitution VIII and plan: deployment/rollback decision (contradicts)
-- [X] T101 **CRITICAL** Make authoritative startup readiness represent successful database open, migrations, recovery reconciliation, template-readiness validation, and HTTP listener availability; fail the systemd unit within a bounded timeout with actionable storage diagnostics, and require installer rollback to prove the previous release is healthy rather than merely process-active per Constitution VI/VIII and T095 (contradicts)
-- [X] T102 Add an explicitly destructive, host-local laboratory reset workflow with dry-run inventory, typed confirmation, checksum-verified backup, durable deletion through shared lifecycle handlers where available, offline recovery when the API cannot start, and ownership-scoped cleanup that preserves images, templates, configuration, backups, and all foreign EVE-NG resources per Constitution V/VI/VIII and plan: resource ownership and deployment decisions (missing)
-- [X] T103 Add configurable retention, archival, and bounded batch pruning for completed operation tasks, audit events, published outbox events, captures, Traffic Filter observations, and deleted-laboratory history, including replay/audit safety floors, size reporting, dry-run mode, safe compaction, and SQLite repository plus maintenance integration tests per FR-025 and plan: SQLite durable history decision (partial)
-- [ ] T104 After the operator-authorized reset, create and verify a compact clean target baseline, build and deploy an immutable candidate from a clean milestone commit, prove a single healthy `10.72.1.7:18082` authority and disabled preview service, run the complete multi-switch, parallel-link, live-delete, capture, Traffic Filter ICMP/TCP/UDP direction/decay, Docker IPv4/IPv6 route, restart/recovery, browser, and 100-cycle leak acceptance suite in target-host clean-baseline mode, then record redacted artifact, migration, cleanup, rollback, and target results per SC-001–SC-009 and T089–T091 (partial)
+- [x] T100 **CRITICAL** Replace large-file `cp`/`install` database restore and unguarded vacuum behavior with a crash-safe SQLite maintenance transaction that uses checksum and integrity validation, bounded lock/I/O and free-space preflight, coordinated service stop, WAL/SHM handling, same-filesystem atomic replacement, directory fsync, automatic rollback, and failure-path tests per Constitution VIII and plan: deployment/rollback decision (contradicts)
+- [x] T101 **CRITICAL** Make authoritative startup readiness represent successful database open, migrations, recovery reconciliation, template-readiness validation, and HTTP listener availability; fail the systemd unit within a bounded timeout with actionable storage diagnostics, and require installer rollback to prove the previous release is healthy rather than merely process-active per Constitution VI/VIII and T095 (contradicts)
+- [x] T102 Add an explicitly destructive, host-local laboratory reset workflow with dry-run inventory, typed confirmation, checksum-verified backup, durable deletion through shared lifecycle handlers where available, offline recovery when the API cannot start, and ownership-scoped cleanup that preserves images, templates, configuration, backups, and all foreign EVE-NG resources per Constitution V/VI/VIII and plan: resource ownership and deployment decisions (missing)
+- [x] T103 Add configurable retention, archival, and bounded batch pruning for completed operation tasks, audit events, published outbox events, captures, Traffic Filter observations, and deleted-laboratory history, including replay/audit safety floors, size reporting, dry-run mode, safe compaction, and SQLite repository plus maintenance integration tests per FR-025 and plan: SQLite durable history decision (partial)
+- [x] T104 After the operator-authorized reset, create and verify a compact clean target baseline, build and deploy an immutable candidate from a clean milestone commit, prove a single healthy `10.72.1.7:18082` authority and disabled preview service, run the complete multi-switch, parallel-link, live-delete, capture, Traffic Filter ICMP/TCP/UDP direction/decay, Docker IPv4/IPv6 route, restart/recovery, browser, and 100-cycle leak acceptance suite in target-host clean-baseline mode, then record redacted artifact, migration, cleanup, rollback, and target results per SC-001–SC-009 and T089–T091 (partial)
