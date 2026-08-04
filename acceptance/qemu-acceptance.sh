@@ -6,6 +6,7 @@ LAB_NAME=${NETLAB_ACCEPTANCE_LAB:-qemu-acceptance-$(date -u +%Y%m%dT%H%M%SZ)}
 ALLOW_REBOOT=${NETLAB_ACCEPTANCE_ALLOW_REBOOT:-0}
 POLL_SECONDS=${NETLAB_ACCEPTANCE_POLL_SECONDS:-180}
 LAB_ID=""
+WORK_DIR=""
 
 api() {
   local method=$1 path=$2 body=${3:-} revision=${4:-}
@@ -19,16 +20,20 @@ api() {
 }
 
 cleanup() {
-  [[ -n $LAB_ID ]] || return 0
-  local lab revision
-  lab=$(api GET "/labs/$LAB_ID" 2>/dev/null) || return 0
-  revision=$(jq -r '.laboratory.revision' <<<"$lab")
-  api DELETE "/labs/$LAB_ID" '' "$revision" >/dev/null || true
+  if [[ -n $LAB_ID ]]; then
+    local lab revision
+    lab=$(api GET "/labs/$LAB_ID" 2>/dev/null) || true
+    if [[ -n ${lab:-} ]]; then
+      revision=$(jq -r '.laboratory.revision' <<<"$lab")
+      api DELETE "/labs/$LAB_ID" '' "$revision" >/dev/null || true
+    fi
+  fi
+  [[ -z $WORK_DIR ]] || rm -rf "$WORK_DIR"
 }
 trap cleanup EXIT
 
 require_tools() {
-  for tool in curl jq python3; do command -v "$tool" >/dev/null || { echo "$tool is required" >&2; exit 2; }; done
+  for tool in curl jq python3 ssh ssh-keygen; do command -v "$tool" >/dev/null || { echo "$tool is required" >&2; exit 2; }; done
 }
 
 free_tcp_port() {
@@ -82,29 +87,49 @@ wait_capability() {
   return 1
 }
 
-registered_qemu_versions() {
+run_guest() {
+  local id=$1 command=$2 timeout=${3:-60} response task
+  response=$(api POST "/nodes/$id/guest-exec" "$(jq -nc --arg command "$command" --argjson timeout "$timeout" '{argv:["/bin/bash","-lc",$command],timeout_seconds:$timeout,output_limit:131072}')")
+  task=$(jq -r '.task.id // .id' <<<"$response")
+  wait_task "$task"
+}
+
+registered_qemu_pairs() {
   local images templates
   images=$(api GET /images)
   templates=$(api GET /templates)
   jq -r --argjson images "$images" '
-    [ $images[] | select(.runtime_kind == "qemu" and .availability == "available") | .id ] as $legal |
-    .[] | .versions[] | select(.enabled == true and (.image_version_id as $id | $legal | index($id))) | .id
+    [ $images[] | select(.runtime_kind == "qemu" and .availability == "available") ] as $legal |
+    .[] as $template |
+    ($template.template_key | ascii_downcase | sub("-qemu$"; "")) as $family |
+    $template.versions[] |
+    select(.enabled == true) |
+    . as $version |
+    ([ $legal[] | select(.id == ($version.image_version_id // "")) ] +
+      [ $legal[] | select((((.name // "") + " " + (.source_reference // "")) | ascii_downcase | contains($family))) ] |
+      unique_by(.id) |
+      sort_by(if ((.source_reference // "") | ascii_downcase | contains("qga")) then 0 else 1 end) |
+      first // empty) as $image |
+    select($image.id != null) |
+    [$version.id, $image.id] | @tsv
   ' <<<"$templates"
 }
 
-registered_ubuntu_version() {
+registered_ubuntu_pair() {
   local images templates
   images=$(api GET /images)
   templates=$(api GET /templates)
   jq -r --argjson images "$images" '
-    [ $images[] | select(.runtime_kind == "qemu" and .availability == "available") | .id ] as $legal |
-    first(.[] | select(.template_key == "ubuntu-qemu") | .versions[] | select(.enabled == true and (.image_version_id as $id | $legal | index($id)))) | .id // empty
+    [ $images[] | select(.runtime_kind == "qemu" and .availability == "available" and ((((.name // "") + " " + (.source_reference // "")) | ascii_downcase | contains("ubuntu")))) ] as $legal |
+    first(.[] | select(.template_key == "ubuntu-qemu") | .versions[] | select(.enabled == true)) as $version |
+    ($legal | sort_by(if ((.source_reference // "") | ascii_downcase | contains("qga")) then 0 else 1 end) | first // empty) as $image |
+    if $version.id != null and $image.id != null then [$version.id, $image.id] | @tsv else empty end
   ' <<<"$templates"
 }
 
 create_node() {
-  local version=$1 index=$2 response
-  response=$(api POST "/labs/$LAB_ID/nodes" "$(jq -nc --arg name "qemu-$index" --arg version "$version" '{name:$name,template_version_id:$version,cpu_count:2,cpu_quota_micros:100000,memory_mib:1024,storage_gib:8,interface_limit:8,interface_count:2,process_limit:256}')")
+  local version=$1 image=$2 index=$3 response
+  response=$(api POST "/labs/$LAB_ID/nodes" "$(jq -nc --arg name "qemu-$index" --arg version "$version" --arg image "$image" '{name:$name,template_version_id:$version,image_version_id:$image,cpu_count:2,cpu_quota_micros:100000,memory_mib:1024,storage_gib:8,interface_limit:8,interface_count:2,process_limit:256}')")
   jq -r '.node.id' <<<"$response"
 }
 
@@ -150,12 +175,13 @@ verify_node() {
 }
 
 verify_automatic_networking() {
-  local id=$1 snapshot interface response object task diagnostics task_result output deadline
+  local id=$1 snapshot interface response object task diagnostics task_result output deadline guest_ip
+  local install_command ssh_mapping nginx_mapping ztp_mapping ssh_port nginx_port ztp_port public_key
   snapshot=$(api GET "/labs/$LAB_ID")
   interface=$(jq -r --arg id "$id" 'first(.interfaces[] | select(.node_id == $id)) | .id // empty' <<<"$snapshot")
   [[ -n $interface ]] || { echo "Ubuntu node $id has no interface for NAT acceptance" >&2; return 1; }
 
-  response=$(api POST "/labs/$LAB_ID/network-objects" '{"name":"automatic-networking","kind":"nat_bridge","config":{"ipv4_prefix":"10.244.86.0/24","ipv6_prefix":"fd86::/64","uplink":"eth0","dhcpv4":{"start":"10.244.86.20","end":"10.244.86.80","lease_time":"10m"},"dhcpv6":{"start":"fd86::20","end":"fd86::80","lease_time":"10m"},"router_advertisements":true,"dns_servers":["1.1.1.1","2606:4700:4700::1111"],"domain":"acceptance.netlab"}}')
+  response=$(api POST "/labs/$LAB_ID/network-objects" '{"name":"automatic-networking","kind":"nat_bridge","config":{"ipv4_prefix":"10.244.86.0/24","ipv6_prefix":"fd86::/64","uplink":"auto","dhcpv4":{"start":"10.244.86.20","end":"10.244.86.80","lease_time":"10m"},"dhcpv6":{"start":"fd86::20","end":"fd86::80","lease_time":"10m"},"router_advertisements":true,"dns_servers":["1.1.1.1","2606:4700:4700::1111"],"domain":"acceptance.netlab"}}')
   object=$(jq -r '.network_object.id' <<<"$response")
   task=$(jq -r '.task.id' <<<"$response")
   wait_task "$task" >/dev/null
@@ -171,32 +197,76 @@ verify_automatic_networking() {
     if task_result=$(wait_task "$task" 2>/dev/null); then
       output=$(jq -r '.result.stdout_base64 | @base64d' <<<"$task_result")
       if grep -Eq 'inet 10\.244\.86\.[0-9]+/' <<<"$output" && grep -Eq 'inet6 (fd86:|[23][0-9a-f]{3}:)' <<<"$output"; then
-        return 0
+        guest_ip=$(sed -nE 's/.*inet (10\.244\.86\.[0-9]+)\/.*/\1/p' <<<"$output" | head -n1)
+        break
       fi
     fi
     sleep 2
   done
-  echo "Ubuntu node $id did not obtain automatic IPv4 and IPv6 addresses" >&2
-  return 1
+  [[ -n ${guest_ip:-} ]] || { echo "Ubuntu node $id did not obtain automatic IPv4 and IPv6 addresses" >&2; return 1; }
+
+  ssh-keygen -q -t ed25519 -N '' -f "$WORK_DIR/portmap-key"
+  public_key=$(<"$WORK_DIR/portmap-key.pub")
+  install_command=$(cat <<EOF
+set -e
+export DEBIAN_FRONTEND=noninteractive
+printf 'Acquire::ForceIPv4 "true";\n' >/etc/apt/apt.conf.d/99netlab-force-ipv4
+apt-get update
+apt-get install -y nginx openssh-server python3
+install -d -m 0700 -o ubuntu -g ubuntu /home/ubuntu/.ssh
+printf '%s\n' '$public_key' >/home/ubuntu/.ssh/authorized_keys
+chown ubuntu:ubuntu /home/ubuntu/.ssh/authorized_keys
+chmod 0600 /home/ubuntu/.ssh/authorized_keys
+printf 'NETLAB_NGINX_E2E\n' >/var/www/html/index.html
+install -d /opt/netlab-ztp
+printf 'NETLAB_ZTP_E2E\n' >/opt/netlab-ztp/ztp.txt
+systemctl enable --now nginx ssh
+systemd-run --unit=netlab-ztp-acceptance --property=Restart=always /usr/bin/python3 -m http.server 8088 --directory /opt/netlab-ztp
+EOF
+)
+  task_result=$(run_guest "$id" "$install_command" 900)
+  jq -e '.result.exit_code == 0' <<<"$task_result" >/dev/null
+
+  response=$(api POST "/nodes/$id/port-mappings" '{"protocol":"tcp","host_address":"127.0.0.1","host_port":0,"guest_address":"","guest_port":22}')
+  ssh_mapping=$(jq -r '.port_mapping.id' <<<"$response"); ssh_port=$(jq -r '.port_mapping.host_port' <<<"$response"); wait_task "$(jq -r '.task.id' <<<"$response")" >/dev/null
+  response=$(api POST "/nodes/$id/port-mappings" '{"protocol":"tcp","host_address":"127.0.0.1","host_port":0,"guest_address":"","guest_port":80}')
+  nginx_mapping=$(jq -r '.port_mapping.id' <<<"$response"); nginx_port=$(jq -r '.port_mapping.host_port' <<<"$response"); wait_task "$(jq -r '.task.id' <<<"$response")" >/dev/null
+  response=$(api POST "/nodes/$id/port-mappings" '{"protocol":"tcp","host_address":"127.0.0.1","host_port":0,"guest_address":"","guest_port":8088}')
+  ztp_mapping=$(jq -r '.port_mapping.id' <<<"$response"); ztp_port=$(jq -r '.port_mapping.host_port' <<<"$response"); wait_task "$(jq -r '.task.id' <<<"$response")" >/dev/null
+
+  [[ $(curl -fsS "http://127.0.0.1:$nginx_port/") == NETLAB_NGINX_E2E ]]
+  [[ $(curl -fsS "http://127.0.0.1:$ztp_port/ztp.txt") == NETLAB_ZTP_E2E ]]
+  [[ $(ssh -i "$WORK_DIR/portmap-key" -p "$ssh_port" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 ubuntu@127.0.0.1 'printf NETLAB_SSH_E2E') == NETLAB_SSH_E2E ]]
+
+  for mapping in "$ssh_mapping" "$nginx_mapping" "$ztp_mapping"; do
+    response=$(api DELETE "/port-mappings/$mapping")
+    wait_task "$(jq -r '.task.id // .id' <<<"$response")" >/dev/null
+  done
+  [[ $(api GET "/nodes/$id/port-mappings" | jq 'length') == 0 ]]
 }
 
 require_tools
+WORK_DIR=$(mktemp -d)
 api GET /capabilities >/dev/null
-mapfile -t versions < <(registered_qemu_versions)
-ubuntu_version=$(registered_ubuntu_version)
-if (( ${#versions[@]} < 1 )); then
+mapfile -t pairs < <(registered_qemu_pairs)
+ubuntu_pair=$(registered_ubuntu_pair)
+if (( ${#pairs[@]} < 1 )); then
   echo "SKIP: one operator-registered available QEMU template version is required; found none." >&2
   exit 77
 fi
-if [[ -z $ubuntu_version ]]; then
+if [[ -z $ubuntu_pair ]]; then
   echo "SKIP: an available Ubuntu QEMU template version is required for automatic-networking acceptance." >&2
   exit 77
 fi
 
 lab=$(api POST /labs "$(jq -nc --arg name "$LAB_NAME" '{name:$name,recovery_policy:"auto_restore"}')")
 LAB_ID=$(jq -r '.id' <<<"$lab")
-nodes=("$(create_node "$ubuntu_version" 1)")
-for index in 1 2 3; do nodes+=("$(create_node "${versions[$((index % ${#versions[@]}))]}" "$((index + 1))")"); done
+IFS=$'\t' read -r ubuntu_version ubuntu_image <<<"$ubuntu_pair"
+nodes=("$(create_node "$ubuntu_version" "$ubuntu_image" 1)")
+for index in 1 2 3; do
+  IFS=$'\t' read -r version image <<<"${pairs[$((index % ${#pairs[@]}))]}"
+  nodes+=("$(create_node "$version" "$image" "$((index + 1))")")
+done
 for id in "${nodes[@]}"; do start_node "$id"; done
 for id in "${nodes[@]}"; do verify_node "$id"; done
 verify_automatic_networking "${nodes[0]}"
