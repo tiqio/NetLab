@@ -527,3 +527,18 @@ TestNetworkObjectLinkCreateIsDurableIdempotentAndObservable -count=1` all passed
 - A headless Chromium smoke check confirmed the laboratory, all five topology resources, and the
   retained Traffic Filter are visible. Placements were normalized into a centered horizontal path so
   both Docker endpoints and all intermediate devices remain inside the initial canvas viewport.
+
+## Traffic Filter Slot Capacity Follow-Up — August 4, 2026
+
+- The `已连接链路` shortcut intentionally selects both Docker attachment interfaces and both direct
+  network-object links in the retained five-resource topology. Attachments consume one capture worker
+  each, while every network-object link consumes two workers to preserve ingress/egress direction, so
+  this scope requires six slots rather than four.
+- Milestone `8fa8e76` raises the default and example capture concurrency from 4 to 16 and updates the
+  Traffic Filter scope summary to report the actual estimated slot count, explicitly documenting the
+  two-slot directional cost of each object link. Focused backend tests, seven panel interaction tests,
+  the production Vue build, frontend artifact hygiene, and `go vet ./...` passed locally.
+- Candidate `traffic-slots-8fa8e76-20260804` (`0.5.21+8fa8e76`) is deployed on
+  `10.72.1.7:18082`, with target `captures.concurrent: 16`. A real six-slot ICMP filter covering the two
+  Docker interfaces and two object links started successfully; all six workers remain `running` without
+  errors and produced observations on all four selected resources in both traffic directions.
