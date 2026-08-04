@@ -15,8 +15,10 @@ This matrix references the existing contracts in
 | Create node | `createNode` | Durable task, node event, desired/observed state | US1 |
 | Start/stop node | `setNodeState` | Durable task and node lifecycle events | US1/US2 |
 | Delete node | `deleteNode` | Durable task, deletion/cleanup events | US1/US2 |
+| Update node settings | `updateNodeSettings` | Revision-sensitive shared node response and event | US2 |
 | Create/delete network object | `createNetworkObject`, `deleteNetworkObject` | Durable task and resource events | US1 |
 | Attach network object | `attachNetworkObject` | Durable task and link/resource events | US1 |
+| Create/delete network-object link | `createNetworkObjectLink`, `deleteNetworkObjectLink` | Durable task, ordered link events, and live cleanup | 005-US1/US3 |
 | Connect/disconnect link | `connectLink`, `disconnectLink` | Durable task and link events | US1 |
 | Atomically reconnect link | `reconnectLink` | Durable task with original-endpoint rollback on failure or cancellation | 004-US2 |
 | Move topology resources | `updateTopologyPlacements` | Revision-sensitive shared placement batch and ordered event | 004-US1 |
