@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/netlab/netlab/internal/domain"
-	"github.com/netlab/netlab/internal/runtime/ownership"
 )
 
 type SwitchL3Runtime struct {
@@ -19,7 +18,7 @@ type SwitchL3Runtime struct {
 }
 
 func (r *SwitchL3Runtime) Diagnostics(ctx context.Context, id domain.ID) (map[string]any, error) {
-	namespace := ownership.Name("nlr", id, 15)
+	namespace := SwitchL3NamespaceName(id)
 	routes, err := r.executor.Output(ctx, r.ip, "-n", namespace, "-j", "route", "show", "table", "all")
 	if err != nil {
 		return nil, err
@@ -47,7 +46,7 @@ func (r *SwitchL3Runtime) Configure(ctx context.Context, object domain.NetworkOb
 	if err := domain.ValidateSwitchL3Config(config); err != nil {
 		return err
 	}
-	namespace := ownership.Name("nlr", object.ID, 15)
+	namespace := SwitchL3NamespaceName(object.ID)
 	if err := ensureNamespace(ctx, r.executor, r.ip, namespace); err != nil {
 		return err
 	}
@@ -109,5 +108,5 @@ func missingFIBTable(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "FIB table does not exist")
 }
 func (r *SwitchL3Runtime) Delete(ctx context.Context, id domain.ID) error {
-	return deleteNamespace(ctx, r.executor, r.ip, ownership.Name("nlr", id, 15))
+	return deleteNamespace(ctx, r.executor, r.ip, SwitchL3NamespaceName(id))
 }
