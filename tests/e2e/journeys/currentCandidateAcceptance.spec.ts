@@ -293,7 +293,7 @@ test("target candidate validates console capture filter and live rewire", async 
   await page.getByRole("tab", { name: "Traffic Filter" }).click();
   await page
     .getByRole("region", { name: "Diagnostics" })
-    .getByRole("button", { name: "Refresh", exact: true })
+    .getByRole("button", { name: /^(Refresh|刷新)$/ })
     .click();
   await consoleCommand(page, first.node.id, "ping -c 1 -W 1 10.77.0.2");
   await consoleCommand(page, second.id, "nc -l -p 19001 >/dev/null 2>&1 &");

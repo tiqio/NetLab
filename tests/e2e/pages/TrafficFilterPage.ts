@@ -26,7 +26,7 @@ export class TrafficFilterPage extends BasePage {
   async refresh() {
     await this.activate(
       this.diagnostics().getByRole("button", {
-        name: "Refresh",
+        name: /^(Refresh|刷新)$/,
         exact: true,
       }),
     );
@@ -45,7 +45,9 @@ export class TrafficFilterPage extends BasePage {
       this.page.getByLabel("Traffic Filter observed packet path"),
     ).toBeVisible();
     await expect(
-      this.diagnostics().getByText(/(?:running|stopped|failed) · \d+\/\d+ observations/),
+      this.diagnostics().getByText(
+        /(?:running|stopped|failed) · \d+\/\d+ observations/,
+      ),
     ).toBeVisible();
   }
 }
