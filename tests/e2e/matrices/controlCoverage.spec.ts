@@ -11,7 +11,7 @@ test("visible empty-workspace controls are inventoried and explain unavailabilit
   const controls = await discoverControls(page);
   const expectedNames = [
     "Toggle device palette",
-    "Select a laboratory0",
+    "Laboratory",
     "Templates",
     "Automation",
     "Refresh",

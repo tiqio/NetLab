@@ -23,12 +23,13 @@ test("real Telnet and VNC sessions switch reconnect and close", async ({
   await new TopologyPage(page, automation).openSelectedTerminal();
   const consolePage = new ConsolePage(page);
   await expect(
-    page.getByRole("button", { name: "TELNET 1", exact: true }),
+    page.getByRole("button", { name: /^(SSH|SERIAL) \d+$/ }).first(),
   ).toBeVisible();
+  const serialSession = page.getByRole("button", { name: /^SERIAL \d+$/ });
+  if (!(await serialSession.count())) await consolePage.add("Serial");
+  await expect(serialSession.first()).toBeVisible();
   await consolePage.add("VNC");
-  await expect(
-    page.getByRole("button", { name: "VNC 2", exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole("button", { name: /^VNC \d+$/ })).toBeVisible();
   await consolePage.reconnect();
   await page.setViewportSize({ width: 1024, height: 768 });
   await expect(

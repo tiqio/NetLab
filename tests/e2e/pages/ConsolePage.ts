@@ -30,10 +30,15 @@ export class ConsolePage extends BasePage {
     ).toContainText(/connecting|connected|reconnecting/);
   }
 
-  async add(mode: "Telnet" | "VNC") {
+  async add(mode: "Telnet" | "Serial" | "VNC") {
     await this.activate(
       this.page.getByRole("button", {
-        name: mode === "Telnet" ? "Add terminal session" : "Add VNC session",
+        name:
+          mode === "Telnet"
+            ? "Add terminal session"
+            : mode === "Serial"
+              ? "Add serial console"
+              : "Add VNC session",
       }),
     );
   }

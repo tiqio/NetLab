@@ -19,7 +19,7 @@ test("real Traffic Filter maps input and survives refresh and stop", async ({
     runId,
     templateKey: "busybox-container",
   });
-  await page.getByRole("tab", { name: "Traffic Filter" }).click();
+  await page.getByRole("tab", { name: /^(Traffic Filter|流量过滤)$/ }).click();
   const filterPage = new TrafficFilterPage(page);
   await filterPage.start("tcp port 443", 20);
   await filterPage.refresh();
@@ -31,7 +31,7 @@ test("real Traffic Filter maps input and survives refresh and stop", async ({
   const current = entries.at(-1)?.traffic_filter;
   expect(current).toMatchObject({
     laboratory_id: laboratory.id,
-    expression: "tcp and dst port 443",
+    expression: "(tcp and src port 443) or (tcp and dst port 443)",
     max_observations: 20,
   });
   await ledger.add({

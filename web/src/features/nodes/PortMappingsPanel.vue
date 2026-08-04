@@ -125,6 +125,7 @@ async function create() {
   if (!canCreate.value) return;
   busy.value = true;
   problem.value = undefined;
+  status.value = "正在创建端口映射…";
   try {
     const value = await api.createPortMapping(props.nodeId, {
       protocol: protocol.value,

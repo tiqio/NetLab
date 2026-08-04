@@ -103,7 +103,7 @@ test("node operations execute through pointer and keyboard", async ({
 
   for (const activation of ["pointer", "keyboard"] as const) {
     let duration = await activate(
-      page.getByRole("button", { name: "Start", exact: true }),
+      page.getByRole("button", { name: /^(Start|启动)$/, exact: true }),
       activation,
     );
     await waitState(primary.id, "running");
@@ -117,7 +117,7 @@ test("node operations execute through pointer and keyboard", async ({
     await openInspector(primary.name);
 
     duration = await activate(
-      page.getByRole("button", { name: "Stop", exact: true }),
+      page.getByRole("button", { name: /^(Stop|停止)$/, exact: true }),
       activation,
     );
     await waitState(primary.id, "stopped");
@@ -154,12 +154,12 @@ test("node operations execute through pointer and keyboard", async ({
         response.request().method() === "POST",
     );
     duration = await activate(
-      page.getByRole("button", { name: "Add interface" }),
+      page.getByRole("button", { name: "添加接口" }),
       activation,
     );
     const interfaceOutcome = await interfaceResponse;
     const interfaceSection = page.locator("section").filter({
-      has: page.getByRole("heading", { name: "Interfaces" }),
+      has: page.getByRole("heading", { name: "接口操作" }),
     });
     await expect(interfaceSection.getByRole("status")).not.toHaveText("", {
       timeout: 30_000,
@@ -177,13 +177,15 @@ test("node operations execute through pointer and keyboard", async ({
     );
 
     const hostPort = activation === "pointer" ? "22231" : "22232";
-    await page.getByLabel("Host port").fill(hostPort);
+    await page.getByLabel("宿主机端口").fill(hostPort);
     duration = await activate(
-      page.getByRole("button", { name: "Publish port" }),
+      page.getByRole("button", { name: "保存并生效" }),
       activation,
     );
     await expect(
-      page.getByRole("status").filter({ hasText: /Mapping queued/ }),
+      page
+        .getByRole("status")
+        .filter({ hasText: /正在创建端口映射|正在发布端口|端口映射已生效/ }),
     ).toBeVisible();
     record(
       "node.port.publish",
@@ -199,12 +201,12 @@ test("node operations execute through pointer and keyboard", async ({
       activation === "pointer" ? primary : await createNode("delete-keyboard");
     await openInspector(node.name);
     let duration = await activate(
-      page.getByRole("button", { name: "Delete", exact: true }),
+      page.getByRole("button", { name: "删除", exact: true }),
       activation,
     );
-    const dialog = page.getByRole("dialog", { name: "Delete node" });
+    const dialog = page.getByRole("dialog", { name: "删除节点" });
     duration += await activate(
-      dialog.getByRole("button", { name: "Delete node" }),
+      dialog.getByRole("button", { name: "确认删除" }),
       activation,
     );
     await waitForCondition(

@@ -268,6 +268,8 @@ function openDelete() {
       <Button
         variant="outline"
         class="w-full min-w-0 justify-between gap-2 px-3"
+        role="combobox"
+        aria-label="Laboratory"
         aria-haspopup="listbox"
         :aria-expanded="switcherOpen"
         data-testid="laboratory-switcher"

@@ -103,4 +103,28 @@ describe("PortMappingsPanel", () => {
     );
     expect(wrapper.text()).toContain("端口映射已生效");
   });
+
+  it("shows immediate feedback while the create request is pending", async () => {
+    let resolveCreate!: (value: {
+      port_mapping: PortMapping;
+      task: OperationTask;
+    }) => void;
+    vi.spyOn(api, "createPortMapping").mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveCreate = resolve;
+        }),
+    );
+    const wrapper = mount(PortMappingsPanel, { props: { nodeId: "node-1" } });
+    await flushPromises();
+
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("保存并生效"))!
+      .trigger("click");
+
+    expect(wrapper.text()).toContain("正在创建端口映射");
+    resolveCreate({ port_mapping: mapping, task: task() });
+    await flushPromises();
+  });
 });

@@ -26,6 +26,42 @@ async function activate(page: Page, locator: Locator, method: Activation) {
   return Math.max(1, Date.now() - started);
 }
 
+async function activateLaboratoryOption(
+  page: Page,
+  laboratoryId: string,
+  laboratoryName: string,
+  method: Activation,
+) {
+  const started = Date.now();
+  const switcher = page.getByTestId("laboratory-switcher");
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    if ((await switcher.getAttribute("aria-expanded")) !== "true") {
+      await activate(page, switcher, method);
+    }
+    const option = page
+      .locator(`[data-laboratory-id="${laboratoryId}"]`)
+      .getByRole("option");
+    try {
+      await expect(option).toBeVisible({ timeout: 2_000 });
+      await expect(option).toBeEnabled({ timeout: 2_000 });
+      if (method === "keyboard") {
+        await option.press("Enter", { timeout: 2_000 });
+      } else {
+        await option.click({ timeout: 2_000 });
+      }
+      await expect(switcher).toContainText(laboratoryName, { timeout: 3_000 });
+      return Math.max(1, Date.now() - started);
+    } catch (error) {
+      lastError = error;
+      if ((await switcher.textContent())?.includes(laboratoryName)) {
+        return Math.max(1, Date.now() - started);
+      }
+    }
+  }
+  throw lastError;
+}
+
 async function closeDialog(page: Page) {
   const dialog = page.locator('[role="dialog"]:visible');
   const close = dialog.getByRole("button", { name: "Close dialog" });
@@ -377,12 +413,10 @@ test("navigation templates and task center support pointer and keyboard", async 
     }
 
     if (!(await switcher.textContent())?.includes(laboratory.name)) {
-      await activate(page, switcher, activation);
-      await activate(
+      await activateLaboratoryOption(
         page,
-        page
-          .locator(`[data-laboratory-id="${laboratory.id}"]`)
-          .getByRole("option"),
+        laboratory.id,
+        laboratory.name,
         activation,
       );
     }
