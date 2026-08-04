@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -47,14 +48,29 @@ func main() {
 		fmt.Println(version)
 		return
 	}
+	if len(os.Args) > 1 && os.Args[1] == "release" {
+		_ = json.NewEncoder(os.Stdout).Encode(map[string]string{"version": version, "candidate_id": candidateID, "binary_digest": binaryDigest, "contract_digest": contractDigest, "built_at": builtAt})
+		return
+	}
+	validateOnly := len(os.Args) > 1 && os.Args[1] == "validate-config"
+	if validateOnly {
+		os.Args = append([]string{os.Args[0]}, os.Args[2:]...)
+	}
 	configPath := flag.String("config", "", "configuration file")
 	flag.Parse()
-	cfg, err := config.Load(*configPath)
+	cfg, err := config.LoadRaw(*configPath)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "load config:", err)
 		os.Exit(1)
 	}
 	applyBuildIdentity(&cfg)
+	if err = cfg.Validate(); err != nil {
+		fmt.Fprintln(os.Stderr, "validate config:", err)
+		os.Exit(1)
+	}
+	if validateOnly {
+		return
+	}
 	releaseIdentity := configuredReleaseIdentity(cfg)
 	logger := observability.NewLogger(slog.LevelInfo)
 	if warning := cfg.SecurityWarning(); warning != "" {
@@ -127,7 +143,7 @@ func main() {
 			readinessPath = "compliance/template-readiness.json"
 		}
 	}
-	if err = templateQueries.LoadReadiness(readinessPath); err != nil {
+	if err = templateQueries.LoadReadinessForCandidate(readinessPath, releaseIdentity.CandidateID); err != nil {
 		logger.Warn("template readiness unavailable", "error", err)
 	}
 	nodeCommands.SetTemplateReadinessResolver(templateQueries)

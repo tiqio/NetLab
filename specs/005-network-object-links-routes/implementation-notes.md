@@ -380,3 +380,15 @@
   persistent foreign EVE-NG resources as NetLab-owned baseline resources.
 - Focused gates: `go test ./internal/compliance ./internal/app/reconcile ./internal/store/sqlite`,
   `go test ./tests/security -run Authority`, and the target-policy/cleanup acceptance-unit tests passed.
+
+## Phase 8 Atomic Deployment Milestone
+
+- The service applies embedded immutable build identity before authoritative configuration validation and
+  exposes `release` plus `validate-config` command modes for deployment preflight.
+- The prebuilt installer now stages the binary and configuration, preserves operator-owned settings,
+  validates the candidate before replacement, installs through atomic file moves, and restores the prior
+  binary/configuration/readiness files if restart or authority verification fails.
+- Installation generates a candidate-bound readiness document for all eight built-in templates. The
+  server rejects readiness evidence from another candidate instead of silently publishing stale truth.
+- Focused gates: netlabd/config/template query tests, deployment security tests, script syntax checks, and
+  release-configuration/readiness generation tests passed locally on August 4, 2026.

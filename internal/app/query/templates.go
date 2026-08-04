@@ -64,12 +64,17 @@ func (s *TemplateService) LoadBuiltins(ctx context.Context, root string) error {
 }
 
 func (s *TemplateService) LoadReadiness(path string) error {
+	return s.LoadReadinessForCandidate(path, "")
+}
+
+func (s *TemplateService) LoadReadinessForCandidate(path, candidateID string) error {
 	body, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
 	var document struct {
-		Templates []struct {
+		CandidateID string `json:"candidate_id"`
+		Templates   []struct {
 			TemplateKey     string         `json:"template_key"`
 			Status          string         `json:"status"`
 			GenuineWorkload bool           `json:"genuine_workload"`
@@ -83,6 +88,9 @@ func (s *TemplateService) LoadReadiness(path string) error {
 	}
 	if err := json.Unmarshal(body, &document); err != nil {
 		return err
+	}
+	if candidateID != "" && document.CandidateID != candidateID {
+		return fmt.Errorf("template readiness candidate %q does not match release %q", document.CandidateID, candidateID)
 	}
 	s.readiness = map[string]domain.TemplateReadiness{}
 	for _, item := range document.Templates {

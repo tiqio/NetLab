@@ -67,9 +67,17 @@ func Defaults() Config {
 }
 
 func Load(path string) (Config, error) {
+	c, err := LoadRaw(path)
+	if err != nil {
+		return c, err
+	}
+	return c, c.Validate()
+}
+
+func LoadRaw(path string) (Config, error) {
 	c := Defaults()
 	if path == "" {
-		return c, c.Validate()
+		return c, nil
 	}
 	body, err := os.ReadFile(path)
 	if err != nil {
@@ -93,7 +101,7 @@ func Load(path string) (Config, error) {
 			return c, err
 		}
 	}
-	return c, c.Validate()
+	return c, nil
 }
 
 func (c Config) Validate() error {

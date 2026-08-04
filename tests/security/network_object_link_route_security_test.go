@@ -21,8 +21,10 @@ func TestPrebuiltDeploymentPreservesExistingConfiguration(t *testing.T) {
 	for _, required := range []string{
 		`NETLAB_PREBUILT_BINARY`,
 		`test -x "$NETLAB_PREBUILT_BINARY"`,
-		`install -Dm0755 "$NETLAB_PREBUILT_BINARY" /usr/local/bin/netlabd`,
-		`if [[ ! -f /etc/netlab/netlab.yaml ]]`,
+		`install -m0755 "$NETLAB_PREBUILT_BINARY" "$work/netlabd"`,
+		`prepare-release-config.sh`,
+		`validate-config -config "$work/netlab.yaml"`,
+		`rollback()`,
 		`systemctl enable netlab`,
 		`systemctl restart netlab`,
 	} {

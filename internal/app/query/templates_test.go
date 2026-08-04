@@ -2,10 +2,22 @@ package query
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/netlab/netlab/internal/domain"
 )
+
+func TestLoadReadinessRejectsDifferentCandidate(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "readiness.json")
+	if err := os.WriteFile(path, []byte(`{"candidate_id":"old","templates":[]}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := NewTemplateService(&templateStoreStub{}).LoadReadinessForCandidate(path, "new"); err == nil {
+		t.Fatal("expected candidate mismatch")
+	}
+}
 
 type templateStoreStub struct {
 	templates []domain.DeviceTemplate

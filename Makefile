@@ -87,7 +87,7 @@ clean:
 install: build
 	install -Dm0755 bin/netlabd /usr/local/bin/netlabd
 	install -Dm0644 deploy/systemd/netlab.service /etc/systemd/system/netlab.service
-	install -Dm0644 deploy/config/netlab.example.yaml /etc/netlab/netlab.yaml
+	install -Dm0755 deploy/scripts/check-authority.sh /usr/local/libexec/netlab/check-authority.sh
 	install -d -m0755 /usr/local/share/netlab/templates/qemu /usr/local/share/netlab/templates/docker
 	install -m0644 templates/qemu/manifest.yaml /usr/local/share/netlab/templates/qemu/manifest.yaml
 	install -m0644 templates/docker/manifest.yaml /usr/local/share/netlab/templates/docker/manifest.yaml

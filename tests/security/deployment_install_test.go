@@ -1,0 +1,64 @@
+package security_test
+
+import (
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+func TestReleaseConfigPreservesOperatorSettings(t *testing.T) {
+	directory := t.TempDir()
+	input := filepath.Join(directory, "netlab.yaml")
+	release := filepath.Join(directory, "release.json")
+	output := filepath.Join(directory, "result.yaml")
+	config := "listen: \"10.72.1.7:18082\"\nstate_dir: /custom/state\nrelease:\n  version: old\n  candidate_id: old\ndeployment:\n  role: authoritative\n"
+	identity := `{"version":"0.6.0","candidate_id":"candidate-2","binary_digest":"sha256:` + strings.Repeat("1", 64) + `","contract_digest":"sha256:` + strings.Repeat("2", 64) + `","built_at":"2026-08-04T00:00:00Z"}`
+	if err := os.WriteFile(input, []byte(config), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(release, []byte(identity), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	command := exec.Command("bash", "../../deploy/scripts/prepare-release-config.sh", input, release, output)
+	if body, err := command.CombinedOutput(); err != nil {
+		t.Fatalf("prepare: %v: %s", err, body)
+	}
+	body, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(body)
+	for _, expected := range []string{"10.72.1.7:18082", "/custom/state", "candidate-2", "deployment:"} {
+		if !strings.Contains(text, expected) {
+			t.Fatalf("result missing %q: %s", expected, text)
+		}
+	}
+	if strings.Contains(text, "candidate_id: old") {
+		t.Fatalf("old release remained: %s", text)
+	}
+}
+
+func TestGeneratedReadinessCoversEightBuiltIns(t *testing.T) {
+	directory := t.TempDir()
+	release := filepath.Join(directory, "release.json")
+	output := filepath.Join(directory, "readiness.json")
+	identity := `{"candidate_id":"candidate-2"}`
+	if err := os.WriteFile(release, []byte(identity), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	command := exec.Command("bash", "../../deploy/scripts/generate-template-readiness.sh", release, output)
+	if body, err := command.CombinedOutput(); err != nil {
+		t.Fatalf("generate: %v: %s", err, body)
+	}
+	body, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"fancywan", "ubuntu-qemu", "fortigate", "vyos", "ruijie-router", "ruijie-switch", "busybox-container", "ubuntu-container"} {
+		if !strings.Contains(string(body), `"template_key": "`+key+`"`) {
+			t.Fatalf("readiness missing %s", key)
+		}
+	}
+}
