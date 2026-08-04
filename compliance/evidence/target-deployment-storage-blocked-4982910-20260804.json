@@ -1,0 +1,54 @@
+{
+  "schema_version": "1.0",
+  "id": "target-deployment-storage-blocked-4982910-20260804",
+  "kind": "deployment",
+  "status": "validated",
+  "candidate_id": "object-links-routes-4982910-20260804",
+  "release_version": "0.5.0+4982910",
+  "binary_digest": "sha256:6af50bc8bf2910ee67f02413e8ba4719d2213810c7fda8785a26761cdbe67482",
+  "contract_digest": "sha256:71d5721ac41dd2d55ccdd7934d4ab0a77c7c77ecd602df43f24af89e1699668a",
+  "scope_digest": "sha256:864493f4d73337b6dd0535c26f293b98d7ac129dd581afa5aa22adfc1908d8ca",
+  "finding_ids": ["CONST-ROLLOUT-10"],
+  "procedure": "Build the immutable candidate from clean source, recover the authoritative database through retained checksum-verified files without deleting state, verify authority isolation, and deploy only if the authoritative health endpoint recovers within the bounded window.",
+  "target": {
+    "host_id": "netlab-target-host",
+    "platform": "linux-x86_64",
+    "authoritative_endpoint": "10.72.1.7:18082",
+    "service_name": "netlab.service",
+    "deployment_attempted": false,
+    "installed_binary_digest": "sha256:d8e8d0b374a3fa18ceb0a1a076d9d485b50f2fdce9c2446592a5550868dca924",
+    "legacy_preview_disabled": true,
+    "listener_ready": false,
+    "storage_blocker": "ext4_sync_file/rq_qos_wait with sustained host I/O pressure above 90 percent"
+  },
+  "started_at": "2026-08-04T02:33:18Z",
+  "finished_at": "2026-08-04T02:41:56Z",
+  "outcome": "blocked",
+  "cleanup": {
+    "baseline_restored": true,
+    "remaining_count": 0,
+    "remediation": [
+      "Retained the stuck database inode and checksum-verified predeployment database copies",
+      "Restored the checksum-verified predeployment database path without deleting state",
+      "Kept netlab-preview.service disabled and avoided installing the new candidate"
+    ]
+  },
+  "redaction": {
+    "passed": true,
+    "prohibited_content_count": 0
+  },
+  "artifacts": [
+    {
+      "kind": "acceptance-procedure",
+      "path": "specs/005-network-object-links-routes/quickstart.md",
+      "digest": "sha256:864493f4d73337b6dd0535c26f293b98d7ac129dd581afa5aa22adfc1908d8ca",
+      "contains_binary_payload": false
+    },
+    {
+      "kind": "deployment-inventory",
+      "path": "compliance/deployment-authority.json",
+      "digest": "sha256:136e6bdb64b8e3ed7395a9af729be94ce500eb611ff1141a5afc181679229e51",
+      "contains_binary_payload": false
+    }
+  ]
+}

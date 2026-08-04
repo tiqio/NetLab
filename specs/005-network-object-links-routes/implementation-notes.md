@@ -420,3 +420,15 @@
   `vmstat` reported sustained blocked I/O, and kernel history contained `sda`/EXT4 write errors from July
   30, 2026. Deployment verification now allows the documented 180-second recovery window and fails fast
   when systemd becomes inactive, but further target replacement is suspended until host I/O recovers.
+- A reversible recovery attempt on August 4, 2026 retained hard-linked copies of the checksum-verified
+  predeployment database, moved the inode held by the stuck process aside, and restored the verified
+  predeployment database without deleting state. The old uninterruptible process exited and systemd
+  restarted the authoritative service, but the replacement still blocked before opening `:18082` in
+  `ext4_sync_file`/`rq_qos_wait`; host I/O pressure remained above 90 percent and the API stayed
+  unreachable. The retired preview unit remains disabled and no second NetLab listener is present.
+- Clean source `498291003f9d1d0c024f08f47fa24055fcc17970` produced candidate
+  `object-links-routes-4982910-20260804` with binary digest
+  `sha256:6af50bc8bf2910ee67f02413e8ba4719d2213810c7fda8785a26761cdbe67482`.
+  Frontend production build, embedded artifact hygiene, and release identity checks passed locally. This
+  candidate was deliberately not installed while the target storage path remained unhealthy; the target
+  binary digest is still the previously accepted `ca072b6` candidate.
