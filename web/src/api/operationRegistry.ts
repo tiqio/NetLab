@@ -11,6 +11,7 @@ export type OperationName =
   | "node.start"
   | "node.stop"
   | "node.delete"
+  | "node.settings.update"
   | "interface.add"
   | "interface.remove"
   | "link.connect"
@@ -23,6 +24,8 @@ export type OperationName =
   | "network_object.create"
   | "network_object.delete"
   | "network_object.attach"
+  | "network_object_link.create"
+  | "network_object_link.delete"
   | "capture.start"
   | "capture.stop"
   | "traffic_filter.start"
@@ -109,6 +112,13 @@ export const operationRegistry: Record<OperationName, OperationDefinition> = {
     idempotent: true,
     apiMethod: "deleteNode",
   },
+  "node.settings.update": {
+    name: "node.settings.update",
+    asynchronous: false,
+    revisionSensitive: true,
+    idempotent: true,
+    apiMethod: "updateNodeSettings",
+  },
   "interface.add": {
     name: "interface.add",
     asynchronous: true,
@@ -192,6 +202,20 @@ export const operationRegistry: Record<OperationName, OperationDefinition> = {
     revisionSensitive: false,
     idempotent: true,
     apiMethod: "attachNetworkObject",
+  },
+  "network_object_link.create": {
+    name: "network_object_link.create",
+    asynchronous: true,
+    revisionSensitive: false,
+    idempotent: true,
+    apiMethod: "createNetworkObjectLink",
+  },
+  "network_object_link.delete": {
+    name: "network_object_link.delete",
+    asynchronous: true,
+    revisionSensitive: true,
+    idempotent: true,
+    apiMethod: "deleteNetworkObjectLink",
   },
   "capture.start": {
     name: "capture.start",

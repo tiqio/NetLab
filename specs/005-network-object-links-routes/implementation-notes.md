@@ -408,3 +408,6 @@
   parallel-link isolation and bidirectional attribution coverage.
 - Focused gates: ownership/linuxnet tests, topology/laboratory/task Vitest, acceptance policy/cleanup unit
   tests, and Prettier passed locally on August 4, 2026.
+- The complete acceptance-unit gate additionally exposed missing operation-registry entries for
+  first-class object-link create/delete and node settings update, plus incorrect handling of a composite
+  capture/filter interaction. The registry and inventory validator now enforce each real operation.

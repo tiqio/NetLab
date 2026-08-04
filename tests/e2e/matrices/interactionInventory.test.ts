@@ -10,7 +10,8 @@ describe("interaction inventory", () => {
       interactions.length,
     );
     for (const interaction of interactions.filter((item) => item.operation)) {
-      expect(operationRegistry).toHaveProperty(interaction.operation!);
+      for (const operation of interaction.operation!.split(","))
+        expect(operationRegistry).toHaveProperty(operation);
     }
   });
 });
