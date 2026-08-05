@@ -30,6 +30,7 @@ const props = withDefaults(
     networkObjectLinks?: NetworkObjectLink[];
     networkObjects?: NetworkObject[];
     consoleRequestNodeId?: string;
+    consoleRequestNetworkObjectId?: string;
     consoleRequestKey?: number;
   }>(),
   {
@@ -89,7 +90,9 @@ watch(
       v-show="section === 'console'"
       :laboratory-id="laboratoryId"
       :nodes="nodes || []"
+      :network-objects="networkObjects || []"
       :request-node-id="consoleRequestNodeId"
+      :request-network-object-id="consoleRequestNetworkObjectId"
       :request-key="consoleRequestKey"
     />
     <GlobalCaptureWorkspace

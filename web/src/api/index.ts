@@ -219,8 +219,14 @@ export const generatedApi = {
     ),
   listNodeConsoles: (nodeId: string) =>
     request<ConsoleDescriptor[]>(`/nodes/${nodeId}/consoles`),
+  listNetworkObjectConsoles: (objectId: string) =>
+    request<ConsoleDescriptor[]>(`/network-objects/${objectId}/consoles`),
   streamNodeConsole: (nodeId: string, mode: "ssh" | "telnet" | "vnc") =>
     `/api/v1/nodes/${nodeId}/consoles/${mode}/stream`,
+  streamNetworkObjectConsole: (
+    objectId: string,
+    mode: "ssh" | "telnet" | "vnc",
+  ) => `/api/v1/network-objects/${objectId}/consoles/${mode}/stream`,
   closeNodeConsoleSession: (
     nodeId: string,
     mode: "ssh" | "telnet" | "vnc",
@@ -228,6 +234,15 @@ export const generatedApi = {
   ) =>
     request<void>(
       `/nodes/${nodeId}/consoles/${mode}/sessions/${encodeURIComponent(sessionId)}`,
+      "DELETE",
+    ),
+  closeNetworkObjectConsoleSession: (
+    objectId: string,
+    mode: "ssh" | "telnet" | "vnc",
+    sessionId: string,
+  ) =>
+    request<void>(
+      `/network-objects/${objectId}/consoles/${mode}/sessions/${encodeURIComponent(sessionId)}`,
       "DELETE",
     ),
   startCapture: (body: StartCaptureRequest) =>

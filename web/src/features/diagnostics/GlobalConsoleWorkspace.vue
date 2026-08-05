@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { Monitor, Plus, TerminalSquare, X } from "lucide-vue-next";
-import { api, type ConsoleDescriptor, type Node } from "@/api";
+import {
+  api,
+  type ConsoleDescriptor,
+  type NetworkObject,
+  type Node,
+} from "@/api";
 import { Button } from "@/components/ui";
 import { randomUUID } from "@/lib/uuid";
 import ConsoleWorkspace from "./ConsoleWorkspace.vue";
@@ -9,7 +14,9 @@ import ConsoleWorkspace from "./ConsoleWorkspace.vue";
 const props = defineProps<{
   laboratoryId?: string;
   nodes: Node[];
+  networkObjects?: NetworkObject[];
   requestNodeId?: string;
+  requestNetworkObjectId?: string;
   requestKey?: number;
 }>();
 interface TerminalSession {
@@ -34,9 +41,18 @@ const activeWorkspace = computed(() =>
 const activeNode = computed(() =>
   props.nodes.find((node) => node.id === activeWorkspace.value?.nodeId),
 );
+const activePC = computed(() =>
+  props.networkObjects?.find(
+    (object) =>
+      object.id === activeWorkspace.value?.nodeId && object.kind === "pc",
+  ),
+);
+const activeKind = computed(
+  () => activeNode.value?.kind || activePC.value?.kind,
+);
 const canAddSerial = computed(
   () =>
-    activeNode.value?.kind === "docker" ||
+    activeKind.value === "docker" ||
     !activeWorkspace.value?.sessions.some(
       (session) => session.mode === "telnet",
     ),
@@ -70,7 +86,10 @@ function validSession(value: unknown): value is TerminalSession {
   );
 }
 function normalizeSessions(nodeId: string, sessions: TerminalSession[]) {
-  if (props.nodes.find((node) => node.id === nodeId)?.kind === "docker")
+  if (
+    props.nodes.find((node) => node.id === nodeId)?.kind === "docker" ||
+    isNetworkObject(nodeId)
+  )
     return sessions;
   let foundTelnet = false;
   return sessions.filter((session) => {
@@ -79,6 +98,13 @@ function normalizeSessions(nodeId: string, sessions: TerminalSession[]) {
     foundTelnet = true;
     return true;
   });
+}
+function isNetworkObject(id: string) {
+  return Boolean(
+    props.networkObjects?.some(
+      (object) => object.id === id && object.kind === "pc",
+    ),
+  );
 }
 function restore(laboratoryId?: string) {
   restoring = true;
@@ -170,7 +196,9 @@ function addSession(
       : "telnet");
   if (
     resolvedMode === "telnet" &&
-    props.nodes.find((node) => node.id === workspace.nodeId)?.kind !== "docker"
+    props.nodes.find((node) => node.id === workspace.nodeId)?.kind !==
+      "docker" &&
+    !isNetworkObject(workspace.nodeId)
   ) {
     const existing = workspace.sessions.find(
       (session) => session.mode === "telnet",
@@ -192,7 +220,9 @@ function addSession(
 }
 async function loadDescriptors(nodeId: string) {
   try {
-    const descriptors = await api.listNodeConsoles(nodeId);
+    const descriptors = isNetworkObject(nodeId)
+      ? await api.listNetworkObjectConsoles(nodeId)
+      : await api.listNodeConsoles(nodeId);
     descriptorsByNode.value = {
       ...descriptorsByNode.value,
       [nodeId]: descriptors,
@@ -249,11 +279,24 @@ watch(
   },
   { immediate: true },
 );
+watch(
+  () => [props.requestNetworkObjectId, props.requestKey] as const,
+  ([objectId]) => {
+    if (!objectId) return;
+    void openNode(objectId);
+  },
+  { immediate: true },
+);
 watch([workspaces, activeNodeId], persist, { deep: true, flush: "sync" });
 watch(
-  () => props.nodes.map((node) => node.id),
-  (nodeIds) => {
-    const available = new Set(nodeIds);
+  () => [
+    ...props.nodes.map((node) => node.id),
+    ...(props.networkObjects || [])
+      .filter((object) => object.kind === "pc")
+      .map((object) => object.id),
+  ],
+  (resourceIds) => {
+    const available = new Set(resourceIds);
     workspaces.value = workspaces.value.filter((workspace) =>
       available.has(workspace.nodeId),
     );
@@ -264,7 +307,11 @@ watch(
 );
 
 function label(nodeId: string) {
-  return props.nodes.find((node) => node.id === nodeId)?.name || nodeId;
+  return (
+    props.nodes.find((node) => node.id === nodeId)?.name ||
+    props.networkObjects?.find((object) => object.id === nodeId)?.name ||
+    nodeId
+  );
 }
 function modeLabel(mode: ConsoleDescriptor["mode"]) {
   return mode === "telnet" ? "SERIAL" : mode.toUpperCase();
@@ -275,7 +322,13 @@ function closeNode(nodeId: string) {
   );
   const workspace = workspaces.value[index];
   for (const session of workspace?.sessions || []) {
-    void api.closeNodeConsoleSession(nodeId, session.mode, session.id);
+    if (isNetworkObject(nodeId))
+      void api.closeNetworkObjectConsoleSession(
+        nodeId,
+        session.mode,
+        session.id,
+      );
+    else void api.closeNodeConsoleSession(nodeId, session.mode, session.id);
   }
   workspaces.value = workspaces.value.filter(
     (workspace) => workspace.nodeId !== nodeId,
@@ -289,11 +342,18 @@ function closeSession(workspace: NodeConsoleWorkspace, sessionId: string) {
   );
   const session = workspace.sessions[index];
   if (session) {
-    void api.closeNodeConsoleSession(
-      workspace.nodeId,
-      session.mode,
-      session.id,
-    );
+    if (isNetworkObject(workspace.nodeId))
+      void api.closeNetworkObjectConsoleSession(
+        workspace.nodeId,
+        session.mode,
+        session.id,
+      );
+    else
+      void api.closeNodeConsoleSession(
+        workspace.nodeId,
+        session.mode,
+        session.id,
+      );
   }
   workspace.sessions = workspace.sessions.filter(
     (session) => session.id !== sessionId,
@@ -308,7 +368,7 @@ function closeSession(workspace: NodeConsoleWorkspace, sessionId: string) {
 }
 function addForActiveNode() {
   if (!activeWorkspace.value) return;
-  if (activeNode.value?.kind === "docker")
+  if (activeKind.value === "docker" || activeKind.value === "pc")
     addSession(activeWorkspace.value, "telnet");
   else if (canAddSSH.value) addSession(activeWorkspace.value, "ssh");
 }
@@ -383,19 +443,19 @@ function addSerialForActiveNode() {
         variant="ghost"
         aria-label="Add terminal session"
         :title="
-          activeNode?.kind === 'docker'
+          activeKind === 'docker' || activeKind === 'pc'
             ? 'Add another container terminal session'
             : canAddSSH
               ? 'Add another SSH terminal session'
               : 'SSH is unavailable; connect the node to a reachable network with valid bootstrap credentials'
         "
-        :disabled="activeNode?.kind !== 'docker' && !canAddSSH"
+        :disabled="!['docker', 'pc'].includes(String(activeKind)) && !canAddSSH"
         @click="addForActiveNode"
       >
         <Plus :size="14" />
       </Button>
       <Button
-        v-if="activeNode?.kind !== 'docker'"
+        v-if="activeKind !== 'docker' && activeKind !== 'pc'"
         class="shrink-0"
         size="icon"
         variant="ghost"
@@ -411,7 +471,7 @@ function addSerialForActiveNode() {
         <TerminalSquare :size="14" />
       </Button>
       <Button
-        v-if="activeNode?.kind !== 'docker'"
+        v-if="activeKind !== 'docker' && activeKind !== 'pc'"
         class="shrink-0"
         size="icon"
         variant="ghost"
@@ -433,6 +493,9 @@ function addSerialForActiveNode() {
           "
           :key="session.id"
           :node-id="workspace.nodeId"
+          :resource-type="
+            isNetworkObject(workspace.nodeId) ? 'network_object' : 'node'
+          "
           :session-id="session.id"
           auto-open
           :auto-mode="session.mode"

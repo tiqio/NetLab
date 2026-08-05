@@ -32,6 +32,7 @@ const props = defineProps<{
   networkObjectLinks?: NetworkObjectLink[];
   networkObjects?: NetworkObject[];
   consoleRequestNodeId?: string;
+  consoleRequestNetworkObjectId?: string;
   consoleRequestKey?: number;
 }>();
 const emit = defineEmits<{
@@ -82,6 +83,7 @@ const value = computed({
           :network-object-links="networkObjectLinks"
           :network-objects="networkObjects"
           :console-request-node-id="consoleRequestNodeId"
+          :console-request-network-object-id="consoleRequestNetworkObjectId"
           :console-request-key="consoleRequestKey"
           @traffic-overlay="(...args) => $emit('trafficOverlay', ...args)"
         />

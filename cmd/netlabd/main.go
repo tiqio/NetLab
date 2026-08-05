@@ -185,6 +185,11 @@ func main() {
 	if pcRuntimeErr != nil {
 		logger.Warn("PC runtime unavailable", "error", pcRuntimeErr)
 	}
+	var networkObjectConsoleHandlers *stream.NetworkObjectConsoleHandlers
+	if pcRuntime != nil {
+		networkObjectConsoleHandlers = stream.NewNetworkObjectConsoleHandlers(repositories, pcRuntime, consoleLimits)
+		networkObjectConsoleHandlers.Register(server.Engine())
+	}
 	bridgeRuntime, bridgeRuntimeErr := linuxnet.NewBridgeRuntime(nil)
 	if bridgeRuntimeErr != nil {
 		logger.Warn("bridge runtime unavailable", "error", bridgeRuntimeErr)
@@ -289,6 +294,9 @@ func main() {
 			reconcile.NewCaptureStateScanner(cfg.StateDir),
 			reconcile.NewOwnedProcessScanner(cfg.StateDir),
 			reconcile.NewRuntimeOwnershipSourceScanner("console-proxies", consoleHandlers),
+		}
+		if networkObjectConsoleHandlers != nil {
+			ownershipScanners = append(ownershipScanners, reconcile.NewRuntimeOwnershipSourceScanner("network-object-console-proxies", networkObjectConsoleHandlers))
 		}
 		if dockerAdapter != nil {
 			ownershipScanners = append(ownershipScanners, reconcile.NewRuntimeOwnershipSourceScanner("docker-labels", dockerAdapter))

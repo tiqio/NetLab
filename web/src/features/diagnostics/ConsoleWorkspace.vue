@@ -21,6 +21,7 @@ type ConsoleMode = ConsoleDescriptor["mode"];
 const props = withDefaults(
   defineProps<{
     nodeId: string;
+    resourceType?: "node" | "network_object";
     sessionId?: string;
     autoOpen?: boolean;
     autoMode?: ConsoleMode;
@@ -28,6 +29,7 @@ const props = withDefaults(
   {
     autoOpen: false,
     autoMode: "telnet",
+    resourceType: "node",
   },
 );
 const descriptors = ref<ConsoleDescriptor[]>([]);
@@ -51,7 +53,10 @@ let reconnects = 0;
 
 async function load() {
   try {
-    descriptors.value = await api.listNodeConsoles(props.nodeId);
+    descriptors.value =
+      props.resourceType === "network_object"
+        ? await api.listNetworkObjectConsoles(props.nodeId)
+        : await api.listNodeConsoles(props.nodeId);
     if (props.autoOpen && !sessions.value.length && descriptors.value[0]) {
       const descriptor = descriptors.value.find(
         (item) => item.mode === props.autoMode,
@@ -135,7 +140,9 @@ async function open(mode: ConsoleMode) {
   await nextTick();
   const stream =
     descriptors.value.find((item) => item.mode === mode)?.stream_url ||
-    api.streamNodeConsole(props.nodeId, mode);
+    (props.resourceType === "network_object"
+      ? api.streamNetworkObjectConsole(props.nodeId, mode)
+      : api.streamNodeConsole(props.nodeId, mode));
   const url = new URL(stream, window.location.origin);
   url.protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   const stableSessionId = props.sessionId || activeSessionId.value;

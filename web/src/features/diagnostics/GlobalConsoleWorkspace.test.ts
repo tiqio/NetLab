@@ -5,9 +5,9 @@ import { nodeFactory } from "@/test/factories";
 
 vi.mock("./ConsoleWorkspace.vue", () => ({
   default: {
-    props: ["nodeId", "autoOpen"],
+    props: ["nodeId", "resourceType", "autoOpen"],
     template:
-      '<div data-console-workspace :data-node-id="nodeId">{{ nodeId }}</div>',
+      '<div data-console-workspace :data-node-id="nodeId" :data-resource-type="resourceType">{{ nodeId }}</div>',
   },
 }));
 
@@ -158,5 +158,52 @@ describe("GlobalConsoleWorkspace", () => {
 
     expect(wrapper.findAll("[data-console-workspace]")).toHaveLength(1);
     expect(wrapper.text()).not.toContain("Ubuntu");
+  });
+
+  it("opens persistent PC shell sessions through the network object console API", async () => {
+    const listConsoles = vi
+      .spyOn(api, "listNetworkObjectConsoles")
+      .mockResolvedValue([
+        {
+          mode: "telnet",
+          stream_url: "/api/v1/network-objects/pc-1/consoles/telnet/stream",
+          reconnectable: true,
+          idle_seconds: 1800,
+        },
+      ]);
+    const wrapper = mount(GlobalConsoleWorkspace, {
+      props: {
+        laboratoryId: "lab-pc-console",
+        nodes: [],
+        networkObjects: [
+          {
+            id: "pc-1",
+            laboratory_id: "lab-pc-console",
+            name: "PC Client",
+            kind: "pc",
+            config: {},
+            desired_state: "active",
+            observed_state: "active",
+            revision: 1,
+          },
+        ],
+        requestNetworkObjectId: "pc-1",
+        requestKey: 1,
+      },
+    });
+    await flushPromises();
+
+    expect(listConsoles).toHaveBeenCalledWith("pc-1");
+    expect(wrapper.get('[aria-label="Node console workspaces"]').text()).toContain(
+      "PC Client",
+    );
+    const consoleWorkspace = wrapper.get("[data-console-workspace]");
+    expect(consoleWorkspace.attributes("data-node-id")).toBe("pc-1");
+    expect(consoleWorkspace.attributes("data-resource-type")).toBe(
+      "network_object",
+    );
+
+    await wrapper.get('[aria-label="Add terminal session"]').trigger("click");
+    expect(wrapper.findAll("[data-console-workspace]")).toHaveLength(2);
   });
 });

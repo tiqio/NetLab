@@ -78,6 +78,7 @@ const trafficObservations = ref<TrafficObservation[]>([]);
 const trafficOverlayActive = ref(false);
 const trafficOverlayColor = ref("#f59e0b");
 const consoleRequestNodeId = ref("");
+const consoleRequestNetworkObjectId = ref("");
 const consoleRequestKey = ref(0);
 const activeId = computed(() => store.active?.laboratory.id);
 const {
@@ -234,6 +235,16 @@ function closeResourceContext() {
 }
 function openNodeTerminal(node: Node) {
   consoleRequestNodeId.value = node.id;
+  consoleRequestNetworkObjectId.value = "";
+  consoleRequestKey.value += 1;
+  setActiveBottomTab("console");
+  shell.value?.openBottom();
+  closeResourceContext();
+}
+function openNetworkObjectTerminal(object: NetworkObject) {
+  if (object.kind !== "pc") return;
+  consoleRequestNodeId.value = "";
+  consoleRequestNetworkObjectId.value = object.id;
   consoleRequestKey.value += 1;
   setActiveBottomTab("console");
   shell.value?.openBottom();
@@ -1556,6 +1567,7 @@ onBeforeUnmount(() => {
           @changed="refreshActive"
           @clear="clearSelection"
           @terminal="openNodeTerminal"
+          @network-object-terminal="openNetworkObjectTerminal"
           @diagnostics-loaded="
             canvasStatus = `Diagnostics loaded for ${$event}.`
           "
@@ -1581,6 +1593,7 @@ onBeforeUnmount(() => {
           :network-object-links="store.active.network_object_links || []"
           :network-objects="store.active.network_objects"
           :console-request-node-id="consoleRequestNodeId"
+          :console-request-network-object-id="consoleRequestNetworkObjectId"
           :console-request-key="consoleRequestKey"
           @update:model-value="
             (value) => setActiveBottomTab(value as BottomTab)
@@ -1742,6 +1755,16 @@ onBeforeUnmount(() => {
             </Button>
           </template>
           <template v-else-if="contextObject">
+            <Button
+              v-if="contextObject.kind === 'pc'"
+              variant="ghost"
+              size="sm"
+              class="w-full justify-start"
+              role="menuitem"
+              @click="openNetworkObjectTerminal(contextObject)"
+            >
+              <TerminalSquare :size="13" /> Terminal
+            </Button>
             <Button
               variant="ghost"
               size="sm"

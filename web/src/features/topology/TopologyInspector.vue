@@ -58,6 +58,7 @@ const emit = defineEmits<{
   lightweightCreated: [string];
   diagnosticsLoaded: [string];
   terminal: [Node];
+  networkObjectTerminal: [NetworkObject];
 }>();
 const endpointA = ref("");
 const endpointB = ref("");
@@ -719,6 +720,14 @@ async function deleteObjectLink() {
           </div>
         </div>
         <div class="mt-3 flex gap-2">
+          <Button
+            v-if="networkObject.kind === 'pc'"
+            size="sm"
+            variant="secondary"
+            @click="$emit('networkObjectTerminal', networkObject)"
+          >
+            Terminal
+          </Button>
           <Button
             size="sm"
             :disabled="diagnosticsLoading"
