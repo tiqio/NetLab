@@ -2,10 +2,12 @@
 
 ## Active Feature
 
-- Specification: `specs/005-network-object-links-routes/spec.md`
-- Plan: `specs/005-network-object-links-routes/plan.md`
+- Specification: `specs/006-topology-add-drawer/spec.md`
+- Plan: `specs/006-topology-add-drawer/plan.md`
 - Constitution: `.specify/memory/constitution.md`
-- Contracts: `specs/005-network-object-links-routes/contracts/`
+- Contracts: `specs/006-topology-add-drawer/contracts/`
+- Previous network-object links specification: `specs/005-network-object-links-routes/spec.md`
+- Previous network-object links plan: `specs/005-network-object-links-routes/plan.md`
 - Governance closure specification: `specs/002-constitution-gap-closure/spec.md`
 - Governance closure plan: `specs/002-constitution-gap-closure/plan.md`
 - Base platform specification: `specs/001-network-simulator-platform/spec.md`
