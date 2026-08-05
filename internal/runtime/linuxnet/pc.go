@@ -2,6 +2,7 @@ package linuxnet
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -83,11 +84,17 @@ func (r *PCRuntime) configureInterface(ctx context.Context, namespace string, ow
 	if err := r.executor.Run(ctx, r.ip, "-n", namespace, "link", "set", iface.Name, "up"); err != nil {
 		return err
 	}
-	if err := r.executor.Run(ctx, r.ip, "-n", namespace, "address", "flush", "dev", iface.Name, "scope", "global"); err != nil {
+	changed, signature, err := r.interfaceConfigChanged(ownerID, iface)
+	if err != nil {
 		return err
 	}
-	if err := r.executor.Run(ctx, r.ip, "-n", namespace, "route", "flush", "dev", iface.Name); err != nil {
-		return err
+	if changed {
+		if err = r.executor.Run(ctx, r.ip, "-n", namespace, "address", "flush", "dev", iface.Name, "scope", "global"); err != nil {
+			return err
+		}
+		if err = r.executor.Run(ctx, r.ip, "-n", namespace, "route", "flush", "dev", iface.Name); err != nil {
+			return err
+		}
 	}
 	modes := map[domain.AddressMode]bool{}
 	for _, mode := range iface.Modes {
@@ -143,7 +150,32 @@ func (r *PCRuntime) configureInterface(ctx context.Context, namespace string, ow
 			}
 		}
 	}
+	if changed {
+		if err = os.MkdirAll(r.pcHelperDirectory(ownerID), 0o755); err != nil {
+			return fmt.Errorf("create PC interface state: %w", err)
+		}
+		if err = os.WriteFile(r.interfaceSignaturePath(ownerID, iface.Name), []byte(signature), 0o644); err != nil {
+			return fmt.Errorf("persist PC interface configuration: %w", err)
+		}
+	}
 	return nil
+}
+
+func (r *PCRuntime) interfaceConfigChanged(ownerID domain.ID, iface domain.PCInterfaceConfig) (bool, string, error) {
+	body, err := json.Marshal(iface)
+	if err != nil {
+		return false, "", err
+	}
+	signature := fmt.Sprintf("%x", sha256.Sum256(body))
+	current, err := os.ReadFile(r.interfaceSignaturePath(ownerID, iface.Name))
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return false, "", fmt.Errorf("read PC interface configuration: %w", err)
+	}
+	return strings.TrimSpace(string(current)) != signature, signature, nil
+}
+
+func (r *PCRuntime) interfaceSignaturePath(ownerID domain.ID, interfaceName string) string {
+	return filepath.Join(r.pcHelperDirectory(ownerID), interfaceName+".config.sha256")
 }
 
 func (r *PCRuntime) configureDNS(namespace string, servers []string) error {

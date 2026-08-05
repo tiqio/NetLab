@@ -133,6 +133,14 @@ func TestPCReconfigurationClearsDynamicStateAndDisabledHelpers(t *testing.T) {
 			t.Fatalf("missing %q in\n%s", fragment, commands)
 		}
 	}
+	executor.commands = nil
+	if err := runtime.Configure(context.Background(), object); err != nil {
+		t.Fatal(err)
+	}
+	commands = strings.Join(executor.commands, "\n")
+	if strings.Contains(commands, "address flush") || strings.Contains(commands, "route flush") {
+		t.Fatalf("unchanged configuration disrupted the interface:\n%s", commands)
+	}
 }
 
 func TestPCAdoptsActiveDHCPHelperAndReportsSLAACTimeout(t *testing.T) {
