@@ -117,7 +117,7 @@
 - [x] T040 [US3] 在 Workspace 中记录并恢复 Inspector Snapshot、有效选择和触发焦点，同时保持画布和 Operations 状态于 `web/src/features/topology/TopologyWorkspace.vue`
 - [x] T041 [US3] 更新 LaboratoryShell 与工具栏的可访问名称、添加入口和紧凑视口行为于 `web/src/components/shell/LaboratoryShell.vue` 和 `web/src/features/laboratories/LaboratoryToolbar.vue`
 - [x] T042 [US3] 运行 US3 Sheet、Drawer、Workspace、axe 和键盘 Playwright 测试及前端构建，把结果和 T032 的 US2 里程碑 SHA 记录到 `specs/006-topology-add-drawer/validation.md`
-- [ ] T043 [US3] 将 US3 作为独立里程碑提交，确认提交后工作区干净并捕获提交 SHA，供 T047 写入 `specs/006-topology-add-drawer/validation.md`
+- [x] T043 [US3] 将 US3 作为独立里程碑提交，确认提交后工作区干净并捕获提交 SHA，供 T047 写入 `specs/006-topology-add-drawer/validation.md`
 
 **Checkpoint**: 用户故事 3 可独立验收；所有关闭方式和键盘操作均安全，Workspace 上下文恢复且没有焦点陷阱。
 
@@ -130,8 +130,8 @@
 - [x] T044 [P] 更新交互覆盖清单中的旧 Dialog 控件和新 Drawer 控件于 `tests/e2e/matrices/interaction-inventory.json`
 - [x] T045 [P] 更新现有创建流程页面对象与旅程中的 Dialog role/名称定位于 `tests/e2e/pages/TemplatePage.ts`、`tests/e2e/journeys/networkObjectLinks.spec.ts`、`tests/e2e/journeys/ubuntuBootstrapOverlay.spec.ts` 和 `tests/e2e/journeys/dockerStaticRoutes.spec.ts`
 - [x] T046 [P] 根据最终实现更新用户可见行为和实际测试命令于 `specs/006-topology-add-drawer/quickstart.md` 和 `specs/006-topology-add-drawer/contracts/ui-contract.md`
-- [ ] T047 运行 `npm run lint`、`npm run format:check`、`npm test`、`npm run build`、相关 Go 合同测试和本地 Playwright 套件，并把全部结果、任何无关已知失败和 T043 的 US3 里程碑 SHA 记录到 `specs/006-topology-add-drawer/validation.md`
-- [ ] T048 对 1024×768、1366×768、1920×1080 三种视口连续运行两次抽屉 Playwright 场景，记录无裁切、无重复创建、无 viewport 漂移结果到 `specs/006-topology-add-drawer/validation.md`
+- [x] T047 运行 `npm run lint`、`npm run format:check`、`npm test`、`npm run build`、相关 Go 合同测试和本地 Playwright 套件，并把全部结果、任何无关已知失败和 T043 的 US3 里程碑 SHA 记录到 `specs/006-topology-add-drawer/validation.md`
+- [x] T048 对 1024×768、1366×768、1920×1080 三种视口连续运行两次抽屉 Playwright 场景，记录无裁切、无重复创建、无 viewport 漂移结果到 `specs/006-topology-add-drawer/validation.md`
 - [ ] T049 提交 T044-T048 涉及的文件和 `specs/006-topology-add-drawer/validation.md`，确认提交后工作区为空并捕获最终源 commit SHA
 - [ ] T050 从 T049 的干净提交生成候选元数据，记录 source commit SHA、version、candidate ID、contract digest 和 built-at 到 `/var/tmp/netlab-candidates/006-topology-add-drawer/release.json`
 - [ ] T051 从 T049 的干净提交构建部署产物、计算 binary digest，并保存到 `/var/tmp/netlab-candidates/006-topology-add-drawer/netlabd` 和 `/var/tmp/netlab-candidates/006-topology-add-drawer/release.json`

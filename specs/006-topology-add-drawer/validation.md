@@ -36,22 +36,23 @@
 
 ## Milestone 4 — Close and Workspace Recovery
 
-- Commit SHA: pending
+- Commit SHA: `d6104db`
 - Previous US2 SHA: `713105b`
 - Accessibility/keyboard tests: PASS — Sheet close reasons, discard alertdialog, Drawer dirty switch/close, axe, Shell and Toolbar; 40 focused tests passed before milestone polish
 - Playwright: PASS discovery — keyboard open/Escape/focus restoration and dirty discard scenarios discovered in both configured viewport projects
 - Build: PASS — Vue type check and Vite production build
-- Worktree clean after commit: pending
+- Worktree clean after commit: yes
 
 ## Final Local Validation
 
 - Source commit SHA: pending
-- Lint: pending
-- Format: pending
-- Unit tests: pending
-- Go contract tests: pending
-- Browser matrix: pending
-- Build: pending
+- Previous US3 SHA: `d6104db`
+- Lint: PASS — 0 errors; repository baseline remains 957 warnings
+- Format: BASELINE FAIL — only 5 pre-existing unrelated files remain unformatted: `GlobalConsoleWorkspace.test.ts`, `GuestCommandPanel.vue`, `LightweightNodeEditor.vue`, `TopologyInspector.test.ts`, `TopologyInspector.vue`; all feature files pass focused Prettier
+- Unit tests: FEATURE PASS — 40 focused tests; full Vitest 235/236 with the sole unrelated failure in `LightweightNodeEditor.test.ts` expecting removed English labels while the component displays Chinese labels
+- Go contract tests: PASS — `go test ./...`, including contract, integration, recovery and security packages
+- Browser matrix: PASS — two consecutive rounds at 1024×768, 1366×768 and 1920×1080; 12/12 drawer journeys passed with right alignment, fixed actions, draft preservation, authoritative creation and unchanged canvas bounds
+- Build: PASS — `make build` synchronized `web/dist` into embedded `internal/api/http/webdist` and produced `bin/netlabd`
 
 ## Candidate Artifact
 

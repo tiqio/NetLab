@@ -22,9 +22,11 @@ test("the right-side add drawer creates an authoritative lightweight resource", 
   const drawer = await topology.openResourceDrawer();
   const drawerBox = await drawer.boundingBox();
   expect(drawerBox).not.toBeNull();
-  expect(drawerBox!.x).toBeGreaterThan(
-    testInfo.project.use.viewport!.width / 2,
-  );
+  expect(
+    Math.abs(
+      drawerBox!.x + drawerBox!.width - testInfo.project.use.viewport!.width,
+    ),
+  ).toBeLessThanOrEqual(1);
   expect(drawerBox!.height).toBeGreaterThan(
     testInfo.project.use.viewport!.height * 0.9,
   );
@@ -60,7 +62,7 @@ test("the right-side add drawer creates an authoritative lightweight resource", 
   expect(canvasAfter).toEqual(canvasBefore);
   interactionResults.push(
     result(
-      "topology.add-drawer.lightweight",
+      "topology.add-drawer.submit",
       testInfo.project.use.viewport!,
       "opened the right drawer and created an authoritative PC without moving the canvas",
       [resource.id],
