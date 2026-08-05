@@ -106,6 +106,10 @@ const keyboardAnnouncement = ref("");
 const keyboardController = new TopologyKeyboardController();
 const createOpen = ref(false);
 const paletteSelection = ref<PaletteSelection>();
+const createDrawer = ref<{
+  isDirty: () => boolean;
+  requestExternalDiscard: (action: () => void) => void;
+}>();
 const commandOpen = ref(false);
 const showLightweight = ref(false);
 const pendingEndpoint = ref("");
@@ -574,13 +578,25 @@ async function refresh() {
   await store.loadTasks();
 }
 
-async function openLaboratory(id: string) {
+async function switchLaboratory(id: string) {
   selectedIds.value = [];
   showLightweight.value = false;
   await store.open(id);
   await store.loadLabs();
   await store.loadTasks();
   localStorage.setItem(ACTIVE_LAB_STORAGE_KEY, id);
+}
+
+async function openLaboratory(id: string) {
+  if (createOpen.value && createDrawer.value?.isDirty()) {
+    createDrawer.value.requestExternalDiscard(() => {
+      createOpen.value = false;
+      paletteSelection.value = undefined;
+      void switchLaboratory(id);
+    });
+    return;
+  }
+  await switchLaboratory(id);
 }
 
 async function laboratoryDeleteAccepted(id: string) {
@@ -1819,6 +1835,7 @@ onBeforeUnmount(() => {
     />
     <CreateTopologyResourceDrawer
       v-if="store.active"
+      ref="createDrawer"
       v-model="createOpen"
       :laboratory-id="store.active.laboratory.id"
       :selection="paletteSelection"

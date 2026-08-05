@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import {
   api,
   ApiError,
@@ -11,19 +11,21 @@ import {
 } from "@/api";
 import { Button, FormField, Input, Select, Sheet } from "@/components/ui";
 import LightweightSwitchConfigEditor from "@/features/nodes/LightweightSwitchConfigEditor.vue";
-import {
-  defaultLightweightSwitchConfig,
-  validateLightweightSwitchConfig,
-  type LightweightSwitchKind,
-} from "@/features/nodes/lightweightSwitchConfig";
+import { type LightweightSwitchKind } from "@/features/nodes/lightweightSwitchConfig";
 import TopologyResourceCatalog, {
   type PaletteSelection,
 } from "./TopologyResourceCatalog.vue";
 import {
-  buildUbuntuPasswordCloudInit,
   generateInitialPassword,
   supportsUbuntuPasswordBootstrap,
 } from "./cloudInit";
+import {
+  buildResourceCreateRequest,
+  createResourceDraft,
+  draftSignature,
+  validateResourceDraft,
+  type ResourceCreateDraft,
+} from "./topologyResourceDraft";
 
 const props = defineProps<{
   modelValue: boolean;
@@ -82,6 +84,11 @@ const fieldErrors = ref<Record<string, string>>({});
 const templates = ref<DeviceTemplate[]>([]);
 const images = ref<ImageVersion[]>([]);
 const lightweightSwitchConfig = ref<Record<string, unknown>>({});
+const initialSignature = ref("");
+const sheetRef = ref<{
+  requestClose: (reason: "button" | "overlay" | "escape") => void;
+  requestDiscardConfirmation: (action: () => void) => void;
+}>();
 const open = computed({
   get: () => props.modelValue,
   set: (value) => emit("update:modelValue", value),
@@ -113,30 +120,39 @@ watch(ubuntuPasswordBootstrap, (supported) => {
     cloudPassword.value = generateInitialPassword();
   if (!supported) cloudPassword.value = "";
 });
-function lightweightConfig(
-  kind: NonNullable<PaletteSelection["networkObjectKind"]>,
-) {
-  if (kind === "pc")
-    return {
-      hostname: name.value,
-      interfaces: [{ name: "eth0", modes: ["dhcpv4", "dhcpv6", "slaac"] }],
-    };
-  if (kind === "nat_bridge")
-    return {
-      ipv4_prefix: "10.10.0.0/24",
-      ipv6_prefix: "2001:db8:10::/64",
-      uplink: "auto",
-      dhcpv4: {
-        start: "10.10.0.100",
-        end: "10.10.0.200",
-        lease_time: "1h",
-      },
-      dns_servers: ["1.1.1.1", "8.8.8.8"],
-    };
-  if (kind === "switch_l2" || kind === "switch_l3")
-    return lightweightSwitchConfig.value;
-  return { mtu: 1500, stp: false };
+const currentDraft = computed<ResourceCreateDraft>(() => ({
+  name: name.value,
+  templateId: templateId.value,
+  templateVersionId: versionId.value,
+  imageVersionId: imageVersionId.value,
+  interfaceCount: Number(interfaceCount.value),
+  ipv4Mode: ipv4Mode.value,
+  ipv4Address: ipv4Address.value,
+  ipv6Mode: ipv6Mode.value,
+  ipv6Address: ipv6Address.value,
+  routes: routes.value,
+  cloudUsername: cloudUsername.value,
+  cloudPassword: cloudPassword.value,
+  networkObjectConfig: lightweightSwitchConfig.value,
+}));
+const dirty = computed(
+  () =>
+    Boolean(props.selection) &&
+    draftSignature(currentDraft.value) !== initialSignature.value,
+);
+function requestDrawerClose() {
+  sheetRef.value?.requestClose("button");
 }
+function changeResource() {
+  const change = () => emit("selectionChanged", undefined);
+  if (dirty.value) sheetRef.value?.requestDiscardConfirmation(change);
+  else change();
+}
+function requestExternalDiscard(action: () => void) {
+  if (dirty.value) sheetRef.value?.requestDiscardConfirmation(action);
+  else action();
+}
+defineExpose({ isDirty: () => dirty.value, requestExternalDiscard });
 const selectedImage = computed(() =>
   images.value.find((item) => item.id === imageVersionId.value),
 );
@@ -188,62 +204,30 @@ const canSubmit = computed(() => {
     selectedImage.value && !imageUnavailableReason(selectedImage.value),
   );
 });
-function validate() {
-  const next: Record<string, string> = {};
-  if (!name.value.trim()) next.name = "Name is required.";
-  if (name.value.trim().length > 120)
-    next.name = "Name must be 120 characters or fewer.";
-  const networkKind = props.selection?.networkObjectKind;
-  if (networkKind === "switch_l2" || networkKind === "switch_l3") {
-    const messages = validateLightweightSwitchConfig(
-      networkKind,
-      lightweightSwitchConfig.value,
-    );
-    if (messages.length) next.switchConfig = messages.join(" ");
-  }
-  if (!props.selection?.networkObjectKind) {
-    if (!versionId.value) next.version = "Select an enabled template version.";
-    if (!imageVersionId.value)
-      next.image = "Select an available image version.";
-    if (
-      !Number.isInteger(Number(interfaceCount.value)) ||
-      Number(interfaceCount.value) < 1 ||
-      Number(interfaceCount.value) > 64
-    )
-      next.interfaces = "Interfaces must be an integer from 1 to 64.";
-    if (ipv4Mode.value === "static" && !ipv4Address.value.includes("/"))
-      next.ipv4Address = "Enter an IPv4 CIDR such as 192.0.2.10/24.";
-    if (ipv6Mode.value === "static" && !ipv6Address.value.includes("/"))
-      next.ipv6Address = "Enter an IPv6 CIDR such as 2001:db8::10/64.";
-    for (const route of routes.value) {
-      if (!route.destination.includes("/"))
-        next[`route.${route.id}`] = "Enter a destination CIDR.";
-      else if ((route.family === "ipv6") !== route.destination.includes(":"))
-        next[`route.${route.id}`] =
-          `Use an ${route.family === "ipv6" ? "IPv6" : "IPv4"} destination.`;
-      else if (
-        route.gateway &&
-        (route.family === "ipv6") !== route.gateway.includes(":")
-      )
-        next[`route.${route.id}`] =
-          "Gateway and destination must use the same address family.";
-      else if (
-        String(route.metric).trim() &&
-        (!Number.isInteger(Number(route.metric)) || Number(route.metric) < 0)
-      )
-        next[`route.${route.id}`] = "Metric must be a non-negative integer.";
-    }
-    if (ubuntuPasswordBootstrap.value) {
-      if (!/^[a-z_][a-z0-9_-]{0,31}$/.test(cloudUsername.value))
-        next.cloudUsername =
-          "Use a lowercase Linux username up to 32 characters.";
-      if (cloudPassword.value.length < 12)
-        next.cloudPassword =
-          "Use an initial password of at least 12 characters.";
-    }
-  }
-  fieldErrors.value = next;
-  return Object.keys(next).length === 0;
+async function focusFirstError() {
+  await nextTick();
+  const firstKey = Object.keys(fieldErrors.value)[0];
+  if (!firstKey) return;
+  const selector = firstKey.startsWith("route.")
+    ? `[data-route-id="${CSS.escape(firstKey.slice(6))}"] input`
+    : `[data-field="${CSS.escape(firstKey)}"] input, [data-field="${CSS.escape(firstKey)}"] select, [data-field="${CSS.escape(firstKey)}"] button`;
+  const element = document.querySelector<HTMLElement>(selector);
+  element?.scrollIntoView?.({ block: "center", behavior: "smooth" });
+  element?.focus();
+}
+async function validate() {
+  if (!props.selection) return false;
+  fieldErrors.value = validateResourceDraft(
+    props.selection,
+    currentDraft.value,
+    {
+      template: selectedTemplate.value,
+      version: selectedVersion.value,
+      image: selectedImage.value,
+    },
+  );
+  if (Object.keys(fieldErrors.value).length) await focusFirstError();
+  return Object.keys(fieldErrors.value).length === 0;
 }
 async function loadCatalog(preserveSelection = true) {
   if (props.selection?.networkObjectKind) return;
@@ -290,23 +274,28 @@ async function loadCatalog(preserveSelection = true) {
 watch(
   () => props.selection,
   (selection) => {
-    name.value = selection?.name || "";
-    templateId.value = selection?.template?.id || "";
-    versionId.value = selection?.version?.id || "";
-    imageVersionId.value = selection?.version?.image_version_id || "";
-    cloudUsername.value = "ubuntu";
-    cloudPassword.value = supportsUbuntuPasswordBootstrap(
-      selection?.template?.template_key,
-      selection?.version?.capabilities,
-    )
-      ? generateInitialPassword()
-      : "";
-    const networkKind = selection?.networkObjectKind;
-    lightweightSwitchConfig.value =
-      networkKind === "switch_l2" || networkKind === "switch_l3"
-        ? defaultLightweightSwitchConfig(networkKind)
-        : {};
-    routes.value = [];
+    if (!selection) {
+      initialSignature.value = "";
+      return;
+    }
+    const draft = createResourceDraft(selection, generateInitialPassword);
+    name.value = draft.name;
+    templateId.value = draft.templateId;
+    versionId.value = draft.templateVersionId;
+    imageVersionId.value = draft.imageVersionId;
+    interfaceCount.value = draft.interfaceCount;
+    ipv4Mode.value = draft.ipv4Mode;
+    ipv4Address.value = draft.ipv4Address;
+    ipv6Mode.value = draft.ipv6Mode;
+    ipv6Address.value = draft.ipv6Address;
+    cloudUsername.value = draft.cloudUsername;
+    cloudPassword.value = draft.cloudPassword;
+    lightweightSwitchConfig.value = draft.networkObjectConfig;
+    routes.value = draft.routes;
+    fieldErrors.value = {};
+    error.value = "";
+    staleMessage.value = "";
+    initialSignature.value = draftSignature(draft);
   },
   { immediate: true },
 );
@@ -334,16 +323,25 @@ watch(versionId, () => {
   staleMessage.value = "";
 });
 async function submit() {
-  if (!props.selection || !canSubmit.value || !validate()) return;
+  if (!props.selection || !canSubmit.value || busy.value) return;
   busy.value = true;
   error.value = "";
+  if (!(await validate())) {
+    busy.value = false;
+    return;
+  }
   try {
     if (props.selection.networkObjectKind) {
-      const value = await api.createNetworkObject(props.laboratoryId, {
-        name: name.value,
-        kind: props.selection.networkObjectKind,
-        config: lightweightConfig(props.selection.networkObjectKind),
-      });
+      const create = buildResourceCreateRequest(
+        props.selection,
+        currentDraft.value,
+        {},
+      );
+      if (create.kind !== "network-object") return;
+      const value = await api.createNetworkObject(
+        props.laboratoryId,
+        create.request,
+      );
       emit("created", { networkObject: value.network_object });
     } else {
       const chosenTemplateId = templateId.value;
@@ -375,44 +373,17 @@ async function submit() {
           "The selected template or image changed on the server. Your other values are preserved; choose an available version and retry.";
         return;
       }
-      const value = await api.createNode(props.laboratoryId, {
-        name: name.value,
-        kind: currentTemplate.runtime_kind,
-        template_version_id: chosenVersionId,
-        image_version_id: chosenImageId || undefined,
-        interface_count: interfaceCount.value,
-        config: networkConfigurable.value
-          ? {
-              network_interfaces: [
-                {
-                  name: initialInterfaceName.value,
-                  modes: [ipv4Mode.value, ipv6Mode.value].filter(
-                    (mode) => mode !== "none",
-                  ),
-                  addresses: [
-                    ipv4Mode.value === "static" ? ipv4Address.value : "",
-                    ipv6Mode.value === "static" ? ipv6Address.value : "",
-                  ].filter(Boolean),
-                  routes: routes.value.map((route) => ({
-                    destination: route.destination.trim(),
-                    gateway: route.gateway.trim() || undefined,
-                    metric: String(route.metric).trim()
-                      ? Number(route.metric)
-                      : undefined,
-                  })),
-                },
-              ],
-            }
-          : undefined,
-        bootstrap: ubuntuPasswordBootstrap.value
-          ? {
-              user_data: buildUbuntuPasswordCloudInit(
-                cloudUsername.value,
-                cloudPassword.value,
-              ),
-            }
-          : undefined,
-      });
+      const create = buildResourceCreateRequest(
+        props.selection,
+        currentDraft.value,
+        {
+          template: currentTemplate,
+          version: currentVersion,
+          image: currentImage,
+        },
+      );
+      if (create.kind !== "node") return;
+      const value = await api.createNode(props.laboratoryId, create.request);
       emit("created", value);
     }
     open.value = false;
@@ -435,8 +406,10 @@ async function submit() {
 </script>
 <template>
   <Sheet
+    ref="sheetRef"
     v-model="open"
     size="min(92vw, 580px)"
+    :prevent-close="dirty"
     :title="selection ? `Add ${selection.name}` : 'Add resource'"
     description="资源及确认位置会共享给所有客户端；画布视口、手工链路路径和当前抽屉草稿仅保存在当前浏览器。"
   >
@@ -463,13 +436,18 @@ async function submit() {
           type="button"
           variant="secondary"
           size="sm"
-          @click="emit('selectionChanged', undefined)"
+          @click="changeResource"
         >
           更换资源
         </Button>
       </div>
-      <FormField label="Name" :error="fieldErrors.name">
-        <Input v-model="name" required maxlength="120" /> </FormField
+      <FormField data-field="name" label="Name" :error="fieldErrors.name">
+        <Input
+          v-model="name"
+          data-testid="create-resource-name"
+          required
+          maxlength="120"
+        /> </FormField
       ><FormField
         v-if="
           selection?.networkObjectKind === 'switch_l2' ||
@@ -605,6 +583,7 @@ async function submit() {
           <div
             v-for="(route, routeIndex) in routes"
             :key="route.id"
+            :data-route-id="route.id"
             class="grid gap-2 rounded-md bg-muted/20 p-2 md:grid-cols-[1.4fr_1fr_7rem_auto]"
           >
             <FormField
@@ -725,7 +704,7 @@ async function submit() {
       </p>
     </form>
     <template v-if="selection" #footer>
-      <Button type="button" variant="secondary" @click="open = false">
+      <Button type="button" variant="secondary" @click="requestDrawerClose">
         取消
       </Button>
       <Button

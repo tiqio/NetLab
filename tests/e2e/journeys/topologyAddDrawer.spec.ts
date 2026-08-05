@@ -67,3 +67,29 @@ test("the right-side add drawer creates an authoritative lightweight resource", 
     ),
   );
 });
+
+test("the add drawer keeps long-form state and confirms dirty close", async ({
+  page,
+  automation,
+  ledger,
+  runId,
+}) => {
+  await createOwnedLaboratory(page, automation, ledger, runId);
+  const topology = new TopologyPage(page, automation);
+  await topology.openResourceDrawer();
+  const form = await topology.chooseDrawerResource("PC");
+  const name = form.getByLabel("Name", { exact: true });
+  await name.fill(`draft-${runId.slice(0, 6)}`);
+  const pageScroll = await page.evaluate(() => window.scrollY);
+  const body = page.locator("[data-sheet-body]");
+  await body.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+  await expect(name).toHaveValue(`draft-${runId.slice(0, 6)}`);
+  expect(await page.evaluate(() => window.scrollY)).toBe(pageScroll);
+  await form.getByRole("button", { name: "取消" }).click();
+  const discard = page.getByRole("alertdialog", { name: "放弃未保存的更改" });
+  await expect(discard).toBeVisible();
+  await discard.getByRole("button", { name: "继续编辑" }).click();
+  await expect(name).toHaveValue(`draft-${runId.slice(0, 6)}`);
+});

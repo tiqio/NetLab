@@ -1,5 +1,6 @@
 import { test, expect } from "../fixtures/acceptanceFixture";
 import { LaboratoryPage } from "../pages/LaboratoryPage";
+import { TopologyPage } from "../pages/TopologyPage";
 
 test("laboratory forms protect required and recoverable input", async ({
   page,
@@ -45,4 +46,18 @@ test("laboratory forms protect required and recoverable input", async ({
   const deletion = page.getByRole("dialog", { name: "Delete laboratory" });
   await deletion.getByRole("button", { name: "Cancel" }).click();
   await expect(deletion).toBeHidden();
+
+  const topology = new TopologyPage(page, automation);
+  await topology.openResourceDrawer();
+  const resourceForm = await topology.chooseDrawerResource("PC");
+  await resourceForm.getByLabel("Name", { exact: true }).fill("drawer draft");
+  await resourceForm.getByRole("button", { name: "取消" }).click();
+  const resourceDiscard = page.getByRole("alertdialog", {
+    name: "放弃未保存的更改",
+  });
+  await expect(resourceDiscard).toBeVisible();
+  await resourceDiscard.getByRole("button", { name: "继续编辑" }).click();
+  await expect(resourceForm.getByLabel("Name", { exact: true })).toHaveValue(
+    "drawer draft",
+  );
 });

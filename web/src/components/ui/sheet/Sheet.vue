@@ -25,6 +25,10 @@ const props = withDefaults(
 );
 const emit = defineEmits<{ closeRequested: [SheetCloseReason] }>();
 const panel = ref<HTMLElement>();
+const confirmation = ref<HTMLElement>();
+const confirmOpen = ref(false);
+const pendingReason = ref<SheetCloseReason>();
+let discardAction: (() => void) | undefined;
 let trigger: HTMLElement | null = null;
 
 const panelStyle = computed(() => {
@@ -51,13 +55,48 @@ function focusableElements() {
 
 function requestClose(reason: SheetCloseReason) {
   emit("closeRequested", reason);
-  if (!props.preventClose) open.value = false;
+  pendingReason.value = reason;
+  requestDiscardConfirmation(() => {
+    open.value = false;
+  });
 }
+
+function requestDiscardConfirmation(action: () => void) {
+  if (!props.preventClose) return action();
+  discardAction = action;
+  confirmOpen.value = true;
+  void nextTick(() =>
+    confirmation.value
+      ?.querySelector<HTMLElement>("[data-keep-editing]")
+      ?.focus(),
+  );
+}
+
+function keepEditing() {
+  confirmOpen.value = false;
+  pendingReason.value = undefined;
+  discardAction = undefined;
+  void nextTick(() => panel.value?.focus());
+}
+
+function discardChanges() {
+  const action = discardAction;
+  confirmOpen.value = false;
+  pendingReason.value = undefined;
+  discardAction = undefined;
+  action?.();
+}
+
+defineExpose({ requestClose, requestDiscardConfirmation });
 
 function handleKeydown(event: KeyboardEvent) {
   if (!open.value) return;
   if (event.key === "Escape") {
     event.preventDefault();
+    if (confirmOpen.value) {
+      emit("closeRequested", "escape");
+      return;
+    }
     requestClose("escape");
     return;
   }
@@ -88,6 +127,8 @@ watch(
       const preferred = panel.value?.querySelector<HTMLElement>("[autofocus]");
       (preferred || focusableElements()[0] || panel.value)?.focus();
     } else if (previous) {
+      confirmOpen.value = false;
+      pendingReason.value = undefined;
       await nextTick();
       trigger?.focus();
       trigger = null;
@@ -156,6 +197,39 @@ onBeforeUnmount(() => {
         >
           <slot name="footer" />
         </footer>
+        <div
+          v-if="confirmOpen"
+          class="absolute inset-0 z-10 grid place-items-center bg-black/55 p-4"
+        >
+          <section
+            ref="confirmation"
+            role="alertdialog"
+            aria-modal="true"
+            aria-label="放弃未保存的更改"
+            class="w-full max-w-sm rounded-lg border border-border bg-card p-4 shadow-2xl"
+          >
+            <h3 class="font-semibold">放弃未保存的更改？</h3>
+            <p class="mt-2 text-sm text-muted-foreground">
+              当前添加配置尚未保存。放弃后需要重新填写。
+            </p>
+            <div class="mt-4 flex justify-end gap-2">
+              <Button
+                data-keep-editing
+                variant="secondary"
+                @click="keepEditing"
+              >
+                继续编辑
+              </Button>
+              <Button
+                data-discard-changes
+                variant="destructive"
+                @click="discardChanges"
+              >
+                放弃更改
+              </Button>
+            </div>
+          </section>
+        </div>
       </section>
     </div>
   </Teleport>

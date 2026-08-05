@@ -86,4 +86,38 @@ describe("Sheet", () => {
     expect(document.activeElement).toBe(trigger);
     wrapper.unmount();
   });
+
+  it("contains dirty close confirmation and supports keep editing or discard", async () => {
+    const wrapper = mount(Sheet, {
+      attachTo: document.body,
+      props: { modelValue: true, title: "Panel", preventClose: true },
+      slots: { default: "<input aria-label='Draft name' />" },
+    });
+    document.body
+      .querySelector<HTMLButtonElement>('[aria-label="Close sheet"]')!
+      .click();
+    await nextTick();
+
+    const alert = document.body.querySelector<HTMLElement>(
+      '[role="alertdialog"]',
+    );
+    expect(alert).not.toBeNull();
+    expect(document.activeElement).toBe(
+      alert?.querySelector("[data-keep-editing]"),
+    );
+
+    alert?.querySelector<HTMLButtonElement>("[data-keep-editing]")?.click();
+    await nextTick();
+    expect(document.body.querySelector('[role="alertdialog"]')).toBeNull();
+    expect(wrapper.props("modelValue")).toBe(true);
+
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    await nextTick();
+    document.body
+      .querySelector<HTMLButtonElement>("[data-discard-changes]")!
+      .click();
+    await nextTick();
+    expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual([false]);
+    wrapper.unmount();
+  });
 });

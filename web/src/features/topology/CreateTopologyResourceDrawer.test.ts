@@ -534,4 +534,161 @@ describe("CreateTopologyResourceDrawer", () => {
     );
     wrapper.unmount();
   });
+
+  it("preserves a dirty draft until the user explicitly discards it", async () => {
+    const wrapper = mount(CreateTopologyResourceDrawer, {
+      attachTo: document.body,
+      props: {
+        modelValue: true,
+        laboratoryId: "lab-1",
+        selection: { kind: "pc", name: "PC", networkObjectKind: "pc" },
+      },
+    });
+    const name = document.body.querySelector<HTMLInputElement>(
+      '[data-testid="create-resource-name"]',
+    )!;
+    name.value = "PC edited";
+    name.dispatchEvent(new Event("input", { bubbles: true }));
+    await flushPromises();
+
+    Array.from(document.body.querySelectorAll("button"))
+      .find((button) => button.textContent?.trim() === "取消")!
+      .click();
+    await flushPromises();
+    expect(document.body.querySelector('[role="alertdialog"]')).not.toBeNull();
+    expect(wrapper.emitted("update:modelValue")).toBeUndefined();
+
+    document.body
+      .querySelector<HTMLButtonElement>("[data-keep-editing]")!
+      .click();
+    await flushPromises();
+    expect(name.value).toBe("PC edited");
+
+    Array.from(document.body.querySelectorAll("button"))
+      .find((button) => button.textContent?.trim() === "更换资源")!
+      .click();
+    await flushPromises();
+    document.body
+      .querySelector<HTMLButtonElement>("[data-discard-changes]")!
+      .click();
+    await flushPromises();
+    expect(wrapper.emitted("selectionChanged")?.at(-1)).toEqual([undefined]);
+    wrapper.unmount();
+  });
+
+  it("focuses and scrolls the first invalid long-form field", async () => {
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: scrollIntoView,
+    });
+    const template: DeviceTemplate = {
+      id: "docker-template",
+      template_key: "ubuntu-container",
+      display_name: "Ubuntu",
+      runtime_kind: "docker",
+      versions: [
+        {
+          id: "docker-version",
+          template_id: "docker-template",
+          version: "24.04",
+          manifest_version: 1,
+          compatible_image_version_ids: ["docker-image"],
+          defaults: {
+            cpu_count: 1,
+            memory_mib: 256,
+            interfaces: 1,
+            interface_name_format: "eth%d",
+          },
+          capabilities: [],
+          supported_nic_drivers: ["veth"],
+          console_modes: [],
+          runtime_options: {},
+          enabled: true,
+          created_at: "2026-08-05T00:00:00Z",
+        },
+      ],
+      created_at: "2026-08-05T00:00:00Z",
+    };
+    const image: ImageVersion = {
+      id: "docker-image",
+      runtime_kind: "docker",
+      name: "ubuntu-network-tools",
+      version: "24.04",
+      digest: "sha256:docker",
+      source_type: "registry",
+      source_reference: "ubuntu:24.04",
+      format: "oci",
+      size_bytes: 1,
+      availability: "available",
+      license_status: "reviewed",
+      license_notes: "",
+      validation_result: {},
+      created_at: "2026-08-05T00:00:00Z",
+    };
+    vi.mocked(api.listTemplates).mockResolvedValue([template]);
+    vi.mocked(api.listImages).mockResolvedValue([image]);
+    const wrapper = mount(CreateTopologyResourceDrawer, {
+      attachTo: document.body,
+      props: {
+        modelValue: false,
+        laboratoryId: "lab-1",
+        selection: {
+          kind: "docker",
+          name: "Ubuntu",
+          template,
+          version: template.versions[0],
+        },
+      },
+    });
+    await wrapper.setProps({ modelValue: true });
+    await flushPromises();
+    Array.from(document.body.querySelectorAll("button"))
+      .find((button) => button.textContent?.includes("Add IPv4 route"))!
+      .click();
+    await flushPromises();
+    const gateway = document.body.querySelector<HTMLInputElement>(
+      '[data-testid="docker-route-0-gateway"]',
+    )!;
+    gateway.value = "2001:db8::1";
+    gateway.dispatchEvent(new Event("input", { bubbles: true }));
+    document.body
+      .querySelector("form")!
+      .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await flushPromises();
+    expect(scrollIntoView).toHaveBeenCalled();
+    expect(document.activeElement).toBe(
+      document.body.querySelector('[data-testid="docker-route-0-destination"]'),
+    );
+    wrapper.unmount();
+  });
+
+  it("locks duplicate submissions while the first request is pending", async () => {
+    let resolveRequest!: (value: never) => void;
+    vi.mocked(api.createNetworkObject).mockReturnValue(
+      new Promise((resolve) => {
+        resolveRequest = resolve;
+      }),
+    );
+    const wrapper = mount(CreateTopologyResourceDrawer, {
+      attachTo: document.body,
+      props: {
+        modelValue: true,
+        laboratoryId: "lab-1",
+        selection: { kind: "pc", name: "PC", networkObjectKind: "pc" },
+      },
+    });
+    const form = document.body.querySelector("form")!;
+    form.dispatchEvent(
+      new Event("submit", { bubbles: true, cancelable: true }),
+    );
+    form.dispatchEvent(
+      new Event("submit", { bubbles: true, cancelable: true }),
+    );
+    await flushPromises();
+    expect(api.createNetworkObject).toHaveBeenCalledTimes(1);
+    resolveRequest({ network_object: { kind: "pc" } } as never);
+    await flushPromises();
+    wrapper.unmount();
+  });
 });

@@ -19,18 +19,19 @@
 
 ## Milestone 2 — Resource Drawer MVP
 
-- Commit SHA: pending
+- Commit SHA: `3524e17`
 - Focused tests: PASS — Catalog, Drawer, Workspace and Toolbar, 22 tests
 - Playwright: scenario compiles and discovers desktop/minimum projects; runtime execution deferred to deployed candidate because no local acceptance service is active
 - Build: PASS — Vue type check and Vite production build
-- Worktree clean after commit: pending
+- Worktree clean after commit: yes
 
 ## Milestone 3 — Long Form Reliability
 
 - Commit SHA: pending
-- Draft/validation tests: pending
-- Playwright: pending
-- Build: pending
+- Previous US1 SHA: `3524e17`
+- Draft/validation tests: PASS — draft model 7 tests; Drawer 12 tests; shared Sheet 7 tests; axe 1 test
+- Playwright: PASS discovery — 5 relevant tests discovered for desktop/minimum viewport; runtime execution reserved for candidate service
+- Build: PASS — Vue type check and Vite production build
 - Worktree clean after commit: pending
 
 ## Milestone 4 — Close and Workspace Recovery
