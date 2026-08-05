@@ -404,17 +404,25 @@ func (h *ConsoleHandlers) modes(ctx context.Context, nodeID domain.ID) ([]string
 		return []string{"telnet"}, nil
 	}
 	raw := node.Config["console_modes"]
+	result := make([]string, 0, 3)
 	if direct, ok := raw.([]string); ok {
-		return direct, nil
-	}
-	values, _ := raw.([]any)
-	result := make([]string, 0, len(values))
-	for _, value := range values {
-		if mode, ok := value.(string); ok && (mode == "telnet" || mode == "vnc") {
-			result = append(result, mode)
+		for _, mode := range direct {
+			if mode == "telnet" || mode == "vnc" {
+				result = append(result, mode)
+			}
+		}
+	} else {
+		values, _ := raw.([]any)
+		for _, value := range values {
+			if mode, ok := value.(string); ok && (mode == "telnet" || mode == "vnc") {
+				result = append(result, mode)
+			}
 		}
 	}
-	if h.ssh != nil && !containsMode(result, "ssh") {
+	availability, supportsAvailability := h.ssh.(interface {
+		Available(context.Context, domain.Node) error
+	})
+	if supportsAvailability && availability.Available(ctx, node) == nil && !containsMode(result, "ssh") {
 		result = append([]string{"ssh"}, result...)
 	}
 	return result, nil

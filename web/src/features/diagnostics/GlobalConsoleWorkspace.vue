@@ -25,6 +25,7 @@ interface NodeConsoleWorkspace {
 
 const workspaces = ref<NodeConsoleWorkspace[]>([]);
 const activeNodeId = ref("");
+const descriptorsByNode = ref<Record<string, ConsoleDescriptor[]>>({});
 const STORAGE_PREFIX = "netlab.console-workspaces.v1:";
 let restoring = false;
 const activeWorkspace = computed(() =>
@@ -39,6 +40,18 @@ const canAddSerial = computed(
     !activeWorkspace.value?.sessions.some(
       (session) => session.mode === "telnet",
     ),
+);
+const activeDescriptors = computed(
+  () => descriptorsByNode.value[activeWorkspace.value?.nodeId || ""] || [],
+);
+const canAddSSH = computed(() =>
+  activeDescriptors.value.some((descriptor) => descriptor.mode === "ssh"),
+);
+const canAddVNC = computed(() =>
+  activeDescriptors.value.some((descriptor) => descriptor.mode === "vnc"),
+);
+const canUseSerial = computed(() =>
+  activeDescriptors.value.some((descriptor) => descriptor.mode === "telnet"),
 );
 
 function storageKey(laboratoryId = props.laboratoryId) {
@@ -154,7 +167,7 @@ function addSession(
     mode ||
     (props.nodes.find((node) => node.id === workspace.nodeId)?.kind === "docker"
       ? "telnet"
-      : "ssh");
+      : "telnet");
   if (
     resolvedMode === "telnet" &&
     props.nodes.find((node) => node.id === workspace.nodeId)?.kind !== "docker"
@@ -177,18 +190,49 @@ function addSession(
   workspace.sessions.push(session);
   workspace.activeSessionId = session.id;
 }
-function openNode(nodeId: string) {
+async function loadDescriptors(nodeId: string) {
+  try {
+    const descriptors = await api.listNodeConsoles(nodeId);
+    descriptorsByNode.value = {
+      ...descriptorsByNode.value,
+      [nodeId]: descriptors,
+    };
+    return descriptors;
+  } catch {
+    const fallback: ConsoleDescriptor[] = [];
+    descriptorsByNode.value = {
+      ...descriptorsByNode.value,
+      [nodeId]: fallback,
+    };
+    return fallback;
+  }
+}
+async function openNode(nodeId: string) {
+  const descriptors = await loadDescriptors(nodeId);
   let workspace = workspaces.value.find((item) => item.nodeId === nodeId);
   if (!workspace) {
     workspace = { nodeId, sessions: [], activeSessionId: "" };
     workspaces.value.push(workspace);
-    addSession(workspace);
-  } else if (
-    props.nodes.find((node) => node.id === nodeId)?.kind !== "docker" &&
-    !workspace.sessions.some((session) => session.mode === "ssh")
-  ) {
-    addSession(workspace, "ssh");
   }
+  const supportedModes = new Set(
+    descriptors.map((descriptor) => descriptor.mode),
+  );
+  workspace.sessions = workspace.sessions.filter((session) =>
+    supportedModes.has(session.mode),
+  );
+  if (!workspace.sessions.length) {
+    const preferred =
+      descriptors.find((descriptor) => descriptor.mode === "telnet") ||
+      descriptors.find((descriptor) => descriptor.mode === "ssh") ||
+      descriptors[0];
+    if (preferred) addSession(workspace, preferred.mode);
+  }
+  if (
+    !workspace.sessions.some(
+      (session) => session.id === workspace.activeSessionId,
+    )
+  )
+    workspace.activeSessionId = workspace.sessions[0]?.id || "";
   activeNodeId.value = nodeId;
 }
 
@@ -201,7 +245,7 @@ watch(
   () => [props.requestNodeId, props.requestKey] as const,
   ([nodeId]) => {
     if (!nodeId) return;
-    openNode(nodeId);
+    void openNode(nodeId);
   },
   { immediate: true },
 );
@@ -263,7 +307,10 @@ function closeSession(workspace: NodeConsoleWorkspace, sessionId: string) {
       workspace.sessions[Math.max(0, index - 1)]?.id || "";
 }
 function addForActiveNode() {
-  if (activeWorkspace.value) addSession(activeWorkspace.value);
+  if (!activeWorkspace.value) return;
+  if (activeNode.value?.kind === "docker")
+    addSession(activeWorkspace.value, "telnet");
+  else if (canAddSSH.value) addSession(activeWorkspace.value, "ssh");
 }
 function addVNCForActiveNode() {
   if (activeWorkspace.value) addSession(activeWorkspace.value, "vnc");
@@ -338,8 +385,11 @@ function addSerialForActiveNode() {
         :title="
           activeNode?.kind === 'docker'
             ? 'Add another container terminal session'
-            : 'Add another SSH terminal session'
+            : canAddSSH
+              ? 'Add another SSH terminal session'
+              : 'SSH is unavailable; connect the node to a reachable network with valid bootstrap credentials'
         "
+        :disabled="activeNode?.kind !== 'docker' && !canAddSSH"
         @click="addForActiveNode"
       >
         <Plus :size="14" />
@@ -350,9 +400,9 @@ function addSerialForActiveNode() {
         size="icon"
         variant="ghost"
         aria-label="Add serial console"
-        :disabled="!canAddSerial"
+        :disabled="!canAddSerial || !canUseSerial"
         :title="
-          canAddSerial
+          canAddSerial && canUseSerial
             ? 'Open the QEMU serial rescue console'
             : 'QEMU exposes one serial console; switch to the existing SERIAL tab'
         "
@@ -366,6 +416,7 @@ function addSerialForActiveNode() {
         size="icon"
         variant="ghost"
         aria-label="Add VNC session"
+        :disabled="!canAddVNC"
         title="Add a VNC session for the active node"
         @click="addVNCForActiveNode"
       >

@@ -2,6 +2,7 @@ package stream
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net"
 	"os"
@@ -23,6 +24,19 @@ type dockerConsoleStub struct{}
 
 func (dockerConsoleStub) OpenConsole(context.Context, domain.Node) (io.ReadWriteCloser, error) {
 	return nil, nil
+}
+
+type sshConsoleStub struct{ available bool }
+
+func (s sshConsoleStub) OpenConsole(context.Context, domain.Node) (io.ReadWriteCloser, error) {
+	return nil, nil
+}
+
+func (s sshConsoleStub) Available(context.Context, domain.Node) error {
+	if s.available {
+		return nil
+	}
+	return fmt.Errorf("unavailable")
 }
 
 func TestConsoleSessionsExposeRuntimeOwnership(t *testing.T) {
@@ -47,6 +61,24 @@ func TestDockerNodesExposeTelnetConsole(t *testing.T) {
 	handler.SetDockerConsole(dockerConsoleStub{})
 	modes, err := handler.modes(context.Background(), "node-1")
 	if err != nil || len(modes) != 1 || modes[0] != "telnet" {
+		t.Fatalf("modes=%v err=%v", modes, err)
+	}
+}
+
+func TestQEMUConsoleModesOmitUnavailableSSH(t *testing.T) {
+	handler := NewConsoleHandlers("", consoleRuntime.Limits{}, consoleNodeReaderStub{node: domain.Node{ID: "node-1", Kind: "qemu", Config: map[string]any{"console_modes": []any{"telnet", "vnc"}}}})
+	handler.SetSSHConsole(sshConsoleStub{})
+	modes, err := handler.modes(context.Background(), "node-1")
+	if err != nil || len(modes) != 2 || modes[0] != "telnet" || modes[1] != "vnc" {
+		t.Fatalf("modes=%v err=%v", modes, err)
+	}
+}
+
+func TestQEMUConsoleModesExposeReachableSSH(t *testing.T) {
+	handler := NewConsoleHandlers("", consoleRuntime.Limits{}, consoleNodeReaderStub{node: domain.Node{ID: "node-1", Kind: "qemu", Config: map[string]any{"console_modes": []string{"telnet"}}}})
+	handler.SetSSHConsole(sshConsoleStub{available: true})
+	modes, err := handler.modes(context.Background(), "node-1")
+	if err != nil || len(modes) != 2 || modes[0] != "ssh" || modes[1] != "telnet" {
 		t.Fatalf("modes=%v err=%v", modes, err)
 	}
 }

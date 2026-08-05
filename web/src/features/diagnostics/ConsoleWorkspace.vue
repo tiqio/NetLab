@@ -53,9 +53,14 @@ async function load() {
   try {
     descriptors.value = await api.listNodeConsoles(props.nodeId);
     if (props.autoOpen && !sessions.value.length && descriptors.value[0]) {
-      const descriptor =
-        descriptors.value.find((item) => item.mode === props.autoMode) ||
-        descriptors.value[0];
+      const descriptor = descriptors.value.find(
+        (item) => item.mode === props.autoMode,
+      );
+      if (!descriptor) {
+        state.value = "failed";
+        error.value = `${props.autoMode.toUpperCase()} console is not available for this node`;
+        return;
+      }
       await createSession(descriptor.mode);
     }
   } catch (value) {

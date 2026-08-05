@@ -25,13 +25,44 @@ type SSHCredentialSource interface {
 }
 
 type SSHBackend struct {
-	addresses   SSHAddressSource
-	credentials SSHCredentialSource
-	timeout     time.Duration
+	addresses    SSHAddressSource
+	credentials  SSHCredentialSource
+	timeout      time.Duration
+	probeTimeout time.Duration
+	port         string
 }
 
 func NewSSHBackend(addresses SSHAddressSource, credentials SSHCredentialSource) *SSHBackend {
-	return &SSHBackend{addresses: addresses, credentials: credentials, timeout: 5 * time.Second}
+	return &SSHBackend{addresses: addresses, credentials: credentials, timeout: 5 * time.Second, probeTimeout: 300 * time.Millisecond, port: "22"}
+}
+
+func (b *SSHBackend) Available(ctx context.Context, node domain.Node) error {
+	if node.ObservedState != domain.ObservedRunning {
+		return fmt.Errorf("SSH console requires a running node")
+	}
+	if b.addresses == nil || b.credentials == nil {
+		return fmt.Errorf("SSH console resolver is unavailable")
+	}
+	seedPath, _ := node.Config["seed_iso"].(string)
+	if seedPath == "" {
+		return fmt.Errorf("SSH credentials are unavailable for this node")
+	}
+	if _, err := b.credentials.Credentials(ctx, seedPath); err != nil {
+		return fmt.Errorf("resolve SSH credentials: %w", err)
+	}
+	addresses, err := b.ResolveAddresses(ctx, node)
+	if err != nil {
+		return err
+	}
+	dialer := net.Dialer{Timeout: b.probeTimeout}
+	for _, address := range addresses {
+		connection, dialErr := dialer.DialContext(ctx, "tcp", net.JoinHostPort(address, b.port))
+		if dialErr == nil {
+			_ = connection.Close()
+			return nil
+		}
+	}
+	return fmt.Errorf("SSH endpoint is not reachable from the NetLab host")
 }
 
 func (b *SSHBackend) OpenConsole(ctx context.Context, node domain.Node) (io.ReadWriteCloser, error) {
@@ -55,7 +86,7 @@ func (b *SSHBackend) OpenConsole(ctx context.Context, node domain.Node) (io.Read
 	}
 	var failures []string
 	for _, address := range addresses {
-		connection, openErr := b.open(ctx, net.JoinHostPort(address, "22"), credentials)
+		connection, openErr := b.open(ctx, net.JoinHostPort(address, b.port), credentials)
 		if openErr == nil {
 			return connection, nil
 		}

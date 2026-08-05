@@ -1,5 +1,6 @@
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
+import { api } from "@/api";
 import { nodeFactory } from "@/test/factories";
 
 vi.mock("./ConsoleWorkspace.vue", () => ({
@@ -14,6 +15,14 @@ import GlobalConsoleWorkspace from "./GlobalConsoleWorkspace.vue";
 
 describe("GlobalConsoleWorkspace", () => {
   it("restores node and terminal tabs after a browser refresh", async () => {
+    vi.spyOn(api, "listNodeConsoles").mockResolvedValue([
+      {
+        mode: "telnet",
+        stream_url: "/console",
+        reconnectable: true,
+        idle_seconds: 1800,
+      },
+    ]);
     const nodes = [
       nodeFactory({ id: "ubuntu", name: "Ubuntu", kind: "docker" }),
     ];
@@ -25,6 +34,7 @@ describe("GlobalConsoleWorkspace", () => {
         requestKey: 1,
       },
     });
+    await flushPromises();
     await first.get('[aria-label="Add terminal session"]').trigger("click");
     expect(first.get('[aria-label="Console sessions"]').text()).toContain(
       "SERIAL 2",
@@ -46,7 +56,21 @@ describe("GlobalConsoleWorkspace", () => {
     expect(restored.findAll("[data-console-workspace]")).toHaveLength(2);
   });
 
-  it("defaults QEMU to SSH while keeping one serial rescue console", async () => {
+  it("defaults QEMU to serial and only enables SSH when advertised", async () => {
+    vi.spyOn(api, "listNodeConsoles").mockResolvedValue([
+      {
+        mode: "telnet",
+        stream_url: "/serial",
+        reconnectable: true,
+        idle_seconds: 1800,
+      },
+      {
+        mode: "vnc",
+        stream_url: "/vnc",
+        reconnectable: true,
+        idle_seconds: 1800,
+      },
+    ]);
     const wrapper = mount(GlobalConsoleWorkspace, {
       props: {
         laboratoryId: "lab-qemu-console",
@@ -55,28 +79,30 @@ describe("GlobalConsoleWorkspace", () => {
         requestKey: 1,
       },
     });
+    await flushPromises();
 
     expect(wrapper.get('[aria-label="Console sessions"]').text()).toContain(
-      "SSH 1",
+      "SERIAL 1",
     );
-    await wrapper.get('[aria-label="Add terminal session"]').trigger("click");
-    expect(wrapper.get('[aria-label="Console sessions"]').text()).toContain(
-      "SSH 2",
-    );
+    expect(
+      wrapper.get('[aria-label="Add terminal session"]').attributes("disabled"),
+    ).toBeDefined();
     await wrapper.get('[aria-label="Add serial console"]').trigger("click");
-    expect(wrapper.get('[aria-label="Console sessions"]').text()).toContain(
-      "SERIAL 3",
-    );
     expect(
       wrapper.get('[aria-label="Add serial console"]').attributes("disabled"),
     ).toBeDefined();
-    expect(wrapper.findAll("[data-console-workspace]")).toHaveLength(3);
-    expect(wrapper.get('[aria-label="Console sessions"]').text()).not.toContain(
-      "SERIAL 4",
-    );
+    expect(wrapper.findAll("[data-console-workspace]")).toHaveLength(1);
   });
 
   it("keeps each opened node console mounted while switching tabs", async () => {
+    vi.spyOn(api, "listNodeConsoles").mockResolvedValue([
+      {
+        mode: "telnet",
+        stream_url: "/console",
+        reconnectable: true,
+        idle_seconds: 1800,
+      },
+    ]);
     const wrapper = mount(GlobalConsoleWorkspace, {
       props: {
         nodes: [
@@ -87,8 +113,10 @@ describe("GlobalConsoleWorkspace", () => {
         requestKey: 1,
       },
     });
+    await flushPromises();
 
     await wrapper.setProps({ requestNodeId: "busybox", requestKey: 2 });
+    await flushPromises();
 
     const consoles = wrapper.findAll("[data-console-workspace]");
     expect(consoles).toHaveLength(2);
@@ -100,6 +128,7 @@ describe("GlobalConsoleWorkspace", () => {
     expect(consoles[1].isVisible()).toBe(true);
 
     await wrapper.setProps({ requestNodeId: "ubuntu", requestKey: 3 });
+    await flushPromises();
 
     const switchedConsoles = wrapper.findAll("[data-console-workspace]");
     expect(switchedConsoles).toHaveLength(2);
