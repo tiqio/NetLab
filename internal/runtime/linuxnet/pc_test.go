@@ -103,6 +103,38 @@ func TestPCReportsDHCPFailure(t *testing.T) {
 	}
 }
 
+func TestPCReconfigurationClearsDynamicStateAndDisabledHelpers(t *testing.T) {
+	executor := &scriptExecutor{activeUnits: map[string]bool{}}
+	runtime, _ := NewPCRuntime(executor)
+	runtime.resolvRoot = t.TempDir()
+	runtime.helperRoot = t.TempDir()
+	ownerID := domain.ID("pc-reconfigure")
+	executor.activeUnits[pcDHCPUnit(ownerID, "eth0", "4")] = true
+	executor.activeUnits[pcDHCPUnit(ownerID, "eth0", "6")] = true
+	object := domain.NetworkObject{
+		ID: ownerID,
+		Config: map[string]any{"interfaces": []any{map[string]any{
+			"name": "eth0", "modes": []any{"static"}, "addresses": []any{"192.0.2.20/24"},
+		}}},
+	}
+	if err := runtime.Configure(context.Background(), object); err != nil {
+		t.Fatal(err)
+	}
+	commands := strings.Join(executor.commands, "\n")
+	for _, fragment := range []string{
+		"address flush dev eth0 scope global",
+		"route flush dev eth0",
+		"systemctl stop " + pcDHCPUnit(ownerID, "eth0", "4"),
+		"systemctl stop " + pcDHCPUnit(ownerID, "eth0", "6"),
+		"accept_ra=0",
+		"address replace 192.0.2.20/24",
+	} {
+		if !strings.Contains(commands, fragment) {
+			t.Fatalf("missing %q in\n%s", fragment, commands)
+		}
+	}
+}
+
 func TestPCAdoptsActiveDHCPHelperAndReportsSLAACTimeout(t *testing.T) {
 	executor := &scriptExecutor{output: []byte(`[{"addr_info":[]}]`), activeUnits: map[string]bool{pcDHCPUnit("pc-3", "eth0", "4"): true}}
 	runtime, _ := NewPCRuntime(executor)

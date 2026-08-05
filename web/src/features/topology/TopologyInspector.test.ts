@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { api, type NetworkObject, type Node } from "@/api";
 import TopologyInspector from "./TopologyInspector.vue";
 import LightweightSwitchConfigEditor from "@/features/nodes/LightweightSwitchConfigEditor.vue";
+import LightweightPCConfigurationPanel from "@/features/nodes/LightweightPCConfigurationPanel.vue";
 
 const natObject: NetworkObject = {
   id: "nat-1",
@@ -202,6 +203,67 @@ describe("TopologyInspector", () => {
       },
     });
     expect(wrapper.text()).toContain("配置更新任务已提交");
+    update.mockRestore();
+  });
+
+  it("configures Lightweight PC DHCP, SLAAC, static addresses, routes, and DNS", async () => {
+    const networkObject: NetworkObject = {
+      id: "pc-1",
+      laboratory_id: "lab-1",
+      name: "Client PC",
+      kind: "pc",
+      revision: 2,
+      desired_state: "active",
+      observed_state: "active",
+      config: {
+        hostname: "client-pc",
+        interfaces: [{ name: "eth0", modes: ["dhcpv4"] }],
+      },
+    };
+    const update = vi
+      .spyOn(api, "updateNetworkObject")
+      .mockResolvedValue({ task: { id: "task-pc" } } as never);
+    const wrapper = mount(TopologyInspector, {
+      props: { laboratoryId: "lab-1", networkObject, interfaces: [] },
+    });
+    const panel = wrapper.findComponent(LightweightPCConfigurationPanel);
+    expect(panel.exists()).toBe(true);
+    const checkboxes = panel.findAll('input[type="checkbox"]');
+    await checkboxes[2].setValue(true);
+    await checkboxes[3].setValue(true);
+    const textInputs = panel.findAll('input:not([type="checkbox"])');
+    await textInputs[3].setValue("192.0.2.10/24, 2001:db8::10/64");
+    await textInputs[4].setValue("1.1.1.1, 2606:4700:4700::1111");
+    await panel
+      .findAll("button")
+      .find((button) => button.text().includes("添加路由"))!
+      .trigger("click");
+    const routeInputs = panel.findAll('input[aria-label="路由目标"]');
+    const gatewayInputs = panel.findAll('input[aria-label="下一跳"]');
+    await routeInputs[0].setValue("0.0.0.0/0");
+    await gatewayInputs[0].setValue("192.0.2.1");
+    await panel
+      .findAll("button")
+      .find((button) => button.text().includes("应用 PC 配置"))!
+      .trigger("click");
+    await flushPromises();
+
+    expect(update).toHaveBeenCalledWith(networkObject, {
+      name: "Client PC",
+      config: {
+        hostname: "client-pc",
+        interfaces: [
+          {
+            name: "eth0",
+            modes: ["dhcpv4", "slaac", "static"],
+            addresses: ["192.0.2.10/24", "2001:db8::10/64"],
+            dns: ["1.1.1.1", "2606:4700:4700::1111"],
+            routes: [{ destination: "0.0.0.0/0", gateway: "192.0.2.1" }],
+          },
+        ],
+      },
+    });
+    expect(panel.text()).toContain("PC 网络配置已提交");
     update.mockRestore();
   });
 

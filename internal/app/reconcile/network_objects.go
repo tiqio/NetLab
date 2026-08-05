@@ -186,6 +186,12 @@ func validateSwitchConfiguration(kind string, config map[string]any) error {
 		return json.Unmarshal(body, destination)
 	}
 	switch kind {
+	case domain.NetworkPC:
+		var value domain.PCConfig
+		if err := decode(&value); err != nil {
+			return err
+		}
+		return domain.ValidatePCConfig(value)
 	case domain.NetworkSwitchL2:
 		var value domain.SwitchL2Config
 		if err := decode(&value); err != nil {

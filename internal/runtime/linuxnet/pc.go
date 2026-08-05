@@ -63,6 +63,7 @@ func (r *PCRuntime) Configure(ctx context.Context, object domain.NetworkObject) 
 	if err := r.executor.Run(ctx, r.ip, "-n", namespace, "link", "set", "lo", "up"); err != nil {
 		return err
 	}
+	dnsServers := make([]string, 0)
 	for _, iface := range config.Interfaces {
 		if !hostObjectName.MatchString(iface.Name) {
 			return fmt.Errorf("invalid PC interface name")
@@ -73,13 +74,37 @@ func (r *PCRuntime) Configure(ctx context.Context, object domain.NetworkObject) 
 		if err := r.configureInterface(ctx, namespace, object.ID, iface); err != nil {
 			return err
 		}
+		dnsServers = append(dnsServers, iface.DNS...)
 	}
-	return nil
+	return r.configureDNS(namespace, dnsServers)
 }
 
 func (r *PCRuntime) configureInterface(ctx context.Context, namespace string, ownerID domain.ID, iface domain.PCInterfaceConfig) error {
 	if err := r.executor.Run(ctx, r.ip, "-n", namespace, "link", "set", iface.Name, "up"); err != nil {
 		return err
+	}
+	if err := r.executor.Run(ctx, r.ip, "-n", namespace, "address", "flush", "dev", iface.Name, "scope", "global"); err != nil {
+		return err
+	}
+	if err := r.executor.Run(ctx, r.ip, "-n", namespace, "route", "flush", "dev", iface.Name); err != nil {
+		return err
+	}
+	modes := map[domain.AddressMode]bool{}
+	for _, mode := range iface.Modes {
+		modes[mode] = true
+	}
+	for family, mode := range map[string]domain.AddressMode{"4": domain.AddressDHCPv4, "6": domain.AddressDHCPv6} {
+		if !modes[mode] {
+			if err := r.stopDHCPHelper(ctx, ownerID, iface.Name, family); err != nil {
+				return err
+			}
+		}
+	}
+	if !modes[domain.AddressSLAAC] {
+		if err := r.executor.Run(ctx, r.ip, "netns", "exec", namespace, "sysctl", "-w", "net.ipv6.conf."+iface.Name+".accept_ra=0"); err != nil {
+			return err
+		}
+		_ = os.Remove(filepath.Join(r.pcHelperDirectory(ownerID), iface.Name+".slaac-started"))
 	}
 	for _, address := range iface.Addresses {
 		if err := r.executor.Run(ctx, r.ip, "-n", namespace, "address", "replace", address, "dev", iface.Name); err != nil {
@@ -97,19 +122,6 @@ func (r *PCRuntime) configureInterface(ctx context.Context, namespace string, ow
 		}
 		if err := r.executor.Run(ctx, r.ip, args...); err != nil {
 			return err
-		}
-	}
-	if len(iface.DNS) > 0 {
-		directory := filepath.Join(r.resolvRoot, namespace)
-		if err := os.MkdirAll(directory, 0o755); err != nil {
-			return fmt.Errorf("configure DNS: %w", err)
-		}
-		lines := make([]string, 0, len(iface.DNS))
-		for _, server := range iface.DNS {
-			lines = append(lines, "nameserver "+server)
-		}
-		if err := os.WriteFile(filepath.Join(directory, "resolv.conf"), []byte(strings.Join(lines, "\n")+"\n"), 0o644); err != nil {
-			return fmt.Errorf("configure DNS: %w", err)
 		}
 	}
 	for _, mode := range iface.Modes {
@@ -130,6 +142,51 @@ func (r *PCRuntime) configureInterface(ctx context.Context, namespace string, ow
 				return err
 			}
 		}
+	}
+	return nil
+}
+
+func (r *PCRuntime) configureDNS(namespace string, servers []string) error {
+	directory := filepath.Join(r.resolvRoot, namespace)
+	path := filepath.Join(directory, "resolv.conf")
+	if len(servers) == 0 {
+		if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("clear DNS: %w", err)
+		}
+		return nil
+	}
+	if err := os.MkdirAll(directory, 0o755); err != nil {
+		return fmt.Errorf("configure DNS: %w", err)
+	}
+	seen := map[string]bool{}
+	lines := make([]string, 0, len(servers))
+	for _, server := range servers {
+		server = strings.TrimSpace(server)
+		if server != "" && !seen[server] {
+			seen[server] = true
+			lines = append(lines, "nameserver "+server)
+		}
+	}
+	if err := os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0o644); err != nil {
+		return fmt.Errorf("configure DNS: %w", err)
+	}
+	return nil
+}
+
+func (r *PCRuntime) stopDHCPHelper(ctx context.Context, ownerID domain.ID, interfaceName, family string) error {
+	unit := pcDHCPUnit(ownerID, interfaceName, family)
+	active, err := r.helperActive(ctx, unit)
+	if err != nil {
+		return fmt.Errorf("inspect DHCPv%s helper for %s: %w", family, interfaceName, err)
+	}
+	if active {
+		if err = r.executor.Run(ctx, "systemctl", "stop", unit); err != nil {
+			return fmt.Errorf("stop DHCPv%s helper for %s: %w", family, interfaceName, err)
+		}
+	}
+	lease := filepath.Join(r.pcHelperDirectory(ownerID), interfaceName+".v"+family+".leases")
+	if err = os.Remove(lease); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("clear DHCPv%s lease for %s: %w", family, interfaceName, err)
 	}
 	return nil
 }

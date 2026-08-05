@@ -21,6 +21,7 @@ import NodeOperationsPanel from "@/features/nodes/NodeOperationsPanel.vue";
 import { dockerRouteReadiness } from "@/features/nodes/dockerRouteReadiness";
 import RuijieConfigurationPanel from "@/features/nodes/RuijieConfigurationPanel.vue";
 import LightweightNodeEditor from "@/features/nodes/LightweightNodeEditor.vue";
+import LightweightPCConfigurationPanel from "@/features/nodes/LightweightPCConfigurationPanel.vue";
 import LightweightSwitchConfigurationPanel from "@/features/nodes/LightweightSwitchConfigurationPanel.vue";
 import ResourceCharts from "@/features/analytics/ResourceCharts.vue";
 import ConfirmationDialog from "@/components/common/ConfirmationDialog.vue";
@@ -747,6 +748,11 @@ async function deleteObjectLink() {
           networkObject.kind === 'switch_l2' ||
           networkObject.kind === 'switch_l3'
         "
+        :network-object="networkObject"
+        @changed="$emit('changed')"
+      />
+      <LightweightPCConfigurationPanel
+        v-if="networkObject.kind === 'pc'"
         :network-object="networkObject"
         @changed="$emit('changed')"
       />
