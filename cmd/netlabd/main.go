@@ -214,7 +214,7 @@ func main() {
 	networkService.AddObjectLinkObserverCleanup(captureManager)
 	networkService.AddObjectLinkObserverCleanup(trafficFilterManager)
 	networkTasks := reconcile.NewNetworkObjectTaskService(networkService, taskRunner)
-	httpapi.NewNetworkHandlers(networkService, networkTasks, pcRuntime, natRuntime, switchL3Runtime).Register(server.Engine())
+	httpapi.NewNetworkHandlers(networkService, networkTasks, pcRuntime, bridgeRuntime, natRuntime, switchL3Runtime).Register(server.Engine())
 	server.Engine().GET("/api/v1/events", gin.WrapH(stream.NewEventHandler(publisher)))
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()

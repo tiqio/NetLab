@@ -67,17 +67,22 @@ func statusFor(err error) string {
 type BridgeRuntime struct {
 	executor CommandExecutor
 	ip       string
+	bridge   string
 }
 
 func NewBridgeRuntime(executor CommandExecutor) (*BridgeRuntime, error) {
 	if executor != nil {
-		return &BridgeRuntime{executor: executor, ip: "ip"}, nil
+		return &BridgeRuntime{executor: executor, ip: "ip", bridge: "bridge"}, nil
 	}
 	ip, err := exec.LookPath("ip")
 	if err != nil {
 		return nil, err
 	}
-	return &BridgeRuntime{executor: SystemExecutor{}, ip: ip}, nil
+	bridge, err := exec.LookPath("bridge")
+	if err != nil {
+		return nil, err
+	}
+	return &BridgeRuntime{executor: SystemExecutor{}, ip: ip, bridge: bridge}, nil
 }
 
 func (r *BridgeRuntime) Configure(ctx context.Context, object domain.NetworkObject) error {
@@ -96,7 +101,39 @@ func (r *BridgeRuntime) Configure(ctx context.Context, object domain.NetworkObje
 			return err
 		}
 	}
+	stpState := "0"
+	if config.STP {
+		stpState = "1"
+	}
+	if err := r.executor.Run(ctx, r.ip, "link", "set", "dev", name, "type", "bridge", "stp_state", stpState); err != nil {
+		return fmt.Errorf("configure bridge STP: %w", err)
+	}
 	return r.executor.Run(ctx, r.ip, "link", "set", name, "up")
+}
+
+func (r *BridgeRuntime) Diagnostics(ctx context.Context, id domain.ID) (map[string]any, error) {
+	name := ownership.Name("nlbr", id, 15)
+	link, err := r.executor.Output(ctx, r.ip, "-d", "-j", "link", "show", "dev", name)
+	if err != nil {
+		return nil, fmt.Errorf("inspect bridge link: %w", err)
+	}
+	ports, err := r.executor.Output(ctx, r.ip, "-d", "-j", "link", "show", "master", name)
+	if err != nil {
+		return nil, fmt.Errorf("inspect bridge ports: %w", err)
+	}
+	fdb, err := r.executor.Output(ctx, r.bridge, "-j", "fdb", "show", "br", name)
+	if err != nil {
+		return nil, fmt.Errorf("inspect bridge forwarding database: %w", err)
+	}
+	linkBody := strings.TrimSpace(string(link))
+	return map[string]any{
+		"bridge":         name,
+		"link":           json.RawMessage(linkBody),
+		"ports":          json.RawMessage(strings.TrimSpace(string(ports))),
+		"forwarding_db":  json.RawMessage(strings.TrimSpace(string(fdb))),
+		"stp_enabled":    strings.Contains(linkBody, `"stp_state":1`),
+		"cleanup_status": "owned",
+	}, nil
 }
 
 func (r *BridgeRuntime) Delete(ctx context.Context, id domain.ID) error {

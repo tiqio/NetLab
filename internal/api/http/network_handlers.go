@@ -13,6 +13,7 @@ type NetworkHandlers struct {
 	service    *reconcile.NetworkObjectService
 	operations *reconcile.NetworkObjectTaskService
 	pc         *linuxnet.PCRuntime
+	bridge     *linuxnet.BridgeRuntime
 	nat        *linuxnet.NATRuntime
 	switchL3   *linuxnet.SwitchL3Runtime
 }
@@ -20,6 +21,9 @@ type NetworkHandlers struct {
 func NewNetworkHandlers(service *reconcile.NetworkObjectService, operations *reconcile.NetworkObjectTaskService, pc *linuxnet.PCRuntime, runtimes ...any) *NetworkHandlers {
 	handler := &NetworkHandlers{service: service, operations: operations, pc: pc}
 	for _, runtime := range runtimes {
+		if value, ok := runtime.(*linuxnet.BridgeRuntime); ok {
+			handler.bridge = value
+		}
 		if value, ok := runtime.(*linuxnet.NATRuntime); ok {
 			handler.nat = value
 		}
@@ -210,6 +214,10 @@ func (h *NetworkHandlers) diagnostics(c *gin.Context) {
 	}
 	var diagnostics any
 	switch value.Kind {
+	case domain.NetworkBridge:
+		if h.bridge != nil {
+			diagnostics, err = h.bridge.Diagnostics(c, value.ID)
+		}
 	case domain.NetworkPC:
 		if h.pc != nil {
 			diagnostics, err = h.pc.Diagnostics(c, value.ID)
