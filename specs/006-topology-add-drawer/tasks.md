@@ -132,15 +132,15 @@
 - [x] T046 [P] 根据最终实现更新用户可见行为和实际测试命令于 `specs/006-topology-add-drawer/quickstart.md` 和 `specs/006-topology-add-drawer/contracts/ui-contract.md`
 - [x] T047 运行 `npm run lint`、`npm run format:check`、`npm test`、`npm run build`、相关 Go 合同测试和本地 Playwright 套件，并把全部结果、任何无关已知失败和 T043 的 US3 里程碑 SHA 记录到 `specs/006-topology-add-drawer/validation.md`
 - [x] T048 对 1024×768、1366×768、1920×1080 三种视口连续运行两次抽屉 Playwright 场景，记录无裁切、无重复创建、无 viewport 漂移结果到 `specs/006-topology-add-drawer/validation.md`
-- [ ] T049 提交 T044-T048 涉及的文件和 `specs/006-topology-add-drawer/validation.md`，确认提交后工作区为空并捕获最终源 commit SHA
-- [ ] T050 从 T049 的干净提交生成候选元数据，记录 source commit SHA、version、candidate ID、contract digest 和 built-at 到 `/var/tmp/netlab-candidates/006-topology-add-drawer/release.json`
-- [ ] T051 从 T049 的干净提交构建部署产物、计算 binary digest，并保存到 `/var/tmp/netlab-candidates/006-topology-add-drawer/netlabd` 和 `/var/tmp/netlab-candidates/006-topology-add-drawer/release.json`
-- [ ] T052 使用 `deploy/scripts/install.sh` 将 T051 产物正式部署到 `10.72.1.7`，把部署时间、发布信息、服务健康和回滚候选保存到 `/var/tmp/netlab-add-drawer-acceptance/deployment.json`
-- [ ] T053 在 `10.72.1.7` 新建 `Topology Add Drawer Acceptance` Lab，通过真实浏览器抽屉创建 Ubuntu QEMU、BusyBox Docker、PC 和 Lightweight L2 或 NAT Bridge，并保存结果到 `/var/tmp/netlab-add-drawer-acceptance/resource-creation.json`
-- [ ] T054 使用第二浏览器验证只同步成功资源、不共享抽屉草稿/滚动/错误状态，并把 API 最终资源对比保存到 `/var/tmp/netlab-add-drawer-acceptance/multi-client.json`
-- [ ] T055 在目标机触发一次模板或镜像过期/不可用失败，验证草稿保留、中文下一步和零幽灵资源，并保存结果到 `/var/tmp/netlab-add-drawer-acceptance/failure-path.json`
-- [ ] T056 删除目标验收 Lab 及其节点、网络对象和链路，验证拓扑、任务和运行资源清理，并保存结果到 `/var/tmp/netlab-add-drawer-acceptance/cleanup.json`
-- [ ] T057 将 T049 源 SHA、T051 产物摘要和 T052-T056 目标机结果汇总到 `specs/006-topology-add-drawer/validation.md`，创建仅包含验收证据的最终文档提交并注明实际部署源仍为 T049
+- [x] T049 提交 T044-T048 涉及的文件和 `specs/006-topology-add-drawer/validation.md`，确认提交后工作区为空并捕获最终源 commit SHA
+- [x] T050 从 T049 的干净提交生成候选元数据，记录 source commit SHA、version、candidate ID、contract digest 和 built-at 到 `/var/tmp/netlab-candidates/006-topology-add-drawer/release.json`
+- [x] T051 从 T049 的干净提交构建部署产物、计算 binary digest，并保存到 `/var/tmp/netlab-candidates/006-topology-add-drawer/netlabd` 和 `/var/tmp/netlab-candidates/006-topology-add-drawer/release.json`
+- [x] T052 使用 `deploy/scripts/install.sh` 将 T051 产物正式部署到 `10.72.1.7`，把部署时间、发布信息、服务健康和回滚候选保存到 `/var/tmp/netlab-add-drawer-acceptance/deployment.json`
+- [x] T053 在 `10.72.1.7` 新建 `Topology Add Drawer Acceptance` Lab，通过真实浏览器抽屉创建 Ubuntu QEMU、BusyBox Docker、PC 和 Lightweight L2 或 NAT Bridge，并保存结果到 `/var/tmp/netlab-add-drawer-acceptance/resource-creation.json`
+- [x] T054 使用第二浏览器验证只同步成功资源、不共享抽屉草稿/滚动/错误状态，并把 API 最终资源对比保存到 `/var/tmp/netlab-add-drawer-acceptance/multi-client.json`
+- [x] T055 在目标机触发一次模板或镜像过期/不可用失败，验证草稿保留、中文下一步和零幽灵资源，并保存结果到 `/var/tmp/netlab-add-drawer-acceptance/failure-path.json`
+- [x] T056 删除目标验收 Lab 及其节点、网络对象和链路，验证拓扑、任务和运行资源清理，并保存结果到 `/var/tmp/netlab-add-drawer-acceptance/cleanup.json`
+- [x] T057 将 T049 源 SHA、T051 产物摘要和 T052-T056 目标机结果汇总到 `specs/006-topology-add-drawer/validation.md`，创建仅包含验收证据的最终文档提交并注明实际部署源仍为 T049
 
 ---
 
