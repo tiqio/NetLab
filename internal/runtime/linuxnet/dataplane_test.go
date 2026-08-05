@@ -178,6 +178,27 @@ func TestNetworkObjectLinkCreatesDirectNamespaceVethPair(t *testing.T) {
 	}
 }
 
+func TestNetworkObjectLinkPreparesBothEndsBeforeApplyingPCConfiguration(t *testing.T) {
+	executor := &dataPlaneExecutor{}
+	runtime, _ := NewDataPlane(executor)
+	link := domain.NetworkObjectLink{ID: "pc-link", ObjectAID: "pc-a", PortAName: "eth0", ObjectBID: "l2-b", PortBName: "access0"}
+	pc := domain.NetworkObject{ID: "pc-a", Kind: domain.NetworkPC, Config: map[string]any{
+		"interfaces": []any{map[string]any{"name": "eth0", "modes": []any{"static"}, "addresses": []any{"192.0.2.10/24"}}},
+	}}
+	l2 := domain.NetworkObject{ID: "l2-b", Kind: domain.NetworkSwitchL2, Config: map[string]any{
+		"vlan_filtering": true, "ports": []any{map[string]any{"name": "access0", "pvid": 1, "tagged": []any{}}},
+	}}
+	if err := runtime.EnsureNetworkObjectLink(context.Background(), link, pc, l2); err != nil {
+		t.Fatal(err)
+	}
+	commands := strings.Join(executor.commands, "\n")
+	prepared := strings.Index(commands, "access0 master br0")
+	configured := strings.Index(commands, "address replace 192.0.2.10/24 dev eth0")
+	if prepared < 0 || configured < 0 || prepared > configured {
+		t.Fatalf("L2 peer was not prepared before PC configuration:\n%s", commands)
+	}
+}
+
 func TestDeleteNetworkObjectLinkDeletesNamespaceEndpoint(t *testing.T) {
 	executor := &dataPlaneExecutor{}
 	runtime, _ := NewDataPlane(executor)

@@ -73,10 +73,16 @@ func (d *DataPlane) EnsureNetworkObjectLink(ctx context.Context, link domain.Net
 	_, errA := d.executor.Output(ctx, d.ip, "-n", namespaceA, "link", "show", link.PortAName)
 	_, errB := d.executor.Output(ctx, d.ip, "-n", namespaceB, "link", "show", link.PortBName)
 	if errA == nil && errB == nil {
-		if err := d.configureNetworkObjectLinkPort(ctx, namespaceA, link.PortAName, objectA); err != nil {
+		if err := d.prepareNetworkObjectLinkPort(ctx, namespaceA, link.PortAName, objectA); err != nil {
 			return err
 		}
-		return d.configureNetworkObjectLinkPort(ctx, namespaceB, link.PortBName, objectB)
+		if err := d.prepareNetworkObjectLinkPort(ctx, namespaceB, link.PortBName, objectB); err != nil {
+			return err
+		}
+		if err := d.configureNamespacePort(ctx, namespaceA, link.PortAName, objectA); err != nil {
+			return err
+		}
+		return d.configureNamespacePort(ctx, namespaceB, link.PortBName, objectB)
 	}
 	if errA == nil {
 		if err := d.executor.Run(ctx, d.ip, "-n", namespaceA, "link", "delete", link.PortAName); err != nil && !missingLinkError(err) {
@@ -117,13 +123,19 @@ func (d *DataPlane) EnsureNetworkObjectLink(ctx context.Context, link domain.Net
 	if err = d.executor.Run(ctx, d.ip, "-n", namespaceB, "link", "set", endB, "name", link.PortBName); err != nil {
 		return err
 	}
-	if err = d.configureNetworkObjectLinkPort(ctx, namespaceA, link.PortAName, objectA); err != nil {
+	if err = d.prepareNetworkObjectLinkPort(ctx, namespaceA, link.PortAName, objectA); err != nil {
 		return err
 	}
-	return d.configureNetworkObjectLinkPort(ctx, namespaceB, link.PortBName, objectB)
+	if err = d.prepareNetworkObjectLinkPort(ctx, namespaceB, link.PortBName, objectB); err != nil {
+		return err
+	}
+	if err = d.configureNamespacePort(ctx, namespaceA, link.PortAName, objectA); err != nil {
+		return err
+	}
+	return d.configureNamespacePort(ctx, namespaceB, link.PortBName, objectB)
 }
 
-func (d *DataPlane) configureNetworkObjectLinkPort(ctx context.Context, namespace, portName string, object domain.NetworkObject) error {
+func (d *DataPlane) prepareNetworkObjectLinkPort(ctx context.Context, namespace, portName string, object domain.NetworkObject) error {
 	if object.Kind == domain.NetworkSwitchL2 {
 		if err := d.executor.Run(ctx, d.ip, "-n", namespace, "link", "set", portName, "master", "br0"); err != nil {
 			return err
@@ -135,7 +147,7 @@ func (d *DataPlane) configureNetworkObjectLinkPort(ctx context.Context, namespac
 	if err := d.executor.Run(ctx, d.ip, "-n", namespace, "link", "set", portName, "up"); err != nil {
 		return err
 	}
-	return d.configureNamespacePort(ctx, namespace, portName, object)
+	return nil
 }
 
 func networkObjectNamespace(object domain.NetworkObject) (string, error) {
