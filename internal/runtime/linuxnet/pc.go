@@ -19,6 +19,8 @@ import (
 type PCRuntime struct {
 	executor           CommandExecutor
 	ip                 string
+	nsenter            string
+	mountNamespacePID  int
 	resolvRoot         string
 	helperRoot         string
 	acquisitionTimeout time.Duration
@@ -40,13 +42,17 @@ type PCDiagnostics struct {
 
 func NewPCRuntime(executor CommandExecutor) (*PCRuntime, error) {
 	if executor != nil {
-		return &PCRuntime{executor: executor, ip: "ip", resolvRoot: "/etc/netns", helperRoot: "/run/netlab/pc", acquisitionTimeout: 30 * time.Second, pollInterval: 250 * time.Millisecond, now: time.Now}, nil
+		return &PCRuntime{executor: executor, ip: "ip", nsenter: "nsenter", mountNamespacePID: os.Getpid(), resolvRoot: "/etc/netns", helperRoot: "/run/netlab/pc", acquisitionTimeout: 30 * time.Second, pollInterval: 250 * time.Millisecond, now: time.Now}, nil
 	}
 	ip, err := exec.LookPath("ip")
 	if err != nil {
 		return nil, err
 	}
-	return &PCRuntime{executor: SystemExecutor{}, ip: ip, resolvRoot: "/etc/netns", helperRoot: "/run/netlab/pc", acquisitionTimeout: 30 * time.Second, pollInterval: 250 * time.Millisecond, now: time.Now}, nil
+	nsenter, err := exec.LookPath("nsenter")
+	if err != nil {
+		return nil, err
+	}
+	return &PCRuntime{executor: SystemExecutor{}, ip: ip, nsenter: nsenter, mountNamespacePID: os.Getpid(), resolvRoot: "/etc/netns", helperRoot: "/run/netlab/pc", acquisitionTimeout: 30 * time.Second, pollInterval: 250 * time.Millisecond, now: time.Now}, nil
 }
 
 func (r *PCRuntime) Configure(ctx context.Context, object domain.NetworkObject) error {
@@ -237,7 +243,14 @@ func (r *PCRuntime) ensureDHCPHelper(ctx context.Context, namespace string, owne
 		}
 		lease := filepath.Join(directory, interfaceName+".v"+family+".leases")
 		pid := filepath.Join(directory, interfaceName+".v"+family+".pid")
-		args := []string{"--quiet", "--no-block", "--collect", "--unit=" + unit, "--property=Restart=on-failure", "--property=RestartSec=2s", "--property=KillMode=control-group", "--setenv=NETLAB_OWNERSHIP=network_object:" + string(ownerID), "--", r.ip, "netns", "exec", namespace, "dhclient", "-d", "-v", "-" + family, "-lf", lease, "-pf", pid, interfaceName}
+		args := []string{
+			"--quiet", "--no-block", "--collect", "--unit=" + unit,
+			"--property=BindsTo=netlab.service", "--property=After=netlab.service",
+			"--property=Restart=on-failure", "--property=RestartSec=2s", "--property=KillMode=control-group",
+			"--setenv=NETLAB_OWNERSHIP=network_object:" + string(ownerID), "--",
+			r.nsenter, "--mount=/proc/" + fmt.Sprint(r.mountNamespacePID) + "/ns/mnt", "--",
+			r.ip, "netns", "exec", namespace, "dhclient", "-d", "-v", "-" + family, "-lf", lease, "-pf", pid, interfaceName,
+		}
 		if err = r.executor.Run(ctx, "systemd-run", args...); err != nil {
 			return fmt.Errorf("start DHCPv%s helper for %s: %w", family, interfaceName, err)
 		}

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-required=(qemu-system-x86_64 docker ip bridge tc nft tcpdump xorriso ss jq)
+required=(qemu-system-x86_64 docker ip bridge tc nft tcpdump xorriso ss jq nsenter)
 for command_name in "${required[@]}"; do
   command -v "$command_name" >/dev/null || { echo "missing required command: $command_name" >&2; exit 1; }
 done

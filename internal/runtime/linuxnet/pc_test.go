@@ -79,7 +79,7 @@ func TestPCStaticDHCPv4DHCPv6SLAACRoutesAndDiagnostics(t *testing.T) {
 		t.Fatal(err)
 	}
 	commands := strings.Join(executor.commands, "\n")
-	for _, fragment := range []string{"address replace 192.0.2.10/24", "systemd-run --quiet --no-block --collect", "dhclient -d -v -4", "dhclient -d -v -6", "accept_ra=2", "route replace 0.0.0.0/0 via 192.0.2.1"} {
+	for _, fragment := range []string{"address replace 192.0.2.10/24", "systemd-run --quiet --no-block --collect", "--property=BindsTo=netlab.service", "nsenter --mount=/proc/", "dhclient -d -v -4", "dhclient -d -v -6", "accept_ra=2", "route replace 0.0.0.0/0 via 192.0.2.1"} {
 		if !strings.Contains(commands, fragment) {
 			t.Fatalf("missing %q in\n%s", fragment, commands)
 		}
