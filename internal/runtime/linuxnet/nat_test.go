@@ -24,11 +24,15 @@ func TestNATPrefixGatewayMasqueradeUplinkAndCleanup(t *testing.T) {
 		"insert rule ip filter FORWARD iifname nlnat",
 		`oifname eth0 accept comment "netlab-forward-out:nat-1"`,
 		`iifname eth0 oifname nlnat`,
-		`ct state established,related accept comment "netlab-forward-in:nat-1"`,
+		`oifname nlnat`,
+		`accept comment "netlab-forward-in:nat-1"`,
 	} {
 		if !strings.Contains(commands, fragment) {
 			t.Fatalf("missing %q in\n%s", fragment, commands)
 		}
+	}
+	if strings.Contains(commands, "ct state established,related") {
+		t.Fatalf("NAT inbound forwarding remained state restricted:\n%s", commands)
 	}
 	if err := runtime.Delete(context.Background(), object.ID); err != nil {
 		t.Fatal(err)

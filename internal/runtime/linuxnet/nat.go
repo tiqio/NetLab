@@ -39,9 +39,12 @@ func (r *NATRuntime) Diagnostics(ctx context.Context, id domain.ID) (map[string]
 	forwardRules, forwardErr := r.executor.Output(ctx, r.nft, "-j", "list", "chain", "ip", "filter", "FORWARD")
 	link, linkErr := r.executor.Output(ctx, r.ip, "-j", "link", "show", "dev", bridge)
 	forwardBody := strings.TrimSpace(string(forwardRules))
+	inboundRule := forwardErr == nil && strings.Contains(forwardBody, "netlab-forward-in:"+string(id))
 	forwardStatus := map[string]any{
-		"outbound_rule": forwardErr == nil && strings.Contains(forwardBody, "netlab-forward-out:"+string(id)),
-		"return_rule":   forwardErr == nil && strings.Contains(forwardBody, "netlab-forward-in:"+string(id)),
+		"outbound_rule":  forwardErr == nil && strings.Contains(forwardBody, "netlab-forward-out:"+string(id)),
+		"inbound_rule":   inboundRule,
+		"inbound_policy": "all_states",
+		"return_rule":    inboundRule,
 	}
 	if forwardErr == nil {
 		forwardStatus["rules"] = json.RawMessage(forwardBody)
@@ -229,8 +232,8 @@ func (r *NATRuntime) ensureForwardRules(ctx context.Context, id domain.ID, bridg
 		}
 	}
 	if !strings.Contains(string(body), inComment) {
-		if err := r.executor.Run(ctx, r.nft, "insert", "rule", "ip", "filter", "FORWARD", "iifname", uplink, "oifname", bridge, "ct", "state", "established,related", "accept", "comment", `"`+inComment+`"`); err != nil {
-			return fmt.Errorf("allow NAT return forwarding: %w", err)
+		if err := r.executor.Run(ctx, r.nft, "insert", "rule", "ip", "filter", "FORWARD", "iifname", uplink, "oifname", bridge, "accept", "comment", `"`+inComment+`"`); err != nil {
+			return fmt.Errorf("allow NAT inbound forwarding: %w", err)
 		}
 	}
 	return nil
