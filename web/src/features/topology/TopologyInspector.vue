@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { Cable, Database, Info, Network, Trash2 } from "lucide-vue-next";
+import {
+  Cable,
+  ChevronDown,
+  ChevronUp,
+  Database,
+  Info,
+  Network,
+  Trash2,
+} from "lucide-vue-next";
 import {
   api,
   type CaptureSession,
@@ -42,7 +50,6 @@ const props = withDefaults(
     networkObjectLinks?: NetworkObjectLink[];
     tasks?: OperationTask[];
     showLightweight?: boolean;
-    diagnosticsRequestKey?: number;
   }>(),
   {
     nodes: () => [],
@@ -74,6 +81,7 @@ const objectLinkStatus = ref("");
 const objectLinkCapture = ref<CaptureSession>();
 const diagnostics = ref<Record<string, unknown>>();
 const diagnosticsLoading = ref(false);
+const diagnosticsExpanded = ref(false);
 const error = ref("");
 const confirmKind = ref<"link" | "network_object" | "">("");
 const confirmOpen = computed({
@@ -203,9 +211,9 @@ const attachmentRows = computed(() =>
     );
     return {
       ...attachment,
-      nodeName: nodeValue?.name || interfaceValue?.node_id || "Unknown node",
+      nodeName: nodeValue?.name || interfaceValue?.node_id || "未知节点",
       interfaceName: interfaceValue?.name || attachment.interface_id,
-      driver: interfaceValue?.driver || "unknown driver",
+      driver: interfaceValue?.driver || "未知驱动",
     };
   }),
 );
@@ -222,7 +230,7 @@ const natGateway = computed(() => {
     octets.length !== 4 ||
     octets.some((value) => !Number.isInteger(value) || value < 0 || value > 255)
   )
-    return "not configured";
+    return "未配置";
   let numeric =
     ((octets[0] << 24) >>> 0) +
     (octets[1] << 16) +
@@ -235,14 +243,14 @@ const natGateway = computed(() => {
 const dhcpv4Summary = computed(() => {
   const value = natConfig.value?.dhcpv4 as
     { start?: string; end?: string; lease_time?: string } | undefined;
-  if (!value?.start || !value.end) return "disabled";
+  if (!value?.start || !value.end) return "已禁用";
   return `${value.start} – ${value.end}${value.lease_time ? ` · ${value.lease_time}` : ""}`;
 });
 const dnsSummary = computed(() => {
   const values = natConfig.value?.dns_servers;
   return Array.isArray(values) && values.length
     ? values.join(", ")
-    : "host resolver";
+    : "宿主机解析器";
 });
 const nodeInterfaces = computed(() =>
   props.node
@@ -293,6 +301,7 @@ async function loadDiagnostics() {
     diagnostics.value = await api.getNetworkObjectDiagnostics(
       props.networkObject.id,
     );
+    diagnosticsExpanded.value = true;
     emit("diagnosticsLoaded", props.networkObject.name);
   } catch (value) {
     error.value = value instanceof Error ? value.message : String(value);
@@ -301,15 +310,10 @@ async function loadDiagnostics() {
   }
 }
 watch(
-  () => props.diagnosticsRequestKey,
-  (value, previous) => {
-    if (value && value !== previous) void loadDiagnostics();
-  },
-);
-watch(
   () => props.networkObject?.id,
   () => {
     diagnostics.value = undefined;
+    diagnosticsExpanded.value = false;
     error.value = "";
     attachNode.value = "";
     attachInterface.value = "";
@@ -420,9 +424,9 @@ async function deleteObjectLink() {
   <div class="min-h-full">
     <header class="flex items-center gap-2 border-b border-border p-3">
       <Info :size="15" class="text-primary" />
-      <h2 class="text-xs font-semibold uppercase tracking-wider">Inspector</h2>
+      <h2 class="text-xs font-semibold uppercase tracking-wider">检查器</h2>
       <Button class="ml-auto" variant="ghost" size="sm" @click="$emit('clear')">
-        Clear
+        清除选择
       </Button>
     </header>
     <LightweightNodeEditor
@@ -436,21 +440,21 @@ async function deleteObjectLink() {
         <div class="flex items-center justify-between gap-2">
           <ResourceIdentity
             :id="node.id"
-            type="node"
+            type="节点"
             :name="node.name"
           /><StatusBadge :state="node.observed_state" />
         </div>
         <dl class="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
-          <dt>Kind</dt>
+          <dt>类型</dt>
           <dd>{{ node.kind }}</dd>
-          <dt>Desired</dt>
+          <dt>期望状态</dt>
           <dd>{{ node.desired_state }}</dd>
-          <dt>Observed</dt>
+          <dt>实际状态</dt>
           <dd>{{ node.observed_state }}</dd>
-          <dt>Revision</dt>
+          <dt>修订版本</dt>
           <dd>{{ node.revision }}</dd>
-          <dt>Runtime</dt>
-          <dd>{{ node.config?.runtime_id || "not assigned" }}</dd>
+          <dt>运行时标识</dt>
+          <dd>{{ node.config?.runtime_id || "尚未分配" }}</dd>
         </dl>
         <StructuredProblem
           v-if="node.last_error"
@@ -512,16 +516,16 @@ async function deleteObjectLink() {
     <template v-else-if="link">
       <section class="panel-section">
         <div class="flex items-center justify-between">
-          <ResourceIdentity :id="link.id" type="link" /><StatusBadge
+          <ResourceIdentity :id="link.id" type="链路" /><StatusBadge
             :state="link.observed_state"
           />
         </div>
         <dl>
-          <dt>Endpoint A</dt>
+          <dt>端点 A</dt>
           <dd :title="link.endpoint_a_id">{{ endpointAName }}</dd>
-          <dt>Endpoint B</dt>
+          <dt>端点 B</dt>
           <dd :title="link.endpoint_b_id">{{ endpointBName }}</dd>
-          <dt>Revision</dt>
+          <dt>修订版本</dt>
           <dd>{{ link.revision }}</dd>
         </dl>
         <Button
@@ -530,7 +534,7 @@ async function deleteObjectLink() {
           size="sm"
           @click="confirmKind = 'link'"
         >
-          <Cable :size="14" /> Disconnect live link
+          <Cable :size="14" /> 实时断开链路
         </Button>
       </section>
     </template>
@@ -539,7 +543,7 @@ async function deleteObjectLink() {
         <div class="flex items-center justify-between gap-2">
           <ResourceIdentity
             :id="networkObjectLink.id"
-            type="network object link"
+            type="网络对象链路"
           />
           <StatusBadge :state="networkObjectLink.observed_state" />
         </div>
@@ -560,12 +564,12 @@ async function deleteObjectLink() {
           <dd>{{ networkObjectLink.desired_state }}</dd>
           <dt>实际状态</dt>
           <dd>{{ networkObjectLink.observed_state }}</dd>
-          <dt>Revision</dt>
+          <dt>修订版本</dt>
           <dd>{{ networkObjectLink.revision }}</dd>
           <template v-if="objectLinkTask">
-            <dt>Lifecycle task</dt>
+            <dt>生命周期任务</dt>
             <dd>{{ objectLinkTask.id }} · {{ objectLinkTask.state }}</dd>
-            <dt>Task progress</dt>
+            <dt>任务进度</dt>
             <dd>
               {{ objectLinkTask.progress_current }} /
               {{ objectLinkTask.progress_total }}
@@ -574,13 +578,13 @@ async function deleteObjectLink() {
           <template v-if="objectLinkCapture">
             <dt>最近抓包</dt>
             <dd>{{ objectLinkCapture.id }} · {{ objectLinkCapture.state }}</dd>
-            <dt>Packets / bytes</dt>
+            <dt>数据包 / 字节</dt>
             <dd>
               {{ objectLinkCapture.packets }} /
               {{ objectLinkCapture.bytes_written }}
             </dd>
-            <dt>Completion</dt>
-            <dd>{{ objectLinkCapture.completion_reason || "active" }}</dd>
+            <dt>完成状态</dt>
+            <dd>{{ objectLinkCapture.completion_reason || "进行中" }}</dd>
           </template>
         </dl>
         <div v-if="objectLinkCapture" class="mt-3 flex flex-wrap gap-2 text-xs">
@@ -592,13 +596,13 @@ async function deleteObjectLink() {
             "
             :href="objectLinkCaptureStream"
             class="text-primary underline"
-            >Live stream</a
+            >实时流</a
           >
           <a
             v-if="objectLinkCapture.artifact_url"
             :href="objectLinkCapture.artifact_url"
             class="text-primary underline"
-            >Retained artifact</a
+            >保留的抓包文件</a
           >
         </div>
         <StructuredProblem
@@ -631,21 +635,21 @@ async function deleteObjectLink() {
         <div class="flex items-center justify-between gap-2">
           <ResourceIdentity
             :id="attachment.id"
-            type="network attachment"
-            :name="`${attachmentNode?.name || 'Node'}:${attachmentInterface?.name || attachment.interface_id} ↔ ${attachmentObject?.name || 'Lightweight network'}:${attachment.port_name || 'port'}`"
+            type="网络附件"
+            :name="`${attachmentNode?.name || '节点'}:${attachmentInterface?.name || attachment.interface_id} ↔ ${attachmentObject?.name || '轻量网络'}:${attachment.port_name || '端口'}`"
           /><StatusBadge :state="attachment.observed_state" />
         </div>
         <dl>
           <dt>节点接口</dt>
           <dd>
-            {{ attachmentNode?.name || "Unknown node" }}:{{
+            {{ attachmentNode?.name || "未知节点" }}:{{
               attachmentInterface?.name || attachment.interface_id
             }}
           </dd>
           <dt>网络端口</dt>
           <dd>
             {{ attachmentObject?.name || attachment.network_object_id }}:{{
-              attachment.port_name || "port"
+              attachment.port_name || "端口"
             }}
           </dd>
           <dt>监听接口</dt>
@@ -654,8 +658,7 @@ async function deleteObjectLink() {
         <p
           class="mt-3 rounded border border-primary/30 bg-primary/5 p-2 text-xs text-muted-foreground"
         >
-          此附件链路通过节点宿主接口监听。打开底部 Capture 或 Traffic
-          Filter，即可监控节点与 Lightweight 网络对象之间的流量。
+          此附件链路通过节点宿主接口监听。打开底部“抓包”或“流量过滤”，即可监控节点与轻量网络对象之间的流量。
         </p>
       </section>
     </template>
@@ -664,31 +667,31 @@ async function deleteObjectLink() {
         <div class="flex items-center justify-between">
           <ResourceIdentity
             :id="networkObject.id"
-            type="network object"
+            type="网络对象"
             :name="networkObject.name"
           /><StatusBadge :state="networkObject.observed_state" />
         </div>
         <dl>
-          <dt>Kind</dt>
+          <dt>类型</dt>
           <dd>{{ networkObject.kind }}</dd>
-          <dt>Desired</dt>
+          <dt>期望状态</dt>
           <dd>{{ networkObject.desired_state }}</dd>
-          <dt>Runtime</dt>
+          <dt>实际状态</dt>
           <dd>{{ networkObject.observed_state }}</dd>
-          <dt>Revision</dt>
+          <dt>修订版本</dt>
           <dd>{{ networkObject.revision }}</dd>
           <template v-if="networkObject.kind === 'nat_bridge'">
-            <dt>IPv4 subnet</dt>
-            <dd>{{ natConfig?.ipv4_prefix || "not configured" }}</dd>
-            <dt>Gateway</dt>
+            <dt>IPv4 子网</dt>
+            <dd>{{ natConfig?.ipv4_prefix || "未配置" }}</dd>
+            <dt>网关</dt>
             <dd>{{ natGateway }}</dd>
-            <dt>Host uplink</dt>
-            <dd>{{ natConfig?.uplink || "auto" }}</dd>
+            <dt>宿主机上联</dt>
+            <dd>{{ natConfig?.uplink || "自动选择" }}</dd>
             <dt>DHCPv4</dt>
             <dd>{{ dhcpv4Summary }}</dd>
-            <dt>DNS upstream</dt>
+            <dt>DNS 上游</dt>
             <dd>{{ dnsSummary }}</dd>
-            <dt>Attachments</dt>
+            <dt>已连接接口</dt>
             <dd>{{ attachmentRows.length }}</dd>
           </template>
         </dl>
@@ -697,13 +700,13 @@ async function deleteObjectLink() {
           class="mt-3 rounded-md border border-border bg-background/40 p-2"
         >
           <h3 class="text-[11px] font-semibold uppercase tracking-wide">
-            Attached interfaces
+            已连接接口
           </h3>
           <p
             v-if="!attachmentRows.length"
             class="mt-2 text-xs text-muted-foreground"
           >
-            No node interfaces are attached.
+            尚未连接任何节点接口。
           </p>
           <div
             v-for="attachment in attachmentRows"
@@ -726,7 +729,7 @@ async function deleteObjectLink() {
             variant="secondary"
             @click="$emit('networkObjectTerminal', networkObject)"
           >
-            Terminal
+            终端
           </Button>
           <Button
             size="sm"
@@ -734,20 +737,38 @@ async function deleteObjectLink() {
             @click="loadDiagnostics"
           >
             <Database :size="14" />
-            {{ diagnosticsLoading ? "Loading…" : "Diagnostics" }} </Button
+            {{ diagnosticsLoading ? "正在加载…" : "运行诊断" }} </Button
           ><Button
             variant="destructive"
             size="sm"
             @click="confirmKind = 'network_object'"
           >
-            <Trash2 :size="14" /> Delete
+            <Trash2 :size="14" /> 删除
           </Button>
         </div>
-        <pre
+        <section
           v-if="diagnostics"
-          aria-label="Network diagnostics"
-          class="mt-3 overflow-auto rounded bg-background p-2 text-[10px]"
-          >{{ JSON.stringify(diagnostics, null, 2) }}</pre>
+          class="mt-3 overflow-hidden rounded border border-border bg-background/40"
+        >
+          <button
+            type="button"
+            class="flex w-full items-center justify-between px-3 py-2 text-left text-xs font-medium"
+            :aria-expanded="diagnosticsExpanded"
+            aria-controls="network-object-diagnostics"
+            @click="diagnosticsExpanded = !diagnosticsExpanded"
+          >
+            <span>诊断结果</span>
+            <ChevronUp v-if="diagnosticsExpanded" :size="14" />
+            <ChevronDown v-else :size="14" />
+          </button>
+          <pre
+            v-show="diagnosticsExpanded"
+            id="network-object-diagnostics"
+            aria-label="网络对象诊断结果"
+            class="max-h-80 overflow-auto border-t border-border bg-background p-2 text-[10px]"
+            >{{ JSON.stringify(diagnostics, null, 2) }}</pre
+          >
+        </section>
         <p v-if="error" role="alert" class="mt-2 text-xs text-destructive">
           {{ error }}
         </p>
@@ -769,7 +790,7 @@ async function deleteObjectLink() {
         v-if="['pc', 'switch_l2', 'switch_l3'].includes(networkObject.kind)"
         class="panel-section"
       >
-        <h3><Cable :size="13" class="inline" /> 连接 Lightweight 网络对象</h3>
+        <h3><Cable :size="13" class="inline" /> 连接轻量网络对象</h3>
         <div class="grid gap-2">
           <FormField label="本端端口"
             ><Select v-model="objectLinkLocalPort"
@@ -825,15 +846,15 @@ async function deleteObjectLink() {
     </template>
     <EmptyState
       v-else
-      title="Nothing selected"
-      description="Select a node, link, or network object on the topology. Details and valid actions appear here."
+      title="尚未选择对象"
+      description="请在拓扑图中选择节点、链路或网络对象，此处将显示详情和可执行操作。"
     />
     <section class="panel-section">
-      <h3><Network :size="13" class="inline" /> Create link</h3>
+      <h3><Network :size="13" class="inline" /> 创建链路</h3>
       <div class="grid gap-2">
-        <FormField label="Interface A">
-          <Select v-model="endpointA" aria-label="Endpoint A">
-            <option value="">Choose an available interface</option>
+        <FormField label="接口 A">
+          <Select v-model="endpointA" aria-label="接口 A">
+            <option value="">选择可用接口</option>
             <option
               v-for="item in availableInterfaces"
               :key="item.id"
@@ -842,9 +863,9 @@ async function deleteObjectLink() {
               {{ item.name }} · {{ item.node_id }}
             </option>
           </Select> </FormField
-        ><FormField label="Interface B">
-          <Select v-model="endpointB" aria-label="Endpoint B">
-            <option value="">Choose a different interface</option>
+        ><FormField label="接口 B">
+          <Select v-model="endpointB" aria-label="接口 B">
+            <option value="">选择另一个接口</option>
             <option
               v-for="item in availableInterfaces"
               :key="item.id"
@@ -859,7 +880,7 @@ async function deleteObjectLink() {
           :disabled="!endpointA || !endpointB || endpointA === endpointB"
           @click="connect"
         >
-          Connect live
+          实时连接
         </Button>
       </div>
       <p v-if="error" role="alert" class="mt-2 text-xs text-destructive">
@@ -869,7 +890,7 @@ async function deleteObjectLink() {
     <ConfirmationDialog
       v-model="confirmOpen"
       :title="
-        confirmKind === 'link' ? 'Disconnect link' : 'Delete network object'
+        confirmKind === 'link' ? '断开链路' : '删除网络对象'
       "
       :resource="
         confirmKind === 'link'
@@ -878,39 +899,39 @@ async function deleteObjectLink() {
       "
       :description="
         confirmKind === 'link'
-          ? 'The live connection will be removed without stopping either endpoint.'
-          : 'The network object and owned namespace or bridge resources will be cleaned up.'
+          ? '实时链路将被移除，两端节点不会停止。'
+          : '网络对象及其拥有的命名空间或网桥资源将被清理。'
       "
-      impact="Active captures, Traffic Filters, or streams using this resource may be interrupted."
-      :confirm-label="confirmKind === 'link' ? 'Disconnect' : 'Delete object'"
+      impact="正在使用该资源的抓包、流量过滤或数据流可能会中断。"
+      :confirm-label="confirmKind === 'link' ? '断开' : '删除对象'"
       @confirm="
         confirmKind === 'link' ? disconnect() : deleteObject();
         confirmKind = '';
       "
     />
     <section class="panel-section">
-      <h3>Attach network object</h3>
+      <h3>连接网络对象</h3>
       <p class="mb-2 text-xs text-muted-foreground">
-        Target: {{ networkObject?.name || "Select a network object first" }}
+        目标：{{ networkObject?.name || "请先选择网络对象" }}
       </p>
-      <FormField label="Target node">
+      <FormField label="目标节点">
         <Select
           v-model="attachNode"
-          aria-label="Target node"
+          aria-label="目标节点"
           :disabled="!networkObject"
         >
-          <option value="">Select node</option>
+          <option value="">选择节点</option>
           <option v-for="item in nodes" :key="item.id" :value="item.id">
             {{ item.name }} · {{ item.kind }}
           </option>
         </Select> </FormField
-      ><FormField label="Target interface">
+      ><FormField label="目标接口">
         <Select
           v-model="attachInterface"
-          aria-label="Target interface"
+          aria-label="目标接口"
           :disabled="!attachNode"
         >
-          <option value="">Select interface</option>
+          <option value="">选择接口</option>
           <option
             v-for="item in attachNodeInterfaces"
             :key="item.id"
@@ -926,7 +947,7 @@ async function deleteObjectLink() {
         "
         label="交换机端口"
       >
-        <Select v-model="attachPortName" aria-label="Switch port">
+        <Select v-model="attachPortName" aria-label="交换机端口">
           <option value="">选择已配置端口</option>
           <option
             v-for="port in configuredAttachmentPorts"
@@ -940,7 +961,7 @@ async function deleteObjectLink() {
         <FormField label="接入 PVID">
           <Input v-model="attachPVID" type="number" min="0" max="4094" />
         </FormField>
-        <FormField label="Tagged VLAN" hint="逗号分隔">
+        <FormField label="Tagged VLAN（带标签 VLAN）" hint="逗号分隔">
           <Input v-model="attachTagged" placeholder="10,20" />
         </FormField>
       </template>
@@ -957,7 +978,7 @@ async function deleteObjectLink() {
         "
         @click="attach"
       >
-        Attach
+        连接
       </Button>
     </section>
   </div>

@@ -19,7 +19,7 @@ async function execute() {
       timeout_seconds: 30,
       output_limit: 1 << 20,
     });
-    status.value = `Guest command queued: ${task.id}`;
+    status.value = `Guest 命令已进入队列：${task.id}`;
   } finally {
     busy.value = false;
   }
@@ -27,14 +27,14 @@ async function execute() {
 </script>
 <template>
   <form class="panel-section" @submit.prevent="execute">
-    <h3>Guest command</h3>
+    <h3>Guest 命令</h3>
     <FormField
-      label="Bounded command"
-      hint="Output is never persisted in browser preferences."
+      label="受限命令"
+      hint="命令输出不会保存到浏览器偏好设置中。"
     >
       <Input v-model="command" autocomplete="off" /> </FormField
     ><Button class="mt-2" size="sm" :disabled="busy">
-      Run through QEMU guest agent
+      通过 QEMU Guest Agent 执行
     </Button>
     <p role="status" class="mt-1 text-xs text-muted-foreground">
       {{ status }}

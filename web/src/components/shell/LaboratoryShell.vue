@@ -129,7 +129,7 @@ defineExpose({
           <div class="absolute right-2 top-2 z-20 flex gap-1">
             <button
               class="shell-toggle"
-              aria-label="Toggle inspector"
+              aria-label="展开或收起检查器"
               :aria-expanded="!preferences.panels.inspector.collapsed"
               @click="
                 preferences.panels.inspector.collapsed
@@ -139,8 +139,8 @@ defineExpose({
             >
               {{
                 preferences.panels.inspector.collapsed
-                  ? "◀ Inspector"
-                  : "Inspector ▶"
+                  ? "◀ 检查器"
+                  : "检查器 ▶"
               }}
             </button>
           </div>
@@ -188,7 +188,7 @@ defineExpose({
     </div>
     <Sheet v-model="paletteSheet" side="left" title="Devices">
       <slot name="palette" /> </Sheet
-    ><Sheet v-model="inspectorSheet" title="Inspector">
+    ><Sheet v-model="inspectorSheet" title="检查器">
       <slot name="inspector" /> </Sheet
     ><Sheet v-model="bottomSheet" side="bottom" title="Operations">
       <slot name="bottom" />

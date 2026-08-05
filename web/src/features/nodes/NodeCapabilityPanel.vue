@@ -45,18 +45,18 @@ watch(() => props.nodeId, refresh);
 </script>
 
 <template>
-  <section class="panel-section" aria-label="Runtime capabilities">
+  <section class="panel-section" aria-label="运行时能力">
     <div class="flex items-center justify-between gap-2">
-      <h3>Runtime capabilities</h3>
+      <h3>运行时能力</h3>
       <Button size="sm" variant="outline" :disabled="loading" @click="refresh"
-        >Refresh</Button
+        >刷新</Button
       >
     </div>
     <p
       v-if="!loading && observations.length === 0"
       class="text-xs text-muted-foreground"
     >
-      No capability observations yet.
+      暂无能力观测结果。
     </p>
     <ul v-else class="grid gap-2">
       <li
@@ -69,7 +69,7 @@ watch(() => props.nodeId, refresh);
           ><span>{{ item.state }}</span>
         </div>
         <p v-if="item.required" class="text-muted-foreground">
-          Required by this template
+          此模板要求该能力
         </p>
         <StructuredProblem
           v-if="item.problem"

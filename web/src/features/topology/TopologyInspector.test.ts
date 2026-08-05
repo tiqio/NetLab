@@ -106,8 +106,8 @@ describe("TopologyInspector", () => {
     await flushPromises();
     expect(wrapper.text()).toContain("capture-object-link · running");
     expect(wrapper.text()).toContain("4 / 256");
-    expect(wrapper.text()).toContain("Live stream");
-    expect(wrapper.text()).toContain("Retained artifact");
+    expect(wrapper.text()).toContain("实时流");
+    expect(wrapper.text()).toContain("保留的抓包文件");
   });
 
   it("summarizes Docker route readiness and recovery guidance", () => {
@@ -464,7 +464,7 @@ describe("TopologyInspector", () => {
     expect(wrapper.text()).toContain("active");
   });
 
-  it("loads network diagnostics when requested by the context menu", async () => {
+  it("loads and collapses network diagnostics inside the Inspector", async () => {
     const diagnostics = vi
       .spyOn(api, "getNetworkObjectDiagnostics")
       .mockResolvedValue({ forwarding_status: { outbound_rule: true } });
@@ -473,16 +473,30 @@ describe("TopologyInspector", () => {
         laboratoryId: "lab-1",
         networkObject: natObject,
         interfaces: [],
-        diagnosticsRequestKey: 0,
       },
     });
 
-    await wrapper.setProps({ diagnosticsRequestKey: 1 });
+    const diagnosticButton = wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("运行诊断"));
+    expect(diagnosticButton).toBeDefined();
+    await diagnosticButton!.trigger("click");
     await flushPromises();
 
     expect(diagnostics).toHaveBeenCalledWith("nat-1");
     expect(wrapper.text()).toContain("outbound_rule");
     expect(wrapper.emitted("diagnosticsLoaded")).toEqual([["Internet NAT"]]);
+    const toggle = wrapper.get(
+      'button[aria-controls="network-object-diagnostics"]',
+    );
+    expect(toggle.attributes("aria-expanded")).toBe("true");
+    await toggle.trigger("click");
+    expect(toggle.attributes("aria-expanded")).toBe("false");
+    expect(
+      wrapper
+        .get('[aria-label="网络对象诊断结果"]')
+        .attributes("style"),
+    ).toContain("display: none");
     diagnostics.mockRestore();
   });
 });

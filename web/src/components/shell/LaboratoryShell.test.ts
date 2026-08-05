@@ -21,7 +21,7 @@ describe("LaboratoryShell", () => {
     expect(wrapper.text()).toContain("toolbar");
     expect(wrapper.text()).toContain("palette");
     expect(wrapper.text()).toContain("inspector");
-    await wrapper.get('[aria-label="Toggle inspector"]').trigger("click");
+    await wrapper.get('[aria-label="展开或收起检查器"]').trigger("click");
     expect(wrapper.emitted("panel")?.[0]).toEqual([
       "inspector",
       { collapsed: true },

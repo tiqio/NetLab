@@ -25,7 +25,7 @@ async function save() {
       cpu_quota_micros: quota.value,
       memory_mib: memory.value,
     });
-    status.value = `${cpu.value} vCPUs limited to ${Math.round(quota.value / 1000)}% of one host core period`;
+    status.value = `${cpu.value} 个 vCPU，CPU 时间限制为宿主机单核周期的 ${Math.round(quota.value / 1000)}%`;
     emit("changed");
   } finally {
     busy.value = false;
@@ -34,17 +34,17 @@ async function save() {
 </script>
 <template>
   <form class="panel-section" @submit.prevent="save">
-    <h3>Resources</h3>
+    <h3>资源限制</h3>
     <div class="grid grid-cols-3 gap-2">
       <FormField label="vCPUs"
         ><Input v-model="cpu" type="number" min="1" /></FormField
-      ><FormField label="CPU quota µs"
+      ><FormField label="CPU 配额（微秒）"
         ><Input v-model="quota" type="number" min="1000" /></FormField
-      ><FormField label="Memory MiB"
+      ><FormField label="内存（MiB）"
         ><Input v-model="memory" type="number" min="64"
       /></FormField>
     </div>
-    <Button class="mt-2" size="sm" :disabled="busy">Apply limits</Button>
+    <Button class="mt-2" size="sm" :disabled="busy">应用限制</Button>
     <p role="status" class="mt-1 text-xs text-muted-foreground">{{ status }}</p>
   </form>
 </template>

@@ -73,7 +73,6 @@ const contextDeleteNode = ref<Node>();
 const contextDeleteObject = ref<NetworkObject>();
 const deletingObjectLinkIds = ref<string[]>([]);
 const failedObjectLinkDelete = ref<NetworkObjectLink>();
-const diagnosticsRequestKey = ref(0);
 const trafficObservations = ref<TrafficObservation[]>([]);
 const trafficOverlayActive = ref(false);
 const trafficOverlayColor = ref("#f59e0b");
@@ -263,14 +262,6 @@ function requestContextNodeDelete(node: Node) {
 function requestContextObjectDelete(object: NetworkObject) {
   contextDeleteObject.value = object;
   closeResourceContext();
-}
-function openContextObjectDiagnostics() {
-  const object = contextObject.value;
-  closeResourceContext();
-  shell.value?.openInspector();
-  if (!object) return;
-  diagnosticsRequestKey.value += 1;
-  canvasStatus.value = `Loading diagnostics for ${object.name}…`;
 }
 function nodeInterfaces(nodeId: string) {
   return (store.active?.interfaces || []).filter(
@@ -706,7 +697,7 @@ async function selectResource(
       store.active?.network_attachments?.find((item) => item.id === id)
         ?.interface_id || "";
     canvasStatus.value =
-      "Network attachment selected. Open Capture or Traffic Filter to observe this segment.";
+      "已选择网络附件，可打开“抓包”或“流量过滤”观察该网段。";
   } else if (type === "network_object_link") {
     selectedInterfaceId.value = "";
     canvasStatus.value =
@@ -1563,14 +1554,11 @@ onBeforeUnmount(() => {
           :attachments="store.active.network_attachments || []"
           :network-object-links="store.active.network_object_links || []"
           :show-lightweight="showLightweight"
-          :diagnostics-request-key="diagnosticsRequestKey"
           @changed="refreshActive"
           @clear="clearSelection"
           @terminal="openNodeTerminal"
           @network-object-terminal="openNetworkObjectTerminal"
-          @diagnostics-loaded="
-            canvasStatus = `Diagnostics loaded for ${$event}.`
-          "
+          @diagnostics-loaded="canvasStatus = `${$event} 的运行诊断已加载。`"
           @lightweight-created="lightweightCreated"
         />
       </template>
@@ -1688,18 +1676,6 @@ onBeforeUnmount(() => {
               role="menuitem"
               @click="
                 closeResourceContext();
-                shell?.openInspector();
-              "
-            >
-              Inspect
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              class="w-full justify-start"
-              role="menuitem"
-              @click="
-                closeResourceContext();
                 requestReconnect();
               "
             >
@@ -1734,18 +1710,6 @@ onBeforeUnmount(() => {
             <Button
               variant="ghost"
               size="sm"
-              class="w-full justify-start"
-              role="menuitem"
-              @click="
-                closeResourceContext();
-                shell?.openInspector();
-              "
-            >
-              Inspect
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
               class="w-full justify-start text-red-300"
               role="menuitem"
               :disabled="deletingObjectLinkIds.includes(contextObjectLink.id)"
@@ -1764,15 +1728,6 @@ onBeforeUnmount(() => {
               @click="openNetworkObjectTerminal(contextObject)"
             >
               <TerminalSquare :size="13" /> Terminal
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              class="w-full justify-start"
-              role="menuitem"
-              @click="openContextObjectDiagnostics"
-            >
-              Inspect & diagnostics
             </Button>
             <Button
               variant="ghost"

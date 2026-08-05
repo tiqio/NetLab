@@ -86,7 +86,7 @@ async function create() {
   const value = envelope.network_object;
   if (!value)
     throw new Error(
-      "Network object task did not include the accepted resource",
+      "网络对象任务未返回已接受的资源",
     );
   lastCreatedId.value = value.id;
   status.value = `${value.kind} ${value.name} is ${value.observed_state}`;
@@ -100,22 +100,22 @@ async function diagnostics(id: string) {
 
 <template>
   <section>
-    <h2>Lightweight nodes</h2>
+    <h2>轻量网络对象</h2>
     <label
       >Kind
       <Select v-model="kind">
         <option value="pc">PC</option>
-        <option value="switch_l2">Layer-2 switch</option>
-        <option value="switch_l3">Layer-3 switch</option>
-        <option value="bridge">Bridge</option>
-        <option value="nat_bridge">NAT bridge</option>
+        <option value="switch_l2">二层交换机</option>
+        <option value="switch_l3">三层交换机</option>
+        <option value="bridge">网桥</option>
+        <option value="nat_bridge">NAT 网桥</option>
       </Select></label
     >
-    <label>Name <input v-model="name" /></label>
+    <label>名称 <input v-model="name" /></label>
     <fieldset v-if="kind === 'pc'">
-      <legend>Dual-stack addressing</legend>
+      <legend>双栈地址配置</legend>
       <label
-        ><input v-model="modes" type="checkbox" value="static" /> Static</label
+        ><input v-model="modes" type="checkbox" value="static" /> 静态地址</label
       ><label
         ><input v-model="modes" type="checkbox" value="dhcpv4" /> DHCPv4</label
       ><label
@@ -125,33 +125,33 @@ async function diagnostics(id: string) {
         SLAAC</label
       ><label>IPv4 <input v-model="ipv4" /></label
       ><label>IPv6 <input v-model="ipv6" /></label>
-      <label>DNS servers <input v-model="dns" /></label>
+      <label>DNS 服务器 <input v-model="dns" /></label>
     </fieldset>
     <fieldset v-if="kind === 'nat_bridge'">
-      <legend>NAT</legend>
-      <label>Prefix <input v-model="natPrefix" /></label
-      ><label>IPv6 prefix <input v-model="natIPv6Prefix" /></label
-      ><label>Uplink <input v-model="uplink" /></label>
+      <legend>NAT 配置</legend>
+      <label>IPv4 前缀 <input v-model="natPrefix" /></label
+      ><label>IPv6 前缀 <input v-model="natIPv6Prefix" /></label
+      ><label>上联接口 <input v-model="uplink" /></label>
     </fieldset>
     <fieldset v-if="kind === 'bridge'">
-      <legend>Bridge</legend>
+      <legend>网桥配置</legend>
       <label>MTU <input v-model.number="bridgeMTU" type="number" /></label>
       <label><input v-model="bridgeSTP" type="checkbox" /> STP</label>
     </fieldset>
     <fieldset v-if="kind === 'switch_l2'">
-      <legend>VLAN port</legend>
-      <label>Port <input v-model="switchPort" /></label>
+      <legend>VLAN 端口</legend>
+      <label>端口 <input v-model="switchPort" /></label>
       <label>PVID <input v-model.number="pvid" type="number" /></label>
-      <label>Tagged VLANs <input v-model="taggedVLANs" /></label>
+      <label>Tagged VLAN <input v-model="taggedVLANs" /></label>
     </fieldset>
     <fieldset v-if="kind === 'switch_l3'">
-      <legend>Routing</legend>
-      <label>Interface <input v-model="switchPort" /></label>
-      <label>Addresses <input v-model="l3Addresses" /></label>
-      <label>Route <input v-model="l3Route" /></label>
-      <label>Gateway <input v-model="l3Gateway" /></label>
+      <legend>路由配置</legend>
+      <label>接口 <input v-model="switchPort" /></label>
+      <label>地址 <input v-model="l3Addresses" /></label>
+      <label>路由 <input v-model="l3Route" /></label>
+      <label>网关 <input v-model="l3Gateway" /></label>
     </fieldset>
-    <Button type="button" @click="create">Create network object</Button>
+    <Button type="button" @click="create">创建网络对象</Button>
     <Button
       type="button"
       :disabled="!lastCreatedId"
