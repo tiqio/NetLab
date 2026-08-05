@@ -34,7 +34,7 @@
 - [X] T005 [P] 为紧凑视口 Devices、Inspector、Operations Sheet 的既有行为补充回归测试于 `web/src/components/shell/LaboratoryShell.test.ts`
 - [X] T006 调整紧凑 Workspace 对增强 Sheet 的使用并保持原有 panel 行为于 `web/src/components/shell/LaboratoryShell.vue`
 - [X] T007 运行 `Sheet.test.ts`、`LaboratoryShell.test.ts`、前端类型检查、lint 和格式检查，并把结果记录到 `specs/006-topology-add-drawer/validation.md`
-- [ ] T008 将 Phase 2 作为独立里程碑提交，确认提交后工作区干净并捕获提交 SHA，供 T020 写入 `specs/006-topology-add-drawer/validation.md`
+- [X] T008 将 Phase 2 作为独立里程碑提交，确认提交后工作区干净并捕获提交 SHA，供 T020 写入 `specs/006-topology-add-drawer/validation.md`
 
 **Checkpoint**: 共享 Sheet 可以承载创建抽屉，原有工作区 Sheet 没有退化。
 
@@ -48,21 +48,21 @@
 
 ### Tests for User Story 1
 
-- [ ] T009 [P] [US1] 为模板加载、搜索、QEMU/Docker/网络对象分类、不可用原因和选择事件编写失败测试于 `web/src/features/topology/TopologyResourceCatalog.test.ts`
-- [ ] T010 [P] [US1] 将现有七类资源创建请求和模板/镜像兼容性断言迁移为抽屉合同测试于 `web/src/features/topology/CreateTopologyResourceDrawer.test.ts`
-- [ ] T011 [P] [US1] 为工具栏打开选择步骤、DevicePalette 预选打开编辑步骤、单实例抽屉、成功刷新和新资源选择编写失败测试于 `web/src/features/topology/TopologyWorkspace.test.ts`
-- [ ] T012 [P] [US1] 为右侧抽屉可见性、画布 viewport 保持、七类资源创建和无需刷新显示编写 Playwright 场景于 `tests/e2e/journeys/topologyAddDrawer.spec.ts`
+- [X] T009 [P] [US1] 为模板加载、搜索、QEMU/Docker/网络对象分类、不可用原因和选择事件编写失败测试于 `web/src/features/topology/TopologyResourceCatalog.test.ts`
+- [X] T010 [P] [US1] 将现有七类资源创建请求和模板/镜像兼容性断言迁移为抽屉合同测试于 `web/src/features/topology/CreateTopologyResourceDrawer.test.ts`
+- [X] T011 [P] [US1] 为工具栏打开选择步骤、DevicePalette 预选打开编辑步骤、单实例抽屉、成功刷新和新资源选择编写失败测试于 `web/src/features/topology/TopologyWorkspace.test.ts`
+- [X] T012 [P] [US1] 为右侧抽屉可见性、画布 viewport 保持、七类资源创建和无需刷新显示编写 Playwright 场景于 `tests/e2e/journeys/topologyAddDrawer.spec.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T013 [US1] 从 DevicePalette 抽离共享模板查询、搜索、分类和选择呈现到 `web/src/features/topology/TopologyResourceCatalog.vue`
-- [ ] T014 [US1] 重构左侧设备栏复用共享资源目录且保持现有 EVE-NG 风格入口于 `web/src/features/topology/DevicePalette.vue`
-- [ ] T015 [US1] 创建支持 selecting/editing/submitting/failed 状态、右侧固定布局和现有全部资源表单的 `web/src/features/topology/CreateTopologyResourceDrawer.vue`
-- [ ] T016 [US1] 将现有创建负载、模板刷新、镜像兼容性、cloud-init 和网络对象配置逻辑从 `web/src/features/topology/CreateTopologyResourceDialog.vue` 迁移到 `web/src/features/topology/CreateTopologyResourceDrawer.vue`
-- [ ] T017 [US1] 在 `web/src/features/topology/TopologyWorkspace.vue` 接入唯一抽屉实例、工具栏选择入口、DevicePalette 预选入口和现有 `created()` 权威刷新路径
-- [ ] T018 [US1] 更新拓扑页面对象的抽屉定位、资源选择和提交助手于 `tests/e2e/pages/TopologyPage.ts`
-- [ ] T019 [US1] 删除被替代的 `web/src/features/topology/CreateTopologyResourceDialog.vue` 与 `web/src/features/topology/CreateTopologyResourceDialog.test.ts`，并清理所有旧 Dialog 引用
-- [ ] T020 [US1] 运行 US1 组件、Workspace 和 Playwright 测试及前端构建，把结果和 T008 的 Sheet 里程碑 SHA 记录到 `specs/006-topology-add-drawer/validation.md`
+- [X] T013 [US1] 从 DevicePalette 抽离共享模板查询、搜索、分类和选择呈现到 `web/src/features/topology/TopologyResourceCatalog.vue`
+- [X] T014 [US1] 重构左侧设备栏复用共享资源目录且保持现有 EVE-NG 风格入口于 `web/src/features/topology/DevicePalette.vue`
+- [X] T015 [US1] 创建支持 selecting/editing/submitting/failed 状态、右侧固定布局和现有全部资源表单的 `web/src/features/topology/CreateTopologyResourceDrawer.vue`
+- [X] T016 [US1] 将现有创建负载、模板刷新、镜像兼容性、cloud-init 和网络对象配置逻辑从 `web/src/features/topology/CreateTopologyResourceDialog.vue` 迁移到 `web/src/features/topology/CreateTopologyResourceDrawer.vue`
+- [X] T017 [US1] 在 `web/src/features/topology/TopologyWorkspace.vue` 接入唯一抽屉实例、工具栏选择入口、DevicePalette 预选入口和现有 `created()` 权威刷新路径
+- [X] T018 [US1] 更新拓扑页面对象的抽屉定位、资源选择和提交助手于 `tests/e2e/pages/TopologyPage.ts`
+- [X] T019 [US1] 删除被替代的 `web/src/features/topology/CreateTopologyResourceDialog.vue` 与 `web/src/features/topology/CreateTopologyResourceDialog.test.ts`，并清理所有旧 Dialog 引用
+- [X] T020 [US1] 运行 US1 组件、Workspace 和 Playwright 测试及前端构建，把结果和 T008 的 Sheet 里程碑 SHA 记录到 `specs/006-topology-add-drawer/validation.md`
 - [ ] T021 [US1] 将 US1 MVP 作为独立里程碑提交，确认提交后工作区干净并捕获提交 SHA，供 T031 写入 `specs/006-topology-add-drawer/validation.md`
 
 **Checkpoint**: 用户故事 1 可独立交付；所有支持资源均可从右侧抽屉创建并收敛到权威拓扑。

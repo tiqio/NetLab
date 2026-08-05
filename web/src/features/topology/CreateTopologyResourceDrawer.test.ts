@@ -1,7 +1,7 @@
 import { flushPromises, mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 import { api, type DeviceTemplate, type ImageVersion } from "@/api";
-import CreateTopologyResourceDialog from "./CreateTopologyResourceDialog.vue";
+import CreateTopologyResourceDrawer from "./CreateTopologyResourceDrawer.vue";
 
 vi.mock("@/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/api")>()),
@@ -13,13 +13,30 @@ vi.mock("@/api", async (importOriginal) => ({
   },
 }));
 
-describe("CreateTopologyResourceDialog", () => {
+describe("CreateTopologyResourceDrawer", () => {
+  it("starts with the shared catalog and emits the selected resource", async () => {
+    const wrapper = mount(CreateTopologyResourceDrawer, {
+      attachTo: document.body,
+      props: { modelValue: true, laboratoryId: "lab-1" },
+    });
+    await flushPromises();
+    const pc = Array.from(document.body.querySelectorAll("button")).find(
+      (button) => button.textContent?.includes("Linux netns host"),
+    ) as HTMLButtonElement;
+    pc.click();
+    await flushPromises();
+    expect(wrapper.emitted("selectionChanged")?.[0]?.[0]).toMatchObject({
+      networkObjectKind: "pc",
+    });
+    wrapper.unmount();
+  });
+
   it("submits user-configured L2 ports and VLANs", async () => {
     vi.mocked(api.createNetworkObject).mockClear();
     vi.mocked(api.createNetworkObject).mockResolvedValue({
       network_object: { kind: "switch_l2" },
     } as never);
-    const wrapper = mount(CreateTopologyResourceDialog, {
+    const wrapper = mount(CreateTopologyResourceDrawer, {
       attachTo: document.body,
       props: {
         modelValue: true,
@@ -94,7 +111,7 @@ describe("CreateTopologyResourceDialog", () => {
         updated_at: "2026-07-31T00:00:00Z",
       },
     } as never);
-    const wrapper = mount(CreateTopologyResourceDialog, {
+    const wrapper = mount(CreateTopologyResourceDrawer, {
       attachTo: document.body,
       props: {
         modelValue: true,
@@ -124,7 +141,7 @@ describe("CreateTopologyResourceDialog", () => {
   });
 
   it("describes confirmed placement as shared state", async () => {
-    const wrapper = mount(CreateTopologyResourceDialog, {
+    const wrapper = mount(CreateTopologyResourceDrawer, {
       attachTo: document.body,
       props: {
         modelValue: true,
@@ -133,17 +150,16 @@ describe("CreateTopologyResourceDialog", () => {
       },
     });
     expect(document.body.textContent).toContain(
-      "resource and confirmed placement are shared with every client",
+      "资源及确认位置会共享给所有客户端",
     );
     expect(document.body.textContent).toContain(
-      "viewport and manual link routes remain local to this browser",
+      "画布视口、手工链路路径和当前抽屉草稿仅保存在当前浏览器",
     );
-    expect(document.body.textContent).not.toContain("placement remains local");
     wrapper.unmount();
   });
 
   it("blocks device creation when no compatible image exists", async () => {
-    const wrapper = mount(CreateTopologyResourceDialog, {
+    const wrapper = mount(CreateTopologyResourceDrawer, {
       attachTo: document.body,
       props: {
         modelValue: true,
@@ -240,7 +256,7 @@ describe("CreateTopologyResourceDialog", () => {
       image("image-ubuntu", "Ubuntu"),
       image("image-fortigate", "FortiGate"),
     ]);
-    const wrapper = mount(CreateTopologyResourceDialog, {
+    const wrapper = mount(CreateTopologyResourceDrawer, {
       attachTo: document.body,
       props: {
         modelValue: false,
@@ -316,7 +332,7 @@ describe("CreateTopologyResourceDialog", () => {
       node: {} as never,
       interfaces: [],
     });
-    const wrapper = mount(CreateTopologyResourceDialog, {
+    const wrapper = mount(CreateTopologyResourceDrawer, {
       attachTo: document.body,
       props: {
         modelValue: false,
@@ -455,7 +471,7 @@ describe("CreateTopologyResourceDialog", () => {
       node: {} as never,
       interfaces: [],
     });
-    const wrapper = mount(CreateTopologyResourceDialog, {
+    const wrapper = mount(CreateTopologyResourceDrawer, {
       attachTo: document.body,
       props: {
         modelValue: false,

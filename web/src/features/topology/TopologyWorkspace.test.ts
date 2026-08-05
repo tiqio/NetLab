@@ -1,6 +1,29 @@
 import { describe, expect, it, vi } from "vitest";
 import type { NetworkObjectLink, NetworkObjectLinkTaskEnvelope } from "@/api";
 import { runObjectLinkDeletion } from "./objectLinkDeletion";
+import { openTopologyCreateDrawer } from "./topologyCreateDrawerState";
+
+describe("TopologyWorkspace create drawer state", () => {
+  it("opens one selecting drawer from the toolbar", () => {
+    expect(openTopologyCreateDrawer()).toEqual({
+      open: true,
+      selection: undefined,
+    });
+  });
+
+  it("opens the same drawer with a palette preselection", () => {
+    expect(
+      openTopologyCreateDrawer({
+        kind: "pc",
+        name: "PC",
+        networkObjectKind: "pc",
+      }),
+    ).toMatchObject({
+      open: true,
+      selection: { networkObjectKind: "pc" },
+    });
+  });
+});
 
 const link: NetworkObjectLink = {
   id: "object-link-1",

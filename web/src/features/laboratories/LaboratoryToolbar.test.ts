@@ -35,6 +35,15 @@ function render(active = laboratoryFactory()) {
 }
 
 describe("LaboratoryToolbar", () => {
+  it("exposes a direct add-resource action without replacing the palette toggle", async () => {
+    const wrapper = render();
+    await wrapper.get('[aria-label="添加资源"]').trigger("click");
+    expect(wrapper.emitted("openCreate")).toHaveLength(1);
+    expect(wrapper.find('[aria-label="Toggle device palette"]').exists()).toBe(
+      true,
+    );
+  });
+
   it("keeps the switcher DOM stable while live laboratory props change", async () => {
     const wrapper = render(laboratoryFactory({ id: "lab-1", name: "One" }));
     await wrapper.get('[data-testid="laboratory-switcher"]').trigger("click");

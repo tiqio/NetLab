@@ -36,6 +36,21 @@ export class TopologyPage extends BasePage {
     );
   }
 
+  async openResourceDrawer() {
+    await this.page.getByRole("button", { name: "添加资源" }).click();
+    const drawer = this.page.getByRole("dialog", { name: "Add resource" });
+    await expect(drawer).toBeVisible();
+    return drawer;
+  }
+
+  async chooseDrawerResource(name: string) {
+    const drawer = this.page.getByRole("dialog", { name: "Add resource" });
+    await drawer.getByRole("button").filter({ hasText: name }).first().click();
+    return this.page.getByRole("dialog", {
+      name: new RegExp(`Add ${name}`, "i"),
+    });
+  }
+
   async selectResourceByKeyboard(index: number, additive = false) {
     const canvas = this.page.getByLabel(/Topology canvas keyboard area/);
     await canvas.focus();

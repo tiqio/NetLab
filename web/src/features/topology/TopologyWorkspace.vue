@@ -38,7 +38,7 @@ import {
 import LaboratoryToolbar from "@/features/laboratories/LaboratoryToolbar.vue";
 import { useLaboratoryStore } from "@/stores/laboratory";
 import type { BottomTab } from "@/types/workspace";
-import CreateTopologyResourceDialog from "./CreateTopologyResourceDialog.vue";
+import CreateTopologyResourceDrawer from "./CreateTopologyResourceDrawer.vue";
 import DevicePalette, { type PaletteSelection } from "./DevicePalette.vue";
 import LinkContextMenu from "./LinkContextMenu.vue";
 import PortChooser from "./PortChooser.vue";
@@ -49,6 +49,7 @@ import { TopologyKeyboardController } from "./topologyKeyboardController";
 import { resolvePlacements } from "./topologyLayout";
 import { buildPlacementBatch } from "./topologyPlacementBatch";
 import { runObjectLinkDeletion } from "./objectLinkDeletion";
+import { openTopologyCreateDrawer } from "./topologyCreateDrawerState";
 import {
   boxSelect,
   cleanSelection,
@@ -607,8 +608,15 @@ function choose(selection: PaletteSelection) {
     shell.value?.openInspector();
     return;
   }
-  paletteSelection.value = selection;
-  createOpen.value = true;
+  const next = openTopologyCreateDrawer(selection);
+  paletteSelection.value = next.selection;
+  createOpen.value = next.open;
+}
+
+function openCreateDrawer() {
+  const next = openTopologyCreateDrawer();
+  paletteSelection.value = next.selection;
+  createOpen.value = next.open;
 }
 
 async function created(value: {
@@ -696,8 +704,7 @@ async function selectResource(
     selectedInterfaceId.value =
       store.active?.network_attachments?.find((item) => item.id === id)
         ?.interface_id || "";
-    canvasStatus.value =
-      "已选择网络附件，可打开“抓包”或“流量过滤”观察该网段。";
+    canvasStatus.value = "已选择网络附件，可打开“抓包”或“流量过滤”观察该网段。";
   } else if (type === "network_object_link") {
     selectedInterfaceId.value = "";
     canvasStatus.value =
@@ -1336,6 +1343,7 @@ onBeforeUnmount(() => {
           @refresh="refresh"
           @changed="refresh"
           @toggle-palette="openPalette"
+          @open-create="openCreateDrawer"
           @open-commands="commandOpen = true"
         />
       </template>
@@ -1809,11 +1817,12 @@ onBeforeUnmount(() => {
       @choose="portChosen"
       @cancel="cancelConnection"
     />
-    <CreateTopologyResourceDialog
+    <CreateTopologyResourceDrawer
       v-if="store.active"
       v-model="createOpen"
       :laboratory-id="store.active.laboratory.id"
       :selection="paletteSelection"
+      @selection-changed="paletteSelection = $event"
       @created="created"
     />
     <CommandPalette

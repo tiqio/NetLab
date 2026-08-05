@@ -37,6 +37,7 @@ const emit = defineEmits<{
   refresh: [];
   changed: [];
   togglePalette: [];
+  openCreate: [];
   openCommands: [];
 }>();
 const createOpen = ref(false);
@@ -256,6 +257,15 @@ function openDelete() {
       @click="$emit('togglePalette')"
     >
       <Menu :size="17" />
+    </Button>
+    <Button
+      variant="secondary"
+      size="sm"
+      aria-label="添加资源"
+      :disabled="!paletteAvailable"
+      @click="$emit('openCreate')"
+    >
+      <Plus :size="14" /> 添加
     </Button>
     <div class="flex items-center gap-2 pr-2">
       <span

@@ -9,14 +9,16 @@ import {
   type NodeInterface,
   type NetworkObject,
 } from "@/api";
-import { Button, Dialog, FormField, Input, Select } from "@/components/ui";
+import { Button, FormField, Input, Select, Sheet } from "@/components/ui";
 import LightweightSwitchConfigEditor from "@/features/nodes/LightweightSwitchConfigEditor.vue";
 import {
   defaultLightweightSwitchConfig,
   validateLightweightSwitchConfig,
   type LightweightSwitchKind,
 } from "@/features/nodes/lightweightSwitchConfig";
-import type { PaletteSelection } from "./DevicePalette.vue";
+import TopologyResourceCatalog, {
+  type PaletteSelection,
+} from "./TopologyResourceCatalog.vue";
 import {
   buildUbuntuPasswordCloudInit,
   generateInitialPassword,
@@ -37,6 +39,7 @@ const emit = defineEmits<{
       networkObject?: NetworkObject;
     },
   ];
+  selectionChanged: [PaletteSelection | undefined];
 }>();
 const name = ref("");
 const templateId = ref("");
@@ -185,16 +188,6 @@ const canSubmit = computed(() => {
     selectedImage.value && !imageUnavailableReason(selectedImage.value),
   );
 });
-const dirty = computed(() =>
-  Boolean(
-    name.value.trim() ||
-    versionId.value ||
-    imageVersionId.value ||
-    interfaceCount.value !== 2 ||
-    cloudPassword.value ||
-    routes.value.length > 0,
-  ),
-);
 function validate() {
   const next: Record<string, string> = {};
   if (!name.value.trim()) next.name = "Name is required.";
@@ -441,13 +434,40 @@ async function submit() {
 }
 </script>
 <template>
-  <Dialog
+  <Sheet
     v-model="open"
-    :prevent-close="dirty && !busy"
-    :title="`Add ${selection?.name || 'device'}`"
-    description="The resource and confirmed placement are shared with every client; viewport and manual link routes remain local to this browser."
+    size="min(92vw, 580px)"
+    :title="selection ? `Add ${selection.name}` : 'Add resource'"
+    description="资源及确认位置会共享给所有客户端；画布视口、手工链路路径和当前抽屉草稿仅保存在当前浏览器。"
   >
-    <form class="grid gap-3" @submit.prevent="submit">
+    <TopologyResourceCatalog
+      v-if="!selection"
+      @choose="emit('selectionChanged', $event)"
+    />
+    <form
+      v-else
+      id="topology-resource-create-form"
+      class="grid gap-3"
+      @submit.prevent="submit"
+    >
+      <div
+        class="flex items-center justify-between gap-3 rounded-md border border-border bg-muted/20 p-2"
+      >
+        <div class="min-w-0">
+          <p class="truncate text-xs font-semibold">{{ selection.name }}</p>
+          <p class="truncate text-[11px] text-muted-foreground">
+            {{ selection.description || selection.kind }}
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          @click="emit('selectionChanged', undefined)"
+        >
+          更换资源
+        </Button>
+      </div>
       <FormField label="Name" :error="fieldErrors.name">
         <Input v-model="name" required maxlength="120" /> </FormField
       ><FormField
@@ -703,13 +723,19 @@ async function submit() {
       <p v-if="staleMessage" role="alert" class="text-xs text-amber-300">
         {{ staleMessage }}
       </p>
-      <div class="flex justify-end gap-2">
-        <Button type="button" variant="secondary" @click="open = false">
-          Cancel </Button
-        ><Button type="submit" :disabled="!canSubmit">
-          {{ busy || catalogLoading ? "Checking…" : "Add to topology" }}
-        </Button>
-      </div>
     </form>
-  </Dialog>
+    <template v-if="selection" #footer>
+      <Button type="button" variant="secondary" @click="open = false">
+        取消
+      </Button>
+      <Button
+        type="submit"
+        form="topology-resource-create-form"
+        aria-label="Add to topology"
+        :disabled="!canSubmit"
+      >
+        {{ busy || catalogLoading ? "检查中…" : "添加到拓扑" }}
+      </Button>
+    </template>
+  </Sheet>
 </template>

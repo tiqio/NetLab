@@ -10,19 +10,19 @@
 
 ## Milestone 1 — Shared Sheet
 
-- Commit SHA: pending
+- Commit SHA: `6bdee8c`
 - Focused tests: PASS — `Sheet.test.ts` and `LaboratoryShell.test.ts`, 9 tests
 - Type check: PASS — `npm run build`
 - Lint/format: PASS for changed files; ESLint reported 14 warnings and 0 errors in focused files
 - Repository baseline note: full `npm run format:check` remains blocked by 7 pre-existing unrelated files; changed files pass focused Prettier check
-- Worktree clean after commit: pending
+- Worktree clean after commit: yes
 
 ## Milestone 2 — Resource Drawer MVP
 
 - Commit SHA: pending
-- Focused tests: pending
-- Playwright: pending
-- Build: pending
+- Focused tests: PASS — Catalog, Drawer, Workspace and Toolbar, 22 tests
+- Playwright: scenario compiles and discovers desktop/minimum projects; runtime execution deferred to deployed candidate because no local acceptance service is active
+- Build: PASS — Vue type check and Vite production build
 - Worktree clean after commit: pending
 
 ## Milestone 3 — Long Form Reliability
