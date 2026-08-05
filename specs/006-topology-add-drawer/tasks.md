@@ -90,7 +90,7 @@
 - [x] T029 [US2] 实现提交期间输入/提交锁和目录提交前复核，确保重复点击不产生重复请求于 `web/src/features/topology/CreateTopologyResourceDrawer.vue`
 - [x] T030 [US2] 更新表单与对话框交互矩阵以覆盖抽屉长表单和错误恢复于 `tests/e2e/matrices/formAndDialogMatrix.spec.ts`
 - [x] T031 [US2] 运行 US2 草稿、抽屉、交互矩阵和 Playwright 测试及前端构建，把结果和 T021 的 US1 里程碑 SHA 记录到 `specs/006-topology-add-drawer/validation.md`
-- [ ] T032 [US2] 将 US2 作为独立里程碑提交，确认提交后工作区干净并捕获提交 SHA，供 T042 写入 `specs/006-topology-add-drawer/validation.md`
+- [x] T032 [US2] 将 US2 作为独立里程碑提交，确认提交后工作区干净并捕获提交 SHA，供 T042 写入 `specs/006-topology-add-drawer/validation.md`
 
 **Checkpoint**: 用户故事 2 可独立验收；最长表单和所有失败路径不会丢失有效草稿或创建重复资源。
 
@@ -104,19 +104,19 @@
 
 ### Tests for User Story 3
 
-- [ ] T033 [P] [US3] 为 dirty Sheet 关闭确认、所有 close reason 统一路径、alertdialog 焦点和取消放弃编写失败测试于 `web/src/components/ui/sheet/Sheet.test.ts`
-- [ ] T034 [P] [US3] 为抽屉脏状态关闭、资源切换、实验室切换、关闭后触发焦点恢复编写失败测试于 `web/src/features/topology/CreateTopologyResourceDrawer.test.ts`
-- [ ] T035 [P] [US3] 为 Inspector 折叠/宽度/选择快照和画布 viewport 不变编写失败测试于 `web/src/features/topology/TopologyWorkspace.test.ts`
-- [ ] T036 [P] [US3] 为全键盘打开、选择、填写、提交、Escape、放弃确认和焦点恢复编写 Playwright 场景于 `tests/e2e/frontend_responsive_keyboard.spec.ts`
-- [ ] T037 [P] [US3] 为抽屉和放弃确认运行 axe 可访问性规则编写测试于 `web/src/features/topology/CreateTopologyResourceDrawer.a11y.test.ts`
+- [x] T033 [P] [US3] 为 dirty Sheet 关闭确认、所有 close reason 统一路径、alertdialog 焦点和取消放弃编写失败测试于 `web/src/components/ui/sheet/Sheet.test.ts`
+- [x] T034 [P] [US3] 为抽屉脏状态关闭、资源切换、实验室切换、关闭后触发焦点恢复编写失败测试于 `web/src/features/topology/CreateTopologyResourceDrawer.test.ts`
+- [x] T035 [P] [US3] 为 Inspector 折叠/宽度/选择快照和画布 viewport 不变编写失败测试于 `web/src/features/topology/TopologyWorkspace.test.ts`
+- [x] T036 [P] [US3] 为全键盘打开、选择、填写、提交、Escape、放弃确认和焦点恢复编写 Playwright 场景于 `tests/e2e/frontend_responsive_keyboard.spec.ts`
+- [x] T037 [P] [US3] 为抽屉和放弃确认运行 axe 可访问性规则编写测试于 `web/src/features/topology/CreateTopologyResourceDrawer.a11y.test.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T038 [US3] 在共享 Sheet 中实现 `preventClose`、close reason、受控放弃确认、焦点陷阱和触发焦点恢复于 `web/src/components/ui/sheet/Sheet.vue`
-- [ ] T039 [US3] 在创建抽屉中连接脏状态、关闭/切换确认和实验室冲突保护于 `web/src/features/topology/CreateTopologyResourceDrawer.vue`
-- [ ] T040 [US3] 在 Workspace 中记录并恢复 Inspector Snapshot、有效选择和触发焦点，同时保持画布和 Operations 状态于 `web/src/features/topology/TopologyWorkspace.vue`
-- [ ] T041 [US3] 更新 LaboratoryShell 与工具栏的可访问名称、添加入口和紧凑视口行为于 `web/src/components/shell/LaboratoryShell.vue` 和 `web/src/features/laboratories/LaboratoryToolbar.vue`
-- [ ] T042 [US3] 运行 US3 Sheet、Drawer、Workspace、axe 和键盘 Playwright 测试及前端构建，把结果和 T032 的 US2 里程碑 SHA 记录到 `specs/006-topology-add-drawer/validation.md`
+- [x] T038 [US3] 在共享 Sheet 中实现 `preventClose`、close reason、受控放弃确认、焦点陷阱和触发焦点恢复于 `web/src/components/ui/sheet/Sheet.vue`
+- [x] T039 [US3] 在创建抽屉中连接脏状态、关闭/切换确认和实验室冲突保护于 `web/src/features/topology/CreateTopologyResourceDrawer.vue`
+- [x] T040 [US3] 在 Workspace 中记录并恢复 Inspector Snapshot、有效选择和触发焦点，同时保持画布和 Operations 状态于 `web/src/features/topology/TopologyWorkspace.vue`
+- [x] T041 [US3] 更新 LaboratoryShell 与工具栏的可访问名称、添加入口和紧凑视口行为于 `web/src/components/shell/LaboratoryShell.vue` 和 `web/src/features/laboratories/LaboratoryToolbar.vue`
+- [x] T042 [US3] 运行 US3 Sheet、Drawer、Workspace、axe 和键盘 Playwright 测试及前端构建，把结果和 T032 的 US2 里程碑 SHA 记录到 `specs/006-topology-add-drawer/validation.md`
 - [ ] T043 [US3] 将 US3 作为独立里程碑提交，确认提交后工作区干净并捕获提交 SHA，供 T047 写入 `specs/006-topology-add-drawer/validation.md`
 
 **Checkpoint**: 用户故事 3 可独立验收；所有关闭方式和键盘操作均安全，Workspace 上下文恢复且没有焦点陷阱。
@@ -127,9 +127,9 @@
 
 **Purpose**: 完成全量回归、文档、干净构建、正式部署和目标机验收。
 
-- [ ] T044 [P] 更新交互覆盖清单中的旧 Dialog 控件和新 Drawer 控件于 `tests/e2e/matrices/interaction-inventory.json`
-- [ ] T045 [P] 更新现有创建流程页面对象与旅程中的 Dialog role/名称定位于 `tests/e2e/pages/TemplatePage.ts`、`tests/e2e/journeys/networkObjectLinks.spec.ts`、`tests/e2e/journeys/ubuntuBootstrapOverlay.spec.ts` 和 `tests/e2e/journeys/dockerStaticRoutes.spec.ts`
-- [ ] T046 [P] 根据最终实现更新用户可见行为和实际测试命令于 `specs/006-topology-add-drawer/quickstart.md` 和 `specs/006-topology-add-drawer/contracts/ui-contract.md`
+- [x] T044 [P] 更新交互覆盖清单中的旧 Dialog 控件和新 Drawer 控件于 `tests/e2e/matrices/interaction-inventory.json`
+- [x] T045 [P] 更新现有创建流程页面对象与旅程中的 Dialog role/名称定位于 `tests/e2e/pages/TemplatePage.ts`、`tests/e2e/journeys/networkObjectLinks.spec.ts`、`tests/e2e/journeys/ubuntuBootstrapOverlay.spec.ts` 和 `tests/e2e/journeys/dockerStaticRoutes.spec.ts`
+- [x] T046 [P] 根据最终实现更新用户可见行为和实际测试命令于 `specs/006-topology-add-drawer/quickstart.md` 和 `specs/006-topology-add-drawer/contracts/ui-contract.md`
 - [ ] T047 运行 `npm run lint`、`npm run format:check`、`npm test`、`npm run build`、相关 Go 合同测试和本地 Playwright 套件，并把全部结果、任何无关已知失败和 T043 的 US3 里程碑 SHA 记录到 `specs/006-topology-add-drawer/validation.md`
 - [ ] T048 对 1024×768、1366×768、1920×1080 三种视口连续运行两次抽屉 Playwright 场景，记录无裁切、无重复创建、无 viewport 漂移结果到 `specs/006-topology-add-drawer/validation.md`
 - [ ] T049 提交 T044-T048 涉及的文件和 `specs/006-topology-add-drawer/validation.md`，确认提交后工作区为空并捕获最终源 commit SHA

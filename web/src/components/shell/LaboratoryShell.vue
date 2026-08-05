@@ -138,15 +138,13 @@ defineExpose({
               "
             >
               {{
-                preferences.panels.inspector.collapsed
-                  ? "◀ 检查器"
-                  : "检查器 ▶"
+                preferences.panels.inspector.collapsed ? "◀ 检查器" : "检查器 ▶"
               }}
             </button>
           </div>
           <button
             class="shell-toggle absolute bottom-2 right-2 z-20"
-            aria-label="Toggle operations drawer"
+            aria-label="展开或收起操作区"
             :aria-expanded="!preferences.panels.bottomDrawer.collapsed"
             @click="
               preferences.panels.bottomDrawer.collapsed
@@ -154,9 +152,7 @@ defineExpose({
                 : $emit('panel', 'bottomDrawer', { collapsed: true })
             "
           >
-            {{
-              preferences.panels.bottomDrawer.collapsed ? "▲ Operations" : "▼"
-            }}
+            {{ preferences.panels.bottomDrawer.collapsed ? "▲ 操作区" : "▼" }}
           </button>
         </div>
         <ResizableHandle
@@ -186,11 +182,11 @@ defineExpose({
         <slot name="inspector" />
       </aside>
     </div>
-    <Sheet v-model="paletteSheet" side="left" title="Devices">
+    <Sheet v-model="paletteSheet" side="left" title="设备">
       <slot name="palette" /> </Sheet
     ><Sheet v-model="inspectorSheet" title="检查器">
       <slot name="inspector" /> </Sheet
-    ><Sheet v-model="bottomSheet" side="bottom" title="Operations">
+    ><Sheet v-model="bottomSheet" side="bottom" title="操作区">
       <slot name="bottom" />
     </Sheet>
   </div>

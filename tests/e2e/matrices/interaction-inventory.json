@@ -16,6 +16,49 @@
       "sensitive_evidence": []
     },
     {
+      "id": "topology.add-drawer.open",
+      "area": "topology",
+      "label": "添加资源",
+      "locator": {
+        "role": "button",
+        "name": "添加资源"
+      },
+      "applicable_states": ["laboratory-open"],
+      "activation": ["pointer", "keyboard"],
+      "outcome_class": "presentation",
+      "cleanup_effect": "none",
+      "sensitive_evidence": []
+    },
+    {
+      "id": "topology.add-drawer.submit",
+      "area": "topology",
+      "label": "添加到拓扑",
+      "locator": {
+        "role": "button",
+        "name": "Add to topology"
+      },
+      "applicable_states": ["add-drawer-editing"],
+      "activation": ["pointer", "keyboard"],
+      "outcome_class": "mutation",
+      "operation": "node.create-or-network-object.create",
+      "cleanup_effect": "laboratory-cascade",
+      "sensitive_evidence": ["bootstrap-password"]
+    },
+    {
+      "id": "topology.add-drawer.discard",
+      "area": "topology",
+      "label": "放弃未保存的更改",
+      "locator": {
+        "role": "alertdialog",
+        "name": "放弃未保存的更改"
+      },
+      "applicable_states": ["add-drawer-dirty"],
+      "activation": ["pointer", "keyboard"],
+      "outcome_class": "presentation",
+      "cleanup_effect": "discard-browser-local-draft",
+      "sensitive_evidence": []
+    },
+    {
       "id": "laboratory.select",
       "area": "laboratory",
       "label": "Laboratory",

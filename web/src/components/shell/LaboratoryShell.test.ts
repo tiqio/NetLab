@@ -83,9 +83,7 @@ describe("LaboratoryShell", () => {
     expect(document.body.textContent).toContain("palette content");
     await wrapper.get('[aria-label="展开或收起检查器"]').trigger("click");
     expect(document.body.textContent).toContain("inspector content");
-    await wrapper
-      .get('[aria-label="Toggle operations drawer"]')
-      .trigger("click");
+    await wrapper.get('[aria-label="展开或收起操作区"]').trigger("click");
     expect(document.body.textContent).toContain("operations content");
 
     wrapper.unmount();

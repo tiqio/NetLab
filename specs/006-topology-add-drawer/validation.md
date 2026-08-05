@@ -27,19 +27,20 @@
 
 ## Milestone 3 — Long Form Reliability
 
-- Commit SHA: pending
+- Commit SHA: `713105b`
 - Previous US1 SHA: `3524e17`
 - Draft/validation tests: PASS — draft model 7 tests; Drawer 12 tests; shared Sheet 7 tests; axe 1 test
 - Playwright: PASS discovery — 5 relevant tests discovered for desktop/minimum viewport; runtime execution reserved for candidate service
 - Build: PASS — Vue type check and Vite production build
-- Worktree clean after commit: pending
+- Worktree clean after commit: yes
 
 ## Milestone 4 — Close and Workspace Recovery
 
 - Commit SHA: pending
-- Accessibility/keyboard tests: pending
-- Playwright: pending
-- Build: pending
+- Previous US2 SHA: `713105b`
+- Accessibility/keyboard tests: PASS — Sheet close reasons, discard alertdialog, Drawer dirty switch/close, axe, Shell and Toolbar; 40 focused tests passed before milestone polish
+- Playwright: PASS discovery — keyboard open/Escape/focus restoration and dirty discard scenarios discovered in both configured viewport projects
+- Build: PASS — Vue type check and Vite production build
 - Worktree clean after commit: pending
 
 ## Final Local Validation
