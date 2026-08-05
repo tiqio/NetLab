@@ -138,20 +138,21 @@ const selectedImage = computed(() =>
   images.value.find((item) => item.id === imageVersionId.value),
 );
 function imageMatchesTemplate(image: ImageVersion) {
-  if (selectedTemplate.value?.runtime_kind !== "docker") return true;
-  const key = selectedTemplate.value.template_key.toLowerCase();
-  const name = image.name.toLowerCase();
-  if (key.includes("ubuntu")) return name.includes("ubuntu");
-  if (key.includes("busybox")) return name.includes("busybox");
-  return true;
+  if (!selectedTemplate.value || !selectedVersion.value) return false;
+  return Boolean(
+    selectedVersion.value.compatible_image_version_ids?.includes(image.id),
+  );
 }
+const templateCompatibleImages = computed(() =>
+  images.value.filter((item) => imageMatchesTemplate(item)),
+);
 const compatibleImages = computed(() =>
-  images.value
+  templateCompatibleImages.value
     .filter(
       (item) =>
         item.runtime_kind === selectedTemplate.value?.runtime_kind &&
         item.availability.toLowerCase() === "available" &&
-        imageMatchesTemplate(item),
+        item.license_status.toLowerCase() === "reviewed",
     )
     .sort((left, right) => {
       const leftPreferred = left.name.includes("network-tools") ? 1 : 0;
@@ -161,8 +162,8 @@ const compatibleImages = computed(() =>
 );
 const imageHint = computed(() =>
   compatibleImages.value.length
-    ? "Only available images matching the selected runtime can be used."
-    : "No compatible image is available. Import an image from the Templates page before creating this device.",
+    ? "Only reviewed images assigned to this device family are shown."
+    : `No reviewed ${selectedTemplate.value?.display_name || "compatible"} image is available. Import the correct image from the Templates page first.`,
 );
 function imageUnavailableReason(image: ImageVersion) {
   if (!selectedTemplate.value) return "select a template first";
@@ -171,6 +172,8 @@ function imageUnavailableReason(image: ImageVersion) {
   if (!imageMatchesTemplate(image)) return "not compatible with this template";
   if (image.availability.toLowerCase() !== "available")
     return image.availability || "unavailable";
+  if (image.license_status.toLowerCase() !== "reviewed")
+    return `license ${image.license_status || "unreviewed"}`;
   return "";
 }
 const canSubmit = computed(() => {
@@ -282,6 +285,7 @@ async function loadCatalog(preserveSelection = true) {
     imageVersionId.value =
       (preserveSelection &&
         nextImages.some((item) => item.id === previousImage) &&
+        version?.compatible_image_version_ids?.includes(previousImage) &&
         previousImage) ||
       version?.image_version_id ||
       compatibleImages.value[0]?.id ||
@@ -368,7 +372,11 @@ async function submit() {
         (chosenImageId &&
           (!currentImage ||
             currentImage.runtime_kind !== currentTemplate.runtime_kind ||
-            currentImage.availability.toLowerCase() !== "available"))
+            currentImage.availability.toLowerCase() !== "available" ||
+            currentImage.license_status.toLowerCase() !== "reviewed" ||
+            !currentVersion.compatible_image_version_ids?.includes(
+              chosenImageId,
+            )))
       ) {
         staleMessage.value =
           "The selected template or image changed on the server. Your other values are preserved; choose an available version and retry.";
@@ -491,7 +499,7 @@ async function submit() {
         <Select v-model="imageVersionId" :disabled="!selectedVersion">
           <option value="">Select an image version</option>
           <option
-            v-for="image in images"
+            v-for="image in templateCompatibleImages"
             :key="image.id"
             :value="image.id"
             :disabled="Boolean(imageUnavailableReason(image))"

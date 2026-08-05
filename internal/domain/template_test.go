@@ -21,3 +21,28 @@ func TestImageStartGate(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestImageCompatibilitySeparatesQEMUDeviceFamilies(t *testing.T) {
+	vyos := DeviceTemplate{Key: "vyos", DisplayName: "VyOS", RuntimeKind: RuntimeQEMU}
+	unbound := TemplateVersion{}
+	if !ImageCompatibleWithTemplate(ImageVersion{RuntimeKind: RuntimeQEMU, Name: "VyOS", SourceReference: "vyos-rolling.qcow2"}, vyos, unbound) {
+		t.Fatal("VyOS image should match the VyOS template")
+	}
+	if ImageCompatibleWithTemplate(ImageVersion{RuntimeKind: RuntimeQEMU, Name: "Ubuntu", SourceReference: "ubuntu-24.04.qcow2"}, vyos, unbound) {
+		t.Fatal("Ubuntu image must not match the VyOS template")
+	}
+	if ImageCompatibleWithTemplate(ImageVersion{RuntimeKind: RuntimeQEMU, Name: "FortiGate", SourceReference: "fortinet-FGT.qcow2"}, vyos, unbound) {
+		t.Fatal("FortiGate image must not match the VyOS template")
+	}
+}
+
+func TestBoundTemplateVersionOnlyAcceptsAssignedImage(t *testing.T) {
+	template := DeviceTemplate{Key: "ubuntu-qemu", DisplayName: "Ubuntu", RuntimeKind: RuntimeQEMU}
+	version := TemplateVersion{ImageVersionID: "ubuntu-24"}
+	if !ImageCompatibleWithTemplate(ImageVersion{ID: "ubuntu-24", RuntimeKind: RuntimeQEMU, Name: "Ubuntu"}, template, version) {
+		t.Fatal("assigned image should be compatible")
+	}
+	if ImageCompatibleWithTemplate(ImageVersion{ID: "ubuntu-22", RuntimeKind: RuntimeQEMU, Name: "Ubuntu"}, template, version) {
+		t.Fatal("a bound template version must reject other images from the same family")
+	}
+}

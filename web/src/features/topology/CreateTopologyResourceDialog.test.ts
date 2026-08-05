@@ -181,13 +181,87 @@ describe("CreateTopologyResourceDialog", () => {
       },
     });
     await flushPromises();
-    expect(document.body.textContent).toContain(
-      "No compatible image is available",
-    );
+    expect(document.body.textContent).toContain("No reviewed compatible image");
     expect(
       document.body.querySelector<HTMLButtonElement>('button[type="submit"]')
         ?.disabled,
     ).toBe(true);
+    wrapper.unmount();
+  });
+
+  it("shows only image versions assigned to the selected QEMU device family", async () => {
+    const template: DeviceTemplate = {
+      id: "template-vyos",
+      template_key: "vyos",
+      display_name: "VyOS",
+      runtime_kind: "qemu",
+      versions: [
+        {
+          id: "version-vyos",
+          template_id: "template-vyos",
+          version: "rolling",
+          manifest_version: 1,
+          compatible_image_version_ids: ["image-vyos"],
+          defaults: {
+            cpu_count: 1,
+            memory_mib: 1024,
+            interfaces: 4,
+            interface_name_format: "eth%d",
+          },
+          capabilities: [],
+          supported_nic_drivers: ["virtio-net-pci"],
+          console_modes: ["telnet"],
+          runtime_options: {},
+          enabled: true,
+          created_at: "2026-08-05T00:00:00Z",
+        },
+      ],
+      created_at: "2026-08-05T00:00:00Z",
+    };
+    const image = (id: string, name: string): ImageVersion => ({
+      id,
+      runtime_kind: "qemu",
+      name,
+      version: "test",
+      digest: `sha256:${id}`,
+      source_type: "local_import",
+      source_reference: `${name}.qcow2`,
+      format: "qcow2",
+      size_bytes: 1,
+      availability: "available",
+      license_status: "reviewed",
+      license_notes: "operator supplied",
+      validation_result: {},
+      created_at: "2026-08-05T00:00:00Z",
+    });
+    vi.mocked(api.listTemplates).mockResolvedValue([template]);
+    vi.mocked(api.listImages).mockResolvedValue([
+      image("image-vyos", "VyOS"),
+      image("image-ubuntu", "Ubuntu"),
+      image("image-fortigate", "FortiGate"),
+    ]);
+    const wrapper = mount(CreateTopologyResourceDialog, {
+      attachTo: document.body,
+      props: {
+        modelValue: false,
+        laboratoryId: "lab-1",
+        selection: {
+          kind: "qemu",
+          name: "VyOS",
+          template,
+          version: template.versions[0],
+        },
+      },
+    });
+    await wrapper.setProps({ modelValue: true });
+    await flushPromises();
+
+    const options = Array.from(
+      document.body.querySelectorAll<HTMLSelectElement>("select")[2].options,
+    ).map((option) => option.textContent);
+    expect(options).toContain("VyOS test");
+    expect(options).not.toContain("Ubuntu test");
+    expect(options).not.toContain("FortiGate test");
     wrapper.unmount();
   });
 
@@ -203,6 +277,7 @@ describe("CreateTopologyResourceDialog", () => {
           template_id: "template-ubuntu",
           version: "24.04",
           manifest_version: 1,
+          compatible_image_version_ids: ["image-nettools"],
           defaults: {
             cpu_count: 1,
             memory_mib: 512,
@@ -341,6 +416,7 @@ describe("CreateTopologyResourceDialog", () => {
           template_id: "template-ubuntu-qemu",
           version: "24.04",
           manifest_version: 1,
+          compatible_image_version_ids: ["image-ubuntu-qemu"],
           defaults: {
             cpu_count: 2,
             memory_mib: 2048,

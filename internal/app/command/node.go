@@ -148,6 +148,9 @@ func (s *NodeService) CreateConfigured(ctx context.Context, labID domain.ID, req
 		if image.RuntimeKind != template.RuntimeKind {
 			return domain.Node{}, nil, domain.Problem{Code: "image_incompatible", Message: "image runtime does not match template"}
 		}
+		if !domain.ImageCompatibleWithTemplate(image, template, version) {
+			return domain.Node{}, nil, domain.Problem{Code: "image_incompatible", Message: "image does not match the selected device template"}
+		}
 		if err = image.CanStart(); err != nil {
 			return domain.Node{}, nil, domain.Problem{Code: "image_unavailable", Message: err.Error(), ResourceType: "image_version", ResourceID: image.ID}
 		}

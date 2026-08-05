@@ -95,6 +95,42 @@ func TestCreateNodeRejectsUnreviewedImage(t *testing.T) {
 	}
 }
 
+func TestCreateNodeRejectsImageFromDifferentQEMUDeviceFamily(t *testing.T) {
+	ctx := context.Background()
+	database, err := storesqlite.Open(ctx, "file:node-template-family?mode=memory&cache=shared")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer database.Close()
+	topology := storesqlite.NewTopologyRepository(database)
+	templates := storesqlite.NewTemplateRepository(database)
+	lab, _ := command.NewLaboratoryService(topology).Create(ctx, "family-lab", "", domain.RecoveryRemainStopped)
+	imagePath := filepath.Join(t.TempDir(), "vyos.qcow2")
+	if err = os.WriteFile(imagePath, []byte("qcow2-test"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	vyosImage := domain.ImageVersion{ID: domain.NewID(), RuntimeKind: domain.RuntimeQEMU, Name: "VyOS", Version: "rolling", Digest: "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", SourceType: "local_import", SourceReference: "vyos-rolling.qcow2", Format: "qcow2", Availability: domain.ImageAvailable, LicenseStatus: domain.LicenseReviewed, Validation: map[string]any{"path": imagePath}, CreatedAt: time.Now().UTC()}
+	ubuntuImage := domain.ImageVersion{ID: domain.NewID(), RuntimeKind: domain.RuntimeQEMU, Name: "Ubuntu", Version: "24.04", Digest: "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", SourceType: "local_import", SourceReference: "ubuntu-24.04.qcow2", Format: "qcow2", Availability: domain.ImageAvailable, LicenseStatus: domain.LicenseReviewed, Validation: map[string]any{"path": imagePath}, CreatedAt: time.Now().UTC()}
+	for _, image := range []domain.ImageVersion{vyosImage, ubuntuImage} {
+		if err = templates.CreateImage(ctx, image); err != nil {
+			t.Fatal(err)
+		}
+	}
+	versionID := domain.NewID()
+	if err = templates.UpsertTemplate(ctx, domain.DeviceTemplate{Key: "vyos", DisplayName: "VyOS", RuntimeKind: domain.RuntimeQEMU, Versions: []domain.TemplateVersion{{ID: versionID, Version: "rolling", ManifestVersion: 1, Defaults: domain.TemplateDefaults{CPUCount: 1, MemoryMiB: 1024, Interfaces: 1, InterfaceNameFormat: "eth%d"}, NICDrivers: []string{"virtio-net-pci"}, Enabled: true}}}); err != nil {
+		t.Fatal(err)
+	}
+	service := command.NewNodeService(topology, templates)
+	if _, _, err = service.CreateConfigured(ctx, lab.ID, command.CreateNodeRequest{Name: "wrong-image", TemplateVersionID: versionID, ImageVersionID: ubuntuImage.ID}); err == nil {
+		t.Fatal("cross-family image was accepted")
+	} else if problem, ok := err.(domain.Problem); !ok || problem.Code != "image_incompatible" {
+		t.Fatalf("cross-family image error=%#v", err)
+	}
+	if _, _, err = service.CreateConfigured(ctx, lab.ID, command.CreateNodeRequest{Name: "vyos", TemplateVersionID: versionID, ImageVersionID: vyosImage.ID}); err != nil {
+		t.Fatalf("compatible VyOS image rejected: %v", err)
+	}
+}
+
 func TestCreateQEMUNodeBuildsMACMatchedCloudInitNetworkConfig(t *testing.T) {
 	ctx := context.Background()
 	database, err := storesqlite.Open(ctx, "file:node-network-config?mode=memory&cache=shared")

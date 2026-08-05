@@ -119,6 +119,12 @@ func (s *TemplateService) List(ctx context.Context) ([]domain.DeviceTemplate, er
 	for templateIndex := range values {
 		for versionIndex := range values[templateIndex].Versions {
 			version := &values[templateIndex].Versions[versionIndex]
+			version.CompatibleImageVersionIDs = nil
+			for _, image := range images {
+				if domain.ImageCompatibleWithTemplate(image, values[templateIndex], *version) {
+					version.CompatibleImageVersionIDs = append(version.CompatibleImageVersionIDs, image.ID)
+				}
+			}
 			if version.ImageVersionID == "" {
 				version.ImageVersionID = recommendedImageID(version.RuntimeOptions, values[templateIndex].RuntimeKind, images)
 			}

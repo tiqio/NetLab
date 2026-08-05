@@ -164,6 +164,7 @@ export interface TemplateVersion {
   version: string;
   manifest_version: number;
   image_version_id?: string;
+  compatible_image_version_ids?: string[];
   defaults: {
     cpu_count: number;
     cpu_quota_micros?: number;

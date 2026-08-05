@@ -48,19 +48,20 @@ type TemplateDefaults struct {
 	InterfaceNameFormat string `json:"interface_name_format" yaml:"interface_name_format"`
 }
 type TemplateVersion struct {
-	ID              ID                 `json:"id" yaml:"-"`
-	TemplateID      ID                 `json:"template_id" yaml:"-"`
-	Version         string             `json:"version" yaml:"version"`
-	ManifestVersion int                `json:"manifest_version" yaml:"manifest_version"`
-	ImageVersionID  ID                 `json:"image_version_id,omitempty" yaml:"image_version_id,omitempty"`
-	Defaults        TemplateDefaults   `json:"defaults" yaml:"defaults"`
-	Capabilities    []string           `json:"capabilities" yaml:"capabilities"`
-	NICDrivers      []string           `json:"supported_nic_drivers" yaml:"nic_drivers"`
-	ConsoleModes    []string           `json:"console_modes" yaml:"console_modes"`
-	RuntimeOptions  map[string]any     `json:"runtime_options" yaml:"runtime_options"`
-	Enabled         bool               `json:"enabled" yaml:"enabled"`
-	Readiness       *TemplateReadiness `json:"readiness,omitempty" yaml:"-"`
-	CreatedAt       time.Time          `json:"created_at" yaml:"-"`
+	ID                        ID                 `json:"id" yaml:"-"`
+	TemplateID                ID                 `json:"template_id" yaml:"-"`
+	Version                   string             `json:"version" yaml:"version"`
+	ManifestVersion           int                `json:"manifest_version" yaml:"manifest_version"`
+	ImageVersionID            ID                 `json:"image_version_id,omitempty" yaml:"image_version_id,omitempty"`
+	CompatibleImageVersionIDs []ID               `json:"compatible_image_version_ids,omitempty" yaml:"-"`
+	Defaults                  TemplateDefaults   `json:"defaults" yaml:"defaults"`
+	Capabilities              []string           `json:"capabilities" yaml:"capabilities"`
+	NICDrivers                []string           `json:"supported_nic_drivers" yaml:"nic_drivers"`
+	ConsoleModes              []string           `json:"console_modes" yaml:"console_modes"`
+	RuntimeOptions            map[string]any     `json:"runtime_options" yaml:"runtime_options"`
+	Enabled                   bool               `json:"enabled" yaml:"enabled"`
+	Readiness                 *TemplateReadiness `json:"readiness,omitempty" yaml:"-"`
+	CreatedAt                 time.Time          `json:"created_at" yaml:"-"`
 }
 
 type TemplateReadiness struct {
@@ -129,6 +130,56 @@ func (i ImageVersion) CanStart() error {
 		return fmt.Errorf("sha256 digest required")
 	}
 	return nil
+}
+
+func ImageCompatibleWithTemplate(image ImageVersion, template DeviceTemplate, version TemplateVersion) bool {
+	if image.RuntimeKind != template.RuntimeKind {
+		return false
+	}
+	if version.ImageVersionID != "" {
+		return image.ID == version.ImageVersionID
+	}
+	templateFamily := imageFamily(template.Key + " " + template.DisplayName)
+	if templateFamily == "" {
+		if name, ok := version.RuntimeOptions["recommended_image_name"].(string); ok {
+			templateFamily = imageFamily(name)
+		}
+	}
+	return templateFamily != "" && templateFamily == imageFamily(image.Name+" "+image.SourceReference)
+}
+
+func imageFamily(value string) string {
+	normalized := strings.ToLower(value)
+	for _, replacement := range []string{"-", "_", "/", "\\", ".", ":"} {
+		normalized = strings.ReplaceAll(normalized, replacement, " ")
+	}
+	fields := strings.Fields(normalized)
+	has := func(candidate string) bool {
+		for _, field := range fields {
+			if field == candidate {
+				return true
+			}
+		}
+		return false
+	}
+	switch {
+	case has("ruijie") && has("router"):
+		return "ruijie-router"
+	case has("ruijie") && has("switch"):
+		return "ruijie-switch"
+	case has("fancywan"):
+		return "fancywan"
+	case has("fortigate") || has("fortinet") || has("fgt"):
+		return "fortigate"
+	case has("vyos"):
+		return "vyos"
+	case has("busybox"):
+		return "busybox"
+	case has("ubuntu"):
+		return "ubuntu"
+	default:
+		return ""
+	}
 }
 func (v TemplateVersion) HasCapability(capability string) bool {
 	for _, candidate := range v.Capabilities {
