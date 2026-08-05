@@ -11,9 +11,10 @@
 ## Milestone 1 — Shared Sheet
 
 - Commit SHA: pending
-- Focused tests: pending
-- Type check: pending
-- Lint/format: pending
+- Focused tests: PASS — `Sheet.test.ts` and `LaboratoryShell.test.ts`, 9 tests
+- Type check: PASS — `npm run build`
+- Lint/format: PASS for changed files; ESLint reported 14 warnings and 0 errors in focused files
+- Repository baseline note: full `npm run format:check` remains blocked by 7 pre-existing unrelated files; changed files pass focused Prettier check
 - Worktree clean after commit: pending
 
 ## Milestone 2 — Resource Drawer MVP

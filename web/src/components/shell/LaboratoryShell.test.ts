@@ -59,4 +59,39 @@ describe("LaboratoryShell", () => {
       "overflow-hidden",
     );
   });
+
+  it("opens the compact devices, inspector, and operations regions in sheets", async () => {
+    const previousWidth = window.innerWidth;
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 900,
+    });
+    const wrapper = mount(LaboratoryShell, {
+      attachTo: document.body,
+      props: { preferences: defaultWorkspacePreferences("lab") },
+      slots: {
+        toolbar: "toolbar",
+        palette: "palette content",
+        canvas: "canvas",
+        inspector: "inspector content",
+        bottom: "operations content",
+      },
+    });
+
+    wrapper.vm.openPalette();
+    await wrapper.vm.$nextTick();
+    expect(document.body.textContent).toContain("palette content");
+    await wrapper.get('[aria-label="展开或收起检查器"]').trigger("click");
+    expect(document.body.textContent).toContain("inspector content");
+    await wrapper
+      .get('[aria-label="Toggle operations drawer"]')
+      .trigger("click");
+    expect(document.body.textContent).toContain("operations content");
+
+    wrapper.unmount();
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: previousWidth,
+    });
+  });
 });

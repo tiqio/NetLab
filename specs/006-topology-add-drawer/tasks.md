@@ -29,11 +29,11 @@
 
 **⚠️ CRITICAL**: 本阶段完成前不得开始创建抽屉集成。
 
-- [ ] T003 [P] 为 right/left/bottom 布局、固定 header/footer、独立 body 滚动、Escape、遮罩关闭请求和关闭后焦点恢复编写失败测试于 `web/src/components/ui/sheet/Sheet.test.ts`
-- [ ] T004 扩展共享 Sheet 的描述、尺寸、header/body/footer、统一 close-request、焦点约束和向后兼容 props/slots 于 `web/src/components/ui/sheet/Sheet.vue`
-- [ ] T005 [P] 为紧凑视口 Devices、Inspector、Operations Sheet 的既有行为补充回归测试于 `web/src/components/shell/LaboratoryShell.test.ts`
-- [ ] T006 调整紧凑 Workspace 对增强 Sheet 的使用并保持原有 panel 行为于 `web/src/components/shell/LaboratoryShell.vue`
-- [ ] T007 运行 `Sheet.test.ts`、`LaboratoryShell.test.ts`、前端类型检查、lint 和格式检查，并把结果记录到 `specs/006-topology-add-drawer/validation.md`
+- [X] T003 [P] 为 right/left/bottom 布局、固定 header/footer、独立 body 滚动、Escape、遮罩关闭请求和关闭后焦点恢复编写失败测试于 `web/src/components/ui/sheet/Sheet.test.ts`
+- [X] T004 扩展共享 Sheet 的描述、尺寸、header/body/footer、统一 close-request、焦点约束和向后兼容 props/slots 于 `web/src/components/ui/sheet/Sheet.vue`
+- [X] T005 [P] 为紧凑视口 Devices、Inspector、Operations Sheet 的既有行为补充回归测试于 `web/src/components/shell/LaboratoryShell.test.ts`
+- [X] T006 调整紧凑 Workspace 对增强 Sheet 的使用并保持原有 panel 行为于 `web/src/components/shell/LaboratoryShell.vue`
+- [X] T007 运行 `Sheet.test.ts`、`LaboratoryShell.test.ts`、前端类型检查、lint 和格式检查，并把结果记录到 `specs/006-topology-add-drawer/validation.md`
 - [ ] T008 将 Phase 2 作为独立里程碑提交，确认提交后工作区干净并捕获提交 SHA，供 T020 写入 `specs/006-topology-add-drawer/validation.md`
 
 **Checkpoint**: 共享 Sheet 可以承载创建抽屉，原有工作区 Sheet 没有退化。
