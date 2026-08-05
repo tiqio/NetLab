@@ -11,11 +11,12 @@ import (
 )
 
 type scriptExecutor struct {
-	commands     []string
-	output       []byte
-	outputFor    func(string, ...string) []byte
-	failContains string
-	activeUnits  map[string]bool
+	commands      []string
+	output        []byte
+	outputFor     func(string, ...string) []byte
+	failContains  string
+	activeUnits   map[string]bool
+	unitExecStart map[string]string
 }
 
 func (e *scriptExecutor) Run(_ context.Context, name string, args ...string) error {
@@ -28,14 +29,20 @@ func (e *scriptExecutor) Run(_ context.Context, name string, args ...string) err
 		if e.activeUnits == nil {
 			e.activeUnits = map[string]bool{}
 		}
+		if e.unitExecStart == nil {
+			e.unitExecStart = map[string]string{}
+		}
 		for _, argument := range args {
 			if strings.HasPrefix(argument, "--unit=") {
-				e.activeUnits[strings.TrimPrefix(argument, "--unit=")] = true
+				unit := strings.TrimPrefix(argument, "--unit=")
+				e.activeUnits[unit] = true
+				e.unitExecStart[unit] = strings.Join(args, " ")
 			}
 		}
 	}
 	if name == "systemctl" && len(args) == 2 && args[0] == "stop" && e.activeUnits != nil {
 		delete(e.activeUnits, args[1])
+		delete(e.unitExecStart, args[1])
 	}
 	return nil
 }
@@ -47,12 +54,54 @@ func (e *scriptExecutor) Output(_ context.Context, name string, args ...string) 
 	}
 	if name == "systemctl" && len(args) > 0 && args[0] == "show" {
 		unit := args[len(args)-1]
+		property := ""
+		for _, argument := range args {
+			if strings.HasPrefix(argument, "--property=") {
+				property = strings.TrimPrefix(argument, "--property=")
+			}
+		}
+		if property == "LoadState" {
+			if e.activeUnits != nil && e.activeUnits[unit] {
+				return []byte("loaded\n"), nil
+			}
+			return []byte("not-found\n"), nil
+		}
+		if property == "ExecStart" {
+			return []byte(e.unitExecStart[unit] + "\n"), nil
+		}
 		if e.activeUnits != nil && e.activeUnits[unit] {
 			return []byte("active\n"), nil
 		}
 		return []byte("inactive\n"), nil
 	}
 	return e.output, nil
+}
+
+func TestPCReplacesDHCPHelperFromPreviousServiceMountNamespace(t *testing.T) {
+	ownerID := domain.ID("pc-stale-helper")
+	unit := pcDHCPUnit(ownerID, "eth0", "4")
+	executor := &scriptExecutor{
+		output:        []byte(`[{"addr_info":[{"family":"inet","scope":"global","dynamic":true}]}]`),
+		activeUnits:   map[string]bool{unit: true},
+		unitExecStart: map[string]string{unit: "nsenter --mount=/proc/111/ns/mnt -- ip netns exec stale"},
+	}
+	runtime, _ := NewPCRuntime(executor)
+	runtime.mountNamespacePID = 222
+	runtime.helperRoot = t.TempDir()
+	runtime.resolvRoot = t.TempDir()
+	object := domain.NetworkObject{ID: ownerID, Config: map[string]any{"interfaces": []any{map[string]any{"name": "eth0", "modes": []any{"dhcpv4"}}}}}
+	if err := runtime.Configure(context.Background(), object); err != nil {
+		t.Fatal(err)
+	}
+	commands := strings.Join(executor.commands, "\n")
+	stop := "systemctl stop " + unit
+	start := "systemd-run --quiet --no-block --collect --unit=" + unit
+	if !strings.Contains(commands, stop) || !strings.Contains(commands, start) || !strings.Contains(commands, "--mount=/proc/222/ns/mnt") {
+		t.Fatalf("stale helper was not replaced with current mount namespace:\n%s", commands)
+	}
+	if strings.Index(commands, stop) > strings.Index(commands, start) {
+		t.Fatalf("helper restarted before stale unit stopped:\n%s", commands)
+	}
 }
 
 func TestPCStaticDHCPv4DHCPv6SLAACRoutesAndDiagnostics(t *testing.T) {

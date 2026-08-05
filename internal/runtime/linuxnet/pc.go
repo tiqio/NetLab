@@ -235,8 +235,23 @@ func (r *PCRuntime) ensureDHCPHelper(ctx context.Context, namespace string, owne
 	if err != nil {
 		return fmt.Errorf("inspect DHCPv%s helper for %s: %w", family, interfaceName, err)
 	}
+	if active {
+		current, inspectErr := r.helperUsesCurrentMountNamespace(ctx, unit)
+		if inspectErr != nil {
+			return fmt.Errorf("inspect DHCPv%s helper generation for %s: %w", family, interfaceName, inspectErr)
+		}
+		if !current {
+			if err = r.stopLoadedDHCPHelper(ctx, unit); err != nil {
+				return fmt.Errorf("replace stale DHCPv%s helper for %s: %w", family, interfaceName, err)
+			}
+			active = false
+		}
+	}
 	started := false
 	if !active {
+		if err = r.stopLoadedDHCPHelper(ctx, unit); err != nil {
+			return fmt.Errorf("prepare DHCPv%s helper for %s: %w", family, interfaceName, err)
+		}
 		directory := r.pcHelperDirectory(ownerID)
 		if err = os.MkdirAll(directory, 0o755); err != nil {
 			return fmt.Errorf("create DHCP helper state: %w", err)
@@ -263,6 +278,37 @@ func (r *PCRuntime) ensureDHCPHelper(ctx context.Context, namespace string, owne
 		return err
 	}
 	return nil
+}
+
+func (r *PCRuntime) helperUsesCurrentMountNamespace(ctx context.Context, unit string) (bool, error) {
+	body, err := r.executor.Output(ctx, "systemctl", "show", "--property=ExecStart", "--value", unit)
+	if err != nil {
+		return false, err
+	}
+	expected := "--mount=/proc/" + fmt.Sprint(r.mountNamespacePID) + "/ns/mnt"
+	return strings.Contains(string(body), expected), nil
+}
+
+func (r *PCRuntime) stopLoadedDHCPHelper(ctx context.Context, unit string) error {
+	body, err := r.executor.Output(ctx, "systemctl", "show", "--property=LoadState", "--value", unit)
+	if err != nil || strings.TrimSpace(string(body)) == "not-found" {
+		return nil
+	}
+	if err = r.executor.Run(ctx, "systemctl", "stop", unit); err != nil {
+		return err
+	}
+	for attempt := 0; attempt < 20; attempt++ {
+		body, err = r.executor.Output(ctx, "systemctl", "show", "--property=LoadState", "--value", unit)
+		if err != nil || strings.TrimSpace(string(body)) == "not-found" {
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(50 * time.Millisecond):
+		}
+	}
+	return fmt.Errorf("transient unit %s remained loaded after stop", unit)
 }
 
 func (r *PCRuntime) helperActive(ctx context.Context, unit string) (bool, error) {
