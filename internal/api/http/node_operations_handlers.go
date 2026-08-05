@@ -30,6 +30,15 @@ type NodeOperationsHandlers struct {
 		Credentials(context.Context, string) (qemuRuntime.BootstrapCredentials, error)
 		PrepareNetworkConfig(context.Context, string, string) (*qemuRuntime.PreparedSeedUpdate, error)
 	}
+	nodeCredentials interface {
+		CredentialsForNode(context.Context, domain.Node) (qemuRuntime.BootstrapCredentials, error)
+	}
+}
+
+func (h *NodeOperationsHandlers) SetNodeCredentialReader(reader interface {
+	CredentialsForNode(context.Context, domain.Node) (qemuRuntime.BootstrapCredentials, error)
+}) {
+	h.nodeCredentials = reader
 }
 
 func NewNodeOperationsHandlers(interfaces *command.InterfaceService, guest *command.GuestCommandService, mappings *command.PortMappingService, nodes interface {
@@ -79,7 +88,7 @@ func (h *NodeOperationsHandlers) listMappings(c *gin.Context) {
 }
 
 func (h *NodeOperationsHandlers) getBootstrapCredentials(c *gin.Context) {
-	if h.nodes == nil || h.credentials == nil {
+	if h.nodes == nil || h.nodeCredentials == nil {
 		writeProblem(c, http.StatusConflict, domain.Problem{Code: "capability_unsupported", Message: "bootstrap credential reader unavailable"})
 		return
 	}
@@ -88,18 +97,12 @@ func (h *NodeOperationsHandlers) getBootstrapCredentials(c *gin.Context) {
 		handleError(c, err)
 		return
 	}
-	templateKey, _ := node.Config["template_key"].(string)
-	seedPath, _ := node.Config["seed_iso"].(string)
-	if !strings.Contains(strings.ToLower(templateKey), "ubuntu") || seedPath == "" {
-		writeProblem(c, http.StatusNotFound, domain.Problem{Code: "bootstrap_credentials_unavailable", Message: "this node has no recoverable Ubuntu cloud-init credentials", ResourceType: "node", ResourceID: node.ID})
-		return
-	}
-	credentials, err := h.credentials.Credentials(c, seedPath)
+	credentials, err := h.nodeCredentials.CredentialsForNode(c, node)
 	if err != nil {
 		writeProblem(c, http.StatusNotFound, domain.Problem{Code: "bootstrap_credentials_unavailable", Message: err.Error(), ResourceType: "node", ResourceID: node.ID})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"username": credentials.Username, "password": credentials.Password, "source": "cloud-init-seed"})
+	c.JSON(http.StatusOK, gin.H{"username": credentials.Username, "password": credentials.Password, "source": "managed-console-credentials"})
 }
 
 func (h *NodeOperationsHandlers) updateSettings(c *gin.Context) {

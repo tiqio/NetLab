@@ -118,6 +118,7 @@ func main() {
 	} else {
 		logger.Warn("cloud-init seed builder unavailable", "error", err)
 	}
+	consoleCredentials := consoleRuntime.NewCredentialStore(cfg.StateDir, seedManager)
 	linkCommands := command.NewLinkService(topologyRepository)
 	placementCommands := command.NewTopologyPlacementService(topologyRepository)
 	topologyTasks := command.NewTopologyTaskService(topologyRepository, taskRunner)
@@ -152,7 +153,7 @@ func main() {
 		logger.Warn("template readiness unavailable", "error", err)
 	}
 	nodeCommands.SetTemplateReadinessResolver(templateQueries)
-	httpapi.NewTemplateHandlers(templateQueries, templateRepository, imageRuntime.NewImporter(cfg.StateDir)).Register(server.Engine())
+	httpapi.NewTemplateHandlers(templateQueries, templateRepository, imageRuntime.NewImporter(cfg.StateDir), consoleCredentials).Register(server.Engine())
 	artifactService := artifact.NewService(repositories, cfg.StateDir)
 	taskQueries := query.NewTaskService(repositories, taskRunner)
 	exportService := command.NewExportService(topologyRepository, artifactService)
@@ -169,9 +170,10 @@ func main() {
 	consoleHandlers := stream.NewConsoleHandlers(filepath.Join(cfg.StateDir, "runtime", "qemu"), consoleLimits, topologyRepository)
 	var nodeAddressResolver *consoleRuntime.SSHBackend
 	if seedManager != nil {
-		nodeAddressResolver = consoleRuntime.NewSSHBackend(topologyRepository, seedManager)
+		nodeAddressResolver = consoleRuntime.NewSSHBackend(topologyRepository, consoleCredentials)
 		consoleHandlers.SetSSHConsole(nodeAddressResolver)
 	}
+	consoleHandlers.SetCredentialSource(consoleCredentials)
 	consoleHandlers.Register(server.Engine())
 	captureManager := reconcile.NewCaptureManager(cfg.StateDir, cfg.Captures.Concurrent, cfg.Captures.GlobalMaxBytes, cfg.Captures.Retention, artifactService)
 	captureManager.SetNetworkObjectRepository(repositories)
@@ -256,7 +258,9 @@ func main() {
 	} else {
 		topologyTasks.SetNodeDeletionCleanup(resourceManager, nil)
 	}
-	httpapi.NewNodeOperationsHandlers(interfaceCommands, guestCommands, portMappingCommands, topologyRepository, resourceManager, seedManager).Register(server.Engine())
+	nodeOperationHandlers := httpapi.NewNodeOperationsHandlers(interfaceCommands, guestCommands, portMappingCommands, topologyRepository, resourceManager, seedManager)
+	nodeOperationHandlers.SetNodeCredentialReader(consoleCredentials)
+	nodeOperationHandlers.Register(server.Engine())
 	if endpointRuntime, runtimeErr := linuxnet.NewEndpointRuntime(); runtimeErr == nil {
 		var dockerAdapter *dockerruntime.Adapter
 		if dockerAdapter, runtimeErr = dockerruntime.NewAdapter(); runtimeErr != nil {

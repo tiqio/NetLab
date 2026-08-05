@@ -102,6 +102,10 @@ export const generatedApi = {
   listImages: () => request<ImageVersion[]>("/images"),
   importImage: (body: Record<string, unknown>, idempotencyKey?: string) =>
     request<ImageVersion>("/images", "POST", { body, idempotencyKey }),
+  setImageConsoleCredentials: (
+    imageId: string,
+    body: { username: string; password: string },
+  ) => request<void>(`/images/${imageId}/console-credentials`, "PUT", { body }),
   listLabs: () => request<Laboratory[]>("/labs"),
   createLab: (
     body: Pick<Laboratory, "name"> & Partial<Laboratory>,

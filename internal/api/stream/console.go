@@ -18,6 +18,7 @@ import (
 	"github.com/netlab/netlab/internal/domain"
 	consoleRuntime "github.com/netlab/netlab/internal/runtime/console"
 	"github.com/netlab/netlab/internal/runtime/ownership"
+	qemuRuntime "github.com/netlab/netlab/internal/runtime/qemu"
 )
 
 type ConsoleNodeReader interface {
@@ -33,6 +34,9 @@ type ConsoleHandlers struct {
 	}
 	ssh interface {
 		OpenConsole(context.Context, domain.Node) (io.ReadWriteCloser, error)
+	}
+	credentials interface {
+		CredentialsForNode(context.Context, domain.Node) (qemuRuntime.BootstrapCredentials, error)
 	}
 	mu                 sync.RWMutex
 	active             map[string]ownership.Record
@@ -53,6 +57,12 @@ func (h *ConsoleHandlers) SetSSHConsole(runtime interface {
 	OpenConsole(context.Context, domain.Node) (io.ReadWriteCloser, error)
 }) {
 	h.ssh = runtime
+}
+
+func (h *ConsoleHandlers) SetCredentialSource(source interface {
+	CredentialsForNode(context.Context, domain.Node) (qemuRuntime.BootstrapCredentials, error)
+}) {
+	h.credentials = source
 }
 
 func NewConsoleHandlers(runtimeDir string, limits consoleRuntime.Limits, readers ...ConsoleNodeReader) *ConsoleHandlers {
@@ -350,7 +360,15 @@ func (h *ConsoleHandlers) openBackend(ctx context.Context, nodeID domain.ID, mod
 		return h.ssh.OpenConsole(ctx, node)
 	}
 	if node.Kind != "docker" {
-		return h.openSocket(string(nodeID), mode)
+		connection, openErr := h.openSocket(string(nodeID), mode)
+		if openErr != nil || mode != "telnet" || h.credentials == nil {
+			return connection, openErr
+		}
+		credentials, credentialErr := h.credentials.CredentialsForNode(ctx, node)
+		if credentialErr != nil {
+			return connection, nil
+		}
+		return consoleRuntime.WithAutoLogin(connection, credentials), nil
 	}
 	if h.docker == nil || mode != "telnet" {
 		return nil, fmt.Errorf("docker exec console is unavailable")

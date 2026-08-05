@@ -2,6 +2,7 @@ package console
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"strconv"
 	"testing"
@@ -19,8 +20,14 @@ func (sshAddressSourceStub) ListNodeNATLeasePaths(context.Context, domain.ID) ([
 
 type sshCredentialSourceStub struct{}
 
-func (sshCredentialSourceStub) Credentials(context.Context, string) (qemuRuntime.BootstrapCredentials, error) {
+func (sshCredentialSourceStub) CredentialsForNode(context.Context, domain.Node) (qemuRuntime.BootstrapCredentials, error) {
 	return qemuRuntime.BootstrapCredentials{Username: "ubuntu", Password: "temporary-password"}, nil
+}
+
+type missingSSHCredentialSourceStub struct{}
+
+func (missingSSHCredentialSourceStub) CredentialsForNode(context.Context, domain.Node) (qemuRuntime.BootstrapCredentials, error) {
+	return qemuRuntime.BootstrapCredentials{}, fmt.Errorf("credentials unavailable")
 }
 
 func TestAddressesFromLeaseMatchesCurrentNodeMAC(t *testing.T) {
@@ -43,10 +50,10 @@ func TestConfiguredAddressesUsesStaticInterfaceCIDRs(t *testing.T) {
 }
 
 func TestSSHAvailabilityRequiresCredentialsAndReachableEndpoint(t *testing.T) {
-	backend := NewSSHBackend(sshAddressSourceStub{}, sshCredentialSourceStub{})
+	backend := NewSSHBackend(sshAddressSourceStub{}, missingSSHCredentialSourceStub{})
 	node := domain.Node{ID: "node-1", ObservedState: domain.ObservedRunning, Config: map[string]any{"network_interfaces": []any{map[string]any{"addresses": []any{"127.0.0.1/32"}}}}}
 	if err := backend.Available(context.Background(), node); err == nil {
-		t.Fatal("SSH was advertised without bootstrap credentials")
+		t.Fatal("SSH was advertised without managed credentials")
 	}
 
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
@@ -54,8 +61,8 @@ func TestSSHAvailabilityRequiresCredentialsAndReachableEndpoint(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer listener.Close()
+	backend = NewSSHBackend(sshAddressSourceStub{}, sshCredentialSourceStub{})
 	backend.port = strconv.Itoa(listener.Addr().(*net.TCPAddr).Port)
-	node.Config["seed_iso"] = "/tmp/seed.iso"
 	if err = backend.Available(context.Background(), node); err != nil {
 		t.Fatalf("reachable SSH endpoint was not advertised: %v", err)
 	}

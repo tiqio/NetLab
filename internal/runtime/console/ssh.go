@@ -20,19 +20,19 @@ type SSHAddressSource interface {
 	ListNodeNATLeasePaths(context.Context, domain.ID) ([]string, error)
 }
 
-type SSHCredentialSource interface {
-	Credentials(context.Context, string) (qemuRuntime.BootstrapCredentials, error)
+type NodeCredentialSource interface {
+	CredentialsForNode(context.Context, domain.Node) (qemuRuntime.BootstrapCredentials, error)
 }
 
 type SSHBackend struct {
 	addresses    SSHAddressSource
-	credentials  SSHCredentialSource
+	credentials  NodeCredentialSource
 	timeout      time.Duration
 	probeTimeout time.Duration
 	port         string
 }
 
-func NewSSHBackend(addresses SSHAddressSource, credentials SSHCredentialSource) *SSHBackend {
+func NewSSHBackend(addresses SSHAddressSource, credentials NodeCredentialSource) *SSHBackend {
 	return &SSHBackend{addresses: addresses, credentials: credentials, timeout: 5 * time.Second, probeTimeout: 300 * time.Millisecond, port: "22"}
 }
 
@@ -43,11 +43,7 @@ func (b *SSHBackend) Available(ctx context.Context, node domain.Node) error {
 	if b.addresses == nil || b.credentials == nil {
 		return fmt.Errorf("SSH console resolver is unavailable")
 	}
-	seedPath, _ := node.Config["seed_iso"].(string)
-	if seedPath == "" {
-		return fmt.Errorf("SSH credentials are unavailable for this node")
-	}
-	if _, err := b.credentials.Credentials(ctx, seedPath); err != nil {
+	if _, err := b.credentials.CredentialsForNode(ctx, node); err != nil {
 		return fmt.Errorf("resolve SSH credentials: %w", err)
 	}
 	addresses, err := b.ResolveAddresses(ctx, node)
@@ -72,11 +68,7 @@ func (b *SSHBackend) OpenConsole(ctx context.Context, node domain.Node) (io.Read
 	if b.addresses == nil || b.credentials == nil {
 		return nil, fmt.Errorf("SSH console resolver is unavailable")
 	}
-	seedPath, _ := node.Config["seed_iso"].(string)
-	if seedPath == "" {
-		return nil, fmt.Errorf("SSH credentials are unavailable for this node")
-	}
-	credentials, err := b.credentials.Credentials(ctx, seedPath)
+	credentials, err := b.credentials.CredentialsForNode(ctx, node)
 	if err != nil {
 		return nil, fmt.Errorf("resolve SSH credentials: %w", err)
 	}

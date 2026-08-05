@@ -9,6 +9,8 @@ const version = ref("");
 const runtime = ref<"qemu" | "docker">("qemu");
 const source = ref("");
 const license = ref("");
+const consoleUsername = ref("");
+const consolePassword = ref("");
 const status = ref("");
 async function submit() {
   try {
@@ -18,6 +20,10 @@ async function submit() {
       runtime_kind: runtime.value,
       source_reference: source.value,
       license_notes: license.value,
+      console_username: consoleUsername.value || undefined,
+      console_password: consoleUsername.value
+        ? consolePassword.value
+        : undefined,
     });
     status.value = `Imported ${value.name}:${value.version}`;
     emit("imported", value);
@@ -53,6 +59,24 @@ async function submit() {
       ><FormField label="License notes">
         <Input v-model="license" required />
       </FormField>
+      <div class="grid grid-cols-2 gap-2">
+        <FormField
+          label="Console username"
+          hint="Optional; enables serial auto-login."
+        >
+          <Input v-model="consoleUsername" autocomplete="off" />
+        </FormField>
+        <FormField
+          label="Console password"
+          hint="Stored only on the NetLab host."
+        >
+          <Input
+            v-model="consolePassword"
+            type="password"
+            autocomplete="new-password"
+          />
+        </FormField>
+      </div>
       <p role="status" class="text-xs text-muted-foreground">
         {{ status }}
       </p>
