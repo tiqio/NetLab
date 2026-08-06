@@ -1,6 +1,8 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
 export async function assertKeyboardReachable(page: Page, locator: Locator) {
+  await expect(locator).toBeVisible();
+  await expect(locator).toBeEnabled();
   await locator.focus();
   await expect(locator).toBeFocused();
   await expect(locator).toBeInViewport();
