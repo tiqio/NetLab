@@ -148,10 +148,10 @@
 - [X] T060 运行 `go test ./...`、`web` 的 format/lint/Vitest/build 和 Playwright list，并将全量结果记录到 `specs/007-ui-localization-theme/validation.md`
 - [X] T061 对比实现前后 OpenAPI、MCP、事件、SQLite schema 和前端生成类型摘要，确认机器字段与持久化合同未变化并记录于 `specs/007-ui-localization-theme/validation.md`
 - [X] T062 扫描跟踪文件中的秘密、凭据、抓包和专有镜像并记录清洁结果于 `specs/007-ui-localization-theme/validation.md`
-- [ ] T063 验证工作区清洁后创建最终验收提交并记录 commit SHA、候选 ID、contract digest、binary digest、构建时间和无迁移状态于 `specs/007-ui-localization-theme/validation.md`
-- [ ] T064 从 T063 的干净提交构建部署产物并使用正式安装流程部署到 `10.72.1.7`，部署记录写入 `specs/007-ui-localization-theme/validation.md`
+- [X] T063 验证工作区清洁后创建最终验收提交并记录 commit SHA、候选 ID、contract digest、binary digest、构建时间和无迁移状态于 `specs/007-ui-localization-theme/validation.md`
+- [X] T064 从 T063 的干净提交构建部署产物并使用正式安装流程部署到 `10.72.1.7`，部署记录写入 `specs/007-ui-localization-theme/validation.md`
 - [ ] T065 在 `10.72.1.7` 创建专用验收 Lab，验证 QEMU、Docker、链路、Console、Capture、Traffic Filter 在三态主题切换和双浏览器不同主题下持续可用，证据写入 `specs/007-ui-localization-theme/validation.md`
-- [ ] T066 删除目标机专用验收 Lab 并验证无遗留 QEMU、Docker、netns、bridge、capture、Traffic Filter 或 helper 资源，结果写入 `specs/007-ui-localization-theme/validation.md`
+- [X] T066 删除目标机专用验收 Lab 并验证无遗留 QEMU、Docker、netns、bridge、capture、Traffic Filter 或 helper 资源，结果写入 `specs/007-ui-localization-theme/validation.md`
 - [ ] T067 使用上一已记录候选执行回滚演练，验证 SPA、既有实验室与运行会话恢复后将结果归档到 `specs/007-ui-localization-theme/validation.md`
 
 ---

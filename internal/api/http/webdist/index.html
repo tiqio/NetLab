@@ -10,14 +10,21 @@
           const stored = localStorage.getItem("netlab.appearance.v1");
           if (["system", "light", "dark"].includes(stored)) preference = stored;
         } catch {}
-        const systemLight = matchMedia?.("(prefers-color-scheme: light)").matches;
-        const resolved = preference === "system" ? (systemLight ? "light" : "dark") : preference;
+        const systemLight = matchMedia?.(
+          "(prefers-color-scheme: light)",
+        ).matches;
+        const resolved =
+          preference === "system"
+            ? systemLight
+              ? "light"
+              : "dark"
+            : preference;
         document.documentElement.dataset.theme = resolved;
         document.documentElement.style.colorScheme = resolved;
       })();
     </script>
     <title>NetLab</title>
-    <script type="module" crossorigin src="/assets/index-C0RVoYQq.js"></script>
+    <script type="module" crossorigin src="/assets/index-BY5DuRA0.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-BXrBh3Aw.css">
   </head>
   <body>
