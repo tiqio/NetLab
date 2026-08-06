@@ -6,7 +6,7 @@
 | Shared visual foundation | `12f1237` | 53 component tests; 9 acceptance fixture tests; build; localization scan; frontend acceptance contract | passed | n/a |
 | Topology clarity | `cee0087` | 27 geometry/canvas/link/traffic component tests; frontend build; localization scan; Playwright at 1024×768, 1366×768 and 1920×1080 | passed | local disposable acceptance |
 | Inspector and workspaces | `1a394a8` | 40 inspector/chart/menu/workspace tests; 15 axe/focus tests; localization scan; build; three-viewport diagnostics journey | passed | local disposable acceptance |
-| Full Chinese UI | pending | localization scan, terminology, error branches, journeys | pending | n/a |
+| Full Chinese UI | `256dd7d` | 49 focused component/locales tests; strengthened interpolation scan; frontend build; six three-viewport localization journeys | passed | local disposable acceptance |
 | Responsive and theme stability | pending | dual theme, three viewports, 125%, repeated transitions | pending | n/a |
 | Continuous audit | pending | scenario inventory, evidence schema, redaction, injected failures | pending | n/a |
 | Target acceptance | pending | clean candidate, deployment, high-density Lab, cleanup | pending | pending |

@@ -133,7 +133,7 @@
 - [X] T056 [US3] 在 `web/src/components/common/StructuredProblem.vue` 和 `web/src/locales/statusMessages.ts` 实现中文摘要、处理建议和可展开原始详情
 - [X] T057 [US3] 更新终端、抓包、任务、拓扑和流量过滤页面对象以使用中文可访问名称 `tests/e2e/pages/ConsolePage.ts`、`tests/e2e/pages/CapturePage.ts`、`tests/e2e/pages/TaskCenterPage.ts`、`tests/e2e/pages/TopologyPage.ts`、`tests/e2e/pages/TrafficFilterPage.ts`
 - [X] T058 [US3] 运行中文扫描、US3 组件测试和浏览器验收，并把结果记录到 `specs/008-ui-overlap-remediation/validation/milestones.md`
-- [ ] T059 [US3] 创建全页面中文化里程碑的聚焦 Git 提交，并把提交 SHA 写入 `specs/008-ui-overlap-remediation/validation/milestones.md`
+- [X] T059 [US3] 创建全页面中文化里程碑的聚焦 Git 提交，并把提交 SHA 写入 `specs/008-ui-overlap-remediation/validation/milestones.md`
 
 **Checkpoint**: US3 可独立证明产品文案全中文、技术名词准确保留且错误可操作。
 
