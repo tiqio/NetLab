@@ -6,6 +6,7 @@ import {
   networkObjectLinkDisplayName,
   parallelLinkCurveness,
   parallelNetworkObjectLinkCurveness,
+  trafficObservationMatchesLink,
 } from "./linkPresentation";
 
 describe("link presentation", () => {
@@ -106,5 +107,22 @@ describe("link presentation", () => {
     expect(parallelNetworkObjectLinkCurveness(links[0], links)).not.toBe(
       parallelNetworkObjectLinkCurveness(links[1], links),
     );
+  });
+
+  it("matches traffic only to the exact parallel link identity", () => {
+    const observation = {
+      fingerprint: "icmp",
+      resource_type: "link" as const,
+      resource_id: "link-a",
+      interface_id: "if-a0",
+      link_id: "link-a",
+      direction: "a_to_b",
+      first_seen: "2026-08-06T00:00:00Z",
+      last_seen: "2026-08-06T00:00:00.100Z",
+      count: 1,
+      bytes: 64,
+    };
+    expect(trafficObservationMatchesLink(observation, "link-a")).toBe(true);
+    expect(trafficObservationMatchesLink(observation, "link-b")).toBe(false);
   });
 });

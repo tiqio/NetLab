@@ -469,7 +469,7 @@ async function submit() {
             )))
       ) {
         staleMessage.value =
-          "The selected template or image changed on the server. Your other values are preserved; choose an available version and retry.";
+          "服务器上的模板或镜像已发生变化。其他输入已保留，请选择可用版本后重试。";
         return;
       }
       const create = buildResourceCreateRequest(
@@ -900,7 +900,7 @@ async function submit() {
               variant="secondary"
               @click="cloudPassword = generateInitialPassword()"
             >
-              Regenerate
+              重新生成
             </Button>
           </div>
           <FormField label="初始用户名" :error="fieldErrors.cloudUsername">

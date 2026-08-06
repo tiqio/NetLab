@@ -149,6 +149,62 @@ describe("TopologyCanvas", () => {
     expect(wrapper.emitted("connector")?.[0]).toEqual(["node-1"]);
   });
 
+  it("keeps port tracks stable through selection and viewport changes", async () => {
+    const wrapper = mount(TopologyCanvas, {
+      props: {
+        nodes: [nodeFactory()],
+        interfaces: Array.from({ length: 8 }, (_, index) => ({
+          id: `if-${index}`,
+          node_id: "node-1",
+          slot: index,
+          name: `eth${index}`,
+          driver: "virtio-net-pci",
+          mac_address: `02:00:00:00:00:${String(index).padStart(2, "0")}`,
+          operational_state: "up",
+          revision: 1,
+        })),
+        links: [],
+        networkObjects: [],
+        preferences: defaultWorkspacePreferences("lab"),
+        selectedIds: ["node-1"],
+      },
+    });
+    await nextTick();
+    const coordinates = () =>
+      wrapper.findAll("[data-interface-id]").map((port) => ({
+        id: port.attributes("data-interface-id"),
+        x: port.attributes("data-port-x"),
+        y: port.attributes("data-port-y"),
+        side: port.attributes("data-port-side"),
+      }));
+    const initial = coordinates();
+    expect(new Set(initial.map((port) => `${port.x}:${port.y}`)).size).toBe(8);
+    await wrapper.setProps({
+      preferences: {
+        ...defaultWorkspacePreferences("lab"),
+        viewport: { centerX: 5, centerY: 4, zoom: 2 },
+      },
+    });
+    await nextTick();
+    expect(coordinates()).toEqual(initial);
+    expect(wrapper.findAll("[data-port-hit-area]")).toHaveLength(8);
+  });
+
+  it("does not animate traffic particles when reduced motion is enabled", async () => {
+    const preferences = defaultWorkspacePreferences("lab");
+    preferences.reducedMotion = true;
+    const wrapper = mount(TopologyCanvas, {
+      props: {
+        nodes: [nodeFactory()],
+        interfaces: [],
+        links: [],
+        networkObjects: [],
+        preferences,
+      },
+    });
+    expect(wrapper.attributes("data-reduced-motion")).toBe("true");
+  });
+
   it("renders parallel object links with distinct readable routes", () => {
     const wrapper = mount(TopologyCanvas, {
       props: {

@@ -5,6 +5,17 @@ export const MIN_ZOOM = 0.1;
 export const MAX_ZOOM = 8;
 export const DEFAULT_DRAG_THRESHOLD = 5;
 
+export type PortTrackSide = "top" | "right" | "bottom" | "left";
+
+export interface PortTrackPosition extends Point {
+  side: PortTrackSide;
+  labelX: number;
+  labelY: number;
+  textAnchor: "start" | "middle" | "end";
+}
+
+const PORT_SIDE_ORDER: PortTrackSide[] = ["right", "bottom", "left", "top"];
+
 export function clamp(value: number, minimum: number, maximum: number) {
   return Math.min(maximum, Math.max(minimum, value));
 }
@@ -114,4 +125,74 @@ export function quadraticRoute(
     { x: midpoint.x + normal.x * offset, y: midpoint.y + normal.y * offset },
     target,
   ];
+}
+
+export function deterministicPortTrack(
+  count: number,
+  center: Point = { x: 0, y: 0 },
+  horizontalRadius = 48,
+  verticalRadius = 40,
+): PortTrackPosition[] {
+  const portCount = Math.max(0, Math.floor(count));
+  if (!portCount) return [];
+
+  const sideCounts = [0, 0, 0, 0];
+  for (let index = 0; index < portCount; index += 1)
+    sideCounts[index % PORT_SIDE_ORDER.length] += 1;
+
+  const sideIndexes = [0, 0, 0, 0];
+  return Array.from({ length: portCount }, (_, index) => {
+    const sideIndex = index % PORT_SIDE_ORDER.length;
+    const side = PORT_SIDE_ORDER[sideIndex];
+    const slot = sideIndexes[sideIndex]++;
+    const slots = sideCounts[sideIndex];
+    const ratio = slots === 1 ? 0 : (slot + 1) / (slots + 1) - 0.5;
+    const xOffset = ratio * horizontalRadius * 1.35;
+    const yOffset = ratio * verticalRadius * 1.35;
+
+    if (side === "right")
+      return {
+        x: center.x + horizontalRadius,
+        y: center.y + yOffset,
+        side,
+        labelX: center.x + horizontalRadius + 11,
+        labelY: center.y + yOffset + 3,
+        textAnchor: "start",
+      };
+    if (side === "left")
+      return {
+        x: center.x - horizontalRadius,
+        y: center.y + yOffset,
+        side,
+        labelX: center.x - horizontalRadius - 11,
+        labelY: center.y + yOffset + 3,
+        textAnchor: "end",
+      };
+    if (side === "bottom")
+      return {
+        x: center.x + xOffset,
+        y: center.y + verticalRadius,
+        side,
+        labelX: center.x + xOffset,
+        labelY: center.y + verticalRadius + 15,
+        textAnchor: "middle",
+      };
+    return {
+      x: center.x + xOffset,
+      y: center.y - verticalRadius,
+      side,
+      labelX: center.x + xOffset,
+      labelY: center.y - verticalRadius - 10,
+      textAnchor: "middle",
+    };
+  });
+}
+
+export function topologyLabelPriority(
+  zoom: number,
+  density: "comfortable" | "compact" | "minimal",
+) {
+  if (density === "minimal" || zoom < 0.55) return "identity";
+  if (density === "compact" || zoom < 0.9) return "identity-state";
+  return "full";
 }

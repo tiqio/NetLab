@@ -147,23 +147,17 @@ test("local topology symbols and labels identify every lightweight kind", async 
   }
   const summary = page.getByTestId("topology-a11y-summary");
   for (const label of [
-    "PC endpoint",
-    "Layer 2 bridge",
-    "NAT bridge",
-    "Layer 2 switch",
-    "Layer 3 switch",
+    "PC 端点",
+    "二层网桥",
+    "NAT 网桥",
+    "二层交换机",
+    "三层交换机",
   ]) {
     await expect(summary).toContainText(label);
   }
-  await page
-    .getByRole("button", { name: "Cycle topology label density" })
-    .click();
-  await page
-    .getByRole("button", { name: "Cycle topology label density" })
-    .click();
-  await expect(
-    page.getByRole("img", { name: /Topology canvas/ }),
-  ).toBeVisible();
+  await page.getByRole("button", { name: "切换拓扑标签密度" }).click();
+  await page.getByRole("button", { name: "切换拓扑标签密度" }).click();
+  await expect(page.getByRole("img", { name: /拓扑画布/ })).toBeVisible();
   interactionResults.push(
     result(
       "topology.canvas.keyboard",
@@ -181,18 +175,18 @@ test("browser recognizes dense QEMU and Docker lifecycle labels and hovered port
 }, testInfo) => {
   await installVisualSnapshot(page);
   await page.goto("/");
-  const canvas = page.getByLabel(/Topology canvas keyboard area/);
+  const canvas = page.getByLabel(/拓扑画布键盘操作区/);
   await expect(canvas).toHaveAttribute("data-dense-topology", "true");
   await expect(canvas).toHaveAttribute("data-label-density", "compact");
   const summary = page.getByTestId("topology-a11y-summary");
   await expect(summary).toContainText(
-    "QEMU router: QEMU virtual machine · Desired Running · Actual Stopped",
+    "QEMU router: QEMU 虚拟机 · 期望 运行中 · 实际 已停止",
   );
   await expect(summary).toContainText(
-    "Docker host: Docker container · Desired Stopped · Actual Running",
+    "Docker host: Docker 容器 · 期望 已停止 · 实际 运行中",
   );
 
-  const chart = page.getByRole("img", { name: /Topology canvas/ });
+  const chart = page.getByRole("img", { name: /拓扑画布/ });
   const box = await chart.boundingBox();
   if (!box) throw new Error("topology canvas has no bounding box");
   const hoverDetails = page.getByTestId("topology-hover-details");
@@ -207,7 +201,7 @@ test("browser recognizes dense QEMU and Docker lifecycle labels and hovered port
     }
   }
   expect(hovered).toBe(true);
-  await expect(hoverDetails).toContainText(/available|connected/);
+  await expect(hoverDetails).toContainText(/可用|已连接/);
 
   interactionResults.push(
     result(

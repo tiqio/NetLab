@@ -4,7 +4,23 @@ import type {
   NetworkObjectLink,
   Node,
   NodeInterface,
+  TrafficObservation,
 } from "@/api";
+
+export function trafficObservationLinkId(observation: TrafficObservation) {
+  if (observation.network_object_link_id)
+    return observation.network_object_link_id;
+  if (observation.resource_type === "network_object_link")
+    return observation.resource_id;
+  return observation.link_id || "";
+}
+
+export function trafficObservationMatchesLink(
+  observation: TrafficObservation,
+  linkId: string,
+) {
+  return trafficObservationLinkId(observation) === linkId;
+}
 
 export function linkEndpointName(
   interfaceId: string,

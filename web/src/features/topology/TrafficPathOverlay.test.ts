@@ -23,8 +23,16 @@ describe("TrafficPathOverlay", () => {
         ],
       },
     });
-    expect(wrapper.text()).toContain("object-link-a · a_to_b");
+    expect(wrapper.text()).toContain("object-link-a · A 到 B");
     expect(wrapper.text()).toContain("2 个数据包");
     expect(wrapper.text()).toContain("无法唯一确定数据包路径");
+  });
+
+  it("keeps the observation summary static for reduced-motion users", () => {
+    const wrapper = mount(TrafficPathOverlay, {
+      props: { observations: [] },
+    });
+    expect(wrapper.find("aside").attributes("aria-live")).toBe("polite");
+    expect(wrapper.find("[style*='animation']").exists()).toBe(false);
   });
 });

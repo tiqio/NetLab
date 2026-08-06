@@ -7,6 +7,8 @@ import {
   screenToWorld,
   worldToScreen,
   zoomAroundPoint,
+  deterministicPortTrack,
+  topologyLabelPriority,
 } from "./topologyGeometry";
 
 describe("topology geometry", () => {
@@ -46,6 +48,45 @@ describe("topology geometry", () => {
         route.flatMap((point) => [point.x, point.y]).every(Number.isFinite),
       ).toBe(true);
     }
+  });
+});
+
+describe("deterministicPortTrack", () => {
+  it.each([1, 2, 4, 8, 16])(
+    "lays out %i ports on stable non-overlapping tracks",
+    (count) => {
+      const first = deterministicPortTrack(count, { x: 100, y: 80 });
+      const second = deterministicPortTrack(count, { x: 100, y: 80 });
+      expect(second).toEqual(first);
+      expect(first).toHaveLength(count);
+      expect(new Set(first.map((port) => `${port.x}:${port.y}`)).size).toBe(
+        count,
+      );
+      for (const port of first) {
+        expect(
+          Math.hypot(port.labelX - port.x, port.labelY - port.y),
+        ).toBeGreaterThanOrEqual(10);
+        if (port.side === "left") expect(port.textAnchor).toBe("end");
+        if (port.side === "right") expect(port.textAnchor).toBe("start");
+      }
+    },
+  );
+
+  it("preserves internal coordinates when the owner moves", () => {
+    const original = deterministicPortTrack(8, { x: 100, y: 80 });
+    const moved = deterministicPortTrack(8, { x: 145, y: 110 });
+    moved.forEach((port, index) => {
+      expect(port.x - original[index].x).toBeCloseTo(45);
+      expect(port.y - original[index].y).toBeCloseTo(30);
+    });
+  });
+});
+
+describe("topologyLabelPriority", () => {
+  it("reduces secondary labels before hiding identity", () => {
+    expect(topologyLabelPriority(1, "comfortable")).toBe("full");
+    expect(topologyLabelPriority(0.7, "comfortable")).toBe("identity-state");
+    expect(topologyLabelPriority(0.4, "comfortable")).toBe("identity");
   });
 });
 

@@ -21,10 +21,16 @@ import type {
 import {
   networkObjectLinkDisplayName,
   parallelNetworkObjectLinkCurveness,
+  trafficObservationLinkId,
 } from "./linkPresentation";
 import type { WorkspacePreferences } from "@/types/workspace";
 import { resolvePlacements } from "./topologyLayout";
-import { screenToWorld } from "./topologyGeometry";
+import {
+  deterministicPortTrack,
+  screenToWorld,
+  topologyLabelPriority,
+  type PortTrackSide,
+} from "./topologyGeometry";
 import {
   TopologyInteractionController,
   type InteractionAction,
@@ -134,6 +140,10 @@ const portOverlays = ref<
     name: string;
     x: number;
     y: number;
+    labelX: number;
+    labelY: number;
+    textAnchor: "start" | "middle" | "end";
+    side: PortTrackSide;
     available: boolean;
     source: boolean;
     emphasized: boolean;
@@ -218,6 +228,12 @@ const effectiveLabelDensity = computed(() =>
     ? "compact"
     : props.preferences.labelDensity,
 );
+const effectiveLabelPriority = computed(() =>
+  topologyLabelPriority(
+    props.preferences.viewport.zoom,
+    effectiveLabelDensity.value,
+  ),
+);
 const selectedConnectorNode = computed(() => {
   if ((props.selectedIds || []).length !== 1) return undefined;
   return props.nodes.find((node) => node.id === props.selectedIds?.[0]);
@@ -278,8 +294,8 @@ function resourceLabel(
     false,
     desiredState,
   );
-  if (effectiveLabelDensity.value === "minimal") return name;
-  if (effectiveLabelDensity.value === "compact")
+  if (effectiveLabelPriority.value === "identity") return name;
+  if (effectiveLabelPriority.value === "identity-state")
     return `${name}\n${semantic.stateLabel}`;
   return `${name}\n${semantic.kindLabel} · ${semantic.stateLabel}`;
 }
@@ -378,11 +394,7 @@ function aggregateTrafficLinks(observations: TrafficObservation[]) {
     }
   >();
   for (const observation of observations) {
-    const resourceId =
-      observation.network_object_link_id ||
-      (observation.resource_type === "network_object_link"
-        ? observation.resource_id
-        : observation.link_id);
+    const resourceId = trafficObservationLinkId(observation);
     if (!resourceId) continue;
     const objectLink = props.networkObjectLinks.find(
       (item) => item.id === resourceId,
@@ -796,7 +808,7 @@ const option = computed(() => ({
               curveness: routeCurveness(link),
             },
             tooltip: {
-              formatter: `${endpointA} ↔ ${endpointB}<br/>${link.observed_state}${hit ? `<br/>${hit.count} packets · ${hit.bytes} bytes · ${trafficMode}${hit.initiatorSource && hit.initiatorTarget ? `<br/>initiated ${hit.initiatorSource} → ${hit.initiatorTarget}` : ""}` : ""}`,
+              formatter: `${endpointA} ↔ ${endpointB}<br/>${link.observed_state}${hit ? `<br/>${hit.count} 个数据包 · ${hit.bytes} 字节 · ${trafficMode}${hit.initiatorSource && hit.initiatorTarget ? `<br/>发起方向 ${hit.initiatorSource} → ${hit.initiatorTarget}` : ""}` : ""}`,
             },
           };
         }),
@@ -843,7 +855,7 @@ const option = computed(() => ({
                 shadowBlur: trafficHit || attachmentSelected ? 7 : 0,
               },
               tooltip: {
-                formatter: `${node.name}:${attachedInterface.name} ↔ ${networkObject.name}:${attachment.port_name || "port"}<br/>Network attachment · ${attachment.observed_state}<br/>Click to select for Capture or Traffic Filter`,
+                formatter: `${node.name}:${attachedInterface.name} ↔ ${networkObject.name}:${attachment.port_name || "端口"}<br/>网络接入 · ${attachment.observed_state}<br/>点击后可用于抓包或流量过滤`,
               },
             },
           ];
@@ -1003,15 +1015,15 @@ function refreshOverlays() {
     const ownerPixel = chart.value?.graphItemPixel?.(node.id);
     if (!ownerPixel) continue;
     const values = interfacesByOwner.value[node.id] || [];
+    const tracks = deterministicPortTrack(values.length, ownerPixel);
     values.forEach((item, index) => {
-      const angle = (Math.PI * 2 * index) / Math.max(values.length, 1);
+      const track = tracks[index];
       const available = !item.desired_link_id;
       nextPorts.push({
         id: item.id,
         ownerId: node.id,
         name: item.name,
-        x: ownerPixel.x + Math.cos(angle) * 42,
-        y: ownerPixel.y + Math.sin(angle) * 42,
+        ...track,
         available,
         source: item.id === props.connectionSourceInterfaceId,
         emphasized: Boolean(
@@ -1030,16 +1042,16 @@ function refreshOverlays() {
     const ownerPixel = chart.value?.graphItemPixel?.(object.id);
     if (!ownerPixel) continue;
     const values = networkObjectPorts(object);
+    const tracks = deterministicPortTrack(values.length, ownerPixel);
     values.forEach((name, index) => {
       const id = objectPortId(object.id, name);
-      const angle = (Math.PI * 2 * index) / Math.max(values.length, 1);
+      const track = tracks[index];
       const available = !occupiedObjectPorts.value.has(id);
       nextPorts.push({
         id,
         ownerId: object.id,
         name,
-        x: ownerPixel.x + Math.cos(angle) * 42,
-        y: ownerPixel.y + Math.sin(angle) * 42,
+        ...track,
         available,
         source: id === props.connectionSourceObjectPortId,
         emphasized: Boolean(
@@ -1059,7 +1071,7 @@ function refreshOverlays() {
   ) {
     const pixel = chart.value?.graphItemPixel?.(selectedConnectorNode.value.id);
     connectorOverlay.value = pixel
-      ? { ownerId: selectedConnectorNode.value.id, x: pixel.x + 58, y: pixel.y }
+      ? { ownerId: selectedConnectorNode.value.id, x: pixel.x + 72, y: pixel.y }
       : undefined;
   } else connectorOverlay.value = undefined;
   const trafficPaths: typeof trafficPathOverlays.value = [];
@@ -1474,6 +1486,7 @@ defineExpose({
     :data-pan-enabled="panEnabled"
     :data-dense-topology="denseTopology"
     :data-label-density="effectiveLabelDensity"
+    :data-reduced-motion="preferences.reducedMotion"
     :data-traffic-active="trafficActive"
     :data-traffic-observations="traffic.length"
     :data-traffic-recent="recentTraffic.length"
@@ -1526,7 +1539,7 @@ defineExpose({
       <g
         v-if="trafficActive"
         data-traffic-path-overlay
-        class="traffic-path-overlay"
+        class="pointer-events-none traffic-path-overlay"
         :style="{ '--traffic-color': trafficColor }"
       >
         <g
@@ -1538,7 +1551,7 @@ defineExpose({
           :data-traffic-source="path.sourceId"
           :data-traffic-target="path.targetId"
         >
-          <title>{{ path.count }} packets · {{ path.bytes }} bytes</title>
+          <title>{{ path.count }} 个数据包 · {{ path.bytes }} 字节</title>
           <path class="traffic-flow-glow" :d="path.pathData" />
           <path class="traffic-flow-trace" :d="path.pathData" />
           <path
@@ -1595,6 +1608,9 @@ defineExpose({
         :key="port.id"
         class="pointer-events-auto cursor-crosshair"
         :data-interface-id="port.id"
+        :data-port-side="port.side"
+        :data-port-x="port.x"
+        :data-port-y="port.y"
         role="button"
         :aria-label="`${port.name}，${port.available ? '可用' : '已连接'}，${port.state}`"
         tabindex="0"
@@ -1635,9 +1651,19 @@ defineExpose({
           "
           :stroke-width="port.emphasized || port.source ? 3 : 2"
         />
+        <circle
+          :cx="port.x"
+          :cy="port.y"
+          r="13"
+          fill="transparent"
+          stroke="transparent"
+          data-port-hit-area
+        />
         <text
-          :x="port.x + 10"
-          :y="port.y + 3"
+          class="pointer-events-none select-none topology-port-label"
+          :x="port.labelX"
+          :y="port.labelY"
+          :text-anchor="port.textAnchor"
           fill="var(--topology-label)"
           font-size="9"
         >
@@ -1690,10 +1716,9 @@ defineExpose({
     </p>
     <p class="sr-only" aria-live="polite" data-testid="topology-hover-details">
       <template v-if="hoveredNode">
-        {{ hoveredNode.name }} ports:
+        {{ hoveredNode.name }} 接口：
         <template v-for="item in hoveredPorts" :key="`hover:${item.id}`">
-          {{ item.name }},
-          {{ item.desired_link_id ? "connected" : "available" }},
+          {{ item.name }}, {{ item.desired_link_id ? "已连接" : "可用" }},
           {{ item.operational_state }};
         </template>
       </template>
@@ -1738,7 +1763,7 @@ defineExpose({
       >
         <h2 class="font-medium">实验室为空</h2>
         <p class="mt-1 text-xs text-muted-foreground">
-          Choose a device from the left palette to begin.
+          请从左侧设备面板选择设备并添加到拓扑。
         </p>
       </div>
     </div>
@@ -1783,7 +1808,7 @@ defineExpose({
   stroke-dasharray: 2 15;
   filter: drop-shadow(0 0 4px var(--traffic-color));
   opacity: 0.88;
-  animation: traffic-dash 0.72s linear infinite;
+  animation: traffic-dash 0.9s linear infinite;
 }
 .traffic-flow-forward,
 .traffic-flow-reverse {
@@ -1815,6 +1840,17 @@ defineExpose({
 }
 .topology-surface[data-pan-enabled="true"] :deep(canvas) {
   cursor: grab !important;
+}
+.topology-port-label {
+  paint-order: stroke;
+  stroke: var(--topology-canvas);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+.topology-surface[data-reduced-motion="true"] .traffic-flow-core,
+.topology-surface[data-reduced-motion="true"] .traffic-flow-reverse {
+  animation: none;
+  stroke-dasharray: 3 13;
 }
 .topology-surface[data-pan-enabled="true"]:active :deep(canvas) {
   cursor: grabbing !important;

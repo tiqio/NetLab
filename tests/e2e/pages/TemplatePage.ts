@@ -39,15 +39,19 @@ export class TemplatePage extends BasePage {
   async chooseLightweight(name: string) {
     const paletteName =
       name === "Layer-2 switch"
-        ? "Lightweight L2 Switch"
+        ? "轻量级二层交换机"
         : name === "Layer-3 switch"
-          ? "Lightweight L3 Switch"
-          : name;
+          ? "轻量级三层交换机"
+          : name === "Bridge"
+            ? "网桥"
+            : name === "NAT bridge"
+              ? "NAT 网桥"
+              : name;
     await this.openPalette();
     await this.page
       .getByRole("button", {
         name: new RegExp(
-          `^${paletteName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`,
+          `^${paletteName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`,
           "i",
         ),
       })

@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import type { TrafficObservation } from "./trafficPathTypes";
 defineProps<{ observations: TrafficObservation[]; ambiguous?: boolean }>();
+
+function directionLabel(direction: string) {
+  if (direction === "a_to_b") return "A 到 B";
+  if (direction === "b_to_a") return "B 到 A";
+  if (direction === "bidirectional") return "双向";
+  return "方向未知";
+}
 </script>
 
 <template>
@@ -18,7 +25,7 @@ defineProps<{ observations: TrafficObservation[]; ambiguous?: boolean }>();
           item.link_id ||
           item.interface_id
         }}
-        · {{ item.direction }} · {{ item.count }} 个数据包 ·
+        · {{ directionLabel(item.direction) }} · {{ item.count }} 个数据包 ·
         {{ item.bytes }} 字节 · {{ item.first_seen }} — {{ item.last_seen }}
       </li>
     </ol>

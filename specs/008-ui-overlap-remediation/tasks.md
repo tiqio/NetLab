@@ -59,20 +59,20 @@
 
 ### Tests for User Story 1
 
-- [ ] T020 [P] [US1] 为 1、2、4、8、16 接口的端口轨道、标签位置和独立命中区增加失败测试 `web/src/features/topology/topologyGeometry.test.ts`
-- [ ] T021 [P] [US1] 为 hover、选择、拖动、缩放和重置后的节点内部坐标稳定性增加失败测试 `web/src/features/topology/TopologyCanvas.test.ts`
-- [ ] T022 [P] [US1] 为平行链路路径、端点显示名和未活动链路不继承高亮增加失败测试 `web/src/features/topology/linkPresentation.test.ts`
-- [ ] T023 [P] [US1] 为方向粒子、停止流量后的衰减和减少动态效果增加失败测试 `web/src/features/topology/TrafficPathOverlay.test.ts`
-- [ ] T024 [P] [US1] 增加高密度拓扑拖动、端口点击、平行链路和流量切换浏览器场景 `tests/e2e/journeys/topologyVisualRecognition.spec.ts`
+- [X] T020 [P] [US1] 为 1、2、4、8、16 接口的端口轨道、标签位置和独立命中区增加失败测试 `web/src/features/topology/topologyGeometry.test.ts`
+- [X] T021 [P] [US1] 为 hover、选择、拖动、缩放和重置后的节点内部坐标稳定性增加失败测试 `web/src/features/topology/TopologyCanvas.test.ts`
+- [X] T022 [P] [US1] 为平行链路路径、端点显示名和未活动链路不继承高亮增加失败测试 `web/src/features/topology/linkPresentation.test.ts`
+- [X] T023 [P] [US1] 为方向粒子、停止流量后的衰减和减少动态效果增加失败测试 `web/src/features/topology/TrafficPathOverlay.test.ts`
+- [X] T024 [P] [US1] 增加高密度拓扑拖动、端口点击、平行链路和流量切换浏览器场景 `tests/e2e/journeys/topologyVisualRecognition.spec.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T025 [US1] 在 `web/src/features/topology/topologyGeometry.ts` 实现确定性端口轨道、节点布局区域和缩放标签优先级
-- [ ] T026 [US1] 在 `web/src/features/topology/TopologyCanvas.vue` 分离身份、状态、图形、端口、标签和连接入口，并阻止装饰层截获点击
-- [ ] T027 [US1] 在 `web/src/features/topology/linkPresentation.ts` 实现平行链路偏移、可读端点名称和活动链路精确匹配
-- [ ] T028 [US1] 在 `web/src/features/topology/TrafficPathOverlay.vue` 修复方向粒子图层、停止衰减和非闪烁展示
-- [ ] T029 [US1] 在 `web/src/features/topology/TopologyCanvas.vue` 和 `web/src/styles/workspace.css` 修复节点拖动漂移、画布收缩和缩放后命中区失配
-- [ ] T030 [US1] 运行 US1 聚焦测试与三视口浏览器验收，并把结果记录到 `specs/008-ui-overlap-remediation/validation/milestones.md`
+- [X] T025 [US1] 在 `web/src/features/topology/topologyGeometry.ts` 实现确定性端口轨道、节点布局区域和缩放标签优先级
+- [X] T026 [US1] 在 `web/src/features/topology/TopologyCanvas.vue` 分离身份、状态、图形、端口、标签和连接入口，并阻止装饰层截获点击
+- [X] T027 [US1] 在 `web/src/features/topology/linkPresentation.ts` 实现平行链路偏移、可读端点名称和活动链路精确匹配
+- [X] T028 [US1] 在 `web/src/features/topology/TrafficPathOverlay.vue` 修复方向粒子图层、停止衰减和非闪烁展示
+- [X] T029 [US1] 在 `web/src/features/topology/TopologyCanvas.vue` 和 `web/src/styles/workspace.css` 修复节点拖动漂移、画布收缩和缩放后命中区失配
+- [X] T030 [US1] 运行 US1 聚焦测试与三视口浏览器验收，并把结果记录到 `specs/008-ui-overlap-remediation/validation/milestones.md`
 - [ ] T031 [US1] 创建拓扑治理里程碑的聚焦 Git 提交，并把提交 SHA 写入 `specs/008-ui-overlap-remediation/validation/milestones.md`
 
 **Checkpoint**: US1 可独立演示为稳定、清晰、可连线且流量方向正确的拓扑画布。
