@@ -546,7 +546,7 @@ async function submit() {
             更换资源
           </Button>
         </div>
-        <FormField data-field="name" label="Name" :error="fieldErrors.name">
+        <FormField data-field="name" label="名称" :error="fieldErrors.name">
           <Input
             v-model="name"
             data-testid="create-resource-name"
@@ -568,6 +568,7 @@ async function submit() {
           /> </FormField
         ><FormField
           v-if="!selection?.networkObjectKind"
+          data-field="template"
           label="设备模板"
           :error="fieldErrors.template"
         >
@@ -588,6 +589,7 @@ async function submit() {
           </Select> </FormField
         ><FormField
           v-if="!selection?.networkObjectKind"
+          data-field="version"
           label="模板版本"
           :error="fieldErrors.version"
         >
@@ -604,6 +606,7 @@ async function submit() {
           </Select> </FormField
         ><FormField
           v-if="!selection?.networkObjectKind"
+          data-field="image"
           label="镜像版本"
           :error="fieldErrors.image"
           :hint="imageHint"
@@ -621,7 +624,7 @@ async function submit() {
                 imageUnavailableReason(image)
                   ? ` (${imageUnavailableReason(image)})`
                   : image.id === selectedVersion?.image_version_id
-                    ? " (recommended)"
+                    ? "（推荐）"
                     : ""
               }}
             </option>
@@ -734,6 +737,7 @@ async function submit() {
         </p>
         <FormField
           v-if="!selection?.networkObjectKind"
+          data-field="interfaces"
           label="接口数量"
           :error="fieldErrors.interfaces"
           hint="请输入 1 到 64 之间的整数。"
@@ -751,7 +755,7 @@ async function submit() {
           class="grid gap-3 rounded-md border border-border bg-muted/10 p-3"
         >
           <p class="text-xs font-medium">
-            Initial {{ initialInterfaceName }} network configuration
+            {{ initialInterfaceName }} 初始网络配置
           </p>
           <FormField label="IPv4 模式">
             <Select v-model="ipv4Mode" data-testid="docker-ipv4-mode">

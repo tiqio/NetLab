@@ -11,6 +11,11 @@ test("主题切换即时生效并在刷新与路由切换后保持", async ({ pa
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await page.getByRole("combobox", { name: "外观主题" }).selectOption("dark");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(page.getByRole("combobox", { name: "外观主题" })).toHaveValue(
+    "dark",
+  );
 });
 
 test("两个浏览器上下文的主题偏好相互隔离", async ({ browser }) => {
@@ -25,6 +30,12 @@ test("两个浏览器上下文的主题偏好相互隔离", async ({ browser }) 
   await darkPage
     .getByRole("combobox", { name: "外观主题" })
     .selectOption("dark");
+  await expect(lightPage.locator("html")).toHaveAttribute(
+    "data-theme",
+    "light",
+  );
+  await expect(darkPage.locator("html")).toHaveAttribute("data-theme", "dark");
+  await Promise.all([lightPage.reload(), darkPage.reload()]);
   await expect(lightPage.locator("html")).toHaveAttribute(
     "data-theme",
     "light",

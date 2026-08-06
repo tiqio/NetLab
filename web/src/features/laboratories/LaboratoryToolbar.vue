@@ -400,7 +400,9 @@ function openDelete() {
       ><span
         class="inline-flex items-center gap-1 text-xs"
         :class="
-          eventStatus === 'connected' ? 'text-green-300' : 'text-amber-300'
+          eventStatus === 'connected'
+            ? 'text-[color:var(--success)]'
+            : 'text-[color:var(--warning)]'
         "
         ><span class="h-2 w-2 rounded-full bg-current" />{{ eventStatus }}</span
       ><Button

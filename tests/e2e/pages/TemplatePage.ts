@@ -72,11 +72,16 @@ export class TemplatePage extends BasePage {
       options.runtime,
     );
     await dialog.locator('[data-field="name"] input').fill(options.nodeName);
-    const selectors = dialog.locator("select");
-    await selectors.nth(0).selectOption(options.templateId);
-    await selectors.nth(1).selectOption(options.versionId);
+    await dialog
+      .locator('[data-field="template"] select')
+      .selectOption(options.templateId);
+    await dialog
+      .locator('[data-field="version"] select')
+      .selectOption(options.versionId);
     if (options.imageId) {
-      await selectors.nth(2).selectOption(options.imageId);
+      await dialog
+        .locator('[data-field="image"] select')
+        .selectOption(options.imageId);
     }
     if (options.interfaces) {
       await dialog

@@ -51,7 +51,7 @@ defineExpose({ refresh: load });
           class="absolute left-2 top-2 text-muted-foreground"
         /><Input v-model="query" class="pl-7" placeholder="搜索模板或系列" />
       </div>
-      <Select v-model="runtime" class="max-w-36">
+      <Select v-model="runtime" class="max-w-36" aria-label="运行时类型">
         <option value="all">全部运行时</option>
         <option value="qemu">QEMU</option>
         <option value="docker">Docker</option>
@@ -150,8 +150,14 @@ defineExpose({ refresh: load });
       <span><XCircle :size="16" class="mr-1 inline" />没有匹配的模板。</span>
     </div>
     <footer class="border-t border-border p-3 text-xs text-muted-foreground">
-      <ShieldCheck :size="13" class="mr-1 inline" />镜像来源、摘要、许可说明、可用性和校验结果均以服务器为准。
-      <CheckCircle2 :size="13" class="ml-2 mr-1 inline text-green-400" />浏览器不会存储镜像内容或凭据。
+      <ShieldCheck
+        :size="13"
+        class="mr-1 inline"
+      />镜像来源、摘要、许可说明、可用性和校验结果均以服务器为准。
+      <CheckCircle2
+        :size="13"
+        class="ml-2 mr-1 inline text-green-400"
+      />浏览器不会存储镜像内容或凭据。
     </footer>
   </section>
 </template>

@@ -1,4 +1,5 @@
 import { expect, test } from "./fixtures/acceptanceFixture";
+import { expectNoSeriousAxeViolations } from "./fixtures/axe";
 
 for (const viewport of [
   { width: 1024, height: 768 },
@@ -17,6 +18,32 @@ for (const viewport of [
       await expect(selector).toBeFocused();
       await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
       await expect(page.locator("body")).not.toHaveCSS("overflow-x", "scroll");
+      const rootOverflow = await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth -
+          document.documentElement.clientWidth,
+      );
+      expect(rootOverflow).toBeLessThanOrEqual(1);
+      await selector.press("Shift+Tab");
+      const activeElement = await page.evaluate(() => ({
+        tag: document.activeElement?.tagName,
+        label: document.activeElement?.getAttribute("aria-label"),
+      }));
+      expect(activeElement.tag).not.toBe("BODY");
+      expect(activeElement.label).not.toBe("外观主题");
+      await expectNoSeriousAxeViolations(page);
+
+      for (const route of ["/templates", "/automation"]) {
+        await page.goto(route);
+        await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
+        await expectNoSeriousAxeViolations(page);
+        const overflow = await page.evaluate(
+          () =>
+            document.documentElement.scrollWidth -
+            document.documentElement.clientWidth,
+        );
+        expect(overflow).toBeLessThanOrEqual(1);
+      }
     });
   }
 }
