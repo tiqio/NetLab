@@ -36,7 +36,7 @@ describe("cleanup coordinator", () => {
       ledger,
       [],
       "success",
-      { timeoutMs: 1 },
+      { timeoutMs: 100 },
       [
         {
           resource_type: "unknown",
@@ -77,6 +77,7 @@ describe("cleanup coordinator", () => {
     expect(cleanup.baseline_restored).toBe(true);
     expect(cleanup.remaining_count).toBe(1);
     expect(cleanup.resources[0]?.cleanup_state).toBe("leaked");
+    expect(cleanup.baseline_restored).toBe(true);
     expect(cleanup.remediation).toContain(
       "temporary-file:tmp-1: unsupported cleanup method unlink for temporary-file",
     );
