@@ -24,6 +24,12 @@
   --warning: #f59e0b;
   --info: #38bdf8;
   --offline: #64748b;
+  --surface-elevated: #111d2a;
+  --surface-subtle: #0b1520;
+  --focus-outline: #5eead4;
+  --text-subtle: #a8bac9;
+  --overlay-backdrop: rgba(2, 8, 15, 0.72);
+  --shadow-color: rgba(0, 0, 0, 0.42);
   --panel-toolbar-height: 46px;
   --density-control-height: 32px;
   --topology-grid: rgba(148, 163, 184, 0.09);
@@ -79,6 +85,12 @@
   --warning: #92400e;
   --info: #0369a1;
   --offline: #64748b;
+  --surface-elevated: #ffffff;
+  --surface-subtle: #f7fafc;
+  --focus-outline: #0d9488;
+  --text-subtle: #526575;
+  --overlay-backdrop: rgba(15, 23, 42, 0.36);
+  --shadow-color: rgba(15, 23, 42, 0.18);
   --topology-grid: rgba(71, 85, 105, 0.13);
   --topology-canvas: #eef3f7;
   --topology-link: #607487;

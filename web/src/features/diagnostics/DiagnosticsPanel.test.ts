@@ -5,7 +5,7 @@ import DiagnosticsPanel from "./DiagnosticsPanel.vue";
 describe("DiagnosticsPanel", () => {
   it("prompts for a node terminal before a console is requested", () => {
     const wrapper = mount(DiagnosticsPanel, { props: { nodeId: "node-1" } });
-    expect(wrapper.text()).toContain("Right-click a node and choose Terminal.");
+    expect(wrapper.text()).toContain("请右键节点并选择“终端”");
   });
 
   it("guides capture source selection when no interface is selected", () => {

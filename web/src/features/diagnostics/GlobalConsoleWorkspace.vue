@@ -431,7 +431,7 @@ function addSerialForActiveNode() {
         <Button
           size="icon"
           variant="ghost"
-          :aria-label="`Close ${modeLabel(session.mode)} ${session.sequence}`"
+          :aria-label="`关闭 ${modeLabel(session.mode)} ${session.sequence}`"
           @click="closeSession(activeWorkspace, session.id)"
         >
           <X :size="12" />
@@ -506,7 +506,7 @@ function addSerialForActiveNode() {
       v-else
       class="grid flex-1 place-items-center text-xs text-muted-foreground"
     >
-      Right-click a node and choose Terminal.
+      尚未打开终端会话。请右键节点并选择“终端”。
     </div>
   </div>
 </template>

@@ -1,13 +1,18 @@
 import { readFile, readdir } from "node:fs/promises";
-import { extname, join, relative } from "node:path";
+import { extname, join, relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const roots = ["web/src/components", "web/src/features", "web/src/views"];
+const defaultRoots = [
+  "web/src/components",
+  "web/src/features",
+  "web/src/views",
+];
 const technical = [
-  /\b(?:Traffic Filter|VLAN Filtering|Guest Agent|Apple Silicon|no shutdown|virtio-net-pci|cloud-init|EVE-NG|QEMU|Docker|VNC|SSH|Telnet|Wireshark|MCP|REST|API|HTTP|HTTPS|TCP|UDP|ICMP|NAT|IPv4|IPv6|DHCP(?:v4|v6)?|SLAAC|DNS|CPU|vCPU|RAM|MAC|QMP|QGA|MTU|VLAN|PVID|STP|CIDR|pcapng?|pcap|tcpdump|JSON|MiB|GiB|VirtIO|VMXNET3|e1000e?|rtl8139|NetLab|VPCS|Windows|Linux|macOS|Intel|CLI|Metric|Guest|KVM|netns|SPA|lease|shutdown|write|Shift|Enter|Escape|(?:eth|ens|enp|tap|br|pnet)\w*\d*)\b/gi,
+  /\b(?:VLAN Filtering|Guest Agent|Apple Silicon|no shutdown|virtio-net-pci|cloud-init|EVE-NG|QEMU|Docker|VNC|SSH|Telnet|Wireshark|MCP|REST|API|HTTP|HTTPS|TCP|UDP|ICMP|NAT|IPv4|IPv6|DHCP(?:v4|v6)?|SLAAC|DNS|CPU|vCPU|RAM|MAC|QMP|QGA|MTU|VLAN|PVID|STP|CIDR|pcapng?|pcap|tcpdump|JSON|MiB|GiB|VirtIO|VMXNET3|e1000e?|rtl8139|NetLab|VPCS|Windows|Linux|macOS|Intel|CLI|KVM|netns|SPA|lease|shutdown|write|Shift|Enter|Escape|(?:eth|ens|enp|tap|br|pnet)\w*\d*)\b/gi,
   /^(?:eth|ens|enp|tap|br|pnet)\w*\d*$/i,
   /^[a-f0-9:#./_-]+$/i,
   /^#[a-f0-9]{3,8}$/i,
-  /^\$?\{?\w+[.\w]*(?:\([^)]*\))?\}?$/,
+  /^(?:\$\{.+\}|\w+\.\w+(?:\([^)]*\))?)$/,
 ];
 const falsePositive = [
   /^ariaLabel$/,
@@ -16,13 +21,14 @@ const falsePositive = [
   /^Promise$/,
   /^OFFICE$/,
   /^Record$/,
-  /^(?:active|running|stopped|tcp|udp|icmp|none)$/,
+  /^(?:description|helperMessage|imageHint|export|username|password)$/,
+  /^(?:active|tcp|udp|icmp)$/,
   /^(?:tcp|udp)(?:\s+(?:src|dst))?\s+port\s+\d+$/i,
-  /^(?:icmp|tcp|udp)(?:,\s*(?:tcp|udp)\s+(?:src|dst)?\s*port\s+\d+|,\s*(?:src|dst)\s+(?:host|net)\s+[\da-f.:/]+)*$/i,
+  /^(?:icmp|tcp|udp)(?:,\s*(?:tcp|udp)\s+(?:src|dst)?\s+port\s+\d+|,\s*(?:src|dst)\s+(?:host|net)\s+[\da-f.:/]+)*$/i,
   /^\$\{/,
   /^\w+\s*\?$/,
   /(?:===|!==|\?\s*['"`]|\|\||&&)/,
-  /^\W*(?:v-if|v-for|:|@|\?|!|\[|\()`/,
+  /^\W*(?:v-if|v-for|:|@|\?|!|\[|\()/,
 ];
 
 async function files(directory) {
@@ -34,7 +40,8 @@ async function files(directory) {
   }
   return output;
 }
-function candidate(value) {
+
+export function localizationCandidate(value) {
   const normalized = value
     .replace(/\$\{[^}]+\}/g, " ")
     .replace(/\s+/g, " ")
@@ -58,41 +65,63 @@ function stringLiterals(expression) {
   return values;
 }
 
-const findings = [];
-for (const root of roots) {
-  for (const path of await files(root)) {
-    const source = await readFile(path, "utf8");
-    const template =
-      source.match(/<template>([\s\S]*?)<\/template>/)?.[1] || "";
-    for (const match of template.matchAll(/>([^<>{}]+)</g)) {
-      const value = candidate(match[1]);
-      if (value) findings.push(`${relative(".", path)}: text: ${value}`);
-    }
-    for (const match of template.matchAll(
-      /\s(?:aria-label|placeholder|title|label)="([^"]+)"/g,
-    )) {
-      const value = candidate(match[1]);
-      if (value) findings.push(`${relative(".", path)}: attribute: ${value}`);
-    }
-    for (const match of template.matchAll(
-      /\s:(?:aria-label|placeholder|title|label)="([^"]+)"/g,
-    )) {
-      for (const literal of stringLiterals(match[1])) {
-        const value = candidate(literal);
-        if (value)
-          findings.push(`${relative(".", path)}: dynamic attribute: ${value}`);
-      }
-    }
-    for (const match of source.matchAll(
-      /(?:status\.value|message|description|hint|actionLabel)\s*(?:=|:)\s*["'`]([^"'`]+)["'`]/g,
-    )) {
-      const value = candidate(match[1]);
-      if (value) findings.push(`${relative(".", path)}: runtime: ${value}`);
+export function scanLocalizationSource(source, path = "component.vue") {
+  const findings = [];
+  const template = source.match(/<template>([\s\S]*?)<\/template>/)?.[1] || "";
+  for (const match of template.matchAll(/>([^<>{}]+)</g)) {
+    const value = localizationCandidate(match[1]);
+    if (value) findings.push(`${path}: text: ${value}`);
+  }
+  for (const match of template.matchAll(
+    /\s(?:aria-label|placeholder|title|label|description|hint)="([^"]+)"/g,
+  )) {
+    const value = localizationCandidate(match[1]);
+    if (value) findings.push(`${path}: attribute: ${value}`);
+  }
+  for (const match of template.matchAll(
+    /\s:(?:aria-label|placeholder|title|label|description|hint)="([^"]+)"/g,
+  )) {
+    for (const literal of stringLiterals(match[1])) {
+      if (
+        /(?:===|!==|\.includes\()/.test(match[1]) &&
+        /^(?:requested|starting|streaming|running|stopping|stopped)$/i.test(
+          literal,
+        )
+      )
+        continue;
+      const value = localizationCandidate(literal);
+      if (value) findings.push(`${path}: dynamic attribute: ${value}`);
     }
   }
+  for (const match of source.matchAll(
+    /(?:status\.value|message|description|hint|actionLabel|emptyMessage|helperMessage)\s*(?:=|:)\s*["'`]([^"'`]+)["'`]/g,
+  )) {
+    const value = localizationCandidate(match[1]);
+    if (value) findings.push(`${path}: runtime: ${value}`);
+  }
+  return findings;
 }
-if (findings.length) {
-  console.error("发现未分类的用户可见英文：\n" + findings.join("\n"));
-  process.exit(1);
+
+export async function scanLocalizationRoots(roots = defaultRoots) {
+  const findings = [];
+  for (const root of roots) {
+    for (const path of await files(root)) {
+      const source = await readFile(path, "utf8");
+      findings.push(...scanLocalizationSource(source, relative(".", path)));
+    }
+  }
+  return findings;
 }
-console.log("中文化扫描通过：产品文本、属性和运行时消息均已分类。");
+
+const invokedPath = process.argv[1] ? resolve(process.argv[1]) : "";
+if (invokedPath === fileURLToPath(import.meta.url)) {
+  const roots = process.env.NETLAB_LOCALIZATION_ROOTS
+    ? process.env.NETLAB_LOCALIZATION_ROOTS.split(":").filter(Boolean)
+    : defaultRoots;
+  const findings = await scanLocalizationRoots(roots);
+  if (findings.length) {
+    console.error("发现未分类的用户可见英文：\n" + findings.join("\n"));
+    process.exit(1);
+  }
+  console.log("中文化扫描通过：产品文本、属性和运行时消息均已分类。");
+}

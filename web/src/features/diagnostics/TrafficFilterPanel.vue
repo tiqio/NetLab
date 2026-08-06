@@ -125,11 +125,11 @@ const pendingDeleteActiveCount = computed(
 );
 const deleteConfirmationResource = computed(() => {
   if (pendingDelete.value?.mode === "all")
-    return `当前实验室的 ${pendingDeleteEntries.value.length} 条 Traffic Filter 会话`;
+    return `当前实验室的 ${pendingDeleteEntries.value.length} 条流量过滤会话`;
   const value = pendingDeleteEntries.value[0]?.traffic_filter;
   return value
     ? `${value.expression || "全部流量"} · ${value.id}`
-    : "Traffic Filter 会话";
+    : "流量过滤会话";
 });
 const selectedScopeCount = computed(
   () =>
@@ -237,13 +237,13 @@ async function waitForTask(id: string) {
     if (["succeeded", "failed", "cancelled"].includes(task.state)) {
       if (task.state !== "succeeded")
         throw new Error(
-          task.error?.message || `Traffic Filter task ${task.state}`,
+          task.error?.message || `流量过滤任务状态：${task.state}`,
         );
       return task;
     }
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
-  throw new Error("Traffic Filter 任务在 30 秒内未完成");
+  throw new Error("流量过滤任务在 30 秒内未完成");
 }
 
 async function start() {
@@ -258,7 +258,7 @@ async function start() {
       const stopped = await api.stopTrafficFilter(replacedFilterId);
       taskId.value = stopped.task.id;
       taskState.value = stopped.task.state;
-      status.value = `正在停止旧 Traffic Filter 会话 ${replacedFilterId}`;
+      status.value = `正在停止旧流量过滤会话 ${replacedFilterId}`;
       await waitForTask(stopped.task.id);
     }
     const value = await api.startTrafficFilter({
@@ -273,12 +273,12 @@ async function start() {
     selectedFilterId.value = value.traffic_filter.id;
     upsert({ traffic_filter: value.traffic_filter, ambiguous: false });
     taskId.value = value.task.id;
-    status.value = `正在启动 Traffic Filter 任务 ${value.task.id}`;
+    status.value = `正在启动流量过滤任务 ${value.task.id}`;
     await waitForTask(value.task.id);
     await refresh(false);
     status.value = replacedFilterId
       ? "旧会话已自动停止，新表达式已经开始监听。"
-      : "Traffic Filter 已运行，并会自动刷新匹配结果。";
+      : "流量过滤已运行，并会自动刷新匹配结果。";
   } catch (error) {
     status.value = errorMessage(error);
     await discover();
@@ -293,7 +293,7 @@ async function refresh(showStatus = true) {
   try {
     const value = await api.getTrafficFilter(selectedFilterId.value);
     upsert(value);
-    if (showStatus) status.value = "Traffic Filter 匹配结果已刷新";
+    if (showStatus) status.value = "流量过滤匹配结果已刷新";
   } catch (error) {
     status.value = errorMessage(error);
   } finally {
@@ -318,10 +318,10 @@ async function stop() {
     const value = await api.stopTrafficFilter(filter.value.id);
     taskId.value = value.task.id;
     taskState.value = value.task.state;
-    status.value = `正在停止 Traffic Filter 任务 ${value.task.id}`;
+    status.value = `正在停止流量过滤任务 ${value.task.id}`;
     await waitForTask(value.task.id);
     await refresh(false);
-    status.value = "Traffic Filter 已停止";
+    status.value = "流量过滤已停止";
   } catch (error) {
     status.value = errorMessage(error);
   } finally {
@@ -367,7 +367,7 @@ async function deleteSessions(targets: FilterEntry[]) {
           (item) => item.traffic_filter.id !== value.id,
         );
         deleted++;
-        status.value = `正在删除 Traffic Filter 会话 ${deleted}/${targets.length}`;
+        status.value = `正在删除流量过滤会话 ${deleted}/${targets.length}`;
       } catch (error) {
         failures.push(`${value.id}: ${errorMessage(error)}`);
       }
@@ -380,7 +380,7 @@ async function deleteSessions(targets: FilterEntry[]) {
       selectedFilterId.value = entries.value[0]?.traffic_filter.id || "";
     status.value = failures.length
       ? `已删除 ${deleted} 条会话，${failures.length} 条失败：${failures.join("；")}`
-      : `已删除 ${deleted} 条 Traffic Filter 会话`;
+      : `已删除 ${deleted} 条流量过滤会话`;
     if (failures.length) await discover();
   } finally {
     busy.value = false;
@@ -573,11 +573,11 @@ function applyExample(value: string | number | undefined) {
         </FormField>
       </div>
       <section
-        aria-label="Traffic Filter 会话列表"
+        aria-label="流量过滤会话列表"
         class="grid gap-2 rounded border border-border bg-background/40 p-2"
       >
         <div class="flex flex-wrap items-center gap-2">
-          <strong class="text-xs">Traffic Filter 会话</strong>
+          <strong class="text-xs">流量过滤会话</strong>
           <span class="text-xs text-muted-foreground">
             {{ filteredEntries.length }} / {{ entries.length }} 条
           </span>
@@ -586,8 +586,8 @@ function applyExample(value: string | number | undefined) {
             variant="destructive"
             class="ml-auto"
             :disabled="busy || !entries.length"
-            aria-label="删除全部 Traffic Filter 会话"
-            title="删除当前实验室的全部 Traffic Filter 会话"
+            aria-label="删除全部流量过滤会话"
+            title="删除当前实验室的全部流量过滤会话"
             @click="requestDeleteAllSessions"
           >
             <Trash2 :size="14" /> 全部删除
@@ -599,7 +599,7 @@ function applyExample(value: string | number | undefined) {
             />
             <Input
               v-model="sessionSearch"
-              aria-label="搜索 Traffic Filter 会话"
+              aria-label="搜索流量过滤会话"
               placeholder="搜索表达式、状态或会话 ID"
               class="pl-7"
             />
@@ -621,7 +621,7 @@ function applyExample(value: string | number | undefined) {
             <button
               type="button"
               class="min-w-0 flex-1 text-left"
-              :aria-label="`选择 Traffic Filter 会话 ${entry.traffic_filter.id}`"
+              :aria-label="`选择流量过滤会话 ${entry.traffic_filter.id}`"
               @click="selectedFilterId = entry.traffic_filter.id"
             >
               <span class="block truncate text-xs font-medium">
@@ -639,7 +639,7 @@ function applyExample(value: string | number | undefined) {
               size="icon"
               variant="ghost"
               :disabled="busy"
-              :aria-label="`删除 Traffic Filter 会话 ${entry.traffic_filter.id}`"
+              :aria-label="`删除流量过滤会话 ${entry.traffic_filter.id}`"
               :title="
                 ['starting', 'running', 'stopping'].includes(
                   entry.traffic_filter.state,
@@ -656,7 +656,7 @@ function applyExample(value: string | number | undefined) {
             v-if="!filteredEntries.length"
             class="px-3 py-4 text-center text-xs text-muted-foreground"
           >
-            没有匹配的 Traffic Filter 会话
+            没有匹配的流量过滤会话
           </p>
         </div>
       </section>
@@ -801,7 +801,7 @@ function applyExample(value: string | number | undefined) {
                 ? '请先修正高亮颜色'
                 : active
                   ? '停止当前会话并应用新的监听配置'
-                  : '启动 Traffic Filter'
+                  : '启动流量过滤'
           "
           @click="start"
         >
@@ -905,8 +905,8 @@ function applyExample(value: string | number | undefined) {
       v-model="deleteConfirmOpen"
       :title="
         pendingDelete?.mode === 'all'
-          ? '删除全部 Traffic Filter 会话'
-          : '删除 Traffic Filter 会话'
+          ? '删除全部流量过滤会话'
+          : '删除流量过滤会话'
       "
       :resource="deleteConfirmationResource"
       description="删除后会话历史和观察记录将无法恢复。"

@@ -387,12 +387,12 @@ function openDelete() {
         to="/templates"
         class="hidden text-xs text-muted-foreground hover:text-foreground md:inline"
       >
-        Templates </RouterLink
+        模板 </RouterLink
       ><RouterLink
         to="/automation"
         class="hidden text-xs text-muted-foreground hover:text-foreground md:inline"
       >
-        Automation </RouterLink
+        自动化 </RouterLink
       ><span
         role="status"
         class="hidden text-xs text-muted-foreground xl:block"

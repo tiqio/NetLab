@@ -99,7 +99,7 @@ async function diagnostics(id: string) {
   <section>
     <h2>轻量网络对象</h2>
     <label
-      >Kind
+      >类型
       <Select v-model="kind">
         <option value="pc">PC</option>
         <option value="switch_l2">二层交换机</option>

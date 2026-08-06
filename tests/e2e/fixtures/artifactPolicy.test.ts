@@ -24,4 +24,15 @@ describe("acceptance artifact policy", () => {
       readFile(join(root, "tests", "case", "evidence.json"), "utf8"),
     ).resolves.toContain("passed");
   });
+
+  it("rejects retained visual evidence containing credentials", async () => {
+    const root = await mkdtemp(join(tmpdir(), "netlab-artifacts-sensitive-"));
+    await writeFile(
+      join(root, "visual-audit.json"),
+      '{"message":"bootstrap_secret=do-not-retain"}\n',
+    );
+    await expect(enforceAcceptanceArtifactPolicy(root)).rejects.toThrow(
+      "Sensitive acceptance evidence",
+    );
+  });
 });

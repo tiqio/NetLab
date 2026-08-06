@@ -26,8 +26,54 @@
 }
 
 .theme-switcher:focus-within {
-  outline: 2px solid var(--ring);
+  outline: 2px solid var(--focus-outline);
   outline-offset: 2px;
+}
+
+.netlab-region {
+  min-width: 0;
+  min-height: 0;
+}
+
+.netlab-region-scroll {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.netlab-copy {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.netlab-actions {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.netlab-hit-target {
+  min-width: 2rem;
+  min-height: 2rem;
+}
+
+.netlab-surface-elevated {
+  border: 1px solid var(--border);
+  background: var(--surface-elevated);
+  color: var(--foreground);
+  box-shadow: 0 16px 40px var(--shadow-color);
+}
+
+.netlab-overlay {
+  background: var(--overlay-backdrop);
+}
+
+[data-layout-region] {
+  min-width: 0;
+  min-height: 0;
 }
 
 @media (max-width: 1100px) {

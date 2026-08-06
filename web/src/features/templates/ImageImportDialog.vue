@@ -41,12 +41,12 @@ async function submit() {
   >
     <form class="grid gap-3" @submit.prevent="submit">
       <div class="grid grid-cols-2 gap-2">
-        <FormField label="Name"> <Input v-model="name" required /> </FormField
-        ><FormField label="Version">
+        <FormField label="名称"> <Input v-model="name" required /> </FormField
+        ><FormField label="版本">
           <Input v-model="version" required />
         </FormField>
       </div>
-      <FormField label="Runtime">
+      <FormField label="运行时">
         <Select v-model="runtime">
           <option value="qemu">QEMU</option>
           <option value="docker">Docker</option>

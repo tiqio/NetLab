@@ -150,7 +150,7 @@ onBeforeUnmount(() => {
     <div
       v-if="open"
       data-sheet-overlay
-      class="fixed inset-0 z-40 bg-black/50"
+      class="netlab-overlay fixed inset-0 z-40"
       @click.self="requestClose('overlay')"
     >
       <section
@@ -160,19 +160,22 @@ onBeforeUnmount(() => {
         :aria-label="title"
         :aria-description="description"
         tabindex="-1"
-        class="absolute flex min-h-0 flex-col border-border bg-card shadow-2xl"
+        class="netlab-surface-elevated absolute flex min-h-0 flex-col"
         :class="panelClass"
         :style="panelStyle"
       >
         <header
           data-sheet-header
-          class="flex shrink-0 items-start justify-between border-b border-border p-3"
+          class="flex shrink-0 items-start justify-between gap-3 border-b border-border p-3"
         >
-          <div class="min-w-0">
-            <h2 class="font-semibold">
+          <div class="min-w-0 flex-1">
+            <h2 class="netlab-copy font-semibold">
               {{ title }}
             </h2>
-            <p v-if="description" class="mt-1 text-xs text-muted-foreground">
+            <p
+              v-if="description"
+              class="netlab-copy mt-1 text-xs text-muted-foreground"
+            >
               {{ description }}
             </p>
           </div>
@@ -194,7 +197,7 @@ onBeforeUnmount(() => {
         <footer
           v-if="$slots.footer"
           data-sheet-footer
-          class="flex shrink-0 justify-end gap-2 border-t border-border p-3"
+          class="netlab-actions shrink-0 justify-end border-t border-border p-3"
         >
           <slot name="footer" />
         </footer>

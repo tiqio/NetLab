@@ -226,7 +226,7 @@ function enabledVersion(template: DeviceTemplate) {
             }}</strong
             ><small class="text-[10px] text-muted-foreground"
               >{{ template.runtime_kind.toUpperCase() }} ·
-              {{ template.versions.length }} versions ·
+              {{ template.versions.length }} 个版本 ·
               {{ enabledVersion(template) ? "可用" : "没有已启用版本" }}</small
             ></span
           >
@@ -236,7 +236,7 @@ function enabledVersion(template: DeviceTemplate) {
         <h3
           class="px-2 py-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground"
         >
-          Lightweight
+          轻量网络对象
         </h3>
         <Button
           v-for="item in filteredLightweight"

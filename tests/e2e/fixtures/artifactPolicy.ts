@@ -8,6 +8,7 @@ const retainedNames = new Set([
   "evidence.json",
   "run-summary.json",
   "summary.txt",
+  "visual-audit.json",
 ]);
 
 function mayRetain(relative: string) {

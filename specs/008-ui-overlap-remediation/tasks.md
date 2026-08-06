@@ -33,18 +33,18 @@
 
 **⚠️ CRITICAL**: 本阶段完成前不得开始用户故事实现。
 
-- [ ] T007 [P] 为文字层级、状态、焦点、表面、边框、图表和拓扑补齐跨主题语义变量 `web/src/styles/theme.css`
-- [ ] T008 [P] 为明确布局区、局部滚动、换行、截断、操作区和无页面横向溢出补充共享规则 `web/src/styles/workspace.css`
-- [ ] T009 [P] 实现边界框相交、命中区域冲突、视口裁切和页面溢出断言 `tests/e2e/fixtures/layoutAssertions.ts`
-- [ ] T010 [P] 为布局断言增加容差、允许覆盖和失败定位单测 `tests/e2e/fixtures/layoutAssertions.test.ts`
-- [ ] T011 [P] 扩展验收类型和运行摘要以承载视觉、中文化、截图与清理结果 `tests/e2e/fixtures/acceptanceTypes.ts`
-- [ ] T012 [P] 扩展证据写入与 Schema 校验流程 `tests/e2e/fixtures/acceptanceFixture.ts`
-- [ ] T013 [P] 强化截图、日志和报告的凭据/终端/抓包脱敏规则 `tests/e2e/fixtures/artifactPolicy.ts`
-- [ ] T014 [P] 扩展英文扫描覆盖模板文本、属性、动态消息和无障碍名称 `scripts/check-ui-localization.mjs`
-- [ ] T015 先补共享组件的布局、焦点、禁用/危险状态和长文本失败测试 `web/src/components/common/InteractionStateMatrix.test.ts`
-- [ ] T016 修复共享空状态、资源身份、状态和错误展示的布局与可读性 `web/src/components/common/EmptyState.vue`、`web/src/components/common/ResourceIdentity.vue`、`web/src/components/common/StatePresentation.vue`、`web/src/components/common/StatusBadge.vue`、`web/src/components/common/StructuredProblem.vue`
-- [ ] T017 修复基础控件的命中区、碰撞避让、焦点与主题状态 `web/src/components/ui/button/Button.vue`、`web/src/components/ui/dialog/Dialog.vue`、`web/src/components/ui/dropdown-menu/DropdownMenu.vue`、`web/src/components/ui/form/FormField.vue`、`web/src/components/ui/select/Select.vue`、`web/src/components/ui/sheet/Sheet.vue`、`web/src/components/ui/tabs/Tabs.vue`、`web/src/components/ui/tooltip/Tooltip.vue`
-- [ ] T018 运行共享基础门禁并将结果记录到 `specs/008-ui-overlap-remediation/validation/milestones.md`
+- [X] T007 [P] 为文字层级、状态、焦点、表面、边框、图表和拓扑补齐跨主题语义变量 `web/src/styles/theme.css`
+- [X] T008 [P] 为明确布局区、局部滚动、换行、截断、操作区和无页面横向溢出补充共享规则 `web/src/styles/workspace.css`
+- [X] T009 [P] 实现边界框相交、命中区域冲突、视口裁切和页面溢出断言 `tests/e2e/fixtures/layoutAssertions.ts`
+- [X] T010 [P] 为布局断言增加容差、允许覆盖和失败定位单测 `tests/e2e/fixtures/layoutAssertions.test.ts`
+- [X] T011 [P] 扩展验收类型和运行摘要以承载视觉、中文化、截图与清理结果 `tests/e2e/fixtures/acceptanceTypes.ts`
+- [X] T012 [P] 扩展证据写入与 Schema 校验流程 `tests/e2e/fixtures/acceptanceFixture.ts`
+- [X] T013 [P] 强化截图、日志和报告的凭据/终端/抓包脱敏规则 `tests/e2e/fixtures/artifactPolicy.ts`
+- [X] T014 [P] 扩展英文扫描覆盖模板文本、属性、动态消息和无障碍名称 `scripts/check-ui-localization.mjs`
+- [X] T015 先补共享组件的布局、焦点、禁用/危险状态和长文本失败测试 `web/src/components/common/InteractionStateMatrix.test.ts`
+- [X] T016 修复共享空状态、资源身份、状态和错误展示的布局与可读性 `web/src/components/common/EmptyState.vue`、`web/src/components/common/ResourceIdentity.vue`、`web/src/components/common/StatePresentation.vue`、`web/src/components/common/StatusBadge.vue`、`web/src/components/common/StructuredProblem.vue`
+- [X] T017 修复基础控件的命中区、碰撞避让、焦点与主题状态 `web/src/components/ui/button/Button.vue`、`web/src/components/ui/dialog/Dialog.vue`、`web/src/components/ui/dropdown-menu/DropdownMenu.vue`、`web/src/components/ui/form/FormField.vue`、`web/src/components/ui/select/Select.vue`、`web/src/components/ui/sheet/Sheet.vue`、`web/src/components/ui/tabs/Tabs.vue`、`web/src/components/ui/tooltip/Tooltip.vue`
+- [X] T018 运行共享基础门禁并将结果记录到 `specs/008-ui-overlap-remediation/validation/milestones.md`
 - [ ] T019 创建共享基础里程碑的聚焦 Git 提交，并把提交 SHA 写入 `specs/008-ui-overlap-remediation/validation/milestones.md`
 
 **Checkpoint**: 共享布局、文案和验收基础可被所有用户故事复用。

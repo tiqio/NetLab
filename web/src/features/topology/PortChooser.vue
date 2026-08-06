@@ -40,10 +40,7 @@ function cancel() {
   <Dialog
     v-model="open"
     :title="title || '选择接口'"
-    :description="
-      description ||
-      'Select one available interface, then confirm the connection.'
-    "
+    :description="description || '请选择一个可用接口，然后确认连接。'"
   >
     <div ref="listbox" class="grid gap-2" role="listbox" aria-label="可用接口">
       <Button
@@ -52,7 +49,7 @@ function cancel() {
         variant="secondary"
         class="justify-between"
         role="option"
-        :aria-label="`Use ${item.name}`"
+        :aria-label="`使用接口 ${item.name}`"
         @click="choose(item)"
       >
         <span>{{ item.name }}</span>
@@ -60,7 +57,7 @@ function cancel() {
       </Button>
     </div>
     <template #footer>
-      <Button variant="ghost" @click="cancel">Cancel</Button>
+      <Button variant="ghost" @click="cancel">取消</Button>
     </template>
   </Dialog>
 </template>

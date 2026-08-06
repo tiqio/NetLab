@@ -455,10 +455,10 @@ onBeforeUnmount(() => clearTimeout(copiedTimer));
                 :disabled="!stopped || busy"
               />
             </FormField>
-            <FormField label="Metric">
+            <FormField label="路由跃点值">
               <Input
                 v-model="route.metric"
-                :aria-label="`${item.name} 路由 ${routeIndex + 1} Metric`"
+                :aria-label="`${item.name} 路由 ${routeIndex + 1} 跃点值`"
                 type="number"
                 min="0"
                 step="1"

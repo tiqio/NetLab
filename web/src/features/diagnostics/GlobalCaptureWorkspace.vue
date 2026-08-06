@@ -259,7 +259,7 @@ watch(
       >
         <Radio :size="12" /> {{ node.name }}
         <span class="text-[10px] opacity-70">
-          {{ interfacesByNode.get(node.id)?.length || 0 }} ports
+          {{ interfacesByNode.get(node.id)?.length || 0 }} 个接口
         </span>
       </Button>
       <Button
@@ -268,7 +268,7 @@ watch(
         :variant="activeGroupId === LINK_GROUP_ID ? 'default' : 'ghost'"
         @click="selectGroup(LINK_GROUP_ID)"
       >
-        <Cable :size="12" /> Links
+        <Cable :size="12" /> 链路
         <span class="text-[10px] opacity-70">{{ links.length }}</span>
       </Button>
       <Button

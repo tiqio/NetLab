@@ -85,7 +85,7 @@ watch(
 </script>
 <template>
   <section class="h-full min-h-[180px]" aria-labelledby="diagnostics-title">
-    <h2 id="diagnostics-title" class="sr-only">Diagnostics</h2>
+    <h2 id="diagnostics-title" class="sr-only">诊断</h2>
     <GlobalConsoleWorkspace
       v-show="section === 'console'"
       :laboratory-id="laboratoryId"

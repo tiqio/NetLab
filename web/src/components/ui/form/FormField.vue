@@ -23,12 +23,15 @@ provide(formFieldControlIdKey, id.value);
     v-bind="$attrs"
     :for="id"
     :data-field="field"
-    class="grid gap-1 text-xs font-medium text-muted-foreground"
+    class="netlab-region grid min-w-0 gap-1 text-xs font-medium text-muted-foreground"
   >
-    <span>{{ label }}</span>
+    <span class="netlab-copy">{{ label }}</span>
     <slot />
-    <span v-if="error" class="text-destructive">{{ error }}</span>
-    <span v-else-if="hint" class="font-normal text-muted-foreground">
+    <span v-if="error" class="netlab-copy text-destructive">{{ error }}</span>
+    <span
+      v-else-if="hint"
+      class="netlab-copy font-normal text-muted-foreground"
+    >
       {{ hint }}
     </span>
   </label>

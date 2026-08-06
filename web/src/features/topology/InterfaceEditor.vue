@@ -23,8 +23,8 @@ async function addInterface() {
       driver.value,
     );
     status.value = value.task
-      ? `Hot-add queued as ${value.task.id}`
-      : "Interface added";
+      ? `热添加任务已排队：${value.task.id}`
+      : "接口已添加";
     emit("changed");
   } catch (error) {
     status.value = error instanceof Error ? error.message : String(error);
@@ -38,7 +38,7 @@ async function removeInterface(value: NodeInterface) {
   }
   try {
     await nodeOperationsApi.removeInterface(value);
-    status.value = props.running ? "Hot-remove queued" : "Interface removed";
+    status.value = props.running ? "热移除任务已排队" : "接口已移除";
     emit("changed");
   } catch (error) {
     status.value = error instanceof Error ? error.message : String(error);
@@ -48,7 +48,7 @@ async function removeInterface(value: NodeInterface) {
 
 <template>
   <section>
-    <h3>Interfaces</h3>
+    <h3>网络接口</h3>
     <label
       >网卡驱动
       <Select v-model="driver">
@@ -59,7 +59,7 @@ async function removeInterface(value: NodeInterface) {
       </Select></label
     >
     <Button type="button" @click="addInterface">
-      {{ running ? "Hot-add interface" : "Add interface" }}
+      {{ running ? "热添加接口" : "添加接口" }}
     </Button>
     <ul>
       <li v-for="item in interfaces" :key="item.id">
@@ -71,7 +71,7 @@ async function removeInterface(value: NodeInterface) {
           :disabled="Boolean(item.desired_link_id)"
           @click="removeInterface(item)"
         >
-          Remove
+          移除
         </Button>
       </li>
     </ul>

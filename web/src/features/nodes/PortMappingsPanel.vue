@@ -204,7 +204,7 @@ async function detectGuestAddress() {
         "QGA 未发现全局 IPv4 地址，请先配置 NAT、DHCP 或静态地址",
       );
     guestAddress.value = addresses[0];
-    status.value = `已选择 Guest IPv4：${addresses[0]}`;
+    status.value = `已选择客户机 IPv4：${addresses[0]}`;
   } catch (error) {
     problem.value = errorProblem(error);
   } finally {
@@ -422,7 +422,7 @@ watch(
               title="在新窗口打开"
               @click="openAccess(mapping)"
             >
-              <ExternalLink :size="13" /> Open
+              <ExternalLink :size="13" /> 打开
             </Button>
             <Button
               variant="ghost"
@@ -430,7 +430,7 @@ watch(
               title="复制访问地址"
               @click="copyAccess(mapping)"
             >
-              <Copy :size="13" /> Copy
+              <Copy :size="13" /> 复制
             </Button>
             <Button
               variant="ghost"
@@ -439,7 +439,7 @@ watch(
               :disabled="busy"
               @click="remove(mapping)"
             >
-              <Trash2 :size="13" /> Remove
+              <Trash2 :size="13" /> 移除
             </Button>
           </div>
         </div>

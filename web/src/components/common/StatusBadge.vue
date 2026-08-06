@@ -23,7 +23,8 @@ const label = computed(() => localizeState(props.state));
 </script>
 <template>
   <span
-    class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px]"
+    class="inline-flex max-w-full items-center gap-1 rounded-full border px-2 py-0.5 text-[11px]"
+    :title="label"
     :class="
       tone === 'success'
         ? 'border-[color:var(--success)]/40 bg-[color:var(--success)]/10 text-[color:var(--success)]'
@@ -33,8 +34,9 @@ const label = computed(() => localizeState(props.state));
             ? 'border-[color:var(--warning)]/40 bg-[color:var(--warning)]/10 text-[color:var(--warning)]'
             : 'border-border bg-muted text-muted-foreground'
     "
-    ><span class="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />{{
-      label
-    }}</span
+    ><span
+      class="h-1.5 w-1.5 shrink-0 rounded-full bg-current"
+      aria-hidden="true"
+    /><span class="truncate">{{ label }}</span></span
   >
 </template>

@@ -828,14 +828,14 @@ async function submit() {
                   "
                 />
               </FormField>
-              <FormField label="Metric">
+              <FormField label="路由跃点值">
                 <Input
                   v-model="route.metric"
                   :data-testid="`docker-route-${routeIndex}-metric`"
                   type="number"
                   min="0"
                   step="1"
-                  placeholder="Default"
+                  placeholder="默认"
                 />
               </FormField>
               <Button
@@ -844,7 +844,7 @@ async function submit() {
                 variant="ghost"
                 :aria-label="`删除路由 ${routeIndex + 1}`"
                 @click="removeRoute(route.id)"
-                >Remove</Button
+                >移除</Button
               >
             </div>
             <p v-if="!routes.length" class="text-xs text-muted-foreground">

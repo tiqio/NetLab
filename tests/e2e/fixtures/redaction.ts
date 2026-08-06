@@ -1,7 +1,7 @@
 const sensitiveKeys =
   /^(authorization|cookie|set-cookie|password|passwd|secret|token|bootstrap|console_output|guest_output|packet_payload|capture_bytes|image_bytes)$/i;
 const credentialValue =
-  /(authorization:\s*\S+|password\s*[=:]\s*\S+|-----BEGIN [A-Z ]+PRIVATE KEY-----)/i;
+  /(authorization:\s*\S+|password\s*[=:]\s*\S+|passwd\s*[=:]\s*\S+|bootstrap(?:_secret)?\s*[=:]\s*\S+|-----BEGIN [A-Z ]+PRIVATE KEY-----)/i;
 const prohibitedArtifact = /\.(pcap|pcapng|qcow2|raw|iso)$/i;
 
 export function sanitizeEvidence<T>(value: T): T {

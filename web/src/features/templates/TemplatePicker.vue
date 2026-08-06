@@ -32,8 +32,8 @@ function reconcileSelection(previousVersion?: TemplateVersion) {
   if (selectedVersion.value && (!version.value || !version.value.enabled)) {
     selectedVersion.value = "";
     staleMessage.value = previousVersion
-      ? `Version ${previousVersion.version} is no longer available.`
-      : "The selected version is no longer available.";
+      ? `版本 ${previousVersion.version} 已不可用。`
+      : "所选版本已不可用。";
   }
 }
 
@@ -88,27 +88,27 @@ onMounted(load);
         <RefreshCw :size="15" :class="loading && 'animate-spin'" />
       </Button>
     </div>
-    <FormField label="Template">
+    <FormField label="设备模板">
       <Select v-model="selectedTemplate" :disabled="loading">
-        <option value="">Select</option>
+        <option value="">请选择</option>
         <option v-for="item in templates" :key="item.id" :value="item.id">
           {{ item.display_name }} · {{ item.runtime_kind.toUpperCase() }}
         </option>
       </Select>
     </FormField>
-    <FormField label="Version">
+    <FormField label="版本">
       <Select
         v-model="selectedVersion"
         :disabled="loading || !selectedTemplate"
       >
-        <option value="">Select</option>
+        <option value="">请选择</option>
         <option
           v-for="item in current?.versions || []"
           :key="item.id"
           :value="item.id"
           :disabled="!item.enabled"
         >
-          {{ item.version }}{{ item.enabled ? "" : " (unavailable)" }}
+          {{ item.version }}{{ item.enabled ? "" : "（不可用）" }}
         </option>
       </Select>
     </FormField>
@@ -116,13 +116,13 @@ onMounted(load);
       {{ error }}
     </p>
     <p v-if="staleMessage" role="alert" class="text-xs text-amber-300">
-      {{ staleMessage }} Refresh the catalog and choose another version.
+      {{ staleMessage }} 请刷新目录并选择其他版本。
     </p>
     <div v-if="version" class="rounded bg-muted/50 p-2 text-xs">
-      <p>{{ version.capabilities.join(", ") || "Basic runtime" }}</p>
+      <p>{{ version.capabilities.join(", ") || "基础运行能力" }}</p>
       <p class="mt-1 text-muted-foreground">
-        NICs: {{ version.supported_nic_drivers.join(", ") || "default" }} ·
-        Consoles: {{ version.console_modes.join(", ") || "none" }}
+        网卡驱动：{{ version.supported_nic_drivers.join(", ") || "默认" }} ·
+        终端方式：{{ version.console_modes.join(", ") || "无" }}
       </p>
     </div>
     <Button :disabled="!canChoose" @click="choose"> 使用模板 </Button>

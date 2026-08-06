@@ -36,7 +36,7 @@ async function save() {
   <form class="panel-section" @submit.prevent="save">
     <h3>资源限制</h3>
     <div class="grid grid-cols-3 gap-2">
-      <FormField label="vCPUs"
+      <FormField label="vCPU 数量"
         ><Input v-model="cpu" type="number" min="1" /></FormField
       ><FormField label="CPU 配额（微秒）"
         ><Input v-model="quota" type="number" min="1000" /></FormField

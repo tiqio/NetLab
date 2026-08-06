@@ -15,7 +15,7 @@ describe("PortChooser", () => {
       },
     });
     const option = document.body.querySelector<HTMLButtonElement>(
-      '[aria-label="Use eth0"]',
+      '[aria-label="使用接口 eth0"]',
     );
     expect(option).not.toBeNull();
     await flushPromises();
@@ -36,7 +36,7 @@ describe("PortChooser", () => {
       },
     });
     const cancel = Array.from(document.body.querySelectorAll("button")).find(
-      (button) => button.textContent?.trim() === "Cancel",
+      (button) => button.textContent?.trim() === "取消",
     );
     expect(cancel).not.toBeUndefined();
     cancel!.click();
@@ -51,14 +51,14 @@ describe("PortChooser", () => {
       attachTo: document.body,
       props: {
         modelValue: true,
-        title: "Choose interface to capture",
-        description: "Select the interface for live Wireshark capture.",
+        title: "选择抓包接口",
+        description: "选择用于 Wireshark 实时抓包的接口。",
         interfaces: [interfaceFactory({ name: "ens0" })],
       },
     });
-    expect(document.body.textContent).toContain("Choose interface to capture");
+    expect(document.body.textContent).toContain("选择抓包接口");
     expect(document.body.textContent).toContain(
-      "Select the interface for live Wireshark capture.",
+      "选择用于 Wireshark 实时抓包的接口。",
     );
     wrapper.unmount();
   });

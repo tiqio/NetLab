@@ -161,6 +161,21 @@ export interface ClientObservation {
   local_preferences_hash?: string;
 }
 
+export interface VisualAuditResult {
+  scenario_id: string;
+  surface: string;
+  theme: "light" | "dark";
+  viewport: Viewport;
+  display_scale: number;
+  status: "passed" | "failed" | "waived";
+  blocking_findings: number;
+  serious_findings: number;
+  untranslated_text_count: number;
+  page_horizontal_overflow: boolean;
+  evidence_refs?: string[];
+  waiver_reason?: string;
+}
+
 export interface AcceptanceEvidence {
   schema_version: "1.0.0";
   run_id: string;
@@ -173,4 +188,5 @@ export interface AcceptanceEvidence {
   version_coverage: VersionCoverage[];
   cleanup: CleanupRecord;
   client_observations?: ClientObservation[];
+  visual_audit_results?: VisualAuditResult[];
 }

@@ -476,17 +476,17 @@ describe("TrafficFilterPanel interactions", () => {
     await flushPromises();
 
     await wrapper
-      .find('input[aria-label="搜索 Traffic Filter 会话"]')
+      .find('input[aria-label="搜索流量过滤会话"]')
       .setValue("udp 19002");
     expect(
-      wrapper.findAll('button[aria-label^="选择 Traffic Filter 会话"]'),
+      wrapper.findAll('button[aria-label^="选择流量过滤会话"]'),
     ).toHaveLength(1);
     await wrapper
-      .find('button[aria-label="删除 Traffic Filter 会话 filter-running"]')
+      .find('button[aria-label="删除流量过滤会话 filter-running"]')
       .trigger("click");
     await flushPromises();
 
-    expect(document.body.textContent).toContain("删除 Traffic Filter 会话");
+    expect(document.body.textContent).toContain("删除流量过滤会话");
     expect(document.body.textContent).toContain("filter-running");
     expect(stopTrafficFilter).not.toHaveBeenCalled();
     Array.from(document.body.querySelectorAll("button"))
@@ -499,8 +499,8 @@ describe("TrafficFilterPanel interactions", () => {
     expect(stopTrafficFilter.mock.invocationCallOrder[0]).toBeLessThan(
       deleteTrafficFilterHistory.mock.invocationCallOrder[0],
     );
-    expect(wrapper.text()).toContain("已删除 1 条 Traffic Filter 会话");
-    expect(wrapper.text()).toContain("没有匹配的 Traffic Filter 会话");
+    expect(wrapper.text()).toContain("已删除 1 条流量过滤会话");
+    expect(wrapper.text()).toContain("没有匹配的流量过滤会话");
     wrapper.unmount();
   });
 
@@ -580,11 +580,11 @@ describe("TrafficFilterPanel interactions", () => {
     await flushPromises();
 
     await wrapper
-      .find('button[aria-label="删除全部 Traffic Filter 会话"]')
+      .find('button[aria-label="删除全部流量过滤会话"]')
       .trigger("click");
     await flushPromises();
     expect(document.body.textContent).toContain(
-      "当前实验室的 2 条 Traffic Filter 会话",
+      "当前实验室的 2 条流量过滤会话",
     );
     expect(document.body.textContent).toContain("1 条运行中会话会先停止");
     Array.from(document.body.querySelectorAll("button"))
@@ -594,7 +594,7 @@ describe("TrafficFilterPanel interactions", () => {
     expect(deleteTrafficFilterHistory).not.toHaveBeenCalled();
 
     await wrapper
-      .find('button[aria-label="删除全部 Traffic Filter 会话"]')
+      .find('button[aria-label="删除全部流量过滤会话"]')
       .trigger("click");
     Array.from(document.body.querySelectorAll("button"))
       .find((button) => button.textContent?.trim() === "确认全部删除")!
@@ -611,10 +611,10 @@ describe("TrafficFilterPanel interactions", () => {
       2,
       "filter-stopped",
     );
-    expect(wrapper.text()).toContain("已删除 2 条 Traffic Filter 会话");
+    expect(wrapper.text()).toContain("已删除 2 条流量过滤会话");
     expect(
       wrapper
-        .find('button[aria-label="删除全部 Traffic Filter 会话"]')
+        .find('button[aria-label="删除全部流量过滤会话"]')
         .attributes("disabled"),
     ).toBeDefined();
     wrapper.unmount();

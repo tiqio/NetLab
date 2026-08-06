@@ -426,11 +426,11 @@ const option = computed(() => {
             formatTimestamp(sessionStartedAt)
           }}</time>
           →
-          <span v-if="listening" class="text-teal-300">running</span>
+          <span v-if="listening" class="text-teal-300">运行中</span>
           <time v-else-if="sessionFinishedAt" :datetime="sessionFinishedAt">
             {{ formatTimestamp(sessionFinishedAt) }}
           </time>
-          <span v-else>stopped</span>
+          <span v-else>已停止</span>
         </span>
         <span v-if="observedTimeRange">
           匹配流量：

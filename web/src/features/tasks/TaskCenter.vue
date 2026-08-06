@@ -256,7 +256,7 @@ const percent = (task: OperationTask) =>
         aria-label="显示更多任务"
         @click="visibleLimit += 30"
       >
-        Show {{ Math.min(30, filtered.length - visibleTasks.length) }} more
+        再显示 {{ Math.min(30, filtered.length - visibleTasks.length) }} 条
       </Button>
     </div>
   </div>

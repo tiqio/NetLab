@@ -21,7 +21,7 @@ const emit = defineEmits<{
     </template>
     <div class="grid gap-1" role="menu" aria-label="链路操作">
       <Button variant="ghost" class="justify-start" @click="emit('inspect')">
-        <Eye :size="13" /> Inspect
+        <Eye :size="13" /> 检查
       </Button>
       <Button
         v-if="!objectLink"
@@ -29,7 +29,7 @@ const emit = defineEmits<{
         class="justify-start"
         @click="emit('reconnect')"
       >
-        <Cable :size="13" /> Reconnect endpoint
+        <Cable :size="13" /> 重新连接端点
       </Button>
       <Button
         v-if="!objectLink"
@@ -37,7 +37,7 @@ const emit = defineEmits<{
         class="justify-start"
         @click="emit('route')"
       >
-        <Route :size="13" /> Edit local route
+        <Route :size="13" /> 编辑本地路由
       </Button>
       <Button
         v-if="!objectLink"
@@ -45,7 +45,7 @@ const emit = defineEmits<{
         class="justify-start"
         @click="emit('disconnect')"
       >
-        <Unplug :size="13" /> Disconnect
+        <Unplug :size="13" /> 断开连接
       </Button>
       <Button
         v-else
@@ -54,7 +54,7 @@ const emit = defineEmits<{
         :disabled="pending"
         @click="emit('delete')"
       >
-        <Trash2 :size="13" /> {{ pending ? "Deleting…" : "Delete link" }}
+        <Trash2 :size="13" /> {{ pending ? "正在删除…" : "删除链路" }}
       </Button>
     </div>
   </DropdownMenu>

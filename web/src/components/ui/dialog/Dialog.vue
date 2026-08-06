@@ -27,23 +27,26 @@ onBeforeUnmount(() => window.removeEventListener("keydown", handleEscape));
   <Teleport to="body">
     <div
       v-if="open"
-      class="fixed inset-0 z-50 grid place-items-center bg-black/65 p-4"
+      class="netlab-overlay fixed inset-0 z-50 grid place-items-center p-4"
       @click.self="requestClose"
     >
       <section
         role="dialog"
         aria-modal="true"
         :aria-label="title"
-        class="max-h-[90vh] w-full max-w-lg overflow-auto rounded-lg border border-border bg-card shadow-2xl"
+        class="netlab-surface-elevated flex max-h-[90vh] min-h-0 w-full max-w-lg flex-col overflow-hidden rounded-lg"
       >
         <header
-          class="flex items-start justify-between border-b border-border px-4 py-3"
+          class="flex shrink-0 items-start justify-between gap-3 border-b border-border px-4 py-3"
         >
-          <div>
-            <h2 class="font-semibold">
+          <div class="min-w-0 flex-1">
+            <h2 class="netlab-copy font-semibold">
               {{ title }}
             </h2>
-            <p v-if="description" class="mt-1 text-xs text-muted-foreground">
+            <p
+              v-if="description"
+              class="netlab-copy mt-1 text-xs text-muted-foreground"
+            >
               {{ description }}
             </p>
           </div>
@@ -56,12 +59,12 @@ onBeforeUnmount(() => window.removeEventListener("keydown", handleEscape));
             <X :size="16" />
           </Button>
         </header>
-        <div class="p-4">
+        <div class="netlab-region-scroll p-4">
           <slot />
         </div>
         <footer
           v-if="$slots.footer"
-          class="flex justify-end gap-2 border-t border-border p-3"
+          class="netlab-actions shrink-0 justify-end border-t border-border p-3"
         >
           <slot name="footer" />
         </footer>

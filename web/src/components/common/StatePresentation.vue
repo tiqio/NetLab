@@ -39,9 +39,10 @@ defineEmits<{ action: [] }>();
 <template>
   <section
     role="status"
-    class="grid min-h-28 place-items-center rounded border border-border bg-muted/20 p-4 text-center"
+    aria-live="polite"
+    class="netlab-region grid min-h-28 place-items-center rounded border border-border bg-muted/20 p-4 text-center"
   >
-    <div>
+    <div class="min-w-0 max-w-full">
       <RefreshCw
         v-if="state === 'loading' || state === 'reconnecting'"
         class="mx-auto animate-spin text-primary"
@@ -58,10 +59,13 @@ defineEmits<{ action: [] }>();
         :size="20"
       />
       <AlertTriangle v-else class="mx-auto text-destructive" :size="20" />
-      <h3 class="mt-2 text-sm font-medium">
+      <h3 class="netlab-copy mt-2 text-sm font-medium">
         {{ title || localizeState(state) }}
       </h3>
-      <p v-if="description" class="mt-1 text-xs text-muted-foreground">
+      <p
+        v-if="description"
+        class="netlab-copy mt-1 text-xs text-muted-foreground"
+      >
         {{ description }}
       </p>
       <Button

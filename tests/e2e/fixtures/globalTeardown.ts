@@ -84,6 +84,9 @@ export default async function globalTeardown(config: FullConfig) {
       client_observations: evidence.flatMap(
         (item) => item.client_observations || [],
       ),
+      visual_audit_results: evidence.flatMap(
+        (item) => item.visual_audit_results || [],
+      ),
     };
     const gateErrors: string[] = [];
     const focused = process.env.NETLAB_ACCEPTANCE_SCOPE === "focused";

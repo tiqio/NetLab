@@ -19,7 +19,7 @@ async function execute() {
       timeout_seconds: 30,
       output_limit: 1 << 20,
     });
-    status.value = `Guest 命令已进入队列：${task.id}`;
+    status.value = `客户机命令已进入队列：${task.id}`;
   } finally {
     busy.value = false;
   }
@@ -27,7 +27,7 @@ async function execute() {
 </script>
 <template>
   <form class="panel-section" @submit.prevent="execute">
-    <h3>Guest 命令</h3>
+    <h3>客户机命令</h3>
     <FormField label="受限命令" hint="命令输出不会保存到浏览器偏好设置中。">
       <Input v-model="command" autocomplete="off" /> </FormField
     ><Button class="mt-2" size="sm" :disabled="busy">

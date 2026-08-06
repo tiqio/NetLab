@@ -14,7 +14,7 @@ const formFieldControlId = inject(formFieldControlIdKey, undefined);
     :id="String($attrs.id || formFieldControlId || '') || undefined"
     :class="
       cn(
-        'h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm text-foreground disabled:opacity-50',
+        'h-8 w-full min-w-0 rounded-md border border-input bg-background px-2.5 text-sm text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--focus-outline)] disabled:opacity-55',
         props.class,
       )
     "

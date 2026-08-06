@@ -15,21 +15,20 @@ defineEmits<{ retry: []; refresh: [] }>();
 <template>
   <section
     role="alert"
-    class="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm"
+    class="netlab-region rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm"
   >
     <div class="flex gap-2">
       <AlertTriangle class="mt-0.5 shrink-0 text-destructive" :size="17" />
       <div class="min-w-0 flex-1">
-        <h3 class="font-semibold">
+        <h3 class="netlab-copy font-semibold">
           {{ title || problem.code }}
         </h3>
-        <p class="mt-1 text-muted-foreground">
+        <p class="netlab-copy mt-1 text-muted-foreground">
           {{ problemContext(problem.code) }}
         </p>
-        <p class="mt-1 text-xs text-muted-foreground">
-          原始错误：{{ problem.message }}
-        </p>
-        <dl class="mt-2 grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 text-xs">
+        <dl
+          class="mt-2 grid min-w-0 grid-cols-[minmax(4rem,auto)_minmax(0,1fr)] gap-x-2 gap-y-1 text-xs"
+        >
           <dt v-if="problem.phase">阶段</dt>
           <dd v-if="problem.phase">
             {{ problem.phase }}
@@ -53,13 +52,17 @@ defineEmits<{ retry: []; refresh: [] }>();
             {{ problem.operator_hint }}
           </dd>
         </dl>
-        <details v-if="problem.details" class="mt-2">
-          <summary>技术详情</summary>
-          <pre class="mt-1 overflow-auto text-xs">{{
-            JSON.stringify(problem.details, null, 2)
-          }}</pre>
+        <details class="mt-2">
+          <summary class="cursor-pointer">原始诊断详情</summary>
+          <p class="netlab-copy mt-1 text-xs text-muted-foreground">
+            {{ problem.message }}
+          </p>
+          <pre
+            v-if="problem.details"
+            class="mt-1 max-h-48 overflow-auto text-xs"
+            >{{ JSON.stringify(problem.details, null, 2) }}</pre>
         </details>
-        <div class="mt-3 flex gap-2">
+        <div class="netlab-actions mt-3">
           <Button
             v-if="problem.retryable"
             size="sm"

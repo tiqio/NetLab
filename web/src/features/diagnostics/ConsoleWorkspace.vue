@@ -253,12 +253,12 @@ onBeforeUnmount(closeRenderer);
         :disabled="!active"
         :title="
           active
-            ? 'Reconnect the active console session'
+            ? '重新连接当前终端会话'
             : 'Open a console session before reconnecting'
         "
         @click="active && open(active)"
       >
-        <RefreshCw :size="13" /> Reconnect </Button
+        <RefreshCw :size="13" /> 重新连接 </Button
       ><span
         role="status"
         class="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground"

@@ -12,6 +12,7 @@ import type {
   InteractionResult,
   VersionCoverage,
   ClientObservation,
+  VisualAuditResult,
 } from "./acceptanceTypes";
 import { cleanupOwnedResources } from "./cleanupCoordinator";
 import { discoverEnvironment } from "./preflight";
@@ -31,6 +32,7 @@ interface AcceptanceFixtures {
   runOutputDirectory: string;
   evidence: Partial<AcceptanceEvidence>;
   clientObservations: ClientObservation[];
+  visualAuditResults: VisualAuditResult[];
 }
 
 export const test = base.extend<AcceptanceFixtures>({
@@ -63,6 +65,7 @@ export const test = base.extend<AcceptanceFixtures>({
   interactionResults: async ({}, use) => use([]),
   versionCoverage: async ({}, use) => use([]),
   clientObservations: async ({}, use) => use([]),
+  visualAuditResults: async ({}, use) => use([]),
   automation: async ({ playwright, baseURL }, use) => {
     const context = await playwright.request.newContext({ baseURL });
     await use(context);
@@ -102,6 +105,7 @@ export const test = base.extend<AcceptanceFixtures>({
         automation,
         outputDirectory,
         clientObservations,
+        visualAuditResults,
       },
       use,
       testInfo,
@@ -118,6 +122,7 @@ export const test = base.extend<AcceptanceFixtures>({
         interaction_results: interactionResults,
         version_coverage: versionCoverage,
         client_observations: clientObservations,
+        visual_audit_results: visualAuditResults,
       };
       await use(evidence);
       const eligibleSkip =

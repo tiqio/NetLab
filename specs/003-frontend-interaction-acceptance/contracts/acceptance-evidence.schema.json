@@ -41,6 +41,10 @@
     "client_observations": {
       "type": "array",
       "items": { "$ref": "#/$defs/clientObservation" }
+    },
+    "visual_audit_results": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/visualAuditResult" }
     }
   },
   "$defs": {
@@ -279,6 +283,53 @@
         },
         "remediation": { "type": "array", "items": { "type": "string" } }
       }
+    },
+    "visualAuditResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scenario_id",
+        "surface",
+        "theme",
+        "viewport",
+        "display_scale",
+        "status",
+        "blocking_findings",
+        "serious_findings",
+        "untranslated_text_count",
+        "page_horizontal_overflow"
+      ],
+      "properties": {
+        "scenario_id": { "type": "string", "minLength": 1 },
+        "surface": { "type": "string", "minLength": 1 },
+        "theme": { "enum": ["light", "dark"] },
+        "viewport": { "$ref": "#/$defs/viewport" },
+        "display_scale": { "type": "number", "minimum": 1, "maximum": 2 },
+        "status": { "enum": ["passed", "failed", "waived"] },
+        "blocking_findings": { "type": "integer", "minimum": 0 },
+        "serious_findings": { "type": "integer", "minimum": 0 },
+        "untranslated_text_count": { "type": "integer", "minimum": 0 },
+        "page_horizontal_overflow": { "type": "boolean" },
+        "evidence_refs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "waiver_reason": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "status": { "const": "waived" } },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": {
+              "waiver_reason": { "type": "string", "minLength": 1 }
+            },
+            "required": ["waiver_reason"]
+          }
+        }
+      ]
     },
     "clientObservation": {
       "type": "object",

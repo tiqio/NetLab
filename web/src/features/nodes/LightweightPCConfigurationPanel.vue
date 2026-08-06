@@ -267,7 +267,7 @@ async function save() {
             />
             <Input
               v-model.number="route.metric"
-              aria-label="Metric"
+              aria-label="路由跃点值"
               type="number"
               min="0"
             />

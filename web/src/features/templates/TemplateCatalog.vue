@@ -92,11 +92,11 @@ defineExpose({ refresh: load });
           <Table>
             <thead class="text-muted-foreground">
               <tr>
-                <th>Version</th>
-                <th>Image</th>
-                <th>Capabilities</th>
-                <th>Consoles</th>
-                <th>Status</th>
+                <th>版本</th>
+                <th>镜像</th>
+                <th>能力</th>
+                <th>终端方式</th>
+                <th>状态</th>
               </tr>
             </thead>
             <tbody>
@@ -116,10 +116,10 @@ defineExpose({ refresh: load });
                     <code class="text-[9px] text-muted-foreground">{{
                       imageFor(version.image_version_id)?.digest
                     }}</code> </template
-                  ><span v-else class="text-muted-foreground">none</span>
+                  ><span v-else class="text-muted-foreground">无</span>
                 </td>
-                <td>{{ version.capabilities.join(", ") || "basic" }}</td>
-                <td>{{ version.console_modes.join(", ") || "none" }}</td>
+                <td>{{ version.capabilities.join(", ") || "基础运行能力" }}</td>
+                <td>{{ version.console_modes.join(", ") || "无" }}</td>
                 <td>
                   <StatusBadge
                     :state="
