@@ -4,7 +4,7 @@
 |---|---|---|---|---|
 | Planning and audit baseline | `d01fef6` | spec/plan/tasks/schema validation | passed | n/a |
 | Shared visual foundation | `12f1237` | 53 component tests; 9 acceptance fixture tests; build; localization scan; frontend acceptance contract | passed | n/a |
-| Topology clarity | pending | geometry, canvas, links, traffic overlay, three viewports | pending | n/a |
+| Topology clarity | `cee0087` | 27 geometry/canvas/link/traffic component tests; frontend build; localization scan; Playwright at 1024×768, 1366×768 and 1920×1080 | passed | local disposable acceptance |
 | Inspector and workspaces | pending | inspector, charts, menus, bottom workspace, axe | pending | n/a |
 | Full Chinese UI | pending | localization scan, terminology, error branches, journeys | pending | n/a |
 | Responsive and theme stability | pending | dual theme, three viewports, 125%, repeated transitions | pending | n/a |

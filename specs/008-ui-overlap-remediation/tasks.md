@@ -73,7 +73,7 @@
 - [X] T028 [US1] 在 `web/src/features/topology/TrafficPathOverlay.vue` 修复方向粒子图层、停止衰减和非闪烁展示
 - [X] T029 [US1] 在 `web/src/features/topology/TopologyCanvas.vue` 和 `web/src/styles/workspace.css` 修复节点拖动漂移、画布收缩和缩放后命中区失配
 - [X] T030 [US1] 运行 US1 聚焦测试与三视口浏览器验收，并把结果记录到 `specs/008-ui-overlap-remediation/validation/milestones.md`
-- [ ] T031 [US1] 创建拓扑治理里程碑的聚焦 Git 提交，并把提交 SHA 写入 `specs/008-ui-overlap-remediation/validation/milestones.md`
+- [X] T031 [US1] 创建拓扑治理里程碑的聚焦 Git 提交，并把提交 SHA 写入 `specs/008-ui-overlap-remediation/validation/milestones.md`
 
 **Checkpoint**: US1 可独立演示为稳定、清晰、可连线且流量方向正确的拓扑画布。
 
