@@ -30,7 +30,7 @@ onMounted(refresh);
 <template>
   <main class="flex h-full min-h-0 flex-col bg-background">
     <header
-      class="flex h-12 items-center gap-3 border-b border-border bg-card px-3"
+      class="flex min-h-12 flex-wrap items-center gap-3 border-b border-border bg-card px-3 py-2"
     >
       <RouterLink
         to="/"
@@ -39,7 +39,9 @@ onMounted(refresh);
         <ArrowLeft :size="15" /> 工作区 </RouterLink
       ><Bot :size="17" class="text-primary" />
       <h1 class="font-semibold">自动化与共享控制</h1>
-      <div class="ml-auto flex items-center gap-2">
+      <div
+        class="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2"
+      >
         <ThemeSwitcher />
         <Button variant="ghost" size="sm" @click="refresh">
           <RefreshCw :size="14" /> 刷新
@@ -50,7 +52,7 @@ onMounted(refresh);
       <section class="min-h-0 border-r border-border">
         <TaskCenter :tasks="tasks" @refresh="refresh" />
       </section>
-      <aside class="overflow-auto p-4 netlab-scrollbar">
+      <aside class="min-w-0 overflow-auto p-4 netlab-scrollbar">
         <section class="rounded border border-border bg-card p-3">
           <h2 class="font-semibold">REST 与 MCP 能力一致性</h2>
           <p class="mt-2 text-sm text-muted-foreground">

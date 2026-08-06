@@ -144,7 +144,7 @@ export class LaboratoryPage extends BasePage {
   }
 
   async closeDialog() {
-    await this.page.getByRole("button", { name: "Close dialog" }).click();
+    await this.page.getByRole("button", { name: "关闭对话框" }).click();
   }
 
   async cancelDelete() {

@@ -12,7 +12,7 @@ const importOpen = ref(false);
 <template>
   <main class="h-full overflow-auto bg-background netlab-scrollbar">
     <header
-      class="sticky top-0 z-10 flex h-12 items-center gap-3 border-b border-border bg-card px-3"
+      class="sticky top-0 z-10 flex min-h-12 flex-wrap items-center gap-3 border-b border-border bg-card px-3 py-2"
     >
       <RouterLink
         to="/"
@@ -21,7 +21,9 @@ const importOpen = ref(false);
         <ArrowLeft :size="15" /> 工作区
       </RouterLink>
       <h1 class="font-semibold">模板与镜像</h1>
-      <div class="ml-auto flex items-center gap-2">
+      <div
+        class="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2"
+      >
         <ThemeSwitcher />
         <Button size="sm" @click="importOpen = true">
           <Upload :size="14" /> 导入镜像引用

@@ -147,18 +147,18 @@
 
 ### Tests for User Story 4
 
-- [ ] T060 [P] [US4] 扩展双主题三视口的页面溢出、焦点和 axe 矩阵 `tests/e2e/frontend_localization_theme_accessibility.spec.ts`
-- [ ] T061 [P] [US4] 增加 20 次主题/面板/路由/刷新循环的布局稳定测试 `tests/e2e/frontend_theme_continuity.spec.ts`
-- [ ] T062 [P] [US4] 增加关键创建、连接、检查器、菜单、终端和抓包的 125% 验收场景 `tests/e2e/matrices/viewportInputMatrix.spec.ts`
-- [ ] T063 [P] [US4] 为检查器和操作抽屉尺寸边界增加失败测试 `web/src/components/shell/laboratoryShellSizing.test.ts`
+- [X] T060 [P] [US4] 扩展双主题三视口的页面溢出、焦点和 axe 矩阵 `tests/e2e/frontend_localization_theme_accessibility.spec.ts`
+- [X] T061 [P] [US4] 增加 20 次主题/面板/路由/刷新循环的布局稳定测试 `tests/e2e/frontend_theme_continuity.spec.ts`
+- [X] T062 [P] [US4] 增加关键创建、连接、检查器、菜单、终端和抓包的 125% 验收场景 `tests/e2e/matrices/viewportInputMatrix.spec.ts`
+- [X] T063 [P] [US4] 为检查器和操作抽屉尺寸边界增加失败测试 `web/src/components/shell/laboratoryShellSizing.test.ts`
 
 ### Implementation for User Story 4
 
-- [ ] T064 [US4] 在 `web/src/components/shell/laboratoryShellSizing.ts` 和 `web/src/components/shell/LaboratoryShell.vue` 约束面板尺寸、窄视口 Sheet 切换和页面级溢出
-- [ ] T065 [P] [US4] 修复实验室工具栏、设备添加抽屉和长表单在 1024×768/125% 下的换行与滚动 `web/src/features/laboratories/LaboratoryToolbar.vue` 和 `web/src/features/topology/CreateTopologyResourceDrawer.vue`
-- [ ] T066 [P] [US4] 修复模板页和自动化页在中文长文本及主题切换下的网格与局部滚动 `web/src/views/TemplatesView.vue` 和 `web/src/views/AutomationView.vue`
-- [ ] T067 [US4] 修复图表、菜单、下拉框和拓扑语义色在主题切换后的残留颜色 `web/src/styles/theme.css`
-- [ ] T068 [US4] 运行 US4 三视口、双主题、125% 和 20 次循环验收，并把结果记录到 `specs/008-ui-overlap-remediation/validation/milestones.md`
+- [X] T064 [US4] 在 `web/src/components/shell/laboratoryShellSizing.ts` 和 `web/src/components/shell/LaboratoryShell.vue` 约束面板尺寸、窄视口 Sheet 切换和页面级溢出
+- [X] T065 [P] [US4] 修复实验室工具栏、设备添加抽屉和长表单在 1024×768/125% 下的换行与滚动 `web/src/features/laboratories/LaboratoryToolbar.vue` 和 `web/src/features/topology/CreateTopologyResourceDrawer.vue`
+- [X] T066 [P] [US4] 修复模板页和自动化页在中文长文本及主题切换下的网格与局部滚动 `web/src/views/TemplatesView.vue` 和 `web/src/views/AutomationView.vue`
+- [X] T067 [US4] 修复图表、菜单、下拉框和拓扑语义色在主题切换后的残留颜色 `web/src/styles/theme.css`
+- [X] T068 [US4] 运行 US4 三视口、双主题、125% 和 20 次循环验收，并把结果记录到 `specs/008-ui-overlap-remediation/validation/milestones.md`
 - [ ] T069 [US4] 创建响应式与主题稳定里程碑的聚焦 Git 提交，并把提交 SHA 写入 `specs/008-ui-overlap-remediation/validation/milestones.md`
 
 **Checkpoint**: US4 可独立证明所有主页面在支持矩阵中稳定、可读、可滚动和可操作。
