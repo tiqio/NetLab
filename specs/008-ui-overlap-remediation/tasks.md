@@ -195,8 +195,8 @@
 
 **Purpose**: 完成全量门禁、干净候选、目标机高密度验收、资源清理和可追溯交付。
 
-- [ ] T080 [P] 将最终术语、允许英文范围、错误分层和布局约束补充到用户文档 `docs/operations/ui-workspace.md`
-- [ ] T081 [P] 将审计覆盖率、已修复发现和允许覆盖理由回填到 `specs/008-ui-overlap-remediation/validation/audit-inventory.md`
+- [X] T080 [P] 将最终术语、允许英文范围、错误分层和布局约束补充到用户文档 `docs/operations/ui-workspace.md`
+- [X] T081 [P] 将审计覆盖率、已修复发现和允许覆盖理由回填到 `specs/008-ui-overlap-remediation/validation/audit-inventory.md`
 - [ ] T082 按 `specs/008-ui-overlap-remediation/quickstart.md` 运行 lint、格式、全部前端单测、构建、浏览器矩阵、Go 单元/合同/安全和产物合规门禁
 - [ ] T083 在干净提交上构建候选并将 commit SHA、candidate ID、二进制摘要、合同摘要、构建时间和无迁移状态记录到 `specs/008-ui-overlap-remediation/validation/candidate.md`
 - [ ] T084 使用已构建候选部署到 `10.72.1.7`，禁止目标机源码修改，并将部署与回滚信息记录到 `specs/008-ui-overlap-remediation/validation/target-acceptance.md`
