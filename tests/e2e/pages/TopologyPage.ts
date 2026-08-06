@@ -54,12 +54,14 @@ export class TopologyPage extends BasePage {
       .locator("xpath=ancestor::button[1]")
       .click();
     return this.page.getByRole("dialog", {
-      name: new RegExp(`Add ${name}`, "i"),
+      name: new RegExp(`^(?:Add ${name}|添加 ${name})$`, "i"),
     });
   }
 
   async selectResourceByKeyboard(index: number, additive = false) {
-    const canvas = this.page.getByLabel(/Topology canvas keyboard area/);
+    const canvas = this.page.getByLabel(
+      /Topology canvas keyboard area|拓扑画布键盘操作区/,
+    );
     await canvas.focus();
     for (let step = 0; step <= index; step += 1) {
       await canvas.press(
@@ -72,11 +74,15 @@ export class TopologyPage extends BasePage {
   }
 
   async openSelectedInspector() {
-    await this.page.getByLabel(/Topology canvas keyboard area/).press("Enter");
+    await this.page
+      .getByLabel(/Topology canvas keyboard area|拓扑画布键盘操作区/)
+      .press("Enter");
   }
 
   async openSelectedTerminal() {
-    const canvas = this.page.getByLabel(/Topology canvas keyboard area/);
+    const canvas = this.page.getByLabel(
+      /Topology canvas keyboard area|拓扑画布键盘操作区/,
+    );
     await canvas.focus();
     await canvas.press("t");
     await expect(
@@ -95,7 +101,9 @@ export class TopologyPage extends BasePage {
   }
 
   async panAndZoom() {
-    const canvas = this.page.getByRole("img", { name: /Topology canvas/ });
+    const canvas = this.page.getByRole("img", {
+      name: /Topology canvas|拓扑画布/,
+    });
     await canvas.hover();
     await this.page.mouse.wheel(0, -300);
     const box = await canvas.boundingBox();

@@ -166,13 +166,12 @@ test("current candidate shares browser HTTP and MCP state without stale resurrec
 
   await secondPage.goto("/");
   await selectLaboratoryByName(secondPage, laboratory.name);
-  await page.getByRole("tab", { name: "Console" }).click();
-  await page.getByRole("tab", { name: "Capture" }).click();
-  await page.getByRole("tab", { name: "Console" }).click();
-  await expect(page.getByRole("tab", { name: "Console" })).toHaveAttribute(
-    "aria-selected",
-    "true",
-  );
+  await page.getByRole("tab", { name: /^(Console|终端)$/ }).click();
+  await page.getByRole("tab", { name: /^(Capture|抓包)$/ }).click();
+  await page.getByRole("tab", { name: /^(Console|终端)$/ }).click();
+  await expect(
+    page.getByRole("tab", { name: /^(Console|终端)$/ }),
+  ).toHaveAttribute("aria-selected", "true");
 });
 
 test("target candidate validates console capture filter and live rewire", async ({
@@ -331,9 +330,9 @@ test("target candidate validates console capture filter and live rewire", async 
     second.id,
     `ip addr flush dev ${secondInterfaceRecord.name}; ip addr add 10.77.0.2/30 dev ${secondInterfaceRecord.name}; ip link set ${secondInterfaceRecord.name} up`,
   );
-  await page.getByRole("tab", { name: "Traffic Filter" }).click();
+  await page.getByRole("tab", { name: /^(Traffic Filter|流量过滤)$/ }).click();
   await page
-    .getByRole("region", { name: "Diagnostics" })
+    .getByRole("region", { name: /^(Diagnostics|诊断)$/ })
     .getByRole("button", { name: /^(Refresh|刷新)$/ })
     .click();
   await consoleCommand(page, first.node.id, "ping -c 1 -W 1 10.77.0.2");
@@ -363,7 +362,9 @@ test("target candidate validates console capture filter and live rewire", async 
     5_000,
     50,
   );
-  const canvas = page.getByLabel("Topology canvas keyboard area");
+  const canvas = page.getByLabel(
+    /Topology canvas keyboard area|拓扑画布键盘操作区/,
+  );
   await expect(canvas).toHaveAttribute("data-traffic-recent", /[1-9]\d*/, {
     timeout: 500,
   });

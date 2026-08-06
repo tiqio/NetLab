@@ -19,7 +19,7 @@ test("real interface capture exposes stream metadata quota and cleanup", async (
     runId,
     templateKey: "busybox-container",
   });
-  await page.getByRole("tab", { name: "Capture" }).click();
+  await page.getByRole("tab", { name: /^(Capture|抓包)$/ }).click();
   const capturePage = new CapturePage(page);
   await capturePage.start();
   await capturePage.refresh();

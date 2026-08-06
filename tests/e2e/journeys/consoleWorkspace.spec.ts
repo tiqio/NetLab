@@ -33,8 +33,8 @@ test("real Telnet and VNC sessions switch reconnect and close", async ({
   await consolePage.reconnect();
   await page.setViewportSize({ width: 1024, height: 768 });
   await expect(
-    page.getByRole("navigation", { name: "Console sessions" }),
+    page.getByRole("navigation", { name: /^(Console sessions|终端会话)$/ }),
   ).toBeVisible();
-  const close = page.getByRole("button", { name: /^Close / }).first();
+  const close = page.getByRole("button", { name: /^(Close|关闭) / }).first();
   if (await close.count()) await close.click();
 });

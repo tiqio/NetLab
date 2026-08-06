@@ -52,7 +52,7 @@ export class TrafficFilterPage extends BasePage {
     ).toBeVisible();
     await expect(
       this.diagnostics().getByText(
-        /(?:running|stopped|failed) · \d+\/\d+ 条记录/,
+        /(?:running|stopped|failed|运行中|已停止|失败) · \d+\/\d+ 条记录/,
       ),
     ).toBeVisible();
   }

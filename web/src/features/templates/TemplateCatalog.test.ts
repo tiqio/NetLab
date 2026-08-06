@@ -57,5 +57,10 @@ describe("TemplateCatalog", () => {
     expect(wrapper.text()).toContain("cloud-init");
     expect(wrapper.text()).toContain("sha256:abc");
     expect(wrapper.text()).toContain("浏览器不会存储镜像内容或凭据");
+    expect(
+      wrapper
+        .get('[aria-label="FancyWAN 版本列表，可横向滚动"]')
+        .attributes("tabindex"),
+    ).toBe("0");
   });
 });

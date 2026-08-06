@@ -84,7 +84,11 @@ defineExpose({ refresh: load });
             </p>
           </div>
         </div>
-        <div class="mt-3 overflow-x-auto">
+        <div
+          class="mt-3 overflow-x-auto"
+          tabindex="0"
+          :aria-label="`${template.display_name} 版本列表，可横向滚动`"
+        >
           <Table>
             <thead class="text-muted-foreground">
               <tr>

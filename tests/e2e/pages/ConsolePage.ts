@@ -32,7 +32,9 @@ export class ConsolePage extends BasePage {
       this.page
         .getByRole("region", { name: /^(Diagnostics|诊断)$/ })
         .getByRole("status"),
-    ).toContainText(/connecting|connected|reconnecting/);
+    ).toContainText(
+      /connecting|connected|reconnecting|正在连接|已连接|正在重新连接/,
+    );
   }
 
   async add(mode: "Telnet" | "Serial" | "VNC") {
@@ -40,17 +42,19 @@ export class ConsolePage extends BasePage {
       this.page.getByRole("button", {
         name:
           mode === "Telnet"
-            ? "Add terminal session"
+            ? /^(Add terminal session|新增终端会话)$/
             : mode === "Serial"
-              ? "Add serial console"
-              : "Add VNC session",
+              ? /^(Add serial console|新增串口终端)$/
+              : /^(Add VNC session|新增 VNC 会话)$/,
       }),
     );
   }
 
   async close(label: string) {
     await this.activate(
-      this.page.getByRole("button", { name: `Close ${label}` }),
+      this.page.getByRole("button", {
+        name: new RegExp(`^(?:Close|关闭) ${label}`),
+      }),
     );
   }
 
