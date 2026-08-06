@@ -33,6 +33,17 @@
   textarea {
     font: inherit;
   }
+  select,
+  select option {
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+  }
+  :root[data-theme="light"] select {
+    color-scheme: light;
+  }
+  :root[data-theme="dark"] select {
+    color-scheme: dark;
+  }
   button:focus-visible,
   input:focus-visible,
   select:focus-visible,

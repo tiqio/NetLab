@@ -14,10 +14,15 @@
 
 .theme-switcher select {
   border: 0;
-  background: transparent;
-  color: inherit;
+  background: var(--popover);
+  color: var(--popover-foreground);
   outline: 0;
   cursor: pointer;
+}
+
+.theme-switcher option {
+  background-color: var(--popover);
+  color: var(--popover-foreground);
 }
 
 .theme-switcher:focus-within {

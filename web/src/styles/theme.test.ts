@@ -7,6 +7,14 @@ describe("semantic theme", () => {
     resolve(process.cwd(), "src/styles/theme.css"),
     "utf8",
   );
+  const indexCss = readFileSync(
+    resolve(process.cwd(), "src/styles/index.css"),
+    "utf8",
+  );
+  const workspaceCss = readFileSync(
+    resolve(process.cwd(), "src/styles/workspace.css"),
+    "utf8",
+  );
 
   it("定义浅色和深色根主题", () => {
     expect(css).toContain(':root[data-theme="dark"]');
@@ -28,5 +36,14 @@ describe("semantic theme", () => {
     ]) {
       expect(css.match(new RegExp(`${token}:`, "g"))).toHaveLength(2);
     }
+  });
+
+  it("让原生下拉框和选项跟随当前主题", () => {
+    expect(indexCss).toContain("select option");
+    expect(indexCss).toContain("background-color: var(--popover)");
+    expect(indexCss).toContain("color: var(--popover-foreground)");
+    expect(indexCss).toContain(':root[data-theme="light"] select');
+    expect(indexCss).toContain(':root[data-theme="dark"] select');
+    expect(workspaceCss).toContain(".theme-switcher option");
   });
 });
