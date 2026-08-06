@@ -54,7 +54,7 @@ export class LaboratoryPage extends BasePage {
       name: /^(Create laboratory|创建实验室)$/,
     });
     await expect(dialog).toBeVisible();
-    await dialog.getByLabel(/^(Name|名称)$/).fill(name);
+    await dialog.locator('[data-field="name"] input').fill(name);
     await dialog
       .getByRole("button", { name: /^(Create laboratory|创建实验室)$/ })
       .click();

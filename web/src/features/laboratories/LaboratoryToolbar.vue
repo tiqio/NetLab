@@ -491,7 +491,7 @@ function openDelete() {
     description="创建由服务器管理并在客户端间共享的实验室。"
   >
     <form class="grid gap-3" @submit.prevent="createLab">
-      <FormField label="名称">
+      <FormField data-field="name" label="名称">
         <Input v-model="name" required autofocus /> </FormField
       ><FormField label="恢复策略">
         <Select v-model="policy">
