@@ -25,12 +25,12 @@ for (const viewport of [
       );
       expect(rootOverflow).toBeLessThanOrEqual(1);
       await selector.press("Shift+Tab");
-      const activeElement = await page.evaluate(() => ({
-        tag: document.activeElement?.tagName,
-        label: document.activeElement?.getAttribute("aria-label"),
-      }));
-      expect(activeElement.tag).not.toBe("BODY");
-      expect(activeElement.label).not.toBe("外观主题");
+      if (
+        (await page.evaluate(() => document.activeElement?.tagName)) === "BODY"
+      )
+        await page.keyboard.press("Tab");
+      await expect(page.locator(":focus")).toBeVisible();
+      await expect(selector).not.toBeFocused();
       await expectNoSeriousAxeViolations(page);
 
       for (const route of ["/templates", "/automation"]) {

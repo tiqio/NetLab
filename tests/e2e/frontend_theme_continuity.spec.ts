@@ -8,13 +8,6 @@ test("主题切换即时生效并在刷新与路由切换后保持", async ({ pa
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await expect(selector).toHaveCSS("background-color", "rgb(255, 255, 255)");
   await expect(selector).toHaveCSS("color", "rgb(20, 32, 43)");
-  const lightSelectColors = await selector.evaluate((element) => {
-    const style = getComputedStyle(element);
-    return { background: style.backgroundColor, foreground: style.color };
-  });
-  expect(lightSelectColors.background).not.toBe(lightSelectColors.foreground);
-  expect(lightSelectColors.background).toBe("rgb(255, 255, 255)");
-  expect(lightSelectColors.foreground).toBe("rgb(20, 32, 43)");
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await page.goto("/templates");
