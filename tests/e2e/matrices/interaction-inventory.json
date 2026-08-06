@@ -55,7 +55,7 @@
         "keyboard"
       ],
       "outcome_class": "mutation",
-      "operation": "node.create-or-network-object.create",
+      "operation": "node.create,network_object.create",
       "cleanup_effect": "laboratory-cascade",
       "sensitive_evidence": [
         "bootstrap-password"
