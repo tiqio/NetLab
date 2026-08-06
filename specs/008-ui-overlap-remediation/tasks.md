@@ -185,7 +185,7 @@
 - [X] T076 [US5] 将中文化扫描、视觉矩阵和证据 Schema 校验接入本地验收入口 `acceptance/frontend-acceptance.sh`
 - [X] T077 [US5] 扩展前端产物合规检查以验证脱敏视觉证据和禁止敏感内容 `scripts/check-frontend-artifacts.sh`
 - [X] T078 [US5] 运行 US5 注入失败/恢复通过测试，并把自动化回归结果记录到 `specs/008-ui-overlap-remediation/validation/milestones.md`
-- [ ] T079 [US5] 创建持续视觉与中文化回归里程碑的聚焦 Git 提交，并把提交 SHA 写入 `specs/008-ui-overlap-remediation/validation/milestones.md`
+- [X] T079 [US5] 创建持续视觉与中文化回归里程碑的聚焦 Git 提交，并把提交 SHA 写入 `specs/008-ui-overlap-remediation/validation/milestones.md`
 
 **Checkpoint**: US5 可独立阻止布局碰撞、低对比度和英文文案回归。
 

@@ -8,7 +8,7 @@
 | Inspector and workspaces | `1a394a8` | 40 inspector/chart/menu/workspace tests; 15 axe/focus tests; localization scan; build; three-viewport diagnostics journey | passed | local disposable acceptance |
 | Full Chinese UI | `256dd7d` | 49 focused component/locales tests; strengthened interpolation scan; frontend build; six three-viewport localization journeys | passed | local disposable acceptance |
 | Responsive and theme stability | `a4a2be9` | 6 shell sizing tests; 27 dual-theme/three-viewport/axe tests; 9 twenty-cycle and 125% input tests; build and localization scan | passed | local disposable acceptance |
-| Continuous audit | pending | scenario inventory, evidence schema, redaction, injected failures | pending | n/a |
+| Continuous audit | `fc10cf4` | 5 inventory/evidence/redaction tests; duplicate and missing-matrix injection; 9 three-viewport visual audit journeys; artifact hygiene | passed | local disposable acceptance |
 | Target acceptance | pending | clean candidate, deployment, high-density Lab, cleanup | pending | pending |
 
 ## Recording Rules
