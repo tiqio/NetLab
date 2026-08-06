@@ -139,7 +139,7 @@ describe("NodeConfigurationPanel", () => {
       wrapper.get<HTMLInputElement>('input[aria-label="eth0 路由 1 目标"]')
         .element.value,
     ).toBe("0.0.0.0/0");
-    await wrapper.get('input[aria-label="eth0 路由 1 Metric"]').setValue("20");
+    await wrapper.get('input[aria-label="eth0 路由 1 跃点值"]').setValue("20");
     await wrapper.get("button:not([type='button'])").trigger("click");
     await flushPromises();
     await wrapper.setProps({ node: { ...node, revision: 2 } });

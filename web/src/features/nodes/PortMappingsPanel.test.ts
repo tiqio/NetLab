@@ -48,7 +48,7 @@ describe("PortMappingsPanel", () => {
 
     await wrapper
       .findAll("button")
-      .find((button) => button.text().includes("Copy"))!
+      .find((button) => button.text().includes("复制"))!
       .trigger("click");
     await flushPromises();
     expect(writeText).toHaveBeenCalledWith("http://10.72.1.159:18090");

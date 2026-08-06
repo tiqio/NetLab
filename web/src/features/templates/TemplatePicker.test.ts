@@ -75,6 +75,6 @@ describe("TemplatePicker", () => {
     await wrapper.get("button:not([aria-label])").trigger("click");
     await flushPromises();
     expect(wrapper.emitted("select")).toBeUndefined();
-    expect(wrapper.text()).toContain("no longer available");
+    expect(wrapper.text()).toContain("已不可用");
   });
 });
