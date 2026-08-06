@@ -81,7 +81,11 @@ export const test = base.extend<AcceptanceFixtures>({
       baseURL || "http://127.0.0.1:8080",
       targetKind,
     );
-    if (targetKind === "remote-privileged" && !environment.baseline_clean) {
+    if (
+      targetKind === "remote-privileged" &&
+      !environment.baseline_clean &&
+      process.env.NETLAB_ACCEPTANCE_BASELINE_MODE !== "preserve"
+    ) {
       throw new Error(
         "Target-host acceptance requires a clean laboratory baseline",
       );
