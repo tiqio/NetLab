@@ -23,3 +23,14 @@
 - Contract SHA-256: `sha256:005a63ebd6d9b04dfc83a07721b97f2b5f0c1f544be642c8ffa1db7e930fe4a6`
 - Source state: clean after the tracked SPA bundle was regenerated and committed.
 - Scope: suppress undeclared ECharts legends, move the topology category legend away from the top toolbar and Inspector toggle, and localize the Lightweight/network category labels.
+
+## Theme and Inspector Simplification Candidate
+
+- Candidate ID: `ui-simplify-theme-20260806T101629Z`
+- Source commit: `1c31cc93e757fbd6afe7594f80120048d8839f00`
+- Focused source commit: `9c35624`
+- Built at: `2026-08-06T10:16:29Z`
+- Installed binary SHA-256: `343f11cea4b5d30117db2f357db4880ee05200fb6b9efbd32ffada0d7a99ccab`
+- Contract SHA-256: `sha256:005a63ebd6d9b04dfc83a07721b97f2b5f0c1f544be642c8ffa1db7e930fe4a6`
+- Source state: clean after committing the regenerated embedded SPA.
+- Scope: make live xterm sessions follow light/dark theme changes, expose the resolved system theme in the toolbar, remove the obsolete global link card, conditionally show active network-object attachment controls, and remove six unreferenced legacy Vue components.

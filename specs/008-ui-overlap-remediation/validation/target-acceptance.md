@@ -38,3 +38,17 @@
 - Release identity: the HTTP capability response reported the candidate, installed binary digest, contract digest and build timestamp above.
 - Visual verification: at 1024×768 the topology category legend rendered at the lower-left without intersecting the top toolbar or Inspector toggle; after selecting a Docker node, the vCPU, CPU quota and memory cards remained above the resource chart and the chart no longer rendered an undeclared legend over its plot area.
 - Regression gates: 69 frontend test files with 284 tests passed; 12 acceptance test files with 25 tests passed; production build, localization scan and frontend artifact hygiene passed.
+
+## 2026-08-06 Theme and Inspector Simplification
+
+- Candidate: `ui-simplify-theme-20260806T101629Z`
+- Source commit: `1c31cc93e757fbd6afe7594f80120048d8839f00`
+- Installed binary SHA-256: `343f11cea4b5d30117db2f357db4880ee05200fb6b9efbd32ffada0d7a99ccab`
+- Deployment: project prebuilt-binary installation synchronized the binary, release configuration and template readiness without editing target source files.
+- Health: `netlab.service` active and `GET /healthz` returned `{"status":"ok"}`.
+- Empty Inspector: only the selection guidance remained; the obsolete global “创建链路” card and the disabled network-object attachment card were absent.
+- Active network object behavior: the attachment workflow remains available after selecting NAT Bridge, Bridge or Lightweight switching/routing objects because it owns port, PVID and tagged-VLAN configuration that canvas links do not replace.
+- Theme control: explicit light selection reported `data-resolved-theme="light"` and “当前生效：浅色主题”; the system option now includes its currently resolved theme.
+- Live terminal: an already-open serial session rendered `rgb(248, 250, 252)` in light mode and changed to `rgb(5, 10, 15)` after selecting dark mode without recreating the terminal session.
+- Cleanup audit: all 60 remaining Vue components had a production reference; six obsolete components and four isolated tests were removed.
+- Regression gates: 65 frontend test files with 274 tests passed; 12 acceptance test files with 25 tests passed; format, lint with zero errors, production build, localization and artifact hygiene passed.
