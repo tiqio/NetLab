@@ -38,4 +38,3 @@ export const technicalTerms = [
   "QGA",
   "pcap",
 ] as const;
-

@@ -12,7 +12,11 @@ describe("ThemeSwitcher", () => {
   it("提供中文三态主题选择", () => {
     const wrapper = mount(ThemeSwitcher);
     const select = wrapper.get('select[aria-label="外观主题"]');
-    expect(select.findAll("option").map((option) => option.text())).toEqual(["跟随系统", "浅色", "深色"]);
+    expect(select.findAll("option").map((option) => option.text())).toEqual([
+      "跟随系统",
+      "浅色",
+      "深色",
+    ]);
   });
 
   it("选择浅色后更新根主题", async () => {
@@ -21,4 +25,3 @@ describe("ThemeSwitcher", () => {
     expect(document.documentElement.dataset.theme).toBe("light");
   });
 });
-

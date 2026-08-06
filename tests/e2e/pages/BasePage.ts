@@ -29,7 +29,9 @@ export class BasePage {
     await expect(dialog).toBeVisible();
     const button = name
       ? dialog.getByRole("button", { name })
-      : dialog.getByRole("button", { name: /确认|删除|继续|confirm|delete|continue/i });
+      : dialog.getByRole("button", {
+          name: /确认|删除|继续|confirm|delete|continue/i,
+        });
     await button.click();
   }
 
@@ -42,7 +44,10 @@ export class BasePage {
   }
 
   async expectResolvedTheme(theme: "light" | "dark") {
-    await expect(this.page.locator("html")).toHaveAttribute("data-theme", theme);
+    await expect(this.page.locator("html")).toHaveAttribute(
+      "data-theme",
+      theme,
+    );
   }
 
   async refreshAndExpect(locator: Locator) {

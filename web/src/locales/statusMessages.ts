@@ -27,9 +27,10 @@ export function localizeState(value: string): string {
 
 export function problemContext(code?: string): string {
   if (!code) return "操作未成功，请检查详细信息后重试。";
-  if (/timeout/i.test(code)) return "操作超时，请检查运行状态和网络连接后重试。";
-  if (/conflict|revision/i.test(code)) return "资源已被其他操作更新，请刷新状态后重试。";
+  if (/timeout/i.test(code))
+    return "操作超时，请检查运行状态和网络连接后重试。";
+  if (/conflict|revision/i.test(code))
+    return "资源已被其他操作更新，请刷新状态后重试。";
   if (/not.?found/i.test(code)) return "目标资源不存在或已被删除，请刷新列表。";
   return "操作未成功；下方保留原始错误，便于诊断。";
 }
-

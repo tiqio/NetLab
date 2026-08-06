@@ -51,7 +51,7 @@ describe("Sheet", () => {
       props: { modelValue: true, title: "Panel", preventClose: true },
     });
     document.body
-      .querySelector<HTMLButtonElement>('[aria-label="Close sheet"]')!
+      .querySelector<HTMLButtonElement>('[aria-label="关闭抽屉"]')!
       .click();
     document.body
       .querySelector<HTMLElement>("[data-sheet-overlay]")!
@@ -94,7 +94,7 @@ describe("Sheet", () => {
       slots: { default: "<input aria-label='Draft name' />" },
     });
     document.body
-      .querySelector<HTMLButtonElement>('[aria-label="Close sheet"]')!
+      .querySelector<HTMLButtonElement>('[aria-label="关闭抽屉"]')!
       .click();
     await nextTick();
 
@@ -128,7 +128,7 @@ describe("Sheet", () => {
       slots: { default: "<button data-background>background</button>" },
     });
     document.body
-      .querySelector<HTMLButtonElement>('[aria-label="Close sheet"]')!
+      .querySelector<HTMLButtonElement>('[aria-label="关闭抽屉"]')!
       .click();
     await nextTick();
     const keep = document.body.querySelector<HTMLButtonElement>(

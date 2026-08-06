@@ -16,7 +16,12 @@ describe("useThemePreference", () => {
   it("首次访问跟随系统浅色偏好", async () => {
     mockColorScheme(true);
     const { useThemePreference } = await loadComposable();
-    const wrapper = mount(defineComponent({ setup: () => useThemePreference(), template: "<div />" }));
+    const wrapper = mount(
+      defineComponent({
+        setup: () => useThemePreference(),
+        template: "<div />",
+      }),
+    );
     expect(document.documentElement.dataset.theme).toBe("light");
     wrapper.unmount();
   });
@@ -24,7 +29,12 @@ describe("useThemePreference", () => {
   it("无明确系统浅色偏好时回退深色", async () => {
     mockColorScheme(false);
     const { useThemePreference } = await loadComposable();
-    const wrapper = mount(defineComponent({ setup: () => useThemePreference(), template: "<div />" }));
+    const wrapper = mount(
+      defineComponent({
+        setup: () => useThemePreference(),
+        template: "<div />",
+      }),
+    );
     expect(document.documentElement.dataset.theme).toBe("dark");
     wrapper.unmount();
   });
@@ -33,7 +43,15 @@ describe("useThemePreference", () => {
     mockColorScheme(false);
     const { useThemePreference, THEME_STORAGE_KEY } = await loadComposable();
     let theme: ReturnType<typeof useThemePreference> | undefined;
-    const wrapper = mount(defineComponent({ setup() { theme = useThemePreference(); return {}; }, template: "<div />" }));
+    const wrapper = mount(
+      defineComponent({
+        setup() {
+          theme = useThemePreference();
+          return {};
+        },
+        template: "<div />",
+      }),
+    );
     theme?.setPreference("light");
     await nextTick();
     expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("light");
@@ -41,4 +59,3 @@ describe("useThemePreference", () => {
     wrapper.unmount();
   });
 });
-

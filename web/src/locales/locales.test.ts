@@ -1,9 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { exactTranslations, localizeState, problemContext, technicalTerms, terminology } from "@/locales";
+import {
+  exactTranslations,
+  localizeState,
+  problemContext,
+  technicalTerms,
+  terminology,
+} from "@/locales";
 
 describe("简体中文资源", () => {
   it("为核心术语提供唯一中文名称", () => {
-    expect(new Set(Object.values(terminology)).size).toBe(Object.values(terminology).length);
+    expect(new Set(Object.values(terminology)).size).toBe(
+      Object.values(terminology).length,
+    );
   });
 
   it("保留技术缩写并翻译产品动作", () => {
@@ -21,4 +29,3 @@ describe("简体中文资源", () => {
     expect(problemContext("revision_conflict")).toContain("刷新");
   });
 });
-

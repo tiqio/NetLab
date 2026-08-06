@@ -179,7 +179,7 @@ onBeforeUnmount(() => {
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Close sheet"
+            aria-label="关闭抽屉"
             @click="requestClose('button')"
           >
             <X :size="16" />

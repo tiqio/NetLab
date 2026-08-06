@@ -1725,7 +1725,7 @@ defineExpose({
 <style scoped>
 .topology-surface {
   position: relative;
-  background-color: #08131d;
+  background-color: var(--topology-canvas);
   background-image:
     linear-gradient(var(--topology-grid) 1px, transparent 1px),
     linear-gradient(90deg, var(--topology-grid) 1px, transparent 1px);

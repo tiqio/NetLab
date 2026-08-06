@@ -29,7 +29,7 @@ describe("interaction state matrix", () => {
         },
       });
       expect(wrapper.get('[role="status"]').text()).toContain(`${state} title`);
-      expect(wrapper.get("button").text()).toContain("Retry");
+      expect(wrapper.get("button").text()).toContain("重试");
     });
   }
 });

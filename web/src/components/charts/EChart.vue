@@ -57,6 +57,7 @@ const emit = defineEmits<{
 const root = ref<HTMLDivElement>();
 const chart = shallowRef<ECharts>();
 let observer: ResizeObserver | undefined;
+let themeObserver: MutationObserver | undefined;
 let activeGraphDrag:
   { id: string; offsetX: number; offsetY: number } | undefined;
 let pendingApply = false;
@@ -193,7 +194,23 @@ function apply() {
     pendingApply = true;
     return;
   }
-  chart.value?.setOption(props.option, {
+  const styles = getComputedStyle(document.documentElement);
+  const foreground = styles.getPropertyValue("--foreground").trim();
+  const muted = styles.getPropertyValue("--muted-foreground").trim();
+  const border = styles.getPropertyValue("--chart-grid").trim();
+  const tooltip = styles.getPropertyValue("--chart-tooltip").trim();
+  const themedOption = {
+    ...props.option,
+    textStyle: { color: foreground },
+    title: { textStyle: { color: foreground }, subtextStyle: { color: muted } },
+    legend: { textStyle: { color: muted } },
+    tooltip: {
+      backgroundColor: tooltip,
+      borderColor: border,
+      textStyle: { color: foreground },
+    },
+  } as EChartsCoreOption;
+  chart.value?.setOption(themedOption, {
     notMerge: props.notMerge,
     lazyUpdate: true,
   });
@@ -250,12 +267,18 @@ onMounted(() => {
     emit("resized");
   });
   observer.observe(root.value);
+  themeObserver = new MutationObserver(() => apply());
+  themeObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["data-theme"],
+  });
   apply();
   emit("ready", chart.value);
 });
 watch(() => props.option, apply, { deep: true });
 onBeforeUnmount(() => {
   observer?.disconnect();
+  themeObserver?.disconnect();
   activeGraphDrag = undefined;
   pendingApply = false;
   chart.value?.getZr().off("dragstart");

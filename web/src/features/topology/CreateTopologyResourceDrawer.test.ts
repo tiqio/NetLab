@@ -767,7 +767,7 @@ describe("CreateTopologyResourceDrawer", () => {
       (wrapper.vm as unknown as { isDirty: () => boolean }).isDirty(),
     ).toBe(false);
     document.body
-      .querySelector<HTMLButtonElement>('[aria-label="Close sheet"]')!
+      .querySelector<HTMLButtonElement>('[aria-label="关闭抽屉"]')!
       .click();
     await flushPromises();
     expect(document.body.querySelector('[role="alertdialog"]')).toBeNull();

@@ -53,27 +53,27 @@
 
 ### Tests for User Story 1
 
-- [ ] T012 [P] [US1] 为共享加载态、空态、确认、高风险动作、状态和结构化错误的中文合同编写失败测试于 `web/src/components/common/LocalizationContract.test.ts`
-- [ ] T013 [P] [US1] 为导航、命令面板、实验室工具栏和操作抽屉的中文标签及可访问名称编写失败测试于 `web/src/components/shell/ShellLocalization.test.ts`
-- [ ] T014 [P] [US1] 为添加资源、拓扑菜单、端口选择、Inspector 和节点操作的中文流程编写失败测试于 `web/src/features/topology/TopologyLocalization.test.ts`
-- [ ] T015 [P] [US1] 为 Console、Capture、Wireshark、Traffic Filter、任务与诊断的中文状态和错误上下文编写失败测试于 `web/src/features/diagnostics/DiagnosticsLocalization.test.ts`
-- [ ] T016 [P] [US1] 为模板、镜像导入和自动化页面的中文加载态、空态、失败态及重试入口编写失败测试于 `web/src/views/PageLocalization.test.ts`
-- [ ] T017 [P] [US1] 创建完整中文关键流程浏览器测试并校验技术数据不被翻译于 `tests/e2e/frontend_localization.spec.ts`
+- [X] T012 [P] [US1] 为共享加载态、空态、确认、高风险动作、状态和结构化错误的中文合同编写失败测试于 `web/src/components/common/LocalizationContract.test.ts`
+- [X] T013 [P] [US1] 为导航、命令面板、实验室工具栏和操作抽屉的中文标签及可访问名称编写失败测试于 `web/src/components/shell/ShellLocalization.test.ts`
+- [X] T014 [P] [US1] 为添加资源、拓扑菜单、端口选择、Inspector 和节点操作的中文流程编写失败测试于 `web/src/features/topology/TopologyLocalization.test.ts`
+- [X] T015 [P] [US1] 为 Console、Capture、Wireshark、Traffic Filter、任务与诊断的中文状态和错误上下文编写失败测试于 `web/src/features/diagnostics/DiagnosticsLocalization.test.ts`
+- [X] T016 [P] [US1] 为模板、镜像导入和自动化页面的中文加载态、空态、失败态及重试入口编写失败测试于 `web/src/views/PageLocalization.test.ts`
+- [X] T017 [P] [US1] 创建完整中文关键流程浏览器测试并校验技术数据不被翻译于 `tests/e2e/frontend_localization.spec.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T018 [US1] 使用集中资源中文化确认、加载、空态、状态徽标、资源标识和结构化错误组件于 `web/src/components/common/ConfirmationDialog.vue`, `web/src/components/common/LoadingState.vue`, `web/src/components/common/EmptyState.vue`, `web/src/components/common/StatusBadge.vue`, `web/src/components/common/ResourceIdentity.vue`, `web/src/components/common/StatePresentation.vue`, `web/src/components/common/StructuredProblem.vue`
-- [ ] T019 [US1] 中文化应用导航、命令面板、实验室外壳和全局操作抽屉于 `web/src/components/shell/CommandPalette.vue`, `web/src/components/shell/LaboratoryShell.vue`, `web/src/components/shell/OperationsDrawer.vue`
-- [ ] T020 [P] [US1] 中文化实验室切换、重命名、复制、导入导出和删除确认于 `web/src/features/laboratories/LaboratoryToolbar.vue`, `web/src/features/laboratories/LaboratoryTransferDialog.vue`
-- [ ] T021 [US1] 中文化资源添加抽屉、设备目录、端口选择、节点与链路右键菜单于 `web/src/features/topology/CreateTopologyResourceDrawer.vue`, `web/src/features/topology/DevicePalette.vue`, `web/src/features/topology/TopologyResourceCatalog.vue`, `web/src/features/topology/PortChooser.vue`, `web/src/features/topology/LinkContextMenu.vue`
-- [ ] T022 [US1] 中文化拓扑工作区、画布操作、Inspector、接口编辑和节点编辑状态于 `web/src/features/topology/TopologyWorkspace.vue`, `web/src/features/topology/TopologyCanvas.vue`, `web/src/features/topology/TopologyInspector.vue`, `web/src/features/topology/InterfaceEditor.vue`, `web/src/features/topology/NodeEditor.vue`
-- [ ] T023 [P] [US1] 中文化 QEMU、Docker、PC、Lightweight L2/L3 的设置、能力、接口、资源、端口映射和命令操作于 `web/src/features/nodes/NodeConfigurationPanel.vue`, `web/src/features/nodes/NodeCapabilityPanel.vue`, `web/src/features/nodes/NodeOperationsPanel.vue`, `web/src/features/nodes/InterfaceOperations.vue`, `web/src/features/nodes/NodeResourcesEditor.vue`, `web/src/features/nodes/PortMappingsPanel.vue`, `web/src/features/nodes/GuestCommandPanel.vue`, `web/src/features/nodes/LightweightNodeEditor.vue`, `web/src/features/nodes/LightweightPCConfigurationPanel.vue`, `web/src/features/nodes/LightweightSwitchConfigEditor.vue`, `web/src/features/nodes/LightweightSwitchConfigurationPanel.vue`, `web/src/features/nodes/RuijieConfigurationPanel.vue`
-- [ ] T024 [P] [US1] 中文化任务搜索、进度、取消、重试、终态和诊断建议于 `web/src/features/tasks/TaskCenter.vue`
-- [ ] T025 [US1] 中文化 Console、Capture、Wireshark 集成、Traffic Filter 和诊断工作区并为原始错误附加中文上下文于 `web/src/features/diagnostics/ConsoleWorkspace.vue`, `web/src/features/diagnostics/GlobalConsoleWorkspace.vue`, `web/src/features/diagnostics/CapturePanel.vue`, `web/src/features/diagnostics/GlobalCaptureWorkspace.vue`, `web/src/features/diagnostics/TrafficFilterPanel.vue`, `web/src/features/diagnostics/DiagnosticsPanel.vue`
-- [ ] T026 [P] [US1] 中文化模板目录、模板选择、镜像导入、模板页和自动化页于 `web/src/features/templates/TemplateCatalog.vue`, `web/src/features/templates/TemplatePicker.vue`, `web/src/features/templates/ImageImportDialog.vue`, `web/src/views/TemplatesView.vue`, `web/src/views/AutomationView.vue`
-- [ ] T027 [US1] 创建响应式工作区样式并修复中文长文本在工具栏、添加抽屉、Inspector 和底部工作区中的截断与操作不可达问题于 `web/src/styles/workspace.css`, `web/src/styles/index.css`, `web/src/components/shell/LaboratoryShell.vue`, `web/src/features/topology/CreateTopologyResourceDrawer.vue`, `web/src/features/topology/TopologyInspector.vue`
-- [ ] T028 [US1] 运行 `scripts/check-ui-localization.sh`、US1 Vitest 与 `tests/e2e/frontend_localization.spec.ts` 并将覆盖率和遗留豁免记录到 `specs/007-ui-localization-theme/validation.md`
-- [ ] T029 [US1] 创建“中文术语与全页面文案”聚焦里程碑提交，提交范围记录于 `specs/007-ui-localization-theme/validation.md`
+- [X] T018 [US1] 使用集中资源中文化确认、加载、空态、状态徽标、资源标识和结构化错误组件于 `web/src/components/common/ConfirmationDialog.vue`, `web/src/components/common/LoadingState.vue`, `web/src/components/common/EmptyState.vue`, `web/src/components/common/StatusBadge.vue`, `web/src/components/common/ResourceIdentity.vue`, `web/src/components/common/StatePresentation.vue`, `web/src/components/common/StructuredProblem.vue`
+- [X] T019 [US1] 中文化应用导航、命令面板、实验室外壳和全局操作抽屉于 `web/src/components/shell/CommandPalette.vue`, `web/src/components/shell/LaboratoryShell.vue`, `web/src/components/shell/OperationsDrawer.vue`
+- [X] T020 [P] [US1] 中文化实验室切换、重命名、复制、导入导出和删除确认于 `web/src/features/laboratories/LaboratoryToolbar.vue`, `web/src/features/laboratories/LaboratoryTransferDialog.vue`
+- [X] T021 [US1] 中文化资源添加抽屉、设备目录、端口选择、节点与链路右键菜单于 `web/src/features/topology/CreateTopologyResourceDrawer.vue`, `web/src/features/topology/DevicePalette.vue`, `web/src/features/topology/TopologyResourceCatalog.vue`, `web/src/features/topology/PortChooser.vue`, `web/src/features/topology/LinkContextMenu.vue`
+- [X] T022 [US1] 中文化拓扑工作区、画布操作、Inspector、接口编辑和节点编辑状态于 `web/src/features/topology/TopologyWorkspace.vue`, `web/src/features/topology/TopologyCanvas.vue`, `web/src/features/topology/TopologyInspector.vue`, `web/src/features/topology/InterfaceEditor.vue`, `web/src/features/topology/NodeEditor.vue`
+- [X] T023 [P] [US1] 中文化 QEMU、Docker、PC、Lightweight L2/L3 的设置、能力、接口、资源、端口映射和命令操作于 `web/src/features/nodes/NodeConfigurationPanel.vue`, `web/src/features/nodes/NodeCapabilityPanel.vue`, `web/src/features/nodes/NodeOperationsPanel.vue`, `web/src/features/nodes/InterfaceOperations.vue`, `web/src/features/nodes/NodeResourcesEditor.vue`, `web/src/features/nodes/PortMappingsPanel.vue`, `web/src/features/nodes/GuestCommandPanel.vue`, `web/src/features/nodes/LightweightNodeEditor.vue`, `web/src/features/nodes/LightweightPCConfigurationPanel.vue`, `web/src/features/nodes/LightweightSwitchConfigEditor.vue`, `web/src/features/nodes/LightweightSwitchConfigurationPanel.vue`, `web/src/features/nodes/RuijieConfigurationPanel.vue`
+- [X] T024 [P] [US1] 中文化任务搜索、进度、取消、重试、终态和诊断建议于 `web/src/features/tasks/TaskCenter.vue`
+- [X] T025 [US1] 中文化 Console、Capture、Wireshark 集成、Traffic Filter 和诊断工作区并为原始错误附加中文上下文于 `web/src/features/diagnostics/ConsoleWorkspace.vue`, `web/src/features/diagnostics/GlobalConsoleWorkspace.vue`, `web/src/features/diagnostics/CapturePanel.vue`, `web/src/features/diagnostics/GlobalCaptureWorkspace.vue`, `web/src/features/diagnostics/TrafficFilterPanel.vue`, `web/src/features/diagnostics/DiagnosticsPanel.vue`
+- [X] T026 [P] [US1] 中文化模板目录、模板选择、镜像导入、模板页和自动化页于 `web/src/features/templates/TemplateCatalog.vue`, `web/src/features/templates/TemplatePicker.vue`, `web/src/features/templates/ImageImportDialog.vue`, `web/src/views/TemplatesView.vue`, `web/src/views/AutomationView.vue`
+- [X] T027 [US1] 创建响应式工作区样式并修复中文长文本在工具栏、添加抽屉、Inspector 和底部工作区中的截断与操作不可达问题于 `web/src/styles/workspace.css`, `web/src/styles/index.css`, `web/src/components/shell/LaboratoryShell.vue`, `web/src/features/topology/CreateTopologyResourceDrawer.vue`, `web/src/features/topology/TopologyInspector.vue`
+- [X] T028 [US1] 运行 `scripts/check-ui-localization.sh`、US1 Vitest 与 `tests/e2e/frontend_localization.spec.ts` 并将覆盖率和遗留豁免记录到 `specs/007-ui-localization-theme/validation.md`
+- [X] T029 [US1] 创建“中文术语与全页面文案”聚焦里程碑提交，提交范围记录于 `specs/007-ui-localization-theme/validation.md`
 
 **Checkpoint**: User Story 1 可独立演示，核心流程无需英文产品说明即可完成。
 
@@ -87,26 +87,26 @@
 
 ### Tests for User Story 2
 
-- [ ] T030 [P] [US2] 为首次系统跟随、深色回退、手动覆盖、存储恢复、存储失败和系统主题变化编写失败测试于 `web/src/composables/useThemePreference.test.ts`
-- [ ] T031 [P] [US2] 为中文主题入口的键盘选择、焦点恢复和当前状态提示编写失败测试于 `web/src/components/appearance/ThemeSwitcher.test.ts`
-- [ ] T032 [P] [US2] 为首屏挂载前主题解析和无错误主题闪烁编写失败测试于 `web/src/themeBootstrap.test.ts`
-- [ ] T033 [P] [US2] 为 ECharts 主题更新后数据、缩放、图例和选择状态保持编写失败测试于 `web/src/components/charts/EChart.test.ts`
-- [ ] T034 [P] [US2] 为拓扑主题更新后节点坐标、路由点、缩放、选择和拖动状态保持编写失败测试于 `web/src/features/topology/topologyThemeContinuity.test.ts`
-- [ ] T035 [P] [US2] 为刷新、路由切换、双浏览器隔离和运行会话连续性创建浏览器测试于 `tests/e2e/frontend_theme_continuity.spec.ts`
+- [X] T030 [P] [US2] 为首次系统跟随、深色回退、手动覆盖、存储恢复、存储失败和系统主题变化编写失败测试于 `web/src/composables/useThemePreference.test.ts`
+- [X] T031 [P] [US2] 为中文主题入口的键盘选择、焦点恢复和当前状态提示编写失败测试于 `web/src/components/appearance/ThemeSwitcher.test.ts`
+- [X] T032 [P] [US2] 为首屏挂载前主题解析和无错误主题闪烁编写失败测试于 `web/src/themeBootstrap.test.ts`
+- [X] T033 [P] [US2] 为 ECharts 主题更新后数据、缩放、图例和选择状态保持编写失败测试于 `web/src/components/charts/EChart.test.ts`
+- [X] T034 [P] [US2] 为拓扑主题更新后节点坐标、路由点、缩放、选择和拖动状态保持编写失败测试于 `web/src/features/topology/topologyThemeContinuity.test.ts`
+- [X] T035 [P] [US2] 为刷新、路由切换、双浏览器隔离和运行会话连续性创建浏览器测试于 `tests/e2e/frontend_theme_continuity.spec.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T036 [US2] 实现 `system | light | dark` 偏好、`light | dark` 解析、`netlab.appearance.v1` 持久化和存储失败回退于 `web/src/composables/useThemePreference.ts`
-- [ ] T037 [US2] 在 Vue 挂载前解析并应用根元素 `data-theme` 与 `color-scheme` 于 `web/src/themeBootstrap.ts`, `web/src/main.ts`, `web/index.html`
-- [ ] T038 [US2] 将单一深色变量重构为浅色/深色语义调色板并覆盖表面、文字、边框、焦点、状态、拓扑和图表变量于 `web/src/styles/theme.css`
-- [ ] T039 [P] [US2] 实现可键盘操作且带中文可访问名称的三态主题切换器于 `web/src/components/appearance/ThemeSwitcher.vue`, `web/src/components/appearance/index.ts`
-- [ ] T040 [US2] 将统一主题入口接入拓扑实验室工具栏、模板页和自动化页于 `web/src/features/laboratories/LaboratoryToolbar.vue`, `web/src/views/TemplatesView.vue`, `web/src/views/AutomationView.vue`
-- [ ] T041 [US2] 使 Shadcn 风格按钮、表单、选择器、菜单、Dialog、Sheet、Tabs、Table、Tooltip 和调整手柄仅使用语义主题变量于 `web/src/components/ui/`
-- [ ] T042 [US2] 让 ECharts、资源图表、抓包图表和任务图表响应解析主题且保持实例交互状态于 `web/src/components/charts/EChart.vue`, `web/src/components/charts/CaptureVolumeChart.vue`, `web/src/components/charts/TaskProgressChart.vue`, `web/src/features/analytics/ResourceCharts.vue`
-- [ ] T043 [US2] 让拓扑画布、节点、网络对象、端口、链路、箭头、粒子、选择框和分组框使用主题语义且保持几何状态于 `web/src/features/topology/TopologyCanvas.vue`, `web/src/features/topology/TrafficPathOverlay.vue`, `web/src/features/topology/topologyVisualSemantics.ts`, `web/src/features/topology/topologySymbols.ts`
-- [ ] T044 [US2] 仅主题化 Console 与 VNC 外围标签、工具栏、边框和状态区并保持客户机 ANSI/远程画面配色于 `web/src/features/diagnostics/ConsoleWorkspace.vue`, `web/src/features/diagnostics/GlobalConsoleWorkspace.vue`, `web/src/features/nodes/NodeOperationsPanel.vue`
-- [ ] T045 [US2] 运行 US2 Vitest、构建和 `tests/e2e/frontend_theme_continuity.spec.ts` 并记录 300ms 切换、隔离和会话连续性证据于 `specs/007-ui-localization-theme/validation.md`
-- [ ] T046 [US2] 创建“全局主题与复杂视图适配”聚焦里程碑提交，提交范围记录于 `specs/007-ui-localization-theme/validation.md`
+- [X] T036 [US2] 实现 `system | light | dark` 偏好、`light | dark` 解析、`netlab.appearance.v1` 持久化和存储失败回退于 `web/src/composables/useThemePreference.ts`
+- [X] T037 [US2] 在 Vue 挂载前解析并应用根元素 `data-theme` 与 `color-scheme` 于 `web/src/themeBootstrap.ts`, `web/src/main.ts`, `web/index.html`
+- [X] T038 [US2] 将单一深色变量重构为浅色/深色语义调色板并覆盖表面、文字、边框、焦点、状态、拓扑和图表变量于 `web/src/styles/theme.css`
+- [X] T039 [P] [US2] 实现可键盘操作且带中文可访问名称的三态主题切换器于 `web/src/components/appearance/ThemeSwitcher.vue`, `web/src/components/appearance/index.ts`
+- [X] T040 [US2] 将统一主题入口接入拓扑实验室工具栏、模板页和自动化页于 `web/src/features/laboratories/LaboratoryToolbar.vue`, `web/src/views/TemplatesView.vue`, `web/src/views/AutomationView.vue`
+- [X] T041 [US2] 使 Shadcn 风格按钮、表单、选择器、菜单、Dialog、Sheet、Tabs、Table、Tooltip 和调整手柄仅使用语义主题变量于 `web/src/components/ui/`
+- [X] T042 [US2] 让 ECharts、资源图表、抓包图表和任务图表响应解析主题且保持实例交互状态于 `web/src/components/charts/EChart.vue`, `web/src/components/charts/CaptureVolumeChart.vue`, `web/src/components/charts/TaskProgressChart.vue`, `web/src/features/analytics/ResourceCharts.vue`
+- [X] T043 [US2] 让拓扑画布、节点、网络对象、端口、链路、箭头、粒子、选择框和分组框使用主题语义且保持几何状态于 `web/src/features/topology/TopologyCanvas.vue`, `web/src/features/topology/TrafficPathOverlay.vue`, `web/src/features/topology/topologyVisualSemantics.ts`, `web/src/features/topology/topologySymbols.ts`
+- [X] T044 [US2] 仅主题化 Console 与 VNC 外围标签、工具栏、边框和状态区并保持客户机 ANSI/远程画面配色于 `web/src/features/diagnostics/ConsoleWorkspace.vue`, `web/src/features/diagnostics/GlobalConsoleWorkspace.vue`, `web/src/features/nodes/NodeOperationsPanel.vue`
+- [X] T045 [US2] 运行 US2 Vitest、构建和 `tests/e2e/frontend_theme_continuity.spec.ts` 并记录 300ms 切换、隔离和会话连续性证据于 `specs/007-ui-localization-theme/validation.md`
+- [X] T046 [US2] 创建“全局主题与复杂视图适配”聚焦里程碑提交，提交范围记录于 `specs/007-ui-localization-theme/validation.md`
 
 **Checkpoint**: User Story 2 可独立验收，主题只影响当前浏览器显示且不会触发资源 mutation 或会话重建。
 
@@ -120,20 +120,20 @@
 
 ### Tests for User Story 3
 
-- [ ] T047 [P] [US3] 扩展共享组件 axe 测试以覆盖两种主题、焦点、禁用和高风险确认语义于 `web/src/components/common/InteractionStateMatrix.test.ts`
-- [ ] T048 [P] [US3] 扩展拓扑可访问性测试以覆盖非纯颜色状态、方向标识、选择和键盘操作于 `web/src/features/topology/TopologyCanvas.a11y.test.ts`
-- [ ] T049 [P] [US3] 为减少动态效果下的流量粒子、状态动画和主题过渡编写失败测试于 `web/src/features/topology/topologyVisualSemantics.test.ts`
-- [ ] T050 [P] [US3] 为两种主题、三视口、中文长文本和全键盘流程创建浏览器矩阵于 `tests/e2e/frontend_localization_theme_accessibility.spec.ts`
+- [X] T047 [P] [US3] 扩展共享组件 axe 测试以覆盖两种主题、焦点、禁用和高风险确认语义于 `web/src/components/common/InteractionStateMatrix.test.ts`
+- [X] T048 [P] [US3] 扩展拓扑可访问性测试以覆盖非纯颜色状态、方向标识、选择和键盘操作于 `web/src/features/topology/TopologyCanvas.a11y.test.ts`
+- [X] T049 [P] [US3] 为减少动态效果下的流量粒子、状态动画和主题过渡编写失败测试于 `web/src/features/topology/topologyVisualSemantics.test.ts`
+- [X] T050 [P] [US3] 为两种主题、三视口、中文长文本和全键盘流程创建浏览器矩阵于 `tests/e2e/frontend_localization_theme_accessibility.spec.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T051 [US3] 为交互组件统一可见焦点、禁用、选中、成功、运行中、警告和失败的图标/文字/线型语义于 `web/src/styles/theme.css`, `web/src/components/common/StatusBadge.vue`, `web/src/components/common/StatePresentation.vue`
-- [ ] T052 [US3] 为主题切换器、菜单、抽屉、Dialog、Tabs 和表单补齐中文可访问名称、焦点恢复与键盘顺序于 `web/src/components/appearance/ThemeSwitcher.vue`, `web/src/components/ui/`, `web/src/features/topology/CreateTopologyResourceDrawer.vue`
-- [ ] T053 [US3] 为拓扑链路方向、流量粒子、活动保留和选择状态增加颜色之外的箭头、形状及线型表达于 `web/src/features/topology/TrafficPathOverlay.vue`, `web/src/features/topology/topologyVisualSemantics.ts`
-- [ ] T054 [US3] 实现 `prefers-reduced-motion` 下的低动态主题过渡和流量效果，同时保留方向可识别性于 `web/src/styles/theme.css`, `web/src/features/topology/TrafficPathOverlay.vue`
-- [ ] T055 [US3] 修复 1024×768、1366×768 和 1920×1080 下中文导航、工具栏、抽屉、Inspector、任务和底部工作区的溢出与重叠于 `web/src/components/shell/LaboratoryShell.vue`, `web/src/features/laboratories/LaboratoryToolbar.vue`, `web/src/features/tasks/TaskCenter.vue`, `web/src/features/topology/TopologyInspector.vue`, `web/src/styles/workspace.css`
-- [ ] T056 [US3] 运行 US3 Vitest、axe 和三视口 Playwright 矩阵并记录对比度、键盘、焦点和减少动态效果证据于 `specs/007-ui-localization-theme/validation.md`
-- [ ] T057 [US3] 创建“可访问性与响应式验收”聚焦里程碑提交，提交范围记录于 `specs/007-ui-localization-theme/validation.md`
+- [X] T051 [US3] 为交互组件统一可见焦点、禁用、选中、成功、运行中、警告和失败的图标/文字/线型语义于 `web/src/styles/theme.css`, `web/src/components/common/StatusBadge.vue`, `web/src/components/common/StatePresentation.vue`
+- [X] T052 [US3] 为主题切换器、菜单、抽屉、Dialog、Tabs 和表单补齐中文可访问名称、焦点恢复与键盘顺序于 `web/src/components/appearance/ThemeSwitcher.vue`, `web/src/components/ui/`, `web/src/features/topology/CreateTopologyResourceDrawer.vue`
+- [X] T053 [US3] 为拓扑链路方向、流量粒子、活动保留和选择状态增加颜色之外的箭头、形状及线型表达于 `web/src/features/topology/TrafficPathOverlay.vue`, `web/src/features/topology/topologyVisualSemantics.ts`
+- [X] T054 [US3] 实现 `prefers-reduced-motion` 下的低动态主题过渡和流量效果，同时保留方向可识别性于 `web/src/styles/theme.css`, `web/src/features/topology/TrafficPathOverlay.vue`
+- [X] T055 [US3] 修复 1024×768、1366×768 和 1920×1080 下中文导航、工具栏、抽屉、Inspector、任务和底部工作区的溢出与重叠于 `web/src/components/shell/LaboratoryShell.vue`, `web/src/features/laboratories/LaboratoryToolbar.vue`, `web/src/features/tasks/TaskCenter.vue`, `web/src/features/topology/TopologyInspector.vue`, `web/src/styles/workspace.css`
+- [X] T056 [US3] 运行 US3 Vitest、axe 和三视口 Playwright 矩阵并记录对比度、键盘、焦点和减少动态效果证据于 `specs/007-ui-localization-theme/validation.md`
+- [X] T057 [US3] 创建“可访问性与响应式验收”聚焦里程碑提交，提交范围记录于 `specs/007-ui-localization-theme/validation.md`
 
 **Checkpoint**: 三个用户故事均可独立工作，且两种主题不会降低关键流程的可读性或可操作性。
 
@@ -143,11 +143,11 @@
 
 **Purpose**: 完成全量回归、合同不变性、可复现候选、目标机验收、清理与回滚证据。
 
-- [ ] T058 [P] 更新中文化、主题使用和技术原文保留说明于 `docs/frontend-localization-theme.md`
-- [ ] T059 [P] 扩展前端验收 schema/夹具以记录主题偏好、解析主题、视口、中文覆盖率和会话连续性于 `tests/e2e/fixtures/acceptanceTypes.ts`, `tests/e2e/fixtures/evidenceReporter.ts`
-- [ ] T060 运行 `go test ./...`、`web` 的 format/lint/Vitest/build 和 Playwright list，并将全量结果记录到 `specs/007-ui-localization-theme/validation.md`
-- [ ] T061 对比实现前后 OpenAPI、MCP、事件、SQLite schema 和前端生成类型摘要，确认机器字段与持久化合同未变化并记录于 `specs/007-ui-localization-theme/validation.md`
-- [ ] T062 扫描跟踪文件中的秘密、凭据、抓包和专有镜像并记录清洁结果于 `specs/007-ui-localization-theme/validation.md`
+- [X] T058 [P] 更新中文化、主题使用和技术原文保留说明于 `docs/frontend-localization-theme.md`
+- [X] T059 [P] 扩展前端验收 schema/夹具以记录主题偏好、解析主题、视口、中文覆盖率和会话连续性于 `tests/e2e/fixtures/acceptanceTypes.ts`, `tests/e2e/fixtures/evidenceReporter.ts`
+- [X] T060 运行 `go test ./...`、`web` 的 format/lint/Vitest/build 和 Playwright list，并将全量结果记录到 `specs/007-ui-localization-theme/validation.md`
+- [X] T061 对比实现前后 OpenAPI、MCP、事件、SQLite schema 和前端生成类型摘要，确认机器字段与持久化合同未变化并记录于 `specs/007-ui-localization-theme/validation.md`
+- [X] T062 扫描跟踪文件中的秘密、凭据、抓包和专有镜像并记录清洁结果于 `specs/007-ui-localization-theme/validation.md`
 - [ ] T063 验证工作区清洁后创建最终验收提交并记录 commit SHA、候选 ID、contract digest、binary digest、构建时间和无迁移状态于 `specs/007-ui-localization-theme/validation.md`
 - [ ] T064 从 T063 的干净提交构建部署产物并使用正式安装流程部署到 `10.72.1.7`，部署记录写入 `specs/007-ui-localization-theme/validation.md`
 - [ ] T065 在 `10.72.1.7` 创建专用验收 Lab，验证 QEMU、Docker、链路、Console、Capture、Traffic Filter 在三态主题切换和双浏览器不同主题下持续可用，证据写入 `specs/007-ui-localization-theme/validation.md`

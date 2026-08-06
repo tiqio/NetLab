@@ -1,8 +1,28 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (() => {
+        let preference = "system";
+        try {
+          const stored = localStorage.getItem("netlab.appearance.v1");
+          if (["system", "light", "dark"].includes(stored)) preference = stored;
+        } catch {}
+        const systemLight = matchMedia?.(
+          "(prefers-color-scheme: light)",
+        ).matches;
+        const resolved =
+          preference === "system"
+            ? systemLight
+              ? "light"
+              : "dark"
+            : preference;
+        document.documentElement.dataset.theme = resolved;
+        document.documentElement.style.colorScheme = resolved;
+      })();
+    </script>
     <title>NetLab</title>
   </head>
   <body>

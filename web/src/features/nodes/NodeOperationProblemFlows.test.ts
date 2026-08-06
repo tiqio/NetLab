@@ -22,6 +22,6 @@ describe("node operation problem flows", () => {
       "Refresh state, compare values, then retry",
     );
     expect(wrapper.text()).toContain("cpu_quota");
-    expect(wrapper.text()).toContain("after 2s");
+    expect(wrapper.text()).toContain("2 秒后");
   });
 });

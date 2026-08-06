@@ -50,7 +50,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", handleEscape));
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Close dialog"
+            aria-label="关闭对话框"
             @click="requestClose"
           >
             <X :size="16" />
@@ -70,16 +70,16 @@ onBeforeUnmount(() => window.removeEventListener("keydown", handleEscape));
         v-if="discardOpen"
         role="alertdialog"
         aria-modal="true"
-        aria-label="Discard unsaved changes"
+        aria-label="放弃未保存的更改"
         class="absolute w-full max-w-sm rounded-lg border border-border bg-card p-4 shadow-2xl"
       >
-        <h3 class="font-semibold">Discard unsaved changes?</h3>
+        <h3 class="font-semibold">要放弃未保存的更改吗？</h3>
         <p class="mt-1 text-xs text-muted-foreground">
           Entered values will be lost if this dialog closes.
         </p>
         <div class="mt-4 flex justify-end gap-2">
           <Button variant="secondary" @click="discardOpen = false"
-            >Keep editing</Button
+            >继续编辑</Button
           >
           <Button
             variant="destructive"
@@ -87,7 +87,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", handleEscape));
               discardOpen = false;
               open = false;
             "
-            >Discard</Button
+            >放弃</Button
           >
         </div>
       </section>

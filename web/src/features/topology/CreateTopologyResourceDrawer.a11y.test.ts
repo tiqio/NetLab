@@ -46,9 +46,7 @@ describe("CreateTopologyResourceDrawer accessibility", () => {
     name.value = "Changed PC";
     name.dispatchEvent(new Event("input", { bubbles: true }));
     await flushPromises();
-    dialog
-      .querySelector<HTMLButtonElement>('[aria-label="Close sheet"]')!
-      .click();
+    dialog.querySelector<HTMLButtonElement>('[aria-label="关闭抽屉"]')!.click();
     await flushPromises();
     const confirmation = document.body.querySelector<HTMLElement>(
       '[role="alertdialog"]',

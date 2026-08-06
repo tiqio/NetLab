@@ -5,13 +5,17 @@ export type ResolvedTheme = "light" | "dark";
 export const THEME_STORAGE_KEY = "netlab.appearance.v1";
 
 function systemTheme(): ResolvedTheme {
-  return globalThis.matchMedia?.("(prefers-color-scheme: light)").matches ? "light" : "dark";
+  return globalThis.matchMedia?.("(prefers-color-scheme: light)").matches
+    ? "light"
+    : "dark";
 }
 
 function readPreference(): ThemePreference {
   try {
     const value = localStorage.getItem(THEME_STORAGE_KEY);
-    return value === "light" || value === "dark" || value === "system" ? value : "system";
+    return value === "light" || value === "dark" || value === "system"
+      ? value
+      : "system";
   } catch {
     return "system";
   }
@@ -52,4 +56,3 @@ export function useThemePreference() {
 
   return { preference, resolvedTheme, setPreference };
 }
-

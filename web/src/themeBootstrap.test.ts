@@ -15,7 +15,9 @@ describe("theme bootstrap", () => {
   it("无偏好时跟随系统", async () => {
     mockColorScheme(true);
     const { resolveInitialTheme } = await import("./themeBootstrap");
-    expect(resolveInitialTheme()).toEqual({ preference: "system", resolved: "light" });
+    expect(resolveInitialTheme()).toEqual({
+      preference: "system",
+      resolved: "light",
+    });
   });
 });
-
