@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { localizeState } from "@/locales";
 const props = defineProps<{ state: string }>();
 const tone = computed(() =>
   [
@@ -18,21 +19,22 @@ const tone = computed(() =>
         ? "warning"
         : "neutral",
 );
+const label = computed(() => localizeState(props.state));
 </script>
 <template>
   <span
     class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px]"
     :class="
       tone === 'success'
-        ? 'border-green-500/40 bg-green-500/10 text-green-300'
+        ? 'border-[color:var(--success)]/40 bg-[color:var(--success)]/10 text-[color:var(--success)]'
         : tone === 'danger'
-          ? 'border-red-500/40 bg-red-500/10 text-red-300'
+          ? 'border-destructive/40 bg-destructive/10 text-destructive'
           : tone === 'warning'
-            ? 'border-amber-500/40 bg-amber-500/10 text-amber-300'
+            ? 'border-[color:var(--warning)]/40 bg-[color:var(--warning)]/10 text-[color:var(--warning)]'
             : 'border-border bg-muted text-muted-foreground'
     "
     ><span class="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />{{
-      state
+      label
     }}</span
   >
 </template>

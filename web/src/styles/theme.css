@@ -1,4 +1,5 @@
-:root {
+:root,
+:root[data-theme="dark"] {
   --background: #071018;
   --foreground: #e6edf3;
   --card: #0d1722;
@@ -26,7 +27,45 @@
   --panel-toolbar-height: 46px;
   --density-control-height: 32px;
   --topology-grid: rgba(148, 163, 184, 0.09);
+  --topology-canvas: #08131d;
+  --topology-link: #71869a;
+  --topology-active: #2dd4bf;
+  --chart-grid: rgba(148, 163, 184, 0.18);
+  --chart-tooltip: #111d2a;
   color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --background: #f4f7fa;
+  --foreground: #14202b;
+  --card: #ffffff;
+  --card-foreground: #14202b;
+  --popover: #ffffff;
+  --popover-foreground: #14202b;
+  --primary: #0f766e;
+  --primary-foreground: #ffffff;
+  --secondary: #e6edf3;
+  --secondary-foreground: #203040;
+  --muted: #e9eff4;
+  --muted-foreground: #5b6d7d;
+  --accent: #d7edf0;
+  --accent-foreground: #124650;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #c7d2dc;
+  --input: #d5dee6;
+  --ring: #0d9488;
+  --success: #15803d;
+  --warning: #b45309;
+  --info: #0369a1;
+  --offline: #64748b;
+  --topology-grid: rgba(71, 85, 105, 0.13);
+  --topology-canvas: #eef3f7;
+  --topology-link: #607487;
+  --topology-active: #0f766e;
+  --chart-grid: rgba(71, 85, 105, 0.2);
+  --chart-tooltip: #ffffff;
+  color-scheme: light;
 }
 
 @theme inline {

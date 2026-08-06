@@ -1,5 +1,5 @@
 <script setup lang="ts">
-withDefaults(defineProps<{ label?: string }>(), { label: "Loading" });
+withDefaults(defineProps<{ label?: string }>(), { label: "正在加载" });
 </script>
 <template>
   <div

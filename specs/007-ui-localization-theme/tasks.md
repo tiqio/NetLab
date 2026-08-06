@@ -20,10 +20,10 @@
 
 **Purpose**: 为文案扫描、主题测试和浏览器验收建立可复用基础，不改变后端、SQLite、HTTP 或 MCP 合同。
 
-- [ ] T001 创建前端文案扫描测试辅助工具并定义用户可见文本提取边界于 `web/src/test/localizationTestUtils.ts`
-- [ ] T002 [P] 创建可控 `matchMedia`、`localStorage` 与主题根元素测试夹具于 `web/src/test/themeTestUtils.ts`
-- [ ] T003 [P] 扩展页面对象的主题选择、当前主题和中文可访问名称定位能力于 `tests/e2e/pages/BasePage.ts`
-- [ ] T004 将主题入口、中文界面流程和三视口覆盖项登记到 `tests/e2e/matrices/interaction-inventory.json`
+- [X] T001 创建前端文案扫描测试辅助工具并定义用户可见文本提取边界于 `web/src/test/localizationTestUtils.ts`
+- [X] T002 [P] 创建可控 `matchMedia`、`localStorage` 与主题根元素测试夹具于 `web/src/test/themeTestUtils.ts`
+- [X] T003 [P] 扩展页面对象的主题选择、当前主题和中文可访问名称定位能力于 `tests/e2e/pages/BasePage.ts`
+- [X] T004 将主题入口、中文界面流程和三视口覆盖项登记到 `tests/e2e/matrices/interaction-inventory.json`
 
 ---
 
@@ -33,13 +33,13 @@
 
 **⚠️ CRITICAL**: 本阶段完成前不得开始用户故事实现。
 
-- [ ] T005 [P] 定义类型化简体中文文案目录和技术原文保留边界于 `web/src/locales/zh-CN.ts`
-- [ ] T006 [P] 定义核心术语、允许保留缩写和禁止冲突译法于 `web/src/locales/terminology.ts`
-- [ ] T007 [P] 定义期望/实际状态、任务、错误、超时和下一步建议格式化规则于 `web/src/locales/statusMessages.ts`
-- [ ] T008 汇总并导出文案、术语和状态资源于 `web/src/locales/index.ts`
-- [ ] T009 创建精确 allowlist 的用户可见英文扫描门禁于 `scripts/check-ui-localization.sh`
-- [ ] T010 为文案目录完整性、术语唯一性、技术原文保留和状态消息回退编写失败测试于 `web/src/locales/locales.test.ts`
-- [ ] T011 为语义颜色变量命名、禁止新增主题专属固定色和主题根属性编写静态测试于 `web/src/styles/theme.test.ts`
+- [X] T005 [P] 定义类型化简体中文文案目录和技术原文保留边界于 `web/src/locales/zh-CN.ts`
+- [X] T006 [P] 定义核心术语、允许保留缩写和禁止冲突译法于 `web/src/locales/terminology.ts`
+- [X] T007 [P] 定义期望/实际状态、任务、错误、超时和下一步建议格式化规则于 `web/src/locales/statusMessages.ts`
+- [X] T008 汇总并导出文案、术语和状态资源于 `web/src/locales/index.ts`
+- [X] T009 创建精确 allowlist 的用户可见英文扫描门禁于 `scripts/check-ui-localization.sh`
+- [X] T010 为文案目录完整性、术语唯一性、技术原文保留和状态消息回退编写失败测试于 `web/src/locales/locales.test.ts`
+- [X] T011 为语义颜色变量命名、禁止新增主题专属固定色和主题根属性编写静态测试于 `web/src/styles/theme.test.ts`
 
 **Checkpoint**: 文案与视觉语义具有单一来源，扫描和测试可阻止新增未分类英文及固定主题颜色。
 

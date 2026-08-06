@@ -29,8 +29,20 @@ export class BasePage {
     await expect(dialog).toBeVisible();
     const button = name
       ? dialog.getByRole("button", { name })
-      : dialog.getByRole("button", { name: /confirm|delete|continue/i });
+      : dialog.getByRole("button", { name: /确认|删除|继续|confirm|delete|continue/i });
     await button.click();
+  }
+
+  themeSelector() {
+    return this.page.getByRole("combobox", { name: "外观主题" });
+  }
+
+  async selectTheme(theme: "跟随系统" | "浅色" | "深色") {
+    await this.themeSelector().selectOption({ label: theme });
+  }
+
+  async expectResolvedTheme(theme: "light" | "dark") {
+    await expect(this.page.locator("html")).toHaveAttribute("data-theme", theme);
   }
 
   async refreshAndExpect(locator: Locator) {

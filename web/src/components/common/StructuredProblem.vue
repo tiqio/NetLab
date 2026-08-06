@@ -8,6 +8,7 @@ import {
 } from "lucide-vue-next";
 import type { Problem } from "@/api/generated";
 import { Button } from "@/components/ui";
+import { problemContext } from "@/locales";
 defineProps<{ problem: Problem; title?: string }>();
 defineEmits<{ retry: []; refresh: [] }>();
 </script>
@@ -23,34 +24,37 @@ defineEmits<{ retry: []; refresh: [] }>();
           {{ title || problem.code }}
         </h3>
         <p class="mt-1 text-muted-foreground">
-          {{ problem.message }}
+          {{ problemContext(problem.code) }}
+        </p>
+        <p class="mt-1 text-xs text-muted-foreground">
+          原始错误：{{ problem.message }}
         </p>
         <dl class="mt-2 grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 text-xs">
-          <dt v-if="problem.phase">Phase</dt>
+          <dt v-if="problem.phase">阶段</dt>
           <dd v-if="problem.phase">
             {{ problem.phase }}
           </dd>
           <dt v-if="problem.cleanup">
-            <Wrench :size="13" class="inline" /> Cleanup
+            <Wrench :size="13" class="inline" /> 清理
           </dt>
           <dd v-if="problem.cleanup">
             {{ problem.cleanup }}
           </dd>
           <dt v-if="problem.retry_after_seconds">
-            <Clock :size="13" class="inline" /> Retry
+            <Clock :size="13" class="inline" /> 重试
           </dt>
           <dd v-if="problem.retry_after_seconds">
-            after {{ problem.retry_after_seconds }}s
+            {{ problem.retry_after_seconds }} 秒后
           </dd>
           <dt v-if="problem.operator_hint">
-            <ShieldCheck :size="13" class="inline" /> Action
+            <ShieldCheck :size="13" class="inline" /> 建议操作
           </dt>
           <dd v-if="problem.operator_hint">
             {{ problem.operator_hint }}
           </dd>
         </dl>
         <details v-if="problem.details" class="mt-2">
-          <summary>Technical details</summary>
+          <summary>技术详情</summary>
           <pre class="mt-1 overflow-auto text-xs">{{
             JSON.stringify(problem.details, null, 2)
           }}</pre>
@@ -62,14 +66,14 @@ defineEmits<{ retry: []; refresh: [] }>();
             variant="secondary"
             @click="$emit('retry')"
           >
-            <RotateCcw :size="13" class="inline" /> Retry</Button
+            <RotateCcw :size="13" class="inline" /> 重试</Button
           ><Button
             v-if="problem.code.includes('revision')"
             size="sm"
             variant="secondary"
             @click="$emit('refresh')"
           >
-            Refresh state
+            刷新状态
           </Button>
         </div>
       </div>

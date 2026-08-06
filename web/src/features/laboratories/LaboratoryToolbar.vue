@@ -407,7 +407,7 @@ function openDelete() {
       ><Button
         variant="ghost"
         size="icon"
-        aria-label="Refresh"
+        aria-label="刷新"
         :disabled="loading"
         @click="$emit('refresh')"
       >

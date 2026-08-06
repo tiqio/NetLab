@@ -6,6 +6,7 @@ import {
   RefreshCw,
 } from "lucide-vue-next";
 import { Button } from "@/components/ui";
+import { localizeState } from "@/locales";
 
 withDefaults(
   defineProps<{
@@ -29,7 +30,7 @@ withDefaults(
   {
     title: "",
     description: "",
-    actionLabel: "Retry",
+    actionLabel: "重试",
     actionAvailable: false,
   },
 );
@@ -48,17 +49,17 @@ defineEmits<{ action: [] }>();
       />
       <LockKeyhole
         v-else-if="state === 'permission'"
-        class="mx-auto text-amber-300"
+        class="mx-auto text-[color:var(--warning)]"
         :size="20"
       />
       <CloudOff
         v-else-if="state === 'stale' || state === 'unsupported'"
-        class="mx-auto text-amber-300"
+        class="mx-auto text-[color:var(--warning)]"
         :size="20"
       />
       <AlertTriangle v-else class="mx-auto text-destructive" :size="20" />
       <h3 class="mt-2 text-sm font-medium">
-        {{ title || state.replaceAll("-", " ") }}
+        {{ title || localizeState(state) }}
       </h3>
       <p v-if="description" class="mt-1 text-xs text-muted-foreground">
         {{ description }}

@@ -23,10 +23,10 @@ defineEmits<{ confirm: [] }>();
       <p v-if="impact" class="text-xs text-muted-foreground">{{ impact }}</p>
       <div class="flex justify-end gap-2">
         <Button variant="secondary" @click="open = false">{{
-          cancelLabel || "Cancel"
+          cancelLabel || "取消"
         }}</Button>
         <Button variant="destructive" @click="$emit('confirm')">{{
-          confirmLabel || "Confirm"
+          confirmLabel || "确认"
         }}</Button>
       </div>
     </div>

@@ -9,8 +9,13 @@
         "role": "button",
         "name": "Toggle device palette"
       },
-      "applicable_states": ["laboratory-open"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "laboratory-open"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -23,8 +28,13 @@
         "role": "button",
         "name": "添加资源"
       },
-      "applicable_states": ["laboratory-open"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "laboratory-open"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -37,12 +47,19 @@
         "role": "button",
         "name": "Add to topology"
       },
-      "applicable_states": ["add-drawer-editing"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "add-drawer-editing"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "mutation",
       "operation": "node.create-or-network-object.create",
       "cleanup_effect": "laboratory-cascade",
-      "sensitive_evidence": ["bootstrap-password"]
+      "sensitive_evidence": [
+        "bootstrap-password"
+      ]
     },
     {
       "id": "topology.add-drawer.discard",
@@ -52,8 +69,13 @@
         "role": "alertdialog",
         "name": "放弃未保存的更改"
       },
-      "applicable_states": ["add-drawer-dirty"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "add-drawer-dirty"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "discard-browser-local-draft",
       "sensitive_evidence": []
@@ -66,8 +88,13 @@
         "role": "combobox",
         "name": "Laboratory"
       },
-      "applicable_states": ["laboratory-present"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "laboratory-present"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "navigation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -80,8 +107,13 @@
         "role": "button",
         "name": "New"
       },
-      "applicable_states": ["always"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "always"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -94,8 +126,13 @@
         "role": "button",
         "name": "Create laboratory"
       },
-      "applicable_states": ["create-dialog"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "create-dialog"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "mutation",
       "operation": "lab.create",
       "cleanup_effect": "delete-created-laboratory",
@@ -109,8 +146,13 @@
         "role": "button",
         "name": "Actions for *"
       },
-      "applicable_states": ["laboratory-open"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "laboratory-open"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -123,8 +165,13 @@
         "role": "button",
         "name": "Duplicate"
       },
-      "applicable_states": ["laboratory-open"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "laboratory-open"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "task",
       "operation": "lab.duplicate",
       "cleanup_effect": "delete-duplicated-laboratory",
@@ -138,8 +185,13 @@
         "role": "button",
         "name": "Rename"
       },
-      "applicable_states": ["laboratory-open"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "laboratory-open"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "mutation",
       "operation": "lab.update",
       "cleanup_effect": "none",
@@ -153,12 +205,19 @@
         "role": "button",
         "name": "Export"
       },
-      "applicable_states": ["laboratory-open"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "laboratory-open"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "task",
       "operation": "lab.export",
       "cleanup_effect": "delete-export-artifact",
-      "sensitive_evidence": ["export-bundle"]
+      "sensitive_evidence": [
+        "export-bundle"
+      ]
     },
     {
       "id": "laboratory.import",
@@ -168,12 +227,19 @@
         "role": "button",
         "name": "Import"
       },
-      "applicable_states": ["always"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "always"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "task",
       "operation": "lab.import",
       "cleanup_effect": "delete-imported-laboratory",
-      "sensitive_evidence": ["import-bundle"]
+      "sensitive_evidence": [
+        "import-bundle"
+      ]
     },
     {
       "id": "laboratory.delete",
@@ -183,8 +249,13 @@
         "role": "button",
         "name": "Delete"
       },
-      "applicable_states": ["laboratory-open"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "laboratory-open"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "task",
       "operation": "lab.delete",
       "cleanup_effect": "delete-laboratory-cascade",
@@ -198,8 +269,13 @@
         "role": "button",
         "name": "Refresh"
       },
-      "applicable_states": ["always"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "always"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -212,8 +288,12 @@
         "role": "button",
         "name": "⌘K"
       },
-      "applicable_states": ["always"],
-      "activation": ["keyboard"],
+      "applicable_states": [
+        "always"
+      ],
+      "activation": [
+        "keyboard"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -226,8 +306,13 @@
         "role": "button",
         "name": "Toggle inspector"
       },
-      "applicable_states": ["laboratory-open"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "laboratory-open"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -240,8 +325,13 @@
         "role": "button",
         "name": "Toggle operations drawer"
       },
-      "applicable_states": ["laboratory-open"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "laboratory-open"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -254,8 +344,13 @@
         "role": "link",
         "name": "Templates"
       },
-      "applicable_states": ["desktop"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "desktop"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "navigation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -268,8 +363,13 @@
         "role": "link",
         "name": "Automation"
       },
-      "applicable_states": ["desktop"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "desktop"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "navigation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -282,8 +382,13 @@
         "role": "textbox",
         "name": "Search device templates"
       },
-      "applicable_states": ["palette-open"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "palette-open"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -296,8 +401,14 @@
         "role": "button",
         "name": "*QEMU*"
       },
-      "applicable_states": ["palette-open", "template-available"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "palette-open",
+        "template-available"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -310,8 +421,13 @@
         "role": "button",
         "name": "PC"
       },
-      "applicable_states": ["palette-open"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "palette-open"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -324,8 +440,13 @@
         "role": "region",
         "name": "Topology canvas keyboard area*"
       },
-      "applicable_states": ["laboratory-open"],
-      "activation": ["keyboard", "drag"],
+      "applicable_states": [
+        "laboratory-open"
+      ],
+      "activation": [
+        "keyboard",
+        "drag"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -338,11 +459,17 @@
         "role": "button",
         "name": "Connect live ports"
       },
-      "applicable_states": ["two-free-ports"],
-      "activation": ["pointer"],
+      "applicable_states": [
+        "two-free-ports"
+      ],
+      "activation": [
+        "pointer"
+      ],
       "outcome_class": "task",
       "operation": "link.connect",
-      "required_capabilities": ["namespace"],
+      "required_capabilities": [
+        "namespace"
+      ],
       "cleanup_effect": "disconnect-link",
       "sensitive_evidence": []
     },
@@ -354,8 +481,13 @@
         "role": "button",
         "name": "Reconnect endpoint"
       },
-      "applicable_states": ["link-selected", "free-replacement-port"],
-      "activation": ["pointer"],
+      "applicable_states": [
+        "link-selected",
+        "free-replacement-port"
+      ],
+      "activation": [
+        "pointer"
+      ],
       "outcome_class": "task",
       "operation": "link.reconnect",
       "cleanup_effect": "cancel-or-retry-task",
@@ -369,8 +501,13 @@
         "role": "button",
         "name": "Group selection"
       },
-      "applicable_states": ["multi-selection"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "multi-selection"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "local-preference",
       "sensitive_evidence": []
@@ -383,8 +520,14 @@
         "role": "region",
         "name": "Topology canvas keyboard area*"
       },
-      "applicable_states": ["laboratory-open", "multiple-resources"],
-      "activation": ["drag", "keyboard"],
+      "applicable_states": [
+        "laboratory-open",
+        "multiple-resources"
+      ],
+      "activation": [
+        "drag",
+        "keyboard"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "clear-selection",
       "sensitive_evidence": []
@@ -397,8 +540,12 @@
         "role": "region",
         "name": "Topology canvas keyboard area*"
       },
-      "applicable_states": ["resource-selected"],
-      "activation": ["keyboard"],
+      "applicable_states": [
+        "resource-selected"
+      ],
+      "activation": [
+        "keyboard"
+      ],
       "outcome_class": "mutation",
       "operation": "topology.positions.update",
       "cleanup_effect": "restore-placement",
@@ -412,8 +559,12 @@
         "role": "region",
         "name": "Topology canvas keyboard area*"
       },
-      "applicable_states": ["multiple-resources"],
-      "activation": ["keyboard"],
+      "applicable_states": [
+        "multiple-resources"
+      ],
+      "activation": [
+        "keyboard"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "clear-selection",
       "sensitive_evidence": []
@@ -426,8 +577,13 @@
         "role": "region",
         "name": "Topology canvas keyboard area*"
       },
-      "applicable_states": ["node-selected", "free-port"],
-      "activation": ["keyboard"],
+      "applicable_states": [
+        "node-selected",
+        "free-port"
+      ],
+      "activation": [
+        "keyboard"
+      ],
       "outcome_class": "task",
       "operation": "link.connect",
       "cleanup_effect": "disconnect-link",
@@ -441,11 +597,18 @@
         "role": "region",
         "name": "Topology canvas keyboard area*"
       },
-      "applicable_states": ["three-network-objects", "free-object-ports"],
-      "activation": ["keyboard"],
+      "applicable_states": [
+        "three-network-objects",
+        "free-object-ports"
+      ],
+      "activation": [
+        "keyboard"
+      ],
       "outcome_class": "task",
       "operation": "network_object_link.create",
-      "required_capabilities": ["namespace"],
+      "required_capabilities": [
+        "namespace"
+      ],
       "cleanup_effect": "laboratory-cascade",
       "sensitive_evidence": []
     },
@@ -461,10 +624,15 @@
         "parallel-network-object-links",
         "object-link-selected"
       ],
-      "activation": ["keyboard"],
+      "activation": [
+        "keyboard"
+      ],
       "outcome_class": "task",
       "operation": "capture.start,traffic_filter.start",
-      "required_capabilities": ["namespace", "capture"],
+      "required_capabilities": [
+        "namespace",
+        "capture"
+      ],
       "cleanup_effect": "stop-observation-and-laboratory-cascade",
       "sensitive_evidence": []
     },
@@ -476,8 +644,14 @@
         "role": "region",
         "name": "Topology canvas keyboard area*"
       },
-      "applicable_states": ["connecting", "box-selecting", "resource-selected"],
-      "activation": ["keyboard"],
+      "applicable_states": [
+        "connecting",
+        "box-selecting",
+        "resource-selected"
+      ],
+      "activation": [
+        "keyboard"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "cancel-transient-before-selection",
       "sensitive_evidence": []
@@ -490,8 +664,12 @@
         "role": "region",
         "name": "Topology canvas keyboard area*"
       },
-      "applicable_states": ["laboratory-open"],
-      "activation": ["keyboard"],
+      "applicable_states": [
+        "laboratory-open"
+      ],
+      "activation": [
+        "keyboard"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -504,8 +682,12 @@
         "role": "button",
         "name": "Toggle route"
       },
-      "applicable_states": ["link-selected"],
-      "activation": ["pointer"],
+      "applicable_states": [
+        "link-selected"
+      ],
+      "activation": [
+        "pointer"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "local-preference",
       "sensitive_evidence": []
@@ -518,8 +700,13 @@
         "role": "button",
         "name": "Start"
       },
-      "applicable_states": ["stopped-node"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "stopped-node"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "task",
       "operation": "node.start",
       "cleanup_effect": "stop-or-delete-node",
@@ -533,8 +720,13 @@
         "role": "button",
         "name": "Stop"
       },
-      "applicable_states": ["running-node"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "running-node"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "task",
       "operation": "node.stop",
       "cleanup_effect": "none",
@@ -548,8 +740,13 @@
         "role": "button",
         "name": "Delete node"
       },
-      "applicable_states": ["node-selected"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "node-selected"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "task",
       "operation": "node.delete",
       "cleanup_effect": "delete-node",
@@ -563,8 +760,13 @@
         "role": "button",
         "name": "Apply limits"
       },
-      "applicable_states": ["node-selected"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "node-selected"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "task",
       "operation": "resources.update",
       "cleanup_effect": "none",
@@ -578,8 +780,13 @@
         "role": "button",
         "name": "Add interface"
       },
-      "applicable_states": ["node-selected"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "node-selected"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "task",
       "operation": "interface.add",
       "cleanup_effect": "remove-interface",
@@ -593,11 +800,18 @@
         "role": "button",
         "name": "Publish port"
       },
-      "applicable_states": ["node-selected"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "node-selected"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "task",
       "operation": "port_mapping.create",
-      "required_capabilities": ["port_mapping"],
+      "required_capabilities": [
+        "port_mapping"
+      ],
       "cleanup_effect": "delete-port-mapping",
       "sensitive_evidence": []
     },
@@ -609,8 +823,13 @@
         "role": "tab",
         "name": "Tasks*"
       },
-      "applicable_states": ["laboratory-open"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "laboratory-open"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -623,8 +842,13 @@
         "role": "textbox",
         "name": "Filter tasks"
       },
-      "applicable_states": ["tasks-tab"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "tasks-tab"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -637,8 +861,13 @@
         "role": "combobox",
         "name": "Task state"
       },
-      "applicable_states": ["tasks-tab"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "tasks-tab"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -651,8 +880,13 @@
         "role": "button",
         "name": "Refresh tasks"
       },
-      "applicable_states": ["tasks-tab"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "tasks-tab"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -665,8 +899,12 @@
         "role": "img",
         "name": "Topology canvas*"
       },
-      "applicable_states": ["laboratory-open"],
-      "activation": ["pointer"],
+      "applicable_states": [
+        "laboratory-open"
+      ],
+      "activation": [
+        "pointer"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -679,8 +917,12 @@
         "role": "region",
         "name": "Topology canvas keyboard area*"
       },
-      "applicable_states": ["laboratory-open"],
-      "activation": ["keyboard"],
+      "applicable_states": [
+        "laboratory-open"
+      ],
+      "activation": [
+        "keyboard"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -693,8 +935,12 @@
         "role": "img",
         "name": "Topology canvas*"
       },
-      "applicable_states": ["laboratory-open"],
-      "activation": ["pointer"],
+      "applicable_states": [
+        "laboratory-open"
+      ],
+      "activation": [
+        "pointer"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -707,8 +953,13 @@
         "role": "button",
         "name": "Fit all"
       },
-      "applicable_states": ["laboratory-open"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "laboratory-open"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -721,8 +972,13 @@
         "role": "button",
         "name": "Fit selection"
       },
-      "applicable_states": ["resource-selected"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "resource-selected"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -735,8 +991,13 @@
         "role": "button",
         "name": "Reset"
       },
-      "applicable_states": ["laboratory-open"],
-      "activation": ["pointer", "keyboard"],
+      "applicable_states": [
+        "laboratory-open"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
@@ -749,8 +1010,12 @@
         "role": "img",
         "name": "Topology canvas keyboard area*"
       },
-      "applicable_states": ["topology-interaction-active"],
-      "activation": ["keyboard"],
+      "applicable_states": [
+        "topology-interaction-active"
+      ],
+      "activation": [
+        "keyboard"
+      ],
       "outcome_class": "presentation",
       "cleanup_effect": "discard-preview",
       "sensitive_evidence": []
@@ -763,8 +1028,12 @@
         "role": "button",
         "name": "Delete link"
       },
-      "applicable_states": ["network-object-link-selected"],
-      "activation": ["pointer"],
+      "applicable_states": [
+        "network-object-link-selected"
+      ],
+      "activation": [
+        "pointer"
+      ],
       "outcome_class": "mutation",
       "operation": "network_object_link.delete",
       "cleanup_effect": "link-and-observers-removed",
@@ -778,12 +1047,75 @@
         "role": "button",
         "name": "保存配置"
       },
-      "applicable_states": ["stopped-docker-node-selected"],
-      "activation": ["pointer"],
+      "applicable_states": [
+        "stopped-docker-node-selected"
+      ],
+      "activation": [
+        "pointer"
+      ],
       "outcome_class": "mutation",
       "operation": "node.settings.update",
-      "required_capabilities": ["docker"],
+      "required_capabilities": [
+        "docker"
+      ],
       "cleanup_effect": "laboratory-cascade",
+      "sensitive_evidence": []
+    },
+    {
+      "id": "appearance.theme.system",
+      "area": "appearance",
+      "label": "跟随系统",
+      "locator": {
+        "role": "combobox",
+        "name": "外观主题"
+      },
+      "applicable_states": [
+        "always"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
+      "outcome_class": "presentation",
+      "cleanup_effect": "browser-local-preference",
+      "sensitive_evidence": []
+    },
+    {
+      "id": "appearance.theme.light",
+      "area": "appearance",
+      "label": "浅色",
+      "locator": {
+        "role": "option",
+        "name": "浅色"
+      },
+      "applicable_states": [
+        "always"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
+      "outcome_class": "presentation",
+      "cleanup_effect": "browser-local-preference",
+      "sensitive_evidence": []
+    },
+    {
+      "id": "appearance.theme.dark",
+      "area": "appearance",
+      "label": "深色",
+      "locator": {
+        "role": "option",
+        "name": "深色"
+      },
+      "applicable_states": [
+        "always"
+      ],
+      "activation": [
+        "pointer",
+        "keyboard"
+      ],
+      "outcome_class": "presentation",
+      "cleanup_effect": "browser-local-preference",
       "sensitive_evidence": []
     }
   ]
