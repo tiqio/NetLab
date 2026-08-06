@@ -51,19 +51,13 @@ async function submit() {
           <option value="qemu">QEMU</option>
           <option value="docker">Docker</option>
         </Select> </FormField
-      ><FormField
-        label="来源引用"
-        hint="引用中不得包含凭据。"
-      >
+      ><FormField label="来源引用" hint="引用中不得包含凭据。">
         <Input v-model="source" required /> </FormField
       ><FormField label="许可说明">
         <Input v-model="license" required />
       </FormField>
       <div class="grid grid-cols-2 gap-2">
-        <FormField
-          label="终端用户名"
-          hint="可选，用于启用串口自动登录。"
-        >
+        <FormField label="终端用户名" hint="可选，用于启用串口自动登录。">
           <Input v-model="consoleUsername" autocomplete="off" />
         </FormField>
         <FormField label="终端密码" hint="仅存储在 NetLab 宿主机上。">

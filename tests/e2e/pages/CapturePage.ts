@@ -19,7 +19,7 @@ export class CapturePage extends BasePage {
         .fill(filter);
     await this.activate(
       this.page.getByRole("button", {
-        name: /^(Start capture|Start packet capture|开始抓取数据包)$/,
+        name: /^(Start capture|Start packet capture|开始抓取数据包|开始抓包)$/,
       }),
     );
     await expect(this.status()).toContainText(

@@ -127,7 +127,10 @@ onMounted(load);
     </div>
     <Button :disabled="!canChoose" @click="choose"> 使用模板 </Button>
     <p class="text-[11px] text-muted-foreground">
-      <ShieldCheck :size="12" class="mr-1 inline" />提交前会根据服务器实时模板目录重新校验所选内容。
+      <ShieldCheck
+        :size="12"
+        class="mr-1 inline"
+      />提交前会根据服务器实时模板目录重新校验所选内容。
     </p>
   </section>
 </template>

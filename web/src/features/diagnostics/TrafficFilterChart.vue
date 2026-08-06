@@ -460,9 +460,7 @@ const option = computed(() => {
         <span v-else-if="scopeNodes?.length || scopeLinks?.length">
           此会话尚未观测到匹配的数据包，灰色图形表示观测范围。
         </span>
-        <span v-else>
-          请在上方选择接口或链路以预览观测范围。
-        </span>
+        <span v-else> 请在上方选择接口或链路以预览观测范围。 </span>
       </div>
       <div
         v-if="ambiguous"

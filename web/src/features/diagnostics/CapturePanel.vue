@@ -246,8 +246,7 @@ function showHelperIssue(
   helperIssue.value = issue;
   helperMessage.value = message;
   helperDialogOpen.value = true;
-  status.value =
-    "本机 Wireshark 辅助程序不可用，请查看安装提示。";
+  status.value = "本机 Wireshark 辅助程序不可用，请查看安装提示。";
 }
 
 async function writeClipboard(value: string) {

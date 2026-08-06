@@ -172,7 +172,10 @@ watch(
       <section
         class="rounded-md border border-border bg-muted/30 p-3 text-xs text-muted-foreground"
       >
-        <ShieldCheck :size="15" class="mr-1 inline text-green-400" />导出内容不包含镜像数据、凭据、引导密钥和抓包文件。
+        <ShieldCheck
+          :size="15"
+          class="mr-1 inline text-green-400"
+        />导出内容不包含镜像数据、凭据、引导密钥和抓包文件。
       </section>
 
       <template v-if="mode === 'import'">
