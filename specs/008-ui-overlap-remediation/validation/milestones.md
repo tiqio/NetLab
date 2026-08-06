@@ -10,7 +10,7 @@
 | Responsive and theme stability | `a4a2be9` | 6 shell sizing tests; 27 dual-theme/three-viewport/axe tests; 9 twenty-cycle and 125% input tests; build and localization scan | passed | local disposable acceptance |
 | Continuous audit | `fc10cf4` | 5 inventory/evidence/redaction tests; duplicate and missing-matrix injection; 9 three-viewport visual audit journeys; artifact hygiene | passed | local disposable acceptance |
 | Final local quality gates | `b280f6c` | Go lint/unit/contract/security; 282 frontend unit tests; 25 acceptance unit tests; localization/schema/artifact checks; 51 browser matrix scenarios with the single contrast finding corrected and 18/18 axe rerun passing | passed | `ui-overlap-final-matrix`, `ui-overlap-light-contrast` |
-| Target acceptance | pending | clean candidate, deployment, high-density Lab, cleanup | pending | pending |
+| Target acceptance | `d678ceb` | candidate `ui-overlap-20260806T085508Z-r2`; target three-viewport visual/localization matrix; 24/24 theme and axe rerun; 3/3 diagnostics rerun; 3/3 125% matrix; evidence schema and artifact hygiene | passed | installed SHA-256 `9db2583aaa8b1e46844f25cf0fa36d60dbd19192388d114325e50389f0ec3b7a`; owned residuals 0; user Lab baseline unchanged |
 
 ## Recording Rules
 
