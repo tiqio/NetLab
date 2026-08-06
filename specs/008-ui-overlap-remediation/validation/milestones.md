@@ -3,7 +3,7 @@
 | Milestone | Commit SHA | Focused gates | Result | Candidate / target evidence |
 |---|---|---|---|---|
 | Planning and audit baseline | `d01fef6` | spec/plan/tasks/schema validation | passed | n/a |
-| Shared visual foundation | pending | 53 component tests; 9 acceptance fixture tests; build; localization scan; frontend acceptance contract | passed | n/a |
+| Shared visual foundation | `12f1237` | 53 component tests; 9 acceptance fixture tests; build; localization scan; frontend acceptance contract | passed | n/a |
 | Topology clarity | pending | geometry, canvas, links, traffic overlay, three viewports | pending | n/a |
 | Inspector and workspaces | pending | inspector, charts, menus, bottom workspace, axe | pending | n/a |
 | Full Chinese UI | pending | localization scan, terminology, error branches, journeys | pending | n/a |

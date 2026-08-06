@@ -45,7 +45,7 @@
 - [X] T016 修复共享空状态、资源身份、状态和错误展示的布局与可读性 `web/src/components/common/EmptyState.vue`、`web/src/components/common/ResourceIdentity.vue`、`web/src/components/common/StatePresentation.vue`、`web/src/components/common/StatusBadge.vue`、`web/src/components/common/StructuredProblem.vue`
 - [X] T017 修复基础控件的命中区、碰撞避让、焦点与主题状态 `web/src/components/ui/button/Button.vue`、`web/src/components/ui/dialog/Dialog.vue`、`web/src/components/ui/dropdown-menu/DropdownMenu.vue`、`web/src/components/ui/form/FormField.vue`、`web/src/components/ui/select/Select.vue`、`web/src/components/ui/sheet/Sheet.vue`、`web/src/components/ui/tabs/Tabs.vue`、`web/src/components/ui/tooltip/Tooltip.vue`
 - [X] T018 运行共享基础门禁并将结果记录到 `specs/008-ui-overlap-remediation/validation/milestones.md`
-- [ ] T019 创建共享基础里程碑的聚焦 Git 提交，并把提交 SHA 写入 `specs/008-ui-overlap-remediation/validation/milestones.md`
+- [X] T019 创建共享基础里程碑的聚焦 Git 提交，并把提交 SHA 写入 `specs/008-ui-overlap-remediation/validation/milestones.md`
 
 **Checkpoint**: 共享布局、文案和验收基础可被所有用户故事复用。
 
