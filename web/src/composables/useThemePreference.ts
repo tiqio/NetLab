@@ -5,7 +5,7 @@ export type ResolvedTheme = "light" | "dark";
 export const THEME_STORAGE_KEY = "netlab.appearance.v1";
 
 function systemTheme(): ResolvedTheme {
-  return globalThis.matchMedia?.("(prefers-color-scheme: light)").matches
+  return globalThis.matchMedia?.("(prefers-color-scheme: light)")?.matches
     ? "light"
     : "dark";
 }
@@ -30,12 +30,14 @@ export function applyResolvedTheme(theme: ResolvedTheme): void {
 }
 
 export function useThemePreference() {
+  systemResolved.value = systemTheme();
   const media = globalThis.matchMedia?.("(prefers-color-scheme: light)");
   const onSystemChange = (event: MediaQueryListEvent) => {
     systemResolved.value = event.matches ? "light" : "dark";
     if (preference.value === "system") applyResolvedTheme(systemResolved.value);
   };
-  media?.addEventListener?.("change", onSystemChange);
+  if (media?.addEventListener) media.addEventListener("change", onSystemChange);
+  else media?.addListener?.(onSystemChange);
 
   const resolvedTheme = computed<ResolvedTheme>(() =>
     preference.value === "system" ? systemResolved.value : preference.value,
@@ -52,7 +54,11 @@ export function useThemePreference() {
   };
 
   applyResolvedTheme(resolvedTheme.value);
-  onBeforeUnmount(() => media?.removeEventListener?.("change", onSystemChange));
+  onBeforeUnmount(() => {
+    if (media?.removeEventListener)
+      media.removeEventListener("change", onSystemChange);
+    else media?.removeListener?.(onSystemChange);
+  });
 
   return { preference, resolvedTheme, setPreference };
 }

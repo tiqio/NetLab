@@ -58,6 +58,10 @@
   --chart-danger: #ef4444;
   --chart-warning: #f59e0b;
   --chart-label: #d9e5ef;
+  --terminal-background: #050a0f;
+  --terminal-foreground: #d9e5ef;
+  --terminal-cursor: #5eead4;
+  --terminal-selection: rgba(94, 234, 212, 0.28);
   color-scheme: dark;
 }
 
@@ -117,6 +121,10 @@
   --chart-danger: #dc2626;
   --chart-warning: #b45309;
   --chart-label: #334155;
+  --terminal-background: #f8fafc;
+  --terminal-foreground: #17212b;
+  --terminal-cursor: #0f766e;
+  --terminal-selection: rgba(13, 148, 136, 0.22);
   color-scheme: light;
 }
 

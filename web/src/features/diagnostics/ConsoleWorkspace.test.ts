@@ -3,8 +3,16 @@ import { describe, expect, it, vi } from "vitest";
 import { api } from "@/api";
 const dispose = vi.fn();
 const disconnect = vi.fn();
+let terminalOptions: Record<string, unknown> | undefined;
+let terminalInstanceOptions: { theme?: Record<string, string> } | undefined;
 vi.mock("@xterm/xterm", () => ({
   Terminal: class {
+    options: { theme?: Record<string, string> };
+    constructor(options: { theme?: Record<string, string> }) {
+      this.options = options;
+      terminalOptions = options;
+      terminalInstanceOptions = this.options;
+    }
     loadAddon() {}
     open() {}
     onData() {}
@@ -83,5 +91,51 @@ describe("ConsoleWorkspace", () => {
     );
     wrapper.unmount();
     vi.unstubAllGlobals();
+  });
+
+  it("applies the active page theme to an open terminal without reconnecting", async () => {
+    class WebSocketStub {
+      static OPEN = 1;
+      readyState = WebSocketStub.OPEN;
+      binaryType = "";
+      onopen?: () => void;
+      onmessage?: (event: MessageEvent) => void;
+      onclose?: () => void;
+      close() {}
+      send() {}
+    }
+    vi.stubGlobal("WebSocket", WebSocketStub);
+    document.documentElement.style.setProperty(
+      "--terminal-background",
+      "#f8fafc",
+    );
+    document.documentElement.style.setProperty(
+      "--terminal-foreground",
+      "#17212b",
+    );
+    vi.spyOn(api, "listNodeConsoles").mockResolvedValue([
+      { mode: "telnet", stream_url: "/console", idle_seconds: 60 },
+    ]);
+
+    const wrapper = mount(ConsoleWorkspace, {
+      props: { nodeId: "node-1", autoOpen: true },
+    });
+    await flushPromises();
+    expect((terminalOptions?.theme as Record<string, string>).background).toBe(
+      "#f8fafc",
+    );
+
+    document.documentElement.style.setProperty(
+      "--terminal-background",
+      "#050a0f",
+    );
+    document.documentElement.dataset.theme = "dark";
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(terminalInstanceOptions?.theme?.background).toBe("#050a0f");
+
+    wrapper.unmount();
+    vi.unstubAllGlobals();
+    document.documentElement.style.removeProperty("--terminal-background");
+    document.documentElement.style.removeProperty("--terminal-foreground");
   });
 });

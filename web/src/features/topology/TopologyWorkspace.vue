@@ -122,7 +122,6 @@ const createDrawer = ref<{
   requestExternalDiscard: (action: () => void) => void;
 }>();
 const commandOpen = ref(false);
-const showLightweight = ref(false);
 const pendingEndpoint = ref("");
 const pendingObjectPort = ref<{ objectId: string; portName: string }>();
 const canvasStatus = ref("");
@@ -601,7 +600,6 @@ async function refresh() {
 
 async function switchLaboratory(id: string) {
   selectedIds.value = [];
-  showLightweight.value = false;
   await store.open(id);
   await store.loadLabs();
   await store.loadTasks();
@@ -623,7 +621,6 @@ async function openLaboratory(id: string) {
 async function laboratoryDeleteAccepted(id: string) {
   const activeId = store.active?.laboratory.id;
   selectedIds.value = [];
-  showLightweight.value = false;
   store.hideLaboratory(id);
   if (activeId && activeId !== id) {
     await store.loadTasks();
@@ -639,12 +636,6 @@ async function laboratoryDeleteAccepted(id: string) {
 }
 
 function choose(selection: PaletteSelection) {
-  if (selection.name === "Lightweight") {
-    showLightweight.value = true;
-    selectedIds.value = [];
-    shell.value?.openInspector();
-    return;
-  }
   captureCreateSnapshot();
   const next = openTopologyCreateDrawer(selection);
   paletteSelection.value = next.selection;
@@ -743,11 +734,6 @@ async function refreshActive() {
   await store.loadTasks();
 }
 
-async function lightweightCreated(id: string) {
-  await refreshActive();
-  selectResource(id, "network_object", false);
-}
-
 async function selectResource(
   id: string,
   type:
@@ -762,7 +748,6 @@ async function selectResource(
     await chooseTargetNode(id);
     return;
   }
-  showLightweight.value = false;
   selectedIds.value = additive
     ? toggleSelected(selectedIds.value, id)
     : selectOne(id);
@@ -793,7 +778,6 @@ function clearSelection() {
   selectedType.value = undefined;
   selectedInterfaceId.value = "";
   selectionAnchor.value = "";
-  showLightweight.value = false;
 }
 
 function cancelOrClear() {
@@ -1635,13 +1619,11 @@ onBeforeUnmount(() => {
           :network-objects="store.active.network_objects"
           :attachments="store.active.network_attachments || []"
           :network-object-links="store.active.network_object_links || []"
-          :show-lightweight="showLightweight"
           @changed="refreshActive"
           @clear="clearSelection"
           @terminal="openNodeTerminal"
           @network-object-terminal="openNetworkObjectTerminal"
           @diagnostics-loaded="canvasStatus = `${$event} 的运行诊断已加载。`"
-          @lightweight-created="lightweightCreated"
         />
       </template>
       <template #bottom>

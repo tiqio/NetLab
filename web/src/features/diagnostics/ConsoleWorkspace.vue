@@ -47,9 +47,29 @@ let fit: FitAddon | undefined;
 let socket: WebSocket | undefined;
 let rfb: RFB | undefined;
 let observer: ResizeObserver | undefined;
+let themeObserver: MutationObserver | undefined;
 let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
 let intentionalClose = false;
 let reconnects = 0;
+
+function terminalTheme() {
+  const styles = getComputedStyle(document.documentElement);
+  const color = (name: string, fallback: string) =>
+    styles.getPropertyValue(name).trim() || fallback;
+  return {
+    background: color("--terminal-background", "#050a0f"),
+    foreground: color("--terminal-foreground", "#d9e5ef"),
+    cursor: color("--terminal-cursor", "#5eead4"),
+    selectionBackground: color(
+      "--terminal-selection",
+      "rgba(94, 234, 212, 0.28)",
+    ),
+  };
+}
+
+function applyTerminalTheme() {
+  if (terminal) terminal.options.theme = terminalTheme();
+}
 
 async function load() {
   try {
@@ -152,11 +172,7 @@ async function open(mode: ConsoleMode) {
       terminal = new Terminal({
         cursorBlink: true,
         convertEol: true,
-        theme: {
-          background: "#050a0f",
-          foreground: "#d9e5ef",
-          cursor: "#5eead4",
-        },
+        theme: terminalTheme(),
         fontSize: 13,
       });
       fit = new FitAddon();
@@ -220,8 +236,19 @@ watch(
     await load();
   },
 );
-onMounted(load);
-onBeforeUnmount(closeRenderer);
+onMounted(() => {
+  themeObserver = new MutationObserver(applyTerminalTheme);
+  themeObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["data-theme"],
+  });
+  void load();
+});
+onBeforeUnmount(() => {
+  themeObserver?.disconnect();
+  themeObserver = undefined;
+  closeRenderer();
+});
 </script>
 <template>
   <div class="flex h-full min-h-[180px] flex-col">
@@ -302,7 +329,7 @@ onBeforeUnmount(closeRenderer);
     >
       {{ error }}
     </p>
-    <div class="relative min-h-0 flex-1 bg-[#050a0f]">
+    <div class="console-surface relative min-h-0 flex-1">
       <div
         v-show="active !== 'vnc'"
         ref="terminalHost"
@@ -327,3 +354,9 @@ onBeforeUnmount(closeRenderer);
     </div>
   </div>
 </template>
+<style scoped>
+.console-surface {
+  background: var(--terminal-background);
+  color: var(--terminal-foreground);
+}
+</style>

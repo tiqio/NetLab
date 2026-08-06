@@ -6,7 +6,6 @@ import {
   ChevronUp,
   Database,
   Info,
-  Network,
   Trash2,
 } from "lucide-vue-next";
 import {
@@ -28,7 +27,6 @@ import StructuredProblem from "@/components/common/StructuredProblem.vue";
 import NodeOperationsPanel from "@/features/nodes/NodeOperationsPanel.vue";
 import { dockerRouteReadiness } from "@/features/nodes/dockerRouteReadiness";
 import RuijieConfigurationPanel from "@/features/nodes/RuijieConfigurationPanel.vue";
-import LightweightNodeEditor from "@/features/nodes/LightweightNodeEditor.vue";
 import LightweightPCConfigurationPanel from "@/features/nodes/LightweightPCConfigurationPanel.vue";
 import LightweightSwitchConfigurationPanel from "@/features/nodes/LightweightSwitchConfigurationPanel.vue";
 import ResourceCharts from "@/features/analytics/ResourceCharts.vue";
@@ -49,7 +47,6 @@ const props = withDefaults(
     attachments?: NetworkAttachment[];
     networkObjectLinks?: NetworkObjectLink[];
     tasks?: OperationTask[];
-    showLightweight?: boolean;
   }>(),
   {
     nodes: () => [],
@@ -62,13 +59,10 @@ const props = withDefaults(
 const emit = defineEmits<{
   changed: [];
   clear: [];
-  lightweightCreated: [string];
   diagnosticsLoaded: [string];
   terminal: [Node];
   networkObjectTerminal: [NetworkObject];
 }>();
-const endpointA = ref("");
-const endpointB = ref("");
 const attachNode = ref("");
 const attachInterface = ref("");
 const attachPortName = ref("");
@@ -265,22 +259,6 @@ const isRuijieNode = computed(() =>
     String(props.node?.config?.template_key || ""),
   ),
 );
-async function connect() {
-  if (
-    !endpointA.value ||
-    !endpointB.value ||
-    endpointA.value === endpointB.value
-  )
-    return;
-  try {
-    await api.connectLink(props.laboratoryId, endpointA.value, endpointB.value);
-    endpointA.value = "";
-    endpointB.value = "";
-    emit("changed");
-  } catch (value) {
-    error.value = value instanceof Error ? value.message : String(value);
-  }
-}
 async function disconnect() {
   if (!props.link) return;
   await api.disconnectLink(props.link.id);
@@ -436,13 +414,7 @@ async function deleteObjectLink() {
       class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto netlab-scrollbar"
       data-layout-region="inspector-content"
     >
-      <LightweightNodeEditor
-        v-if="showLightweight"
-        :laboratory-id="laboratoryId"
-        class="legacy-lightweight"
-        @created="$emit('lightweightCreated', $event)"
-      />
-      <template v-else-if="node">
+      <template v-if="node">
         <section class="border-b border-border p-3">
           <div
             class="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-2"
@@ -862,44 +834,6 @@ async function deleteObjectLink() {
         title="尚未选择对象"
         description="请在拓扑图中选择节点、链路或网络对象，此处将显示详情和可执行操作。"
       />
-      <section class="panel-section">
-        <h3><Network :size="13" class="inline" /> 创建链路</h3>
-        <div class="grid gap-2">
-          <FormField label="接口 A">
-            <Select v-model="endpointA" aria-label="接口 A">
-              <option value="">选择可用接口</option>
-              <option
-                v-for="item in availableInterfaces"
-                :key="item.id"
-                :value="item.id"
-              >
-                {{ item.name }} · {{ item.node_id }}
-              </option>
-            </Select> </FormField
-          ><FormField label="接口 B">
-            <Select v-model="endpointB" aria-label="接口 B">
-              <option value="">选择另一个接口</option>
-              <option
-                v-for="item in availableInterfaces"
-                :key="item.id"
-                :value="item.id"
-                :disabled="item.id === endpointA"
-              >
-                {{ item.name }} · {{ item.node_id }}
-              </option>
-            </Select> </FormField
-          ><Button
-            size="sm"
-            :disabled="!endpointA || !endpointB || endpointA === endpointB"
-            @click="connect"
-          >
-            实时连接
-          </Button>
-        </div>
-        <p v-if="error" role="alert" class="mt-2 text-xs text-destructive">
-          {{ error }}
-        </p>
-      </section>
       <ConfirmationDialog
         v-model="confirmOpen"
         :title="confirmKind === 'link' ? '断开链路' : '删除网络对象'"
@@ -920,17 +854,13 @@ async function deleteObjectLink() {
           confirmKind = '';
         "
       />
-      <section class="panel-section">
-        <h3>连接网络对象</h3>
+      <section v-if="networkObject" class="panel-section">
+        <h3>连接节点到此网络对象</h3>
         <p class="mb-2 text-xs text-muted-foreground">
-          目标：{{ networkObject?.name || "请先选择网络对象" }}
+          目标：{{ networkObject.name }}。用于连接 NAT、网桥或轻量交换机端口。
         </p>
         <FormField label="目标节点">
-          <Select
-            v-model="attachNode"
-            aria-label="目标节点"
-            :disabled="!networkObject"
-          >
+          <Select v-model="attachNode" aria-label="目标节点">
             <option value="">选择节点</option>
             <option v-for="item in nodes" :key="item.id" :value="item.id">
               {{ item.name }} · {{ item.kind }}
@@ -1021,28 +951,5 @@ dd {
 }
 dt {
   color: var(--muted-foreground);
-}
-.legacy-lightweight {
-  padding: 1rem;
-}
-.legacy-lightweight :deep(label),
-.legacy-lightweight :deep(fieldset) {
-  display: grid;
-  gap: 0.35rem;
-  margin: 0.5rem 0;
-}
-.legacy-lightweight :deep(input),
-.legacy-lightweight :deep(select) {
-  height: 2rem;
-  border: 1px solid var(--input);
-  border-radius: 0.3rem;
-  background: var(--background);
-  padding: 0 0.5rem;
-}
-.legacy-lightweight :deep(button) {
-  margin: 0.25rem;
-  padding: 0.4rem 0.6rem;
-  border-radius: 0.3rem;
-  background: var(--secondary);
 }
 </style>

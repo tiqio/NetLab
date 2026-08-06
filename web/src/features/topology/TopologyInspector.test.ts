@@ -18,6 +18,27 @@ const natObject: NetworkObject = {
 };
 
 describe("TopologyInspector", () => {
+  it("keeps the empty Inspector focused on selection guidance", () => {
+    const wrapper = mount(TopologyInspector, {
+      props: { laboratoryId: "lab-1", interfaces: [] },
+    });
+    expect(wrapper.text()).toContain("尚未选择对象");
+    expect(wrapper.text()).not.toContain("创建链路");
+    expect(wrapper.text()).not.toContain("连接节点到此网络对象");
+  });
+
+  it("only shows attachment controls for a selected network object", () => {
+    const wrapper = mount(TopologyInspector, {
+      props: {
+        laboratoryId: "lab-1",
+        networkObject: natObject,
+        interfaces: [],
+      },
+    });
+    expect(wrapper.text()).toContain("连接节点到此网络对象");
+    expect(wrapper.text()).not.toContain("创建链路");
+  });
+
   it("shows authoritative object-link lifecycle, capture metadata, and failure", async () => {
     vi.spyOn(api, "listCaptures").mockResolvedValue([
       {
