@@ -16,10 +16,11 @@ export function resolveInitialTheme(): {
   } catch {
     preference = "system";
   }
-  const system = globalThis.matchMedia?.("(prefers-color-scheme: light)")
-    .matches
-    ? "light"
-    : "dark";
+  const system =
+    typeof globalThis.matchMedia === "function" &&
+    globalThis.matchMedia("(prefers-color-scheme: light)").matches
+      ? "light"
+      : "dark";
   return {
     preference,
     resolved: preference === "system" ? system : preference,

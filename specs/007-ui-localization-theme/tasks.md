@@ -251,3 +251,15 @@ T050 双主题三视口浏览器矩阵
 - 不新增后端状态、数据库迁移或主题同步 API。
 - 不把用户数据、设备输出、命令、地址、接口、镜像、厂商、协议、错误代码和资源 ID 翻译或写入文案目录。
 - 不在源码、测试夹具或验收证据中保存凭据、专有镜像或抓包内容。
+
+---
+
+## Phase 7: Convergence
+
+- [ ] T068 将 `web/src/components/`, `web/src/features/`, `web/src/views/` 中的产品自有英文文案直接迁移到 `web/src/locales/zh-CN.ts` 和领域化中文资源，移除对 `web/src/composables/useUiLocalization.ts` 挂载后文本改写的依赖，并将 `scripts/check-ui-localization.sh` 升级为覆盖文本节点、属性、运行时消息和精确技术术语豁免的全量门禁 per FR-001/FR-002/FR-024/SC-001 and plan: centralized text (contradicts)
+- [ ] T069 将 `web/src/features/topology/TopologyCanvas.vue`, `web/src/features/topology/TrafficPathOverlay.vue`, `web/src/features/topology/topologyVisualSemantics.ts`, `web/src/features/topology/topologySymbols.ts` 中的固定颜色迁移到浅色/深色拓扑语义调色板，并增加节点、端口、链路、箭头、粒子、选择及流量状态双主题视觉测试 per FR-013/FR-015 and US3/AC2-3 (partial)
+- [ ] T070 将 `web/src/features/analytics/ResourceCharts.vue`, `web/src/components/charts/CaptureVolumeChart.vue`, `web/src/components/charts/TaskProgressChart.vue` 的固定颜色迁移到图表语义调色板，修正 `web/src/components/charts/EChart.vue` 的主题配置合并以保留调用方 title/legend/tooltip/dataZoom/selection，并扩展 `web/src/components/charts/EChart.test.ts` per FR-016 and US2/AC2 and US3/AC3 (partial)
+- [ ] T071 扩展 `tests/e2e/frontend_localization.spec.ts`, `tests/e2e/frontend_theme_continuity.spec.ts`, `tests/e2e/frontend_localization_theme_accessibility.spec.ts`，在两种主题和三视口下执行 axe、全键盘、中文长文本、资源添加、链路、任务、Console、Capture、Traffic Filter 及主题切换前后权威状态/会话连续性断言 per FR-024/FR-025 and SC-003/SC-004/SC-005 (partial)
+- [ ] T072 修复 `tests/e2e/pages/TemplatePage.ts` 与相关 FormField/Select 稳定定位合同，随后在 `10.72.1.7` 创建并清理专用验收 Lab，完成 QEMU、Docker、链路、Console、Capture、Traffic Filter、三态主题和双浏览器隔离联合验收，并将证据写入 `specs/007-ui-localization-theme/validation.md` per FR-026 and T065 (missing)
+- [X] T073 将 `web/src/components/appearance/ThemeSwitcher.vue` 作为共享控件接入 `web/src/features/laboratories/LaboratoryToolbar.vue`, `web/src/views/TemplatesView.vue`, `web/src/views/AutomationView.vue` 的正常布局，移除 `web/src/styles/workspace.css` 中可能遮挡操作的固定悬浮入口，并增加 1024×768 中文长文本可达性测试 per FR-007/FR-019 and plan: page entries (partial)
+- [X] T074 使用安全的 `globalThis.matchMedia` 能力检测重构 `web/index.html` 和 `web/src/themeBootstrap.ts` 的首屏主题解析，并在 `web/src/themeBootstrap.test.ts` 增加无 matchMedia、无 localStorage、无明确系统偏好时深色回退且无挂载阻塞的测试 per FR-008/FR-021 (partial)

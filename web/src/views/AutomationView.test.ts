@@ -15,7 +15,7 @@ describe("AutomationView", () => {
       },
     });
     await flushPromises();
-    expect(wrapper.text()).toContain("REST and MCP parity");
-    expect(wrapper.text()).toContain("No UI-only mutations");
+    expect(wrapper.text()).toContain("REST 与 MCP 能力一致性");
+    expect(wrapper.text()).toContain("不存在仅界面可用的变更操作");
   });
 });

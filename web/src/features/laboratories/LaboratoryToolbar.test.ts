@@ -39,38 +39,30 @@ describe("LaboratoryToolbar", () => {
     const wrapper = render();
     await wrapper.get('[aria-label="添加资源"]').trigger("click");
     expect(wrapper.emitted("openCreate")).toHaveLength(1);
-    expect(wrapper.find('[aria-label="Toggle device palette"]').exists()).toBe(
-      true,
-    );
+    expect(wrapper.find('[aria-label="切换设备面板"]').exists()).toBe(true);
   });
 
   it("keeps the switcher DOM stable while live laboratory props change", async () => {
     const wrapper = render(laboratoryFactory({ id: "lab-1", name: "One" }));
     await wrapper.get('[data-testid="laboratory-switcher"]').trigger("click");
-    const switcher = wrapper.get('[aria-label="Laboratory switcher"]').element;
+    const switcher = wrapper.get('[aria-label="实验室切换器"]').element;
     await wrapper.setProps({
       labs: [
         laboratoryFactory({ id: "lab-1", name: "One", revision: 2 }),
         laboratoryFactory({ id: "lab-2", name: "Two" }),
       ],
     });
-    expect(wrapper.get('[aria-label="Laboratory switcher"]').element).toBe(
-      switcher,
-    );
+    expect(wrapper.get('[aria-label="实验室切换器"]').element).toBe(switcher);
     await wrapper.get('[data-testid="new-laboratory"]').trigger("click");
-    expect(wrapper.get('[aria-label="Laboratory switcher"]').element).toBe(
-      switcher,
-    );
+    expect(wrapper.get('[aria-label="实验室切换器"]').element).toBe(switcher);
   });
 
   it("uses one searchable vertical laboratory switcher", async () => {
     const wrapper = render();
-    expect(wrapper.find('[aria-label="Open laboratories"]').exists()).toBe(
-      false,
-    );
+    expect(wrapper.find('[aria-label="打开实验室列表"]').exists()).toBe(false);
     await wrapper.get('[data-testid="laboratory-switcher"]').trigger("click");
     expect(wrapper.get('[role="listbox"]').isVisible()).toBe(true);
-    await wrapper.get('[aria-label="Search laboratories"]').setValue("branch");
+    await wrapper.get('[aria-label="搜索实验室"]').setValue("branch");
     const options = wrapper.findAll('[role="option"]');
     expect(options).toHaveLength(1);
     expect(options[0].text()).toContain("Branch validation");
@@ -86,11 +78,11 @@ describe("LaboratoryToolbar", () => {
     await rows[1].trigger("contextmenu", { clientX: 240, clientY: 160 });
     const menu = document.body.querySelector('[role="menu"]');
     expect(menu?.textContent).toContain("Branch validation");
-    expect(menu?.textContent).toContain("Rename");
-    expect(menu?.textContent).toContain("Duplicate");
-    expect(menu?.textContent).toContain("Export");
-    expect(menu?.textContent).toContain("Import");
-    expect(menu?.textContent).toContain("Delete");
+    expect(menu?.textContent).toContain("重命名");
+    expect(menu?.textContent).toContain("复制");
+    expect(menu?.textContent).toContain("导出");
+    expect(menu?.textContent).toContain("导入");
+    expect(menu?.textContent).toContain("删除");
     expect(wrapper.emitted("select")).toBeUndefined();
   });
 
@@ -98,7 +90,7 @@ describe("LaboratoryToolbar", () => {
     const wrapper = render();
     await wrapper.get('[data-testid="laboratory-switcher"]').trigger("click");
     await wrapper.get('[data-testid="new-laboratory"]').trigger("click");
-    expect(document.body.textContent).toContain("Create laboratory");
+    expect(document.body.textContent).toContain("创建实验室");
     expect(wrapper.get('[role="listbox"]').isVisible()).toBe(false);
   });
 
@@ -128,13 +120,13 @@ describe("LaboratoryToolbar", () => {
     await rows[1].trigger("contextmenu", { clientX: 240, clientY: 160 });
     const deleteAction = Array.from(
       document.body.querySelectorAll('[role="menu"] button'),
-    ).find((button) => button.textContent?.trim() === "Delete") as
+    ).find((button) => button.textContent?.trim() === "删除") as
       HTMLButtonElement | undefined;
     expect(deleteAction).toBeDefined();
     deleteAction!.click();
     await wrapper.vm.$nextTick();
     const confirm = Array.from(document.body.querySelectorAll("button")).find(
-      (button) => button.textContent?.trim() === "Delete",
+      (button) => button.textContent?.trim() === "删除",
     );
     expect(confirm).toBeDefined();
     confirm!.click();

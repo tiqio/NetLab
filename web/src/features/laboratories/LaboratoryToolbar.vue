@@ -18,6 +18,7 @@ import {
 } from "lucide-vue-next";
 import { api, ApiError, type Laboratory } from "@/api";
 import { Button, Dialog, FormField, Input, Select } from "@/components/ui";
+import { ThemeSwitcher } from "@/components/appearance";
 import LaboratoryTransferDialog from "./LaboratoryTransferDialog.vue";
 
 const props = withDefaults(
@@ -177,7 +178,7 @@ async function duplicateLab() {
     laboratory.id,
     `${laboratory.name} copy`,
   );
-  status.value = `Duplicate queued: ${value.task.id}`;
+  status.value = `复制任务已进入队列：${value.task.id}`;
   emit("changed");
 }
 function openRename() {
@@ -211,7 +212,7 @@ async function renameLab() {
       emit("changed");
     } else {
       renameError.value =
-        error instanceof Error ? error.message : "Unable to rename laboratory";
+        error instanceof Error ? error.message : "无法重命名实验室";
     }
   } finally {
     renameBusy.value = false;
@@ -228,7 +229,7 @@ async function deleteLab() {
   const laboratory = actionLab.value;
   const deletingId = laboratory.id;
   const value = await api.deleteLab(laboratory);
-  status.value = `Delete queued: ${value.task.id}`;
+  status.value = `删除任务已进入队列：${value.task.id}`;
   deleteOpen.value = false;
   emit("deleteAccepted", deletingId);
 }
@@ -241,17 +242,15 @@ function openDelete() {
 <template>
   <header
     class="flex h-[var(--panel-toolbar-height)] items-center gap-2 border-b border-border bg-card px-2"
-    aria-label="Laboratory toolbar"
+    aria-label="实验室工具栏"
   >
     <Button
       variant="ghost"
       size="icon"
-      aria-label="Toggle device palette"
+      aria-label="切换设备面板"
       :disabled="!paletteAvailable"
       :title="
-        paletteAvailable
-          ? 'Show or hide device templates'
-          : 'Create or select a laboratory before adding devices'
+        paletteAvailable ? '显示或隐藏设备模板' : '添加设备前请创建或选择实验室'
       "
       autofocus
       @click="$emit('togglePalette')"
@@ -279,14 +278,14 @@ function openDelete() {
         variant="outline"
         class="w-full min-w-0 justify-between gap-2 px-3"
         role="combobox"
-        aria-label="Laboratory"
+        aria-label="实验室"
         aria-haspopup="listbox"
         :aria-expanded="switcherOpen"
         data-testid="laboratory-switcher"
         @click="toggleSwitcher"
       >
         <span class="min-w-0 truncate text-left">
-          {{ active?.name || "Select a laboratory" }}
+          {{ active?.name || "选择实验室" }}
         </span>
         <span
           class="flex shrink-0 items-center gap-1 text-[10px] text-muted-foreground"
@@ -297,7 +296,7 @@ function openDelete() {
       <section
         v-show="switcherOpen"
         class="absolute left-0 top-full z-40 mt-1 w-[min(24rem,calc(100vw-1rem))] overflow-hidden rounded-md border border-border bg-popover shadow-2xl"
-        aria-label="Laboratory switcher"
+        aria-label="实验室切换器"
       >
         <header class="flex items-center gap-2 border-b border-border p-2">
           <div class="relative min-w-0 flex-1">
@@ -307,18 +306,18 @@ function openDelete() {
             />
             <Input
               v-model="laboratoryQuery"
-              aria-label="Search laboratories"
+              aria-label="搜索实验室"
               class="pl-7"
-              placeholder="Search laboratories"
+              placeholder="搜索实验室"
             />
           </div>
           <Button size="sm" data-testid="new-laboratory" @click="openCreate">
-            <Plus :size="14" /> New
+            <Plus :size="14" /> 新建
           </Button>
         </header>
         <div
           role="listbox"
-          aria-label="Laboratories"
+          aria-label="实验室列表"
           class="max-h-72 overflow-y-auto p-1 netlab-scrollbar"
           @contextmenu="openGlobalContext"
         >
@@ -349,8 +348,8 @@ function openDelete() {
                 <small class="block truncate text-[10px] text-muted-foreground">
                   {{
                     lab.recovery_policy === "auto_restore"
-                      ? "Auto restore"
-                      : "Remain stopped"
+                      ? "自动恢复"
+                      : "保持停止"
                   }}
                   · revision {{ lab.revision }}
                 </small>
@@ -360,8 +359,8 @@ function openDelete() {
               variant="ghost"
               size="icon"
               class="mr-1 h-7 w-7 shrink-0 opacity-60 group-hover:opacity-100"
-              :aria-label="`Actions for ${lab.name}`"
-              :title="`Manage ${lab.name}`"
+              :aria-label="`${lab.name} 的操作`"
+              :title="`管理 ${lab.name}`"
               @click="openLabActions(lab, $event)"
             >
               <MoreVertical :size="14" />
@@ -371,19 +370,19 @@ function openDelete() {
             v-if="!filteredLabs.length"
             class="px-3 py-6 text-center text-xs text-muted-foreground"
           >
-            No laboratories match “{{ laboratoryQuery }}”.
+            没有匹配“{{ laboratoryQuery }}”的实验室。
           </p>
         </div>
         <footer
           class="border-t border-border px-3 py-2 text-[10px] text-muted-foreground"
         >
-          Right-click a laboratory to rename, duplicate, export, import, or
-          delete it. Use the <MoreVertical :size="11" class="inline" /> button
-          on touch devices.
+          右键单击实验室可重命名、复制、导出、导入或删除。触摸设备请使用
+          <MoreVertical :size="11" class="inline" /> 按钮。
         </footer>
       </section>
     </div>
     <div class="ml-auto flex items-center gap-2">
+      <ThemeSwitcher />
       <RouterLink
         to="/templates"
         class="hidden text-xs text-muted-foreground hover:text-foreground md:inline"
@@ -422,9 +421,7 @@ function openDelete() {
       v-if="contextMenuOpen"
       ref="contextMenu"
       role="menu"
-      :aria-label="
-        actionLab ? `Actions for ${actionLab.name}` : 'Laboratory actions'
-      "
+      :aria-label="actionLab ? `${actionLab.name} 的操作` : '实验室操作'"
       class="fixed z-[70] w-52 rounded-md border border-border bg-popover p-1 shadow-2xl"
       :style="{ left: `${contextMenuX}px`, top: `${contextMenuY}px` }"
       @contextmenu.prevent
@@ -443,7 +440,7 @@ function openDelete() {
         role="menuitem"
         @click="openRename"
       >
-        <Edit3 :size="13" /> Rename
+        <Edit3 :size="13" /> 重命名
       </Button>
       <Button
         v-if="actionLab"
@@ -453,7 +450,7 @@ function openDelete() {
         role="menuitem"
         @click="duplicateLab"
       >
-        <Copy :size="13" /> Duplicate
+        <Copy :size="13" /> 复制
       </Button>
       <Button
         v-if="actionLab"
@@ -463,7 +460,7 @@ function openDelete() {
         role="menuitem"
         @click="openTransfer('export')"
       >
-        <Download :size="13" /> Export
+        <Download :size="13" /> 导出
       </Button>
       <Button
         variant="ghost"
@@ -472,7 +469,7 @@ function openDelete() {
         role="menuitem"
         @click="openTransfer('import')"
       >
-        <Upload :size="13" /> Import
+        <Upload :size="13" /> 导入
       </Button>
       <Button
         v-if="actionLab"
@@ -482,24 +479,24 @@ function openDelete() {
         role="menuitem"
         @click="openDelete"
       >
-        <Trash2 :size="13" /> Delete
+        <Trash2 :size="13" /> 删除
       </Button>
     </section>
   </Teleport>
   <Dialog
     v-model="createOpen"
-    title="Create laboratory"
-    description="Create a shared server-authoritative laboratory."
+    title="创建实验室"
+    description="创建由服务器管理并在客户端间共享的实验室。"
   >
     <form class="grid gap-3" @submit.prevent="createLab">
-      <FormField label="Name">
+      <FormField label="名称">
         <Input v-model="name" required autofocus /> </FormField
-      ><FormField label="Recovery policy">
+      ><FormField label="恢复策略">
         <Select v-model="policy">
-          <option value="auto_restore">Auto restore after host restart</option>
-          <option value="remain_stopped">Remain stopped</option>
+          <option value="auto_restore">宿主机重启后自动恢复</option>
+          <option value="remain_stopped">保持停止</option>
         </Select> </FormField
-      ><Button type="submit"> Create laboratory </Button>
+      ><Button type="submit"> 创建实验室 </Button>
     </form>
   </Dialog>
   <LaboratoryTransferDialog
@@ -514,37 +511,34 @@ function openDelete() {
     :prevent-close="
       renameName.trim() !== (actionLab?.name || '') && !renameBusy
     "
-    title="Rename laboratory"
-    description="The name is shared by every connected browser."
+    title="重命名实验室"
+    description="名称会同步到所有已连接的浏览器。"
   >
     <form class="grid gap-3" @submit.prevent="renameLab">
-      <FormField label="Name" :error="renameError">
+      <FormField label="名称" :error="renameError">
         <Input v-model="renameName" required maxlength="120" />
       </FormField>
       <div class="flex justify-end gap-2">
         <Button type="button" variant="secondary" @click="renameOpen = false">
-          Cancel
+          取消
         </Button>
         <Button type="submit" :disabled="renameBusy || !renameName.trim()">
-          {{ renameBusy ? "Saving…" : "Save name" }}
+          {{ renameBusy ? "正在保存…" : "保存名称" }}
         </Button>
       </div>
     </form>
   </Dialog>
   <Dialog
     v-model="deleteOpen"
-    title="Delete laboratory"
-    :description="
-      actionLab ? `Delete ${actionLab.name} and its owned resources?` : ''
-    "
+    title="删除实验室"
+    :description="actionLab ? `删除 ${actionLab.name} 及其拥有的资源？` : ''"
   >
     <p class="text-sm text-muted-foreground">
-      This is destructive and cleanup progress will remain visible as a durable
-      task.
+      此操作不可恢复，清理进度会作为持久化任务持续显示。
     </p>
     <template #footer>
-      <Button variant="secondary" @click="deleteOpen = false"> Cancel </Button
-      ><Button variant="destructive" @click="deleteLab"> Delete </Button>
+      <Button variant="secondary" @click="deleteOpen = false"> 取消 </Button
+      ><Button variant="destructive" @click="deleteLab"> 删除 </Button>
     </template>
   </Dialog>
 </template>

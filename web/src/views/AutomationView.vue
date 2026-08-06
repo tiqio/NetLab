@@ -4,6 +4,7 @@ import { RouterLink } from "vue-router";
 import { ArrowLeft, Bot, RefreshCw, Upload } from "lucide-vue-next";
 import { api, type AuditEvent, type OperationTask } from "@/api";
 import { Button, Textarea } from "@/components/ui";
+import { ThemeSwitcher } from "@/components/appearance";
 import TaskCenter from "@/features/tasks/TaskCenter.vue";
 const tasks = ref<OperationTask[]>([]);
 const audit = ref<AuditEvent[]>([]);
@@ -18,7 +19,7 @@ async function refresh() {
 async function importBundle() {
   try {
     const value = await api.importLab(JSON.parse(importText.value));
-    status.value = `Import queued: ${value.task.id}`;
+    status.value = `导入任务已进入队列：${value.task.id}`;
     await refresh();
   } catch (error) {
     status.value = error instanceof Error ? error.message : String(error);
@@ -35,12 +36,15 @@ onMounted(refresh);
         to="/"
         class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft :size="15" /> Workspace </RouterLink
+        <ArrowLeft :size="15" /> 工作区 </RouterLink
       ><Bot :size="17" class="text-primary" />
-      <h1 class="font-semibold">Automation and shared control</h1>
-      <Button class="ml-auto" variant="ghost" size="sm" @click="refresh">
-        <RefreshCw :size="14" /> Refresh
-      </Button>
+      <h1 class="font-semibold">自动化与共享控制</h1>
+      <div class="ml-auto flex items-center gap-2">
+        <ThemeSwitcher />
+        <Button variant="ghost" size="sm" @click="refresh">
+          <RefreshCw :size="14" /> 刷新
+        </Button>
+      </div>
     </header>
     <div class="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[1.4fr_1fr]">
       <section class="min-h-0 border-r border-border">
@@ -48,35 +52,34 @@ onMounted(refresh);
       </section>
       <aside class="overflow-auto p-4 netlab-scrollbar">
         <section class="rounded border border-border bg-card p-3">
-          <h2 class="font-semibold">REST and MCP parity</h2>
+          <h2 class="font-semibold">REST 与 MCP 能力一致性</h2>
           <p class="mt-2 text-sm text-muted-foreground">
-            The SPA, REST API, and MCP tools use the same application commands,
-            durable tasks, revisions, and ordered resource events. Layout
-            preferences are intentionally browser-local.
+            SPA、REST API 与 MCP
+            工具共用相同的应用命令、持久化任务、修订版本和有序资源事件。布局偏好仅保存在当前浏览器中。
           </p>
           <ul class="mt-3 grid gap-1 text-xs text-muted-foreground">
-            <li>• No account-scoped node state</li>
-            <li>• No UI-only mutations</li>
-            <li>• Capture responses use metadata and artifact handles</li>
-            <li>• Event gaps trigger authoritative snapshot refresh</li>
+            <li>• 节点状态不按账户隔离</li>
+            <li>• 不存在仅界面可用的变更操作</li>
+            <li>• 抓包响应使用元数据与产物句柄</li>
+            <li>• 事件缺口会触发权威快照刷新</li>
           </ul>
         </section>
         <section class="mt-3 rounded border border-border bg-card p-3">
-          <h2 class="font-semibold">Import redacted bundle</h2>
+          <h2 class="font-semibold">导入脱敏数据包</h2>
           <Textarea
             v-model="importText"
             rows="8"
-            aria-label="Laboratory export JSON"
+            aria-label="实验室导出 JSON"
             class="mt-2 w-full rounded border border-input bg-background p-2 font-mono text-xs"
           /><Button class="mt-2" size="sm" @click="importBundle">
-            <Upload :size="14" /> Import
+            <Upload :size="14" /> 导入
           </Button>
           <p role="status" class="mt-2 text-xs text-muted-foreground">
             {{ status }}
           </p>
         </section>
         <section class="mt-3 rounded border border-border bg-card p-3">
-          <h2 class="font-semibold">Audit</h2>
+          <h2 class="font-semibold">审计</h2>
           <ul class="mt-2 grid gap-2">
             <li
               v-for="event in audit"

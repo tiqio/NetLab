@@ -3,6 +3,7 @@ import { ref } from "vue";
 import { RouterLink } from "vue-router";
 import { ArrowLeft, Upload } from "lucide-vue-next";
 import { Button } from "@/components/ui";
+import { ThemeSwitcher } from "@/components/appearance";
 import TemplateCatalog from "@/features/templates/TemplateCatalog.vue";
 import ImageImportDialog from "@/features/templates/ImageImportDialog.vue";
 const catalog = ref<InstanceType<typeof TemplateCatalog>>();
@@ -17,12 +18,15 @@ const importOpen = ref(false);
         to="/"
         class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft :size="15" /> Workspace
+        <ArrowLeft :size="15" /> 工作区
       </RouterLink>
-      <h1 class="font-semibold">Templates and images</h1>
-      <Button class="ml-auto" size="sm" @click="importOpen = true">
-        <Upload :size="14" /> Import image reference
-      </Button>
+      <h1 class="font-semibold">模板与镜像</h1>
+      <div class="ml-auto flex items-center gap-2">
+        <ThemeSwitcher />
+        <Button size="sm" @click="importOpen = true">
+          <Upload :size="14" /> 导入镜像引用
+        </Button>
+      </div>
     </header>
     <TemplateCatalog ref="catalog" /><ImageImportDialog
       v-model="importOpen"

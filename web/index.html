@@ -10,9 +10,9 @@
           const stored = localStorage.getItem("netlab.appearance.v1");
           if (["system", "light", "dark"].includes(stored)) preference = stored;
         } catch {}
-        const systemLight = matchMedia?.(
-          "(prefers-color-scheme: light)",
-        ).matches;
+        const systemLight =
+          typeof globalThis.matchMedia === "function" &&
+          globalThis.matchMedia("(prefers-color-scheme: light)").matches;
         const resolved =
           preference === "system"
             ? systemLight
