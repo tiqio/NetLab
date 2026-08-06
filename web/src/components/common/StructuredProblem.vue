@@ -23,7 +23,7 @@ defineEmits<{ retry: []; refresh: [] }>();
         <h3 class="netlab-copy font-semibold">
           {{ title || problem.code }}
         </h3>
-        <p class="netlab-copy mt-1 text-muted-foreground">
+        <p class="netlab-copy mt-1 text-foreground/90">
           {{ problemContext(problem.code) }}
         </p>
         <dl
