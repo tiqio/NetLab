@@ -541,10 +541,7 @@ async function deleteObjectLink() {
     <template v-else-if="networkObjectLink">
       <section class="panel-section">
         <div class="flex items-center justify-between gap-2">
-          <ResourceIdentity
-            :id="networkObjectLink.id"
-            type="网络对象链路"
-          />
+          <ResourceIdentity :id="networkObjectLink.id" type="网络对象链路" />
           <StatusBadge :state="networkObjectLink.observed_state" />
         </div>
         <dl>
@@ -766,8 +763,7 @@ async function deleteObjectLink() {
             id="network-object-diagnostics"
             aria-label="网络对象诊断结果"
             class="max-h-80 overflow-auto border-t border-border bg-background p-2 text-[10px]"
-            >{{ JSON.stringify(diagnostics, null, 2) }}</pre
-          >
+            >{{ JSON.stringify(diagnostics, null, 2) }}</pre>
         </section>
         <p v-if="error" role="alert" class="mt-2 text-xs text-destructive">
           {{ error }}
@@ -889,9 +885,7 @@ async function deleteObjectLink() {
     </section>
     <ConfirmationDialog
       v-model="confirmOpen"
-      :title="
-        confirmKind === 'link' ? '断开链路' : '删除网络对象'
-      "
+      :title="confirmKind === 'link' ? '断开链路' : '删除网络对象'"
       :resource="
         confirmKind === 'link'
           ? selectedLinkName

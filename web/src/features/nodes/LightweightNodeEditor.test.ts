@@ -8,9 +8,9 @@ describe("LightweightNodeEditor", () => {
     const wrapper = mount(LightweightNodeEditor, {
       props: { laboratoryId: "lab-1" },
     });
-    expect(wrapper.text()).toContain("Layer-2 switch");
-    expect(wrapper.text()).toContain("Layer-3 switch");
-    expect(wrapper.text()).toContain("NAT bridge");
+    expect(wrapper.text()).toContain("二层交换机");
+    expect(wrapper.text()).toContain("三层交换机");
+    expect(wrapper.text()).toContain("NAT 网桥");
     expect(wrapper.text()).toContain("DHCPv4");
     expect(wrapper.text()).toContain("DHCPv6");
     expect(wrapper.text()).toContain("IPv6 SLAAC");

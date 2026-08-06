@@ -50,7 +50,7 @@ func TestCreateNodePinsValidatedTemplateImage(t *testing.T) {
 		t.Fatal(err)
 	}
 	versionID := domain.NewID()
-	if err = templates.UpsertTemplate(ctx, domain.DeviceTemplate{Key: "ubuntu-test", DisplayName: "Ubuntu Test", RuntimeKind: domain.RuntimeQEMU, Versions: []domain.TemplateVersion{{ID: versionID, Version: "24.04", ManifestVersion: 1, ImageVersionID: image.ID, Defaults: domain.TemplateDefaults{CPUCount: 2, MemoryMiB: 2048, Interfaces: 2, InterfaceNameFormat: "ens%d"}, NICDrivers: []string{"virtio-net-pci"}, Enabled: true}}}); err != nil {
+	if err = templates.UpsertTemplate(ctx, domain.DeviceTemplate{Key: "ubuntu-test", DisplayName: "Ubuntu Test", RuntimeKind: domain.RuntimeQEMU, Versions: []domain.TemplateVersion{{ID: versionID, Version: "24.04", ManifestVersion: 1, ImageVersionID: image.ID, Defaults: domain.TemplateDefaults{CPUCount: 2, MemoryMiB: 2048, Interfaces: 2, InterfaceNameFormat: "ens%d"}, NICDrivers: []string{"virtio-net-pci", "e1000"}, Enabled: true}}}); err != nil {
 		t.Fatal(err)
 	}
 	service := command.NewNodeService(topology, templates)
@@ -68,6 +68,16 @@ func TestCreateNodePinsValidatedTemplateImage(t *testing.T) {
 	}
 	if node.CPUCount != 2 || node.MemoryMiB != 2048 || len(interfaces) != 2 || interfaces[0].Name != "ens0" || interfaces[0].Driver != "virtio-net-pci" {
 		t.Fatalf("defaults not applied: node=%+v interfaces=%+v", node, interfaces)
+	}
+	_, selectedInterfaces, err := service.CreateConfigured(ctx, lab.ID, command.CreateNodeRequest{Name: "ubuntu-e1000", TemplateVersionID: versionID, NICDriver: "e1000"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if selectedInterfaces[0].Driver != "e1000" {
+		t.Fatalf("requested driver not applied: %+v", selectedInterfaces)
+	}
+	if _, _, err = service.CreateConfigured(ctx, lab.ID, command.CreateNodeRequest{Name: "ubuntu-invalid-driver", TemplateVersionID: versionID, NICDriver: "vmxnet3"}); err == nil {
+		t.Fatal("unsupported driver should fail")
 	}
 }
 

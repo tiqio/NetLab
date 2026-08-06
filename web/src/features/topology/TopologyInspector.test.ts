@@ -493,9 +493,7 @@ describe("TopologyInspector", () => {
     await toggle.trigger("click");
     expect(toggle.attributes("aria-expanded")).toBe("false");
     expect(
-      wrapper
-        .get('[aria-label="网络对象诊断结果"]')
-        .attributes("style"),
+      wrapper.get('[aria-label="网络对象诊断结果"]').attributes("style"),
     ).toContain("display: none");
     diagnostics.mockRestore();
   });

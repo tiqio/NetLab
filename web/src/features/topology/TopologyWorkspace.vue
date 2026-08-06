@@ -49,7 +49,10 @@ import { TopologyKeyboardController } from "./topologyKeyboardController";
 import { resolvePlacements } from "./topologyLayout";
 import { buildPlacementBatch } from "./topologyPlacementBatch";
 import { runObjectLinkDeletion } from "./objectLinkDeletion";
-import { openTopologyCreateDrawer } from "./topologyCreateDrawerState";
+import {
+  captureTopologyCreateWorkspace,
+  openTopologyCreateDrawer,
+} from "./topologyCreateDrawerState";
 import {
   boxSelect,
   cleanSelection,
@@ -105,6 +108,14 @@ const focusedResourceId = ref("");
 const keyboardAnnouncement = ref("");
 const keyboardController = new TopologyKeyboardController();
 const createOpen = ref(false);
+const createSucceeded = ref(false);
+const createSnapshot = ref<{
+  inspector: { collapsed: boolean; size: number };
+  selectedIds: string[];
+  selectedType: typeof selectedType.value;
+  focusedResourceId: string;
+  activeElement: HTMLElement | null;
+}>();
 const paletteSelection = ref<PaletteSelection>();
 const createDrawer = ref<{
   isDirty: () => boolean;
@@ -624,12 +635,14 @@ function choose(selection: PaletteSelection) {
     shell.value?.openInspector();
     return;
   }
+  captureCreateSnapshot();
   const next = openTopologyCreateDrawer(selection);
   paletteSelection.value = next.selection;
   createOpen.value = next.open;
 }
 
 function openCreateDrawer() {
+  captureCreateSnapshot();
   const next = openTopologyCreateDrawer();
   paletteSelection.value = next.selection;
   createOpen.value = next.open;
@@ -640,6 +653,7 @@ async function created(value: {
   interfaces?: NodeInterface[];
   networkObject?: NetworkObject;
 }) {
+  createSucceeded.value = true;
   if (!store.active) return;
   const center = topologyCanvas.value?.viewportCenter?.() || { x: 0, y: 0 };
   await refreshActive();
@@ -683,6 +697,35 @@ async function created(value: {
     }
     selectResource(resource.id, resourceType, false);
   }
+}
+
+function captureCreateSnapshot() {
+  if (createOpen.value || createSnapshot.value) return;
+  createSucceeded.value = false;
+  createSnapshot.value = captureTopologyCreateWorkspace({
+    inspector: { ...preferences.value.panels.inspector },
+    selectedIds: [...selectedIds.value],
+    selectedType: selectedType.value,
+    focusedResourceId: focusedResourceId.value,
+    activeElement: document.activeElement as HTMLElement | null,
+  });
+}
+
+function setCreateOpen(value: boolean) {
+  createOpen.value = value;
+  if (value) return;
+  const snapshot = createSnapshot.value;
+  createSnapshot.value = undefined;
+  paletteSelection.value = undefined;
+  if (!snapshot || createSucceeded.value) {
+    createSucceeded.value = false;
+    return;
+  }
+  setPanel("inspector", snapshot.inspector);
+  selectedIds.value = snapshot.selectedIds;
+  selectedType.value = snapshot.selectedType;
+  focusedResourceId.value = snapshot.focusedResourceId;
+  requestAnimationFrame(() => snapshot.activeElement?.focus());
 }
 
 async function refreshActive() {
@@ -1836,9 +1879,10 @@ onBeforeUnmount(() => {
     <CreateTopologyResourceDrawer
       v-if="store.active"
       ref="createDrawer"
-      v-model="createOpen"
+      :model-value="createOpen"
       :laboratory-id="store.active.laboratory.id"
       :selection="paletteSelection"
+      @update:model-value="setCreateOpen"
       @selection-changed="paletteSelection = $event"
       @created="created"
     />

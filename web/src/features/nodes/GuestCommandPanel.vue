@@ -28,10 +28,7 @@ async function execute() {
 <template>
   <form class="panel-section" @submit.prevent="execute">
     <h3>Guest 命令</h3>
-    <FormField
-      label="受限命令"
-      hint="命令输出不会保存到浏览器偏好设置中。"
-    >
+    <FormField label="受限命令" hint="命令输出不会保存到浏览器偏好设置中。">
       <Input v-model="command" autocomplete="off" /> </FormField
     ><Button class="mt-2" size="sm" :disabled="busy">
       通过 QEMU Guest Agent 执行

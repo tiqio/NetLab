@@ -167,6 +167,7 @@ func (h *TopologyHandlers) createNode(c *gin.Context) {
 		StorageGiB        int            `json:"storage_gib"`
 		InterfaceLimit    int            `json:"interface_limit"`
 		ProcessLimit      int            `json:"process_limit"`
+		NICDriver         string         `json:"nic_driver"`
 		InterfaceCount    int            `json:"interface_count"`
 		Config            map[string]any `json:"config"`
 		Bootstrap         struct {
@@ -179,7 +180,7 @@ func (h *TopologyHandlers) createNode(c *gin.Context) {
 		handleError(c, err)
 		return
 	}
-	node, interfaces, err := h.nodes.CreateConfigured(c, domain.ID(c.Param("labId")), command.CreateNodeRequest{Name: body.Name, Kind: body.Kind, TemplateVersionID: body.TemplateVersionID, ImageVersionID: body.ImageVersionID, CPUCount: body.CPUCount, CPUQuotaMicros: body.CPUQuotaMicros, MemoryMiB: body.MemoryMiB, StorageGiB: body.StorageGiB, InterfaceLimit: body.InterfaceLimit, ProcessLimit: body.ProcessLimit, InterfaceCount: body.InterfaceCount, Config: body.Config, Bootstrap: qemuRuntime.SeedSpec{UserData: body.Bootstrap.UserData, MetaData: body.Bootstrap.MetaData, NetworkConfig: body.Bootstrap.NetworkConfig}})
+	node, interfaces, err := h.nodes.CreateConfigured(c, domain.ID(c.Param("labId")), command.CreateNodeRequest{Name: body.Name, Kind: body.Kind, TemplateVersionID: body.TemplateVersionID, ImageVersionID: body.ImageVersionID, CPUCount: body.CPUCount, CPUQuotaMicros: body.CPUQuotaMicros, MemoryMiB: body.MemoryMiB, StorageGiB: body.StorageGiB, InterfaceLimit: body.InterfaceLimit, ProcessLimit: body.ProcessLimit, NICDriver: body.NICDriver, InterfaceCount: body.InterfaceCount, Config: body.Config, Bootstrap: qemuRuntime.SeedSpec{UserData: body.Bootstrap.UserData, MetaData: body.Bootstrap.MetaData, NetworkConfig: body.Bootstrap.NetworkConfig}})
 	if err != nil {
 		handleError(c, err)
 		return

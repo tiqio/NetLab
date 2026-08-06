@@ -25,6 +25,7 @@ const emit = defineEmits<{ choose: [PaletteSelection] }>();
 const templates = ref<DeviceTemplate[]>([]);
 const query = ref("");
 const loading = ref(false);
+const loadError = ref("");
 const lightweight: PaletteSelection[] = [
   {
     kind: "pc",
@@ -79,7 +80,7 @@ const networkDevices = computed(() =>
     .filter(
       (item) =>
         item.template &&
-        `${item.name} ${item.description}`
+        `${item.key} ${item.name} ${item.description}`
           .toLowerCase()
           .includes(query.value.toLowerCase()),
     ),
@@ -88,19 +89,31 @@ const filtered = computed(() =>
   templates.value.filter(
     (item) =>
       !["ruijie-router", "ruijie-switch"].includes(item.template_key) &&
-      `${item.display_name} ${item.runtime_kind}`
+      `${item.display_name} ${item.template_key} ${item.runtime_kind} ${item.versions.map((version) => String(version.runtime_options?.description || "")).join(" ")}`
         .toLowerCase()
         .includes(query.value.toLowerCase()),
   ),
 );
-onMounted(async () => {
+const filteredLightweight = computed(() =>
+  lightweight.filter((item) =>
+    `${item.name} ${item.networkObjectKind || ""} ${item.description || ""}`
+      .toLowerCase()
+      .includes(query.value.toLowerCase()),
+  ),
+);
+async function loadTemplates() {
   loading.value = true;
+  loadError.value = "";
   try {
     templates.value = (await api.listTemplates()) || [];
+  } catch (value) {
+    templates.value = [];
+    loadError.value = `无法加载设备模板：${value instanceof Error ? value.message : String(value)}`;
   } finally {
     loading.value = false;
   }
-});
+}
+onMounted(loadTemplates);
 function iconFor(name: string) {
   const lower = name.toLowerCase();
   if (lower.includes("forti")) return Shield;
@@ -136,6 +149,21 @@ function enabledVersion(template: DeviceTemplate) {
       <p v-if="loading" role="status" class="p-2 text-xs text-muted-foreground">
         Loading templates…
       </p>
+      <div
+        v-if="loadError"
+        role="alert"
+        class="m-2 rounded-md border border-destructive/40 p-3 text-xs text-destructive"
+      >
+        <p>{{ loadError }}</p>
+        <Button
+          class="mt-2"
+          size="sm"
+          variant="secondary"
+          @click="loadTemplates"
+        >
+          重试加载
+        </Button>
+      </div>
       <section>
         <h3
           class="px-2 py-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground"
@@ -211,7 +239,7 @@ function enabledVersion(template: DeviceTemplate) {
           Lightweight
         </h3>
         <Button
-          v-for="item in lightweight"
+          v-for="item in filteredLightweight"
           :key="item.name"
           variant="ghost"
           class="palette-item h-auto justify-start"

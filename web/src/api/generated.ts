@@ -396,6 +396,7 @@ export interface CreateNodeRequest {
   storage_gib?: number;
   interface_limit?: number;
   process_limit?: number;
+  nic_driver?: string;
   interface_count?: number;
   config?: Record<string, unknown>;
   bootstrap?: {

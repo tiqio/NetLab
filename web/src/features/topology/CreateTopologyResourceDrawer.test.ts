@@ -1,6 +1,6 @@
 import { flushPromises, mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
-import { api, type DeviceTemplate, type ImageVersion } from "@/api";
+import { api, ApiError, type DeviceTemplate, type ImageVersion } from "@/api";
 import CreateTopologyResourceDrawer from "./CreateTopologyResourceDrawer.vue";
 
 vi.mock("@/api", async (importOriginal) => ({
@@ -12,6 +12,56 @@ vi.mock("@/api", async (importOriginal) => ({
     createNetworkObject: vi.fn(),
   },
 }));
+
+function qemuCatalog(id = "ubuntu-qemu") {
+  const image: ImageVersion = {
+    id: `${id}-image`,
+    runtime_kind: "qemu",
+    name: id,
+    version: "24.04",
+    digest: `sha256:${id}`,
+    source_type: "local_import",
+    source_reference: `${id}.qcow2`,
+    format: "qcow2",
+    size_bytes: 1,
+    availability: "available",
+    license_status: "reviewed",
+    license_notes: "operator supplied",
+    validation_result: {},
+    created_at: "2026-08-06T00:00:00Z",
+  };
+  const template: DeviceTemplate = {
+    id,
+    template_key: id,
+    display_name: id,
+    runtime_kind: "qemu",
+    versions: [
+      {
+        id: `${id}-version`,
+        template_id: id,
+        version: "24.04",
+        manifest_version: 1,
+        compatible_image_version_ids: [image.id],
+        defaults: {
+          cpu_count: 2,
+          cpu_quota_micros: 100000,
+          memory_mib: 2048,
+          disk_gib: 16,
+          interfaces: 2,
+          interface_name_format: "ens%d",
+        },
+        capabilities: [],
+        supported_nic_drivers: ["virtio-net-pci", "e1000"],
+        console_modes: ["telnet"],
+        runtime_options: { interface_limit: 16, process_limit: 1024 },
+        enabled: true,
+        created_at: "2026-08-06T00:00:00Z",
+      },
+    ],
+    created_at: "2026-08-06T00:00:00Z",
+  };
+  return { template, version: template.versions[0], image };
+}
 
 describe("CreateTopologyResourceDrawer", () => {
   it("starts with the shared catalog and emits the selected resource", async () => {
@@ -687,8 +737,170 @@ describe("CreateTopologyResourceDrawer", () => {
     );
     await flushPromises();
     expect(api.createNetworkObject).toHaveBeenCalledTimes(1);
+    expect(
+      document.body.querySelector("fieldset")?.hasAttribute("disabled"),
+    ).toBe(true);
     resolveRequest({ network_object: { kind: "pc" } } as never);
     await flushPromises();
+    wrapper.unmount();
+  });
+
+  it("keeps an asynchronously selected default image clean", async () => {
+    const catalog = qemuCatalog();
+    vi.mocked(api.listTemplates).mockResolvedValue([catalog.template]);
+    vi.mocked(api.listImages).mockResolvedValue([catalog.image]);
+    const wrapper = mount(CreateTopologyResourceDrawer, {
+      attachTo: document.body,
+      props: {
+        modelValue: true,
+        laboratoryId: "lab-1",
+        selection: {
+          kind: "qemu",
+          name: "Ubuntu",
+          template: catalog.template,
+          version: catalog.version,
+        },
+      },
+    });
+    await flushPromises();
+    expect(
+      (wrapper.vm as unknown as { isDirty: () => boolean }).isDirty(),
+    ).toBe(false);
+    document.body
+      .querySelector<HTMLButtonElement>('[aria-label="Close sheet"]')!
+      .click();
+    await flushPromises();
+    expect(document.body.querySelector('[role="alertdialog"]')).toBeNull();
+    wrapper.unmount();
+  });
+
+  it("filters cross-runtime templates and confirms destructive template changes", async () => {
+    const first = qemuCatalog("ubuntu-one");
+    const second = qemuCatalog("ubuntu-two");
+    const docker = {
+      ...qemuCatalog("busybox").template,
+      runtime_kind: "docker" as const,
+    };
+    vi.mocked(api.listTemplates).mockResolvedValue([
+      first.template,
+      second.template,
+      docker,
+    ]);
+    vi.mocked(api.listImages).mockResolvedValue([first.image, second.image]);
+    const wrapper = mount(CreateTopologyResourceDrawer, {
+      attachTo: document.body,
+      props: {
+        modelValue: true,
+        laboratoryId: "lab-1",
+        selection: {
+          kind: "qemu",
+          name: "Ubuntu",
+          template: first.template,
+          version: first.version,
+        },
+      },
+    });
+    await flushPromises();
+    expect(document.body.textContent).not.toContain("busybox · DOCKER");
+    const name = document.body.querySelector<HTMLInputElement>(
+      '[data-testid="create-resource-name"]',
+    )!;
+    name.value = "edited";
+    name.dispatchEvent(new Event("input", { bubbles: true }));
+    await flushPromises();
+    const templateSelect = Array.from(
+      document.body.querySelectorAll<HTMLSelectElement>("select"),
+    ).find((select) =>
+      Array.from(select.options).some(
+        (option) => option.value === second.template.id,
+      ),
+    )!;
+    expect(templateSelect).toBeDefined();
+    templateSelect.value = second.template.id;
+    templateSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    await flushPromises();
+    expect(document.body.querySelector('[role="alertdialog"]')).not.toBeNull();
+    document.body
+      .querySelector<HTMLButtonElement>("[data-keep-editing]")!
+      .click();
+    await flushPromises();
+    expect(
+      Array.from(
+        document.body.querySelectorAll<HTMLSelectElement>("select"),
+      ).find((select) =>
+        Array.from(select.options).some(
+          (option) => option.value === second.template.id,
+        ),
+      )?.value,
+    ).toBe(first.template.id);
+    expect(name.value).toBe("edited");
+    wrapper.unmount();
+  });
+
+  it("maps structured server fields and focuses the related control", async () => {
+    const catalog = qemuCatalog();
+    vi.mocked(api.listTemplates).mockResolvedValue([catalog.template]);
+    vi.mocked(api.listImages).mockResolvedValue([catalog.image]);
+    vi.mocked(api.createNode).mockRejectedValue(
+      new ApiError(409, {
+        code: "quota_exceeded",
+        message: "资源配额不足，请调整后重试。",
+        details: { fields: { cpu_count: "vCPU 超过当前配额。" } },
+      } as never),
+    );
+    const wrapper = mount(CreateTopologyResourceDrawer, {
+      attachTo: document.body,
+      props: {
+        modelValue: true,
+        laboratoryId: "lab-1",
+        selection: {
+          kind: "qemu",
+          name: "Ubuntu",
+          template: catalog.template,
+          version: catalog.version,
+        },
+      },
+    });
+    await flushPromises();
+    document.body
+      .querySelector("form")!
+      .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await flushPromises();
+    expect(document.body.textContent).toContain("vCPU 超过当前配额");
+    expect(document.activeElement).toBe(
+      document.body.querySelector('[data-field="cpuCount"] input'),
+    );
+    wrapper.unmount();
+  });
+
+  it("preserves draft values while configuration groups collapse", async () => {
+    const catalog = qemuCatalog();
+    vi.mocked(api.listTemplates).mockResolvedValue([catalog.template]);
+    vi.mocked(api.listImages).mockResolvedValue([catalog.image]);
+    const wrapper = mount(CreateTopologyResourceDrawer, {
+      attachTo: document.body,
+      props: {
+        modelValue: true,
+        laboratoryId: "lab-1",
+        selection: {
+          kind: "qemu",
+          name: "Ubuntu",
+          template: catalog.template,
+          version: catalog.version,
+        },
+      },
+    });
+    await flushPromises();
+    const name = document.body.querySelector<HTMLInputElement>(
+      '[data-testid="create-resource-name"]',
+    )!;
+    name.value = "kept-name";
+    name.dispatchEvent(new Event("input", { bubbles: true }));
+    const details = document.body.querySelector("details")!;
+    details.open = false;
+    details.dispatchEvent(new Event("toggle"));
+    await flushPromises();
+    expect(name.value).toBe("kept-name");
     wrapper.unmount();
   });
 });

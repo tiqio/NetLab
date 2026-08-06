@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import type { NetworkObjectLink, NetworkObjectLinkTaskEnvelope } from "@/api";
 import { runObjectLinkDeletion } from "./objectLinkDeletion";
-import { openTopologyCreateDrawer } from "./topologyCreateDrawerState";
+import {
+  captureTopologyCreateWorkspace,
+  openTopologyCreateDrawer,
+} from "./topologyCreateDrawerState";
 
 describe("TopologyWorkspace create drawer state", () => {
   it("opens one selecting drawer from the toolbar", () => {
@@ -21,6 +24,25 @@ describe("TopologyWorkspace create drawer state", () => {
     ).toMatchObject({
       open: true,
       selection: { networkObjectKind: "pc" },
+    });
+  });
+
+  it("captures inspector, selection and focus without sharing mutable arrays", () => {
+    const selectedIds = ["node-1"];
+    const snapshot = captureTopologyCreateWorkspace({
+      inspector: { collapsed: false, size: 360 },
+      selectedIds,
+      selectedType: "node",
+      focusedResourceId: "node-1",
+      activeElement: null,
+    });
+    selectedIds.push("node-2");
+    expect(snapshot).toEqual({
+      inspector: { collapsed: false, size: 360 },
+      selectedIds: ["node-1"],
+      selectedType: "node",
+      focusedResourceId: "node-1",
+      activeElement: null,
     });
   });
 });

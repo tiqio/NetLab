@@ -90,4 +90,36 @@ describe("TopologyResourceCatalog", () => {
       networkObjectKind: "nat_bridge",
     });
   });
+
+  it("searches template keys and descriptions", async () => {
+    const candidate = template("ubuntu-special-key", "Linux Guest", "qemu");
+    candidate.versions[0].runtime_options = {
+      description: "Cloud-init appliance",
+    };
+    vi.spyOn(api, "listTemplates").mockResolvedValue([candidate]);
+    const wrapper = mount(TopologyResourceCatalog);
+    await flushPromises();
+    await wrapper
+      .get('[aria-label="Search device templates"]')
+      .setValue("special-key");
+    expect(wrapper.text()).toContain("Linux Guest");
+    await wrapper
+      .get('[aria-label="Search device templates"]')
+      .setValue("cloud-init");
+    expect(wrapper.text()).toContain("Linux Guest");
+  });
+
+  it("shows a recoverable Chinese error when template loading fails", async () => {
+    const list = vi
+      .spyOn(api, "listTemplates")
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValueOnce([template("busybox", "BusyBox", "docker")]);
+    const wrapper = mount(TopologyResourceCatalog);
+    await flushPromises();
+    expect(wrapper.get('[role="alert"]').text()).toContain("无法加载设备模板");
+    await wrapper.get('[role="alert"] button').trigger("click");
+    await flushPromises();
+    expect(list).toHaveBeenCalledTimes(2);
+    expect(wrapper.text()).toContain("BusyBox");
+  });
 });

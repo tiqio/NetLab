@@ -95,3 +95,52 @@ test("the add drawer keeps long-form state and confirms dirty close", async ({
   await discard.getByRole("button", { name: "继续编辑" }).click();
   await expect(name).toHaveValue(`draft-${runId.slice(0, 6)}`);
 });
+
+test("the add drawer creates every lightweight resource kind through the real API", async ({
+  page,
+  automation,
+  ledger,
+  runId,
+}) => {
+  const { laboratory } = await createOwnedLaboratory(
+    page,
+    automation,
+    ledger,
+    runId,
+  );
+  const topology = new TopologyPage(page, automation);
+  for (const [label, kind] of [
+    ["PC", "pc"],
+    ["Bridge", "bridge"],
+    ["NAT bridge", "nat_bridge"],
+    ["Lightweight L2 Switch", "switch_l2"],
+    ["Lightweight L3 Switch", "switch_l3"],
+  ] as const) {
+    await topology.openResourceDrawer();
+    const form = await topology.chooseDrawerResource(label);
+    const name = `drawer-${kind}-${runId.slice(0, 6)}`;
+    await form.getByLabel("Name", { exact: true }).fill(name);
+    await form.getByRole("button", { name: "Add to topology" }).click();
+    const resource = await waitForCondition(
+      async () => {
+        const response = await automation.get(`/api/v1/labs/${laboratory.id}`);
+        const snapshot = await response.json();
+        return snapshot.network_objects.find(
+          (item: { name: string; kind: string }) =>
+            item.name === name && item.kind === kind,
+        );
+      },
+      (value): value is { id: string; revision: number } => Boolean(value),
+      `${kind} created from add drawer`,
+      30_000,
+    );
+    await ledger.add({
+      resource_type: "network_object",
+      resource_id: resource.id,
+      laboratory_id: laboratory.id,
+      revision: resource.revision,
+      cleanup_method: "laboratory-cascade",
+    });
+    await expect(form).toBeHidden();
+  }
+});

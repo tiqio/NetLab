@@ -46,8 +46,9 @@ const panelClass = computed(() => {
 });
 
 function focusableElements() {
+  const root = confirmOpen.value ? confirmation.value : panel.value;
   return Array.from(
-    panel.value?.querySelectorAll<HTMLElement>(
+    root?.querySelectorAll<HTMLElement>(
       'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
     ) || [],
   ).filter((element) => !element.hasAttribute("hidden"));
@@ -94,7 +95,7 @@ function handleKeydown(event: KeyboardEvent) {
   if (event.key === "Escape") {
     event.preventDefault();
     if (confirmOpen.value) {
-      emit("closeRequested", "escape");
+      keepEditing();
       return;
     }
     requestClose("escape");

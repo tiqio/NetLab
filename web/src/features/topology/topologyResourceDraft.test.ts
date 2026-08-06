@@ -15,15 +15,17 @@ const version: TemplateVersion = {
   manifest_version: 1,
   compatible_image_version_ids: ["image-1"],
   defaults: {
-    cpu_count: 1,
-    memory_mib: 512,
+    cpu_count: 2,
+    cpu_quota_micros: 100000,
+    memory_mib: 2048,
+    disk_gib: 16,
     interfaces: 2,
     interface_name_format: "ens%d",
   },
   capabilities: ["cloud_init"],
   supported_nic_drivers: ["virtio-net-pci"],
   console_modes: ["telnet"],
-  runtime_options: {},
+  runtime_options: { interface_limit: 12, process_limit: 512 },
   enabled: true,
   created_at: "2026-08-05T00:00:00Z",
 };
@@ -66,6 +68,13 @@ describe("topology resource draft", () => {
       templateId: "template-1",
       templateVersionId: "version-1",
       imageVersionId: "",
+      cpuCount: 2,
+      cpuQuotaMicros: 100000,
+      memoryMiB: 2048,
+      storageGiB: 16,
+      interfaceLimit: 12,
+      processLimit: 512,
+      nicDriver: "virtio-net-pci",
       interfaceCount: 2,
       cloudUsername: "ubuntu",
       cloudPassword: "Secret-123456",
@@ -154,6 +163,15 @@ describe("topology resource draft", () => {
     expect(result.kind).toBe("node");
     if (result.kind === "node") {
       expect(result.request.interface_count).toBe(2);
+      expect(result.request).toMatchObject({
+        cpu_count: 2,
+        cpu_quota_micros: 100000,
+        memory_mib: 2048,
+        storage_gib: 16,
+        interface_limit: 12,
+        process_limit: 512,
+        nic_driver: "virtio-net-pci",
+      });
       expect(result.request.config).toMatchObject({
         network_interfaces: [
           {

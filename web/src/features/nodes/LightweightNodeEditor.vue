@@ -84,10 +84,7 @@ async function create() {
     config: config.value,
   });
   const value = envelope.network_object;
-  if (!value)
-    throw new Error(
-      "网络对象任务未返回已接受的资源",
-    );
+  if (!value) throw new Error("网络对象任务未返回已接受的资源");
   lastCreatedId.value = value.id;
   status.value = `${value.kind} ${value.name} is ${value.observed_state}`;
   emit("created", value.id);
@@ -115,7 +112,8 @@ async function diagnostics(id: string) {
     <fieldset v-if="kind === 'pc'">
       <legend>双栈地址配置</legend>
       <label
-        ><input v-model="modes" type="checkbox" value="static" /> 静态地址</label
+        ><input v-model="modes" type="checkbox" value="static" />
+        静态地址</label
       ><label
         ><input v-model="modes" type="checkbox" value="dhcpv4" /> DHCPv4</label
       ><label

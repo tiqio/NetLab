@@ -32,6 +32,13 @@ export interface ResourceCreateDraft {
   templateId: string;
   templateVersionId: string;
   imageVersionId: string;
+  cpuCount: number;
+  cpuQuotaMicros: number;
+  memoryMiB: number;
+  storageGiB: number;
+  interfaceLimit: number;
+  processLimit: number;
+  nicDriver: string;
   interfaceCount: number;
   ipv4Mode: IPv4Mode;
   ipv4Address: string;
@@ -95,12 +102,21 @@ export function createResourceDraft(
     selection.template?.template_key,
     selection.version?.capabilities,
   );
+  const defaults = selection.version?.defaults;
+  const runtimeOptions = selection.version?.runtime_options || {};
   return {
     name: selection.name,
     templateId: selection.template?.id || "",
     templateVersionId: selection.version?.id || "",
     imageVersionId: selection.version?.image_version_id || "",
-    interfaceCount: selection.version?.defaults.interfaces || 2,
+    cpuCount: defaults?.cpu_count || 1,
+    cpuQuotaMicros: defaults?.cpu_quota_micros || 0,
+    memoryMiB: defaults?.memory_mib || 512,
+    storageGiB: defaults?.disk_gib || 0,
+    interfaceLimit: Number(runtimeOptions.interface_limit) || 64,
+    processLimit: Number(runtimeOptions.process_limit) || 4096,
+    nicDriver: selection.version?.supported_nic_drivers[0] || "",
+    interfaceCount: defaults?.interfaces || 2,
     ipv4Mode: "none",
     ipv4Address: "",
     ipv6Mode: "none",
@@ -189,6 +205,38 @@ export function validateResourceDraft(
     Number(draft.interfaceCount) > 64
   )
     errors.interfaces = "接口数量必须是 1 到 64 的整数。";
+  if (!Number.isInteger(Number(draft.cpuCount)) || Number(draft.cpuCount) < 1)
+    errors.cpuCount = "vCPU 数必须是至少 1 的整数。";
+  if (
+    !Number.isInteger(Number(draft.cpuQuotaMicros)) ||
+    Number(draft.cpuQuotaMicros) < 0
+  )
+    errors.cpuQuotaMicros = "CPU 配额必须是非负整数。";
+  if (
+    !Number.isInteger(Number(draft.memoryMiB)) ||
+    Number(draft.memoryMiB) < 64
+  )
+    errors.memoryMiB = "内存至少为 64 MiB。";
+  if (
+    !Number.isInteger(Number(draft.storageGiB)) ||
+    Number(draft.storageGiB) < 0
+  )
+    errors.storageGiB = "存储容量必须是非负整数。";
+  if (
+    !Number.isInteger(Number(draft.interfaceLimit)) ||
+    Number(draft.interfaceLimit) < Number(draft.interfaceCount)
+  )
+    errors.interfaceLimit = "接口上限不得小于初始接口数量。";
+  if (
+    !Number.isInteger(Number(draft.processLimit)) ||
+    Number(draft.processLimit) < 1
+  )
+    errors.processLimit = "进程上限必须是至少 1 的整数。";
+  if (
+    draft.nicDriver &&
+    !context.version?.supported_nic_drivers.includes(draft.nicDriver)
+  )
+    errors.nicDriver = "请选择模板支持的网卡驱动。";
   if (draft.ipv4Mode === "static" && !draft.ipv4Address.includes("/"))
     errors.ipv4Address = "请输入 IPv4 CIDR，例如 192.0.2.10/24。";
   if (draft.ipv6Mode === "static" && !draft.ipv6Address.includes("/"))
@@ -264,6 +312,13 @@ export function buildResourceCreateRequest(
       kind: context.template?.runtime_kind,
       template_version_id: draft.templateVersionId,
       image_version_id: draft.imageVersionId || undefined,
+      cpu_count: Number(draft.cpuCount),
+      cpu_quota_micros: Number(draft.cpuQuotaMicros),
+      memory_mib: Number(draft.memoryMiB),
+      storage_gib: Number(draft.storageGiB),
+      interface_limit: Number(draft.interfaceLimit),
+      process_limit: Number(draft.processLimit),
+      nic_driver: draft.nicDriver || undefined,
       interface_count: Number(draft.interfaceCount),
       config: networkConfigurable
         ? {

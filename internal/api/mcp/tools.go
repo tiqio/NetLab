@@ -134,7 +134,7 @@ func Tools(services Services) []Tool {
 			}
 			return map[string]any{"task": taskValue}, nil
 		}},
-		{Name: "netlab.nodes.create", Description: "Create a template-pinned QEMU/Docker or lightweight node.", InputSchema: mutationSchema(map[string]any{"lab_id": stringProperty("Laboratory ID"), "name": stringProperty("Node name"), "kind": stringProperty("Runtime kind"), "template_version_id": stringProperty("Template version ID"), "image_version_id": stringProperty("Image version ID"), "cpu_count": integerProperty(0), "cpu_quota_micros": integerProperty(0), "memory_mib": integerProperty(0), "interface_count": integerProperty(0), "config": nodeConfigProperty(), "bootstrap": map[string]any{"type": "object"}}, "lab_id", "name"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
+		{Name: "netlab.nodes.create", Description: "Create a template-pinned QEMU/Docker or lightweight node.", InputSchema: mutationSchema(map[string]any{"lab_id": stringProperty("Laboratory ID"), "name": stringProperty("Node name"), "kind": stringProperty("Runtime kind"), "template_version_id": stringProperty("Template version ID"), "image_version_id": stringProperty("Image version ID"), "cpu_count": integerProperty(0), "cpu_quota_micros": integerProperty(0), "memory_mib": integerProperty(0), "storage_gib": integerProperty(0), "interface_limit": integerProperty(0), "process_limit": integerProperty(0), "nic_driver": stringProperty("NIC driver"), "interface_count": integerProperty(0), "config": nodeConfigProperty(), "bootstrap": map[string]any{"type": "object"}}, "lab_id", "name"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
 			labID, err := argumentString(args, "lab_id")
 			if err != nil {
 				return nil, err
@@ -143,7 +143,7 @@ func Tools(services Services) []Tool {
 			if err != nil {
 				return nil, err
 			}
-			request := command.CreateNodeRequest{Name: name, Kind: optionalString(args, "kind"), TemplateVersionID: domain.ID(optionalString(args, "template_version_id")), ImageVersionID: domain.ID(optionalString(args, "image_version_id")), CPUCount: intArgument(args, "cpu_count"), CPUQuotaMicros: int64(intArgument(args, "cpu_quota_micros")), MemoryMiB: intArgument(args, "memory_mib"), InterfaceCount: intArgument(args, "interface_count")}
+			request := command.CreateNodeRequest{Name: name, Kind: optionalString(args, "kind"), TemplateVersionID: domain.ID(optionalString(args, "template_version_id")), ImageVersionID: domain.ID(optionalString(args, "image_version_id")), CPUCount: intArgument(args, "cpu_count"), CPUQuotaMicros: int64(intArgument(args, "cpu_quota_micros")), MemoryMiB: intArgument(args, "memory_mib"), StorageGiB: intArgument(args, "storage_gib"), InterfaceLimit: intArgument(args, "interface_limit"), ProcessLimit: intArgument(args, "process_limit"), NICDriver: optionalString(args, "nic_driver"), InterfaceCount: intArgument(args, "interface_count")}
 			if config, ok := args["config"].(map[string]any); ok {
 				request.Config = config
 			}

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -37,6 +38,7 @@ type CreateNodeRequest struct {
 	StorageGiB        int
 	InterfaceLimit    int
 	ProcessLimit      int
+	NICDriver         string
 	InterfaceCount    int
 	Config            map[string]any
 	Bootstrap         qemuRuntime.SeedSpec
@@ -205,6 +207,12 @@ func (s *NodeService) CreateConfigured(ctx context.Context, labID domain.ID, req
 		driver := ""
 		if len(templateVersion.NICDrivers) > 0 {
 			driver = templateVersion.NICDrivers[0]
+		}
+		if request.NICDriver != "" {
+			if !slices.Contains(templateVersion.NICDrivers, request.NICDriver) {
+				return domain.Node{}, nil, domain.Problem{Code: "capability_unsupported", Message: "NIC driver is not supported by the template"}
+			}
+			driver = request.NICDriver
 		}
 		macAddress := randomMAC()
 		if sequentialMACs == "sequential" {

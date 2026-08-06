@@ -61,7 +61,7 @@ describe("Sheet", () => {
 
     expect(
       wrapper.emitted("closeRequested")?.map(([reason]) => reason),
-    ).toEqual(["button", "overlay", "escape"]);
+    ).toEqual(["button", "overlay"]);
     expect(wrapper.emitted("update:modelValue")).toBeUndefined();
     wrapper.unmount();
   });
@@ -118,6 +118,36 @@ describe("Sheet", () => {
       .click();
     await nextTick();
     expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual([false]);
+    wrapper.unmount();
+  });
+
+  it("contains keyboard focus inside the discard alertdialog", async () => {
+    const wrapper = mount(Sheet, {
+      attachTo: document.body,
+      props: { modelValue: true, title: "Panel", preventClose: true },
+      slots: { default: "<button data-background>background</button>" },
+    });
+    document.body
+      .querySelector<HTMLButtonElement>('[aria-label="Close sheet"]')!
+      .click();
+    await nextTick();
+    const keep = document.body.querySelector<HTMLButtonElement>(
+      "[data-keep-editing]",
+    )!;
+    const discard = document.body.querySelector<HTMLButtonElement>(
+      "[data-discard-changes]",
+    )!;
+    discard.focus();
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab" }));
+    expect(document.activeElement).toBe(keep);
+    keep.focus();
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Tab", shiftKey: true }),
+    );
+    expect(document.activeElement).toBe(discard);
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    await nextTick();
+    expect(document.body.querySelector('[role="alertdialog"]')).toBeNull();
     wrapper.unmount();
   });
 });

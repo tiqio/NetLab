@@ -194,9 +194,9 @@ describe("GlobalConsoleWorkspace", () => {
     await flushPromises();
 
     expect(listConsoles).toHaveBeenCalledWith("pc-1");
-    expect(wrapper.get('[aria-label="Node console workspaces"]').text()).toContain(
-      "PC Client",
-    );
+    expect(
+      wrapper.get('[aria-label="Node console workspaces"]').text(),
+    ).toContain("PC Client");
     const consoleWorkspace = wrapper.get("[data-console-workspace]");
     expect(consoleWorkspace.attributes("data-node-id")).toBe("pc-1");
     expect(consoleWorkspace.attributes("data-resource-type")).toBe(
