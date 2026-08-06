@@ -140,7 +140,7 @@ async function diagnostics(id: string) {
       <legend>VLAN 端口</legend>
       <label>端口 <input v-model="switchPort" /></label>
       <label>PVID <input v-model.number="pvid" type="number" /></label>
-      <label>Tagged VLAN <input v-model="taggedVLANs" /></label>
+      <label>带标签 VLAN <input v-model="taggedVLANs" /></label>
     </fieldset>
     <fieldset v-if="kind === 'switch_l3'">
       <legend>路由配置</legend>
@@ -155,7 +155,7 @@ async function diagnostics(id: string) {
       :disabled="!lastCreatedId"
       @click="diagnostics(lastCreatedId)"
     >
-      Refresh diagnostics
+      刷新诊断信息
     </Button>
     <p role="status">
       {{ status }}

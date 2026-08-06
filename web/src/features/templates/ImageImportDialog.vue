@@ -25,7 +25,7 @@ async function submit() {
         ? consolePassword.value
         : undefined,
     });
-    status.value = `Imported ${value.name}:${value.version}`;
+    status.value = `已导入 ${value.name}:${value.version}`;
     emit("imported", value);
     open.value = false;
   } catch (error) {
@@ -36,8 +36,8 @@ async function submit() {
 <template>
   <Dialog
     v-model="open"
-    title="Import image reference"
-    description="Import a server-local or registry reference. Browser uploads and embedded proprietary bytes are not supported."
+    title="导入镜像引用"
+    description="导入服务器本地路径或镜像仓库引用。不支持浏览器上传或嵌入专有镜像数据。"
   >
     <form class="grid gap-3" @submit.prevent="submit">
       <div class="grid grid-cols-2 gap-2">
@@ -52,24 +52,21 @@ async function submit() {
           <option value="docker">Docker</option>
         </Select> </FormField
       ><FormField
-        label="Source reference"
-        hint="Do not include credentials in the reference."
+        label="来源引用"
+        hint="引用中不得包含凭据。"
       >
         <Input v-model="source" required /> </FormField
-      ><FormField label="License notes">
+      ><FormField label="许可说明">
         <Input v-model="license" required />
       </FormField>
       <div class="grid grid-cols-2 gap-2">
         <FormField
-          label="Console username"
-          hint="Optional; enables serial auto-login."
+          label="终端用户名"
+          hint="可选，用于启用串口自动登录。"
         >
           <Input v-model="consoleUsername" autocomplete="off" />
         </FormField>
-        <FormField
-          label="Console password"
-          hint="Stored only on the NetLab host."
-        >
+        <FormField label="终端密码" hint="仅存储在 NetLab 宿主机上。">
           <Input
             v-model="consolePassword"
             type="password"
@@ -80,7 +77,7 @@ async function submit() {
       <p role="status" class="text-xs text-muted-foreground">
         {{ status }}
       </p>
-      <Button>Import and validate</Button>
+      <Button>导入并校验</Button>
     </form>
   </Dialog>
 </template>

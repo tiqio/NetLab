@@ -71,7 +71,7 @@ describe("CreateTopologyResourceDrawer", () => {
     });
     await flushPromises();
     const pc = Array.from(document.body.querySelectorAll("button")).find(
-      (button) => button.textContent?.includes("Linux netns host"),
+      (button) => button.textContent?.includes("Linux netns 主机"),
     ) as HTMLButtonElement;
     pc.click();
     await flushPromises();
@@ -414,7 +414,7 @@ describe("CreateTopologyResourceDrawer", () => {
     ipv6Mode.value = "slaac";
     ipv6Mode.dispatchEvent(new Event("change", { bubbles: true }));
     const addRoute = Array.from(document.body.querySelectorAll("button")).find(
-      (button) => button.textContent?.includes("Add IPv4 route"),
+      (button) => button.textContent?.includes("添加 IPv4 路由"),
     )!;
     addRoute.click();
     await wrapper.vm.$nextTick();
@@ -694,7 +694,7 @@ describe("CreateTopologyResourceDrawer", () => {
     await wrapper.setProps({ modelValue: true });
     await flushPromises();
     Array.from(document.body.querySelectorAll("button"))
-      .find((button) => button.textContent?.includes("Add IPv4 route"))!
+      .find((button) => button.textContent?.includes("添加 IPv4 路由"))!
       .click();
     await flushPromises();
     const gateway = document.body.querySelector<HTMLInputElement>(

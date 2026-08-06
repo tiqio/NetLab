@@ -488,7 +488,7 @@ onBeforeUnmount(() => clearTimeout(copiedTimer));
       <div>
         <h3>登录信息</h3>
         <p class="text-xs text-muted-foreground">
-          来自 cloud-init seed，只读显示。
+          来自 cloud-init 种子数据，仅供只读查看。
         </p>
       </div>
       <p

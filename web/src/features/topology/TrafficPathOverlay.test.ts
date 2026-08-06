@@ -24,7 +24,7 @@ describe("TrafficPathOverlay", () => {
       },
     });
     expect(wrapper.text()).toContain("object-link-a · a_to_b");
-    expect(wrapper.text()).toContain("2 packets");
-    expect(wrapper.text()).toContain("ambiguous");
+    expect(wrapper.text()).toContain("2 个数据包");
+    expect(wrapper.text()).toContain("无法唯一确定数据包路径");
   });
 });

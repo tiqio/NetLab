@@ -30,8 +30,28 @@
   --topology-canvas: #08131d;
   --topology-link: #71869a;
   --topology-active: #2dd4bf;
+  --topology-running: #22c55e;
+  --topology-failed: #ef4444;
+  --topology-transition: #f59e0b;
+  --topology-selected: #f8fafc;
+  --topology-emphasis: #fde047;
+  --topology-traffic: #f59e0b;
+  --topology-label: #e6edf3;
+  --topology-port: #5eead4;
+  --topology-port-muted: #64748b;
+  --topology-port-outline: #08131d;
+  --topology-group-fill: rgba(14, 116, 144, 0.08);
+  --topology-group-border: #0e7490;
+  --topology-group-label: #67e8f9;
   --chart-grid: rgba(148, 163, 184, 0.18);
   --chart-tooltip: #111d2a;
+  --chart-track: #1f2937;
+  --chart-series-primary: #2dd4bf;
+  --chart-series-secondary: #38bdf8;
+  --chart-series-tertiary: #a78bfa;
+  --chart-danger: #ef4444;
+  --chart-warning: #f59e0b;
+  --chart-label: #d9e5ef;
   color-scheme: dark;
 }
 
@@ -63,8 +83,28 @@
   --topology-canvas: #eef3f7;
   --topology-link: #607487;
   --topology-active: #0f766e;
+  --topology-running: #15803d;
+  --topology-failed: #dc2626;
+  --topology-transition: #b45309;
+  --topology-selected: #0f172a;
+  --topology-emphasis: #a16207;
+  --topology-traffic: #c2410c;
+  --topology-label: #14202b;
+  --topology-port: #0f766e;
+  --topology-port-muted: #64748b;
+  --topology-port-outline: #ffffff;
+  --topology-group-fill: rgba(14, 116, 144, 0.09);
+  --topology-group-border: #0e7490;
+  --topology-group-label: #0e7490;
   --chart-grid: rgba(71, 85, 105, 0.2);
   --chart-tooltip: #ffffff;
+  --chart-track: #d8e1e8;
+  --chart-series-primary: #0f766e;
+  --chart-series-secondary: #0369a1;
+  --chart-series-tertiary: #7c3aed;
+  --chart-danger: #dc2626;
+  --chart-warning: #b45309;
+  --chart-label: #334155;
   color-scheme: light;
 }
 

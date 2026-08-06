@@ -75,7 +75,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", handleEscape));
       >
         <h3 class="font-semibold">要放弃未保存的更改吗？</h3>
         <p class="mt-1 text-xs text-muted-foreground">
-          Entered values will be lost if this dialog closes.
+          关闭对话框后，已输入的内容将丢失。
         </p>
         <div class="mt-4 flex justify-end gap-2">
           <Button variant="secondary" @click="discardOpen = false"

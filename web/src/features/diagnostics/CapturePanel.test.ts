@@ -50,8 +50,8 @@ describe("CapturePanel", () => {
       }),
     );
     expect(startCapture.mock.calls[0][0]).not.toHaveProperty("interface");
-    expect(wrapper.text()).toContain("Retention");
-    expect(wrapper.text()).toContain("task");
+    expect(wrapper.text()).toContain("保留方式");
+    expect(wrapper.text()).toContain("cap");
   });
 
   it("opens an active capture through the local Wireshark helper", async () => {
@@ -95,16 +95,14 @@ describe("CapturePanel", () => {
     });
     await flushPromises();
     await wrapper
-      .get('button[title="Open this live stream in local Wireshark"]')
+      .get('button[title="在本机 Wireshark 中打开实时流"]')
       .trigger("click");
     await flushPromises();
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(String(fetchMock.mock.calls[1][1]?.body)).toContain(
       "/api/v1/captures/cap-live/stream",
     );
-    expect(wrapper.text()).toContain(
-      "Wireshark opened with the live capture stream.",
-    );
+    expect(wrapper.text()).toContain("已使用 Wireshark 打开实时抓包流。");
   });
 
   it("selects the newest capture for an interface", async () => {
@@ -145,7 +143,7 @@ describe("CapturePanel", () => {
     expect(wrapper.text()).toContain("cap-new");
     expect(
       wrapper
-        .get('button[title="Open this live stream in local Wireshark"]')
+        .get('button[title="在本机 Wireshark 中打开实时流"]')
         .attributes("disabled"),
     ).toBeUndefined();
   });
@@ -177,17 +175,13 @@ describe("CapturePanel", () => {
     });
     await flushPromises();
     await wrapper
-      .get('button[title="Open this live stream in local Wireshark"]')
+      .get('button[title="在本机 Wireshark 中打开实时流"]')
       .trigger("click");
     await flushPromises();
-    expect(document.body.textContent).toContain(
-      "Wireshark integration required",
-    );
-    expect(document.body.textContent).toContain(
-      "Wireshark installation alone is not enough",
-    );
-    expect(document.body.textContent).toContain("Windows helper");
-    expect(document.body.textContent).toContain("Install Wireshark");
+    expect(document.body.textContent).toContain("需要配置 Wireshark 集成");
+    expect(document.body.textContent).toContain("仅安装 Wireshark 还不够");
+    expect(document.body.textContent).toContain("Windows 辅助程序");
+    expect(document.body.textContent).toContain("安装 Wireshark");
   });
 });
 

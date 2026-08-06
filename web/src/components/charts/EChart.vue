@@ -199,16 +199,51 @@ function apply() {
   const muted = styles.getPropertyValue("--muted-foreground").trim();
   const border = styles.getPropertyValue("--chart-grid").trim();
   const tooltip = styles.getPropertyValue("--chart-tooltip").trim();
+  const resolveThemeValues = (value: unknown): unknown => {
+    if (typeof value === "string")
+      return value.replace(/var\((--[^)]+)\)/g, (_match, name: string) =>
+        styles.getPropertyValue(name).trim(),
+      );
+    if (Array.isArray(value)) return value.map(resolveThemeValues);
+    if (value && typeof value === "object")
+      return Object.fromEntries(
+        Object.entries(value).map(([key, entry]) => [
+          key,
+          resolveThemeValues(entry),
+        ]),
+      );
+    return value;
+  };
+  const option = resolveThemeValues(props.option) as Record<string, unknown>;
+  const mergeTextStyle = (value: unknown, color: string) => ({
+    ...((value as Record<string, unknown>) || {}),
+    color,
+  });
+  const mergeComponent = (
+    value: unknown,
+    decorate: (entry: Record<string, unknown>) => Record<string, unknown>,
+  ) =>
+    Array.isArray(value)
+      ? value.map((entry) => decorate((entry as Record<string, unknown>) || {}))
+      : decorate((value as Record<string, unknown>) || {});
   const themedOption = {
-    ...props.option,
-    textStyle: { color: foreground },
-    title: { textStyle: { color: foreground }, subtextStyle: { color: muted } },
-    legend: { textStyle: { color: muted } },
-    tooltip: {
+    ...option,
+    textStyle: mergeTextStyle(option.textStyle, foreground),
+    title: mergeComponent(option.title, (entry) => ({
+      ...entry,
+      textStyle: mergeTextStyle(entry.textStyle, foreground),
+      subtextStyle: mergeTextStyle(entry.subtextStyle, muted),
+    })),
+    legend: mergeComponent(option.legend, (entry) => ({
+      ...entry,
+      textStyle: mergeTextStyle(entry.textStyle, muted),
+    })),
+    tooltip: mergeComponent(option.tooltip, (entry) => ({
+      ...entry,
       backgroundColor: tooltip,
       borderColor: border,
-      textStyle: { color: foreground },
-    },
+      textStyle: mergeTextStyle(entry.textStyle, foreground),
+    })),
   } as EChartsCoreOption;
   chart.value?.setOption(themedOption, {
     notMerge: props.notMerge,

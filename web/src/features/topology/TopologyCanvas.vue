@@ -58,7 +58,7 @@ const props = withDefaults(
     networkObjectLinks: () => [],
     traffic: () => [],
     trafficActive: false,
-    trafficColor: "#f59e0b",
+    trafficColor: "var(--topology-traffic)",
   },
 );
 const emit = defineEmits<{
@@ -524,8 +524,8 @@ const groupGraphics = computed(() =>
           r: 8,
         },
         style: {
-          fill: "rgba(14,116,144,.08)",
-          stroke: "#0e7490",
+          fill: "var(--topology-group-fill)",
+          stroke: "var(--topology-group-border)",
           lineDash: [6, 4],
         },
         z: -1,
@@ -537,7 +537,7 @@ const groupGraphics = computed(() =>
         y: top + 8,
         style: {
           text: `${group.collapsed ? "▸" : "▾"} ${group.label}`,
-          fill: "#67e8f9",
+          fill: "var(--topology-group-label)",
           fontSize: 11,
         },
       },
@@ -556,7 +556,11 @@ const routeGraphics = computed(() => {
       y: point.y,
       draggable: true,
       shape: { cx: 0, cy: 0, r: 8 },
-      style: { fill: "#f59e0b", stroke: "#fef3c7", lineWidth: 2 },
+      style: {
+        fill: "var(--topology-traffic)",
+        stroke: "var(--topology-selected)",
+        lineWidth: 2,
+      },
       z: 30,
       ondrag: (event: { target?: { x?: number; y?: number } }) =>
         emit("routePoint", props.editingLinkId!, {
@@ -609,7 +613,7 @@ const option = computed(() => ({
   legend: [
     {
       data: ["QEMU", "Docker", "Lightweight", "Network"],
-      textStyle: { color: "#91a4b5", fontSize: 10 },
+      textStyle: { color: "var(--muted-foreground)", fontSize: 10 },
       right: 12,
       top: 10,
     },
@@ -634,12 +638,17 @@ const option = computed(() => ({
       edgeSymbol: ["none", "none"],
       edgeLabel: {
         show: !denseTopology.value,
-        color: "#91a4b5",
+        color: "var(--muted-foreground)",
         fontSize: 9,
         formatter: (value: { data: { label?: string } }) =>
           value.data.label || "",
       },
-      label: { show: true, position: "bottom", color: "#e6edf3", fontSize: 11 },
+      label: {
+        show: true,
+        position: "bottom",
+        color: "var(--topology-label)",
+        fontSize: 11,
+      },
       emphasis: { focus: "adjacency" },
       categories: [
         { name: "QEMU" },
@@ -677,7 +686,7 @@ const option = computed(() => ({
               borderColor: trafficHit
                 ? props.trafficColor
                 : props.focusedResourceId === node.id
-                  ? "#fde047"
+                  ? "var(--topology-emphasis)"
                   : semantic.borderColor,
               borderWidth: trafficHit ? 4 : selected.value.has(node.id) ? 4 : 2,
               borderType: semantic.pattern,
@@ -685,7 +694,7 @@ const option = computed(() => ({
               shadowBlur: trafficHit ? 10 : 0,
             },
             tooltip: {
-              formatter: `${node.name}<br/>${semantic.label}<br/>desired ${node.desired_state}<br/>revision ${node.revision}`,
+              formatter: `${node.name}<br/>${semantic.label}<br/>期望状态 ${node.desired_state}<br/>修订版本 ${node.revision}`,
             },
             resourceType: "node",
           };
@@ -715,7 +724,7 @@ const option = computed(() => ({
               color: semantic.color,
               borderColor:
                 props.focusedResourceId === item.id
-                  ? "#fde047"
+                  ? "var(--topology-emphasis)"
                   : semantic.borderColor,
               borderWidth: selected.value.has(item.id) ? 4 : 2,
               borderType: semantic.pattern,
@@ -774,10 +783,10 @@ const option = computed(() => ({
                 props.trafficActive && hit
                   ? props.trafficColor
                   : link.observed_state === "connected"
-                    ? "#64748b"
+                    ? "var(--topology-link)"
                     : link.observed_state === "pending"
-                      ? "#f59e0b"
-                      : "#ef4444",
+                      ? "var(--topology-transition)"
+                      : "var(--topology-failed)",
               width: props.trafficActive && hit ? 4 : 2,
               opacity: props.trafficActive && hit ? 0.68 : 1,
               shadowColor:
@@ -818,10 +827,10 @@ const option = computed(() => ({
                 color: trafficHit
                   ? props.trafficColor
                   : attachmentSelected
-                    ? "#fde047"
+                    ? "var(--topology-emphasis)"
                     : healthy
-                      ? "#22d3ee"
-                      : "#ef4444",
+                      ? "var(--topology-active)"
+                      : "var(--topology-failed)",
                 width: trafficHit || attachmentSelected ? 4 : 2,
                 opacity: trafficHit ? 0.68 : 1,
                 type: healthy ? "dashed" : "dotted",
@@ -829,7 +838,7 @@ const option = computed(() => ({
                 shadowColor: trafficHit
                   ? props.trafficColor
                   : attachmentSelected
-                    ? "#fde047"
+                    ? "var(--topology-emphasis)"
                     : undefined,
                 shadowBlur: trafficHit || attachmentSelected ? 7 : 0,
               },
@@ -852,12 +861,12 @@ const option = computed(() => ({
               color: hit
                 ? props.trafficColor
                 : selectedLink
-                  ? "#fde047"
+                  ? "var(--topology-emphasis)"
                   : link.observed_state === "connected"
-                    ? "#38bdf8"
+                    ? "var(--topology-active)"
                     : link.observed_state === "pending"
-                      ? "#f59e0b"
-                      : "#ef4444",
+                      ? "var(--topology-transition)"
+                      : "var(--topology-failed)",
               width: hit || selectedLink ? 4 : 2,
               opacity: hit ? 0.72 : 1,
               type: link.observed_state === "connected" ? "solid" : "dashed",
@@ -868,7 +877,7 @@ const option = computed(() => ({
               shadowColor: hit
                 ? props.trafficColor
                 : selectedLink
-                  ? "#fde047"
+                  ? "var(--topology-emphasis)"
                   : undefined,
               shadowBlur: hit || selectedLink ? 8 : 0,
             },
@@ -1471,7 +1480,7 @@ defineExpose({
     :data-traffic-lingering="lingeringTraffic.length"
     data-traffic-pulse="false"
     tabindex="0"
-    aria-label="Topology canvas keyboard area. Use arrow keys to traverse resources, Shift to extend selection, Enter to open actions, and Escape to clear."
+    aria-label="拓扑画布键盘操作区。使用方向键浏览资源，按 Shift 扩展选择，按 Enter 打开操作，按 Escape 清除选择。"
     @keydown="handleKeyboard"
     @dblclick="$emit('background')"
     @pointerdown.capture="handleSurfacePointerDown"
@@ -1484,7 +1493,7 @@ defineExpose({
       ref="chart"
       :option="option"
       :class="panEnabled ? 'cursor-grab active:cursor-grabbing' : ''"
-      aria-label="Topology canvas. Use the inspector for equivalent resource details and actions."
+      aria-label="拓扑画布。可在检查器中查看同等的资源详情和操作。"
       @chart-click="handleClick"
       @chart-over="handleHover"
       @chart-out="clearHover"
@@ -1570,7 +1579,7 @@ defineExpose({
           :y1="connectionPreview.sourceY"
           :x2="connectionPreview.targetX"
           :y2="connectionPreview.targetY"
-          stroke="#5eead4"
+          stroke="var(--topology-port)"
           stroke-width="2"
           stroke-dasharray="7 5"
         />
@@ -1578,7 +1587,7 @@ defineExpose({
           :cx="connectionPreview.targetX"
           :cy="connectionPreview.targetY"
           r="4"
-          fill="#5eead4"
+          fill="var(--topology-port)"
         />
       </g>
       <g
@@ -1587,7 +1596,7 @@ defineExpose({
         class="pointer-events-auto cursor-crosshair"
         :data-interface-id="port.id"
         role="button"
-        :aria-label="`${port.name}, ${port.available ? 'available' : 'connected'}, ${port.state}`"
+        :aria-label="`${port.name}，${port.available ? '可用' : '已连接'}，${port.state}`"
         tabindex="0"
         @click.stop="
           port.kind === 'node_interface'
@@ -1606,19 +1615,32 @@ defineExpose({
         "
       >
         <title>
-          {{ port.name }} · {{ port.available ? "available" : "connected" }}
+          {{ port.name }} · {{ port.available ? "可用" : "已连接" }}
         </title>
         <circle
           :cx="port.x"
           :cy="port.y"
           :r="port.emphasized ? 7.5 : 5.5"
           :fill="
-            port.source ? '#f59e0b' : port.available ? '#5eead4' : '#64748b'
+            port.source
+              ? 'var(--topology-traffic)'
+              : port.available
+                ? 'var(--topology-port)'
+                : 'var(--topology-port-muted)'
           "
-          :stroke="port.emphasized ? '#f0fdfa' : '#08131d'"
+          :stroke="
+            port.emphasized
+              ? 'var(--topology-selected)'
+              : 'var(--topology-port-outline)'
+          "
           :stroke-width="port.emphasized || port.source ? 3 : 2"
         />
-        <text :x="port.x + 10" :y="port.y + 3" fill="#ccfbf1" font-size="9">
+        <text
+          :x="port.x + 10"
+          :y="port.y + 3"
+          fill="var(--topology-label)"
+          font-size="9"
+        >
           {{ port.name }}
         </text>
       </g>
@@ -1627,7 +1649,7 @@ defineExpose({
         class="pointer-events-auto cursor-crosshair"
         data-topology-connector
         role="button"
-        aria-label="Start connection"
+        aria-label="开始连接"
         tabindex="0"
         @click.stop="$emit('connector', connectorOverlay.ownerId)"
         @keydown.enter.prevent="$emit('connector', connectorOverlay.ownerId)"
@@ -1637,15 +1659,15 @@ defineExpose({
           :cx="connectorOverlay.x"
           :cy="connectorOverlay.y"
           r="11"
-          fill="#0d9488"
-          stroke="#99f6e4"
+          fill="var(--topology-active)"
+          stroke="var(--topology-port)"
           stroke-width="2"
         />
         <text
           :x="connectorOverlay.x"
           :y="connectorOverlay.y + 4"
           text-anchor="middle"
-          fill="#ffffff"
+          fill="var(--primary-foreground)"
           font-size="14"
         >
           +
@@ -1687,7 +1709,7 @@ defineExpose({
             false,
             node.desired_state,
           ).label
-        }}{{ selectedIds?.includes(node.id) ? ", selected" : "" }}
+        }}{{ selectedIds?.includes(node.id) ? "，已选择" : "" }}
       </li>
       <li v-for="item in networkObjects" :key="`a11y:${item.id}`">
         {{ item.name }}:
@@ -1699,12 +1721,12 @@ defineExpose({
             false,
             item.desired_state,
           ).label
-        }}{{ selectedIds?.includes(item.id) ? ", selected" : "" }}
+        }}{{ selectedIds?.includes(item.id) ? "，已选择" : "" }}
       </li>
       <li v-for="link in networkObjectLinks" :key="`a11y:${link.id}`">
         {{ networkObjectLinkDisplayName(link, networkObjects) }}:
         {{ link.observed_state
-        }}{{ selectedIds?.includes(link.id) ? ", selected" : "" }}
+        }}{{ selectedIds?.includes(link.id) ? "，已选择" : "" }}
       </li>
     </ul>
     <div
@@ -1714,7 +1736,7 @@ defineExpose({
       <div
         class="rounded-lg border border-dashed border-border bg-card/85 p-6 text-center"
       >
-        <h2 class="font-medium">Empty laboratory</h2>
+        <h2 class="font-medium">实验室为空</h2>
         <p class="mt-1 text-xs text-muted-foreground">
           Choose a device from the left palette to begin.
         </p>

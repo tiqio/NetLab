@@ -342,7 +342,7 @@ describe("TopologyCanvas", () => {
     await nextTick();
 
     const port = wrapper.get('[data-interface-id="switch-a:swp1"]');
-    expect(port.attributes("aria-label")).toContain("swp1, available");
+    expect(port.attributes("aria-label")).toContain("swp1，可用");
     await port.trigger("click");
     expect(wrapper.emitted("objectPort")?.[0]).toEqual(["switch-a", "swp1"]);
   });

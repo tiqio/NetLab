@@ -14,7 +14,19 @@ describe("semantic theme", () => {
   });
 
   it("为拓扑和图表提供语义变量", () => {
-    expect(css).toContain("--topology-active");
-    expect(css).toContain("--chart-grid");
+    for (const token of [
+      "--topology-running",
+      "--topology-failed",
+      "--topology-transition",
+      "--topology-selected",
+      "--topology-traffic",
+      "--topology-port",
+      "--chart-grid",
+      "--chart-track",
+      "--chart-series-primary",
+      "--chart-danger",
+    ]) {
+      expect(css.match(new RegExp(`${token}:`, "g"))).toHaveLength(2);
+    }
   });
 });

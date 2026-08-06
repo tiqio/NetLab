@@ -27,9 +27,11 @@ const option = computed(() => ({
       data: [percent.value],
       barWidth: 10,
       showBackground: true,
-      backgroundStyle: { color: "#1f2937", borderRadius: 5 },
+      backgroundStyle: { color: "var(--chart-track)", borderRadius: 5 },
       itemStyle: {
-        color: props.truncated ? "#f59e0b" : "#38bdf8",
+        color: props.truncated
+          ? "var(--chart-warning)"
+          : "var(--chart-series-secondary)",
         borderRadius: 5,
       },
     },
@@ -40,7 +42,7 @@ const option = computed(() => ({
   <div class="h-4 w-full">
     <EChart
       :option="option"
-      :aria-label="`Capture quota ${Math.round(percent)} percent`"
+      :aria-label="`抓包配额已使用 ${Math.round(percent)}%`"
     />
   </div>
 </template>

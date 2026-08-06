@@ -26,13 +26,13 @@ describe("TopologyCanvas accessibility", () => {
         selectedIds: ["node-1"],
       },
     });
-    const region = wrapper.get('[aria-label^="Topology canvas keyboard area"]');
+    const region = wrapper.get('[aria-label^="拓扑画布键盘操作区"]');
     expect(region.attributes("tabindex")).toBe("0");
     expect(region.classes()).toContain("focus-visible:ring-2");
     const summary = wrapper.get('[data-testid="topology-a11y-summary"]');
     expect(summary.attributes("aria-live")).toBe("polite");
     expect(summary.text()).toContain(
-      "Ubuntu: QEMU virtual machine · Desired Stopped · Actual Failed, selected",
+      "Ubuntu: QEMU 虚拟机 · 期望 已停止 · 实际 失败，已选择",
     );
     const chart = wrapper.findComponent(EChart);
     const option = chart.props("option") as {

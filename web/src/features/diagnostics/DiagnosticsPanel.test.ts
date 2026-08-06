@@ -13,7 +13,7 @@ describe("DiagnosticsPanel", () => {
       props: { initialSection: "captures" },
     });
     expect(wrapper.text()).toContain(
-      "Select a node and interface above, or right-click a topology node and choose Capture.",
+      "请在上方选择节点和接口，或右键单击拓扑节点并选择抓包。",
     );
   });
 

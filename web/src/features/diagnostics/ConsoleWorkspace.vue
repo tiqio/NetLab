@@ -268,7 +268,7 @@ onBeforeUnmount(closeRenderer);
     <nav
       v-if="sessions.length && !autoOpen"
       class="flex gap-1 overflow-x-auto border-b border-border bg-muted/20 p-1"
-      aria-label="Console sessions"
+      aria-label="终端会话"
     >
       <div
         v-for="session in sessions"

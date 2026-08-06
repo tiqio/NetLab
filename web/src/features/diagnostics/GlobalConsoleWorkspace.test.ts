@@ -35,22 +35,20 @@ describe("GlobalConsoleWorkspace", () => {
       },
     });
     await flushPromises();
-    await first.get('[aria-label="Add terminal session"]').trigger("click");
-    expect(first.get('[aria-label="Console sessions"]').text()).toContain(
-      "SERIAL 2",
-    );
+    await first.get('[aria-label="新增终端会话"]').trigger("click");
+    expect(first.get('[aria-label="终端会话"]').text()).toContain("SERIAL 2");
     first.unmount();
 
     const restored = mount(GlobalConsoleWorkspace, {
       props: { laboratoryId: "lab-restore", nodes },
     });
-    expect(
-      restored.get('[aria-label="Node console workspaces"]').text(),
-    ).toContain("Ubuntu");
-    expect(restored.get('[aria-label="Console sessions"]').text()).toContain(
+    expect(restored.get('[aria-label="节点终端工作区"]').text()).toContain(
+      "Ubuntu",
+    );
+    expect(restored.get('[aria-label="终端会话"]').text()).toContain(
       "SERIAL 1",
     );
-    expect(restored.get('[aria-label="Console sessions"]').text()).toContain(
+    expect(restored.get('[aria-label="终端会话"]').text()).toContain(
       "SERIAL 2",
     );
     expect(restored.findAll("[data-console-workspace]")).toHaveLength(2);
@@ -81,15 +79,13 @@ describe("GlobalConsoleWorkspace", () => {
     });
     await flushPromises();
 
-    expect(wrapper.get('[aria-label="Console sessions"]').text()).toContain(
-      "SERIAL 1",
-    );
+    expect(wrapper.get('[aria-label="终端会话"]').text()).toContain("SERIAL 1");
     expect(
-      wrapper.get('[aria-label="Add terminal session"]').attributes("disabled"),
+      wrapper.get('[aria-label="新增终端会话"]').attributes("disabled"),
     ).toBeDefined();
-    await wrapper.get('[aria-label="Add serial console"]').trigger("click");
+    await wrapper.get('[aria-label="新增串口终端"]').trigger("click");
     expect(
-      wrapper.get('[aria-label="Add serial console"]').attributes("disabled"),
+      wrapper.get('[aria-label="新增串口终端"]').attributes("disabled"),
     ).toBeDefined();
     expect(wrapper.findAll("[data-console-workspace]")).toHaveLength(1);
   });
@@ -136,21 +132,17 @@ describe("GlobalConsoleWorkspace", () => {
       "display: none",
     );
     expect(switchedConsoles[1].attributes("style")).toContain("display: none");
-    expect(
-      wrapper.get('[aria-label="Node console workspaces"]').text(),
-    ).toContain("Ubuntu");
-    expect(
-      wrapper.get('[aria-label="Node console workspaces"]').text(),
-    ).toContain("BusyBox");
-    expect(wrapper.get('[aria-label="Console sessions"]').text()).toContain(
-      "SERIAL 1",
+    expect(wrapper.get('[aria-label="节点终端工作区"]').text()).toContain(
+      "Ubuntu",
     );
+    expect(wrapper.get('[aria-label="节点终端工作区"]').text()).toContain(
+      "BusyBox",
+    );
+    expect(wrapper.get('[aria-label="终端会话"]').text()).toContain("SERIAL 1");
 
-    await wrapper.get('[aria-label="Add terminal session"]').trigger("click");
+    await wrapper.get('[aria-label="新增终端会话"]').trigger("click");
     expect(wrapper.findAll("[data-console-workspace]")).toHaveLength(3);
-    expect(wrapper.get('[aria-label="Console sessions"]').text()).toContain(
-      "SERIAL 2",
-    );
+    expect(wrapper.get('[aria-label="终端会话"]').text()).toContain("SERIAL 2");
 
     await wrapper.setProps({
       nodes: [nodeFactory({ id: "busybox", name: "BusyBox", kind: "docker" })],
@@ -194,16 +186,16 @@ describe("GlobalConsoleWorkspace", () => {
     await flushPromises();
 
     expect(listConsoles).toHaveBeenCalledWith("pc-1");
-    expect(
-      wrapper.get('[aria-label="Node console workspaces"]').text(),
-    ).toContain("PC Client");
+    expect(wrapper.get('[aria-label="节点终端工作区"]').text()).toContain(
+      "PC Client",
+    );
     const consoleWorkspace = wrapper.get("[data-console-workspace]");
     expect(consoleWorkspace.attributes("data-node-id")).toBe("pc-1");
     expect(consoleWorkspace.attributes("data-resource-type")).toBe(
       "network_object",
     );
 
-    await wrapper.get('[aria-label="Add terminal session"]').trigger("click");
+    await wrapper.get('[aria-label="新增终端会话"]').trigger("click");
     expect(wrapper.findAll("[data-console-workspace]")).toHaveLength(2);
   });
 });

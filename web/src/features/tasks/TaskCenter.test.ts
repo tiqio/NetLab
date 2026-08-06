@@ -12,7 +12,7 @@ describe("TaskCenter", () => {
       },
     });
     expect(wrapper.findAll("article")).toHaveLength(30);
-    await wrapper.get('button[aria-label="Show more tasks"]').trigger("click");
+    await wrapper.get('button[aria-label="显示更多任务"]').trigger("click");
     expect(wrapper.findAll("article")).toHaveLength(60);
   });
 
@@ -30,7 +30,7 @@ describe("TaskCenter", () => {
       },
     });
     expect(wrapper.text()).toContain("node.start");
-    await wrapper.get('input[aria-label="Filter tasks"]').setValue("capture");
+    await wrapper.get('input[aria-label="筛选任务"]').setValue("capture");
     const cards = wrapper
       .findAll("article")
       .map((item) => item.text())

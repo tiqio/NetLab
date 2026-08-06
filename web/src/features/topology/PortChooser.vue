@@ -39,18 +39,13 @@ function cancel() {
 <template>
   <Dialog
     v-model="open"
-    :title="title || 'Choose interface'"
+    :title="title || '选择接口'"
     :description="
       description ||
       'Select one available interface, then confirm the connection.'
     "
   >
-    <div
-      ref="listbox"
-      class="grid gap-2"
-      role="listbox"
-      aria-label="Available interfaces"
-    >
+    <div ref="listbox" class="grid gap-2" role="listbox" aria-label="可用接口">
       <Button
         v-for="item in interfaces"
         :key="item.id"

@@ -160,11 +160,11 @@ watch(
 <template>
   <Dialog
     :model-value="modelValue"
-    :title="mode === 'export' ? 'Export laboratory' : 'Import laboratory'"
+    :title="mode === 'export' ? '导出实验室' : '导入实验室'"
     :description="
       mode === 'export'
-        ? 'Create a durable, redacted metadata bundle for this laboratory.'
-        : 'Validate and import a redacted NetLab metadata bundle.'
+        ? '为此实验室创建持久化且已脱敏的元数据包。'
+        : '校验并导入已脱敏的 NetLab 元数据包。'
     "
     @update:model-value="$emit('update:modelValue', $event)"
   >
@@ -172,14 +172,13 @@ watch(
       <section
         class="rounded-md border border-border bg-muted/30 p-3 text-xs text-muted-foreground"
       >
-        <ShieldCheck :size="15" class="mr-1 inline text-green-400" />Exports
-        exclude image bytes, credentials, bootstrap secrets, and captures.
+        <ShieldCheck :size="15" class="mr-1 inline text-green-400" />导出内容不包含镜像数据、凭据、引导密钥和抓包文件。
       </section>
 
       <template v-if="mode === 'import'">
         <Textarea
           v-model="transferText"
-          aria-label="Laboratory export JSON"
+          aria-label="实验室导出 JSON"
           rows="12"
           class="w-full rounded border border-input bg-background p-2 font-mono text-xs"
           @input="parseBundle"
@@ -188,7 +187,7 @@ watch(
           v-if="parsedBundle"
           class="rounded-md border border-border p-3"
         >
-          <h3 class="text-sm font-semibold">Bundle metadata</h3>
+          <h3 class="text-sm font-semibold">数据包元信息</h3>
           <p class="mt-1 text-xs text-muted-foreground">
             Schema version {{ parsedBundle.schema_version || "unknown" }} ·
             {{ referencedDigests.length }} referenced image digest(s)

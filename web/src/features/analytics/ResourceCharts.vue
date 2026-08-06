@@ -7,17 +7,17 @@ const resourceMetrics = computed(() => [
   {
     label: "vCPU",
     value: props.node?.cpu_count || 0,
-    color: "#2dd4bf",
+    color: "var(--chart-series-primary)",
   },
   {
-    label: "CPU quota cores",
+    label: "CPU 配额（核心）",
     value: (props.node?.cpu_quota_micros || 0) / 100000,
-    color: "#38bdf8",
+    color: "var(--chart-series-secondary)",
   },
   {
-    label: "Memory GiB",
+    label: "内存（GiB）",
     value: (props.node?.memory_mib || 0) / 1024,
-    color: "#a78bfa",
+    color: "var(--chart-series-tertiary)",
   },
 ]);
 const hasTaskData = computed(() => Boolean(props.tasks?.length));
@@ -27,42 +27,45 @@ const resourceOption = computed(() => ({
   xAxis: {
     type: "category",
     data: [props.node?.name || "No node"],
-    axisLabel: { color: "#91a4b5" },
+    axisLabel: { color: "var(--muted-foreground)" },
   },
   yAxis: {
     type: "value",
-    axisLabel: { color: "#91a4b5" },
-    splitLine: { lineStyle: { color: "#203445" } },
+    axisLabel: { color: "var(--muted-foreground)" },
+    splitLine: { lineStyle: { color: "var(--chart-grid)" } },
   },
   series: [
     {
       name: "vCPU",
       type: "bar",
       data: [props.node?.cpu_count || 0],
-      itemStyle: { color: "#2dd4bf" },
+      itemStyle: { color: "var(--chart-series-primary)" },
     },
     {
-      name: "CPU quota cores",
+      name: "CPU 配额（核心）",
       type: "bar",
       data: [(props.node?.cpu_quota_micros || 0) / 100000],
-      itemStyle: { color: "#38bdf8" },
+      itemStyle: { color: "var(--chart-series-secondary)" },
     },
     {
-      name: "Memory GiB",
+      name: "内存（GiB）",
       type: "bar",
       data: [(props.node?.memory_mib || 0) / 1024],
-      itemStyle: { color: "#a78bfa" },
+      itemStyle: { color: "var(--chart-series-tertiary)" },
     },
   ],
 }));
 const taskOption = computed(() => ({
   tooltip: { trigger: "item" },
-  legend: { bottom: 0, textStyle: { color: "#91a4b5", fontSize: 10 } },
+  legend: {
+    bottom: 0,
+    textStyle: { color: "var(--muted-foreground)", fontSize: 10 },
+  },
   series: [
     {
       type: "pie",
       radius: ["45%", "68%"],
-      label: { color: "#d9e5ef", fontSize: 10 },
+      label: { color: "var(--chart-label)", fontSize: 10 },
       data: Object.entries(
         (props.tasks || []).reduce<Record<string, number>>(
           (result, task) => ({
@@ -81,7 +84,7 @@ const taskOption = computed(() => ({
     class="grid h-full min-h-[220px] gap-2 p-2"
     :class="hasTaskData ? 'grid-cols-2' : 'grid-cols-1'"
   >
-    <section class="flex min-h-0 min-w-0 flex-col" aria-label="Node resources">
+    <section class="flex min-h-0 min-w-0 flex-col" aria-label="节点资源">
       <dl class="mb-1 grid shrink-0 grid-cols-3 gap-1">
         <div
           v-for="metric in resourceMetrics"
@@ -105,13 +108,13 @@ const taskOption = computed(() => ({
       <EChart
         class="min-h-0 flex-1"
         :option="resourceOption"
-        aria-label="Selected node resource allocation chart"
+        aria-label="所选节点资源分配图"
       />
     </section>
     <EChart
       v-if="hasTaskData"
       :option="taskOption"
-      aria-label="Task state distribution chart"
+      aria-label="任务状态分布图"
     />
   </div>
 </template>

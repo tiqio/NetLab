@@ -39,7 +39,7 @@ async function run(action: () => Promise<unknown>, message: string) {
       value && typeof value === "object" && "task" in value
         ? (value as { task: { id: string } }).task
         : undefined;
-    status.value = `${message}${task ? ` · task ${task.id}` : ""}`;
+    status.value = `${message}${task ? ` · 任务 ${task.id}` : ""}`;
     emit("changed");
   } catch (error) {
     problem.value =
@@ -66,7 +66,7 @@ async function runLifecycle() {
     const value = await api.setNodeState(props.node, target);
     let task = value.task;
     const action = target === "running" ? "正在启动" : "正在停止";
-    status.value = `${action} · task ${task.id} · ${task.state}`;
+    status.value = `${action} · 任务 ${task.id} · ${task.state}`;
     emit("changed");
     while (
       generation === lifecycleGeneration &&
@@ -75,7 +75,7 @@ async function runLifecycle() {
       await wait(500);
       if (generation !== lifecycleGeneration) return;
       task = await api.getTask(task.id);
-      status.value = `${action} · task ${task.id} · ${task.state} · ${task.progress_current}/${task.progress_total}`;
+      status.value = `${action} · 任务 ${task.id} · ${task.state} · ${task.progress_current}/${task.progress_total}`;
       emit("changed");
     }
     if (generation !== lifecycleGeneration) return;

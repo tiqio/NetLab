@@ -514,7 +514,7 @@ async function submit() {
     v-model="open"
     size="min(92vw, 580px)"
     :prevent-close="dirty"
-    :title="selection ? `Add ${selection.name}` : 'Add resource'"
+    :title="selection ? `添加 ${selection.name}` : '添加资源'"
     description="资源及确认位置会共享给所有客户端；画布视口、手工链路路径和当前抽屉草稿仅保存在当前浏览器。"
   >
     <TopologyResourceCatalog
@@ -568,7 +568,7 @@ async function submit() {
           /> </FormField
         ><FormField
           v-if="!selection?.networkObjectKind"
-          label="Device template"
+          label="设备模板"
           :error="fieldErrors.template"
         >
           <Select
@@ -577,7 +577,7 @@ async function submit() {
             :disabled="catalogLoading"
             @update:model-value="requestTemplateChange"
           >
-            <option value="">Select a template</option>
+            <option value="">选择模板</option>
             <option
               v-for="item in compatibleTemplates"
               :key="item.id"
@@ -588,11 +588,11 @@ async function submit() {
           </Select> </FormField
         ><FormField
           v-if="!selection?.networkObjectKind"
-          label="Template version"
+          label="模板版本"
           :error="fieldErrors.version"
         >
           <Select v-model="versionId">
-            <option value="">Select a version</option>
+            <option value="">选择版本</option>
             <option
               v-for="version in selectedTemplate?.versions || []"
               :key="version.id"
@@ -604,12 +604,12 @@ async function submit() {
           </Select> </FormField
         ><FormField
           v-if="!selection?.networkObjectKind"
-          label="Image version"
+          label="镜像版本"
           :error="fieldErrors.image"
           :hint="imageHint"
         >
           <Select v-model="imageVersionId" :disabled="!selectedVersion">
-            <option value="">Select an image version</option>
+            <option value="">选择镜像版本</option>
             <option
               v-for="image in templateCompatibleImages"
               :key="image.id"
@@ -734,9 +734,9 @@ async function submit() {
         </p>
         <FormField
           v-if="!selection?.networkObjectKind"
-          label="Interfaces (count)"
+          label="接口数量"
           :error="fieldErrors.interfaces"
-          hint="Whole number from 1 to 64."
+          hint="请输入 1 到 64 之间的整数。"
         >
           <Input
             v-model="interfaceCount"
@@ -753,10 +753,10 @@ async function submit() {
           <p class="text-xs font-medium">
             Initial {{ initialInterfaceName }} network configuration
           </p>
-          <FormField label="IPv4 mode">
+          <FormField label="IPv4 模式">
             <Select v-model="ipv4Mode" data-testid="docker-ipv4-mode">
-              <option value="none">No automatic IPv4 configuration</option>
-              <option value="static">Static IPv4</option>
+              <option value="none">不自动配置 IPv4</option>
+              <option value="static">静态 IPv4</option>
               <option value="dhcpv4">DHCPv4</option>
             </Select>
           </FormField>
@@ -777,10 +777,9 @@ async function submit() {
           >
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <p class="text-xs font-medium">Static routes</p>
+                <p class="text-xs font-medium">静态路由</p>
                 <p class="text-[11px] text-muted-foreground">
-                  The gateway must be reachable through the static address on
-                  this interface.
+                  网关必须可通过此接口的静态地址到达。
                 </p>
               </div>
               <div class="flex gap-2">
@@ -789,14 +788,14 @@ async function submit() {
                   size="sm"
                   variant="secondary"
                   @click="addRoute('ipv4')"
-                  >Add IPv4 route</Button
+                  >添加 IPv4 路由</Button
                 >
                 <Button
                   type="button"
                   size="sm"
                   variant="secondary"
                   @click="addRoute('ipv6')"
-                  >Add IPv6 route</Button
+                  >添加 IPv6 路由</Button
                 >
               </div>
             </div>
@@ -807,7 +806,7 @@ async function submit() {
               class="grid gap-2 rounded-md bg-muted/20 p-2 md:grid-cols-[1.4fr_1fr_7rem_auto]"
             >
               <FormField
-                label="Destination CIDR"
+                label="目标 CIDR"
                 :error="fieldErrors[`route.${route.id}`]"
               >
                 <Input
@@ -816,7 +815,7 @@ async function submit() {
                   :placeholder="route.family === 'ipv6' ? '::/0' : '0.0.0.0/0'"
                 />
               </FormField>
-              <FormField label="Gateway (optional)">
+              <FormField label="网关（可选）">
                 <Input
                   v-model="route.gateway"
                   :data-testid="`docker-route-${routeIndex}-gateway`"
@@ -839,19 +838,19 @@ async function submit() {
                 type="button"
                 size="sm"
                 variant="ghost"
-                :aria-label="`Remove route ${routeIndex + 1}`"
+                :aria-label="`删除路由 ${routeIndex + 1}`"
                 @click="removeRoute(route.id)"
                 >Remove</Button
               >
             </div>
             <p v-if="!routes.length" class="text-xs text-muted-foreground">
-              No custom static routes.
+              暂无自定义静态路由。
             </p>
           </div>
-          <FormField label="IPv6 mode">
+          <FormField label="IPv6 模式">
             <Select v-model="ipv6Mode" data-testid="docker-ipv6-mode">
-              <option value="none">Link-local only</option>
-              <option value="static">Static IPv6</option>
+              <option value="none">仅链路本地地址</option>
+              <option value="static">静态 IPv6</option>
               <option value="slaac">SLAAC</option>
               <option value="dhcpv6">DHCPv6</option>
             </Select>
@@ -885,7 +884,7 @@ async function submit() {
         >
           <div class="flex items-center justify-between gap-2">
             <div>
-              <p class="text-xs font-medium">Ubuntu initial login</p>
+              <p class="text-xs font-medium">Ubuntu 初始登录信息</p>
               <p class="text-[11px] text-muted-foreground">
                 Injected once through the node-scoped cloud-init seed ISO and
                 not saved in browser preferences.
@@ -900,16 +899,13 @@ async function submit() {
               Regenerate
             </Button>
           </div>
-          <FormField
-            label="Initial username"
-            :error="fieldErrors.cloudUsername"
-          >
+          <FormField label="初始用户名" :error="fieldErrors.cloudUsername">
             <Input v-model="cloudUsername" autocomplete="username" />
           </FormField>
           <FormField
-            label="Initial password"
+            label="初始密码"
             :error="fieldErrors.cloudPassword"
-            hint="Record this value before creating the node; it cannot be recovered from the UI later."
+            hint="创建节点前请记录此值，之后无法从界面中恢复。"
           >
             <Input
               v-model="cloudPassword"
@@ -934,7 +930,7 @@ async function submit() {
       <Button
         type="submit"
         form="topology-resource-create-form"
-        aria-label="Add to topology"
+        aria-label="添加到拓扑"
         :disabled="!canSubmit"
       >
         {{ busy || catalogLoading ? "检查中…" : "添加到拓扑" }}

@@ -104,11 +104,11 @@ const percent = (task: OperationTask) =>
       <Input
         v-model="query"
         class="max-w-64"
-        placeholder="Filter operation or resource"
-        aria-label="Filter tasks"
+        placeholder="筛选操作或资源"
+        aria-label="筛选任务"
       />
-      <Select v-model="state" class="max-w-36" aria-label="Task state">
-        <option value="all">All states</option>
+      <Select v-model="state" class="max-w-36" aria-label="任务状态">
+        <option value="all">全部状态</option>
         <option
           v-for="value in [
             'queued',
@@ -123,37 +123,33 @@ const percent = (task: OperationTask) =>
           :label="value"
         />
       </Select>
-      <Select v-model="kind" class="max-w-44" aria-label="Operation kind">
-        <option value="all">All operations</option>
+      <Select v-model="kind" class="max-w-44" aria-label="操作类型">
+        <option value="all">全部操作</option>
         <option v-for="value in kinds" :key="value" :value="value">
           {{ value }}
         </option>
       </Select>
-      <Select
-        v-model="resourceType"
-        class="max-w-40"
-        aria-label="Resource type"
-      >
-        <option value="all">All resources</option>
+      <Select v-model="resourceType" class="max-w-40" aria-label="资源类型">
+        <option value="all">全部资源</option>
         <option v-for="value in resourceTypes" :key="value" :value="value">
           {{ value }}
         </option>
       </Select>
-      <Select v-model="scope" class="max-w-40" aria-label="Laboratory scope">
-        <option value="laboratory">Active laboratory</option>
-        <option value="all">All laboratories</option>
+      <Select v-model="scope" class="max-w-40" aria-label="实验室范围">
+        <option value="laboratory">当前实验室</option>
+        <option value="all">全部实验室</option>
       </Select>
-      <Select v-model="timeRange" class="max-w-32" aria-label="Task time range">
-        <option value="all">Any time</option>
-        <option value="15">15 minutes</option>
-        <option value="60">1 hour</option>
-        <option value="1440">24 hours</option>
+      <Select v-model="timeRange" class="max-w-32" aria-label="任务时间范围">
+        <option value="all">任意时间</option>
+        <option value="15">15 分钟</option>
+        <option value="60">1 小时</option>
+        <option value="1440">24 小时</option>
       </Select>
       <Button
         class="ml-auto"
         variant="ghost"
         size="icon"
-        aria-label="Refresh tasks"
+        aria-label="刷新任务"
         @click="$emit('refresh')"
       >
         <RefreshCw :size="14" />
@@ -164,7 +160,7 @@ const percent = (task: OperationTask) =>
         v-if="!filtered.length"
         class="grid h-full place-items-center text-xs text-muted-foreground"
       >
-        No tasks match the current filter.
+        没有符合当前筛选条件的任务。
       </div>
       <article
         v-for="task in visibleTasks"
@@ -181,8 +177,8 @@ const percent = (task: OperationTask) =>
               class="h-auto max-w-full justify-start truncate px-0 text-[10px] text-muted-foreground hover:text-primary"
               :title="
                 inActiveLaboratory(task)
-                  ? 'Open resource'
-                  : 'Resource is deleted or outside the active laboratory'
+                  ? '打开资源'
+                  : '资源已删除或不在当前实验室中'
               "
               :disabled="!inActiveLaboratory(task)"
               @click="$emit('navigate', task.resource_type, task.resource_id)"
@@ -211,18 +207,18 @@ const percent = (task: OperationTask) =>
         <dl
           class="grid grid-cols-[auto_1fr_auto_1fr] gap-x-2 text-[10px] text-muted-foreground"
         >
-          <dt>Created</dt>
+          <dt>创建时间</dt>
           <dd>{{ task.created_at }}</dd>
-          <dt>Started</dt>
-          <dd>{{ task.started_at || "not started" }}</dd>
-          <dt>Finished</dt>
-          <dd>{{ task.finished_at || "not finished" }}</dd>
-          <dt>Cancel</dt>
+          <dt>开始时间</dt>
+          <dd>{{ task.started_at || "尚未开始" }}</dd>
+          <dt>完成时间</dt>
+          <dd>{{ task.finished_at || "尚未完成" }}</dd>
+          <dt>取消</dt>
           <dd>
             {{
               ["queued", "running"].includes(task.state)
-                ? "available"
-                : "not available in terminal state"
+                ? "可用"
+                : "终态任务不可取消"
             }}
           </dd>
         </dl>
@@ -233,7 +229,7 @@ const percent = (task: OperationTask) =>
             :disabled="replaying === task.id"
             @click="replay(task)"
           >
-            <RotateCcw :size="12" /> Re-read task
+            <RotateCcw :size="12" /> 重新读取任务
           </Button>
           <Button
             v-if="['queued', 'running'].includes(task.state)"
@@ -242,11 +238,11 @@ const percent = (task: OperationTask) =>
             :disabled="cancelling === task.id"
             @click="cancel(task)"
           >
-            <Ban :size="12" /> Cancel
+            <Ban :size="12" /> 取消
           </Button>
         </div>
         <details v-if="task.result" class="text-xs">
-          <summary>Terminal result</summary>
+          <summary>终端执行结果</summary>
           <pre class="mt-1 max-h-40 overflow-auto rounded bg-muted/40 p-2">{{
             JSON.stringify(task.result, null, 2)
           }}</pre>
@@ -257,7 +253,7 @@ const percent = (task: OperationTask) =>
         v-if="visibleTasks.length < filtered.length"
         variant="secondary"
         class="mb-2 w-full"
-        aria-label="Show more tasks"
+        aria-label="显示更多任务"
         @click="visibleLimit += 30"
       >
         Show {{ Math.min(30, filtered.length - visibleTasks.length) }} more

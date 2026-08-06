@@ -51,7 +51,7 @@ describe("TrafficFilterChart", () => {
       }),
     ]);
     expect(wrapper.text()).toContain("Listening for icmp");
-    expect(wrapper.text()).toContain("Gray/dashed = listening scope");
+    expect(wrapper.text()).toContain("灰色虚线表示监听范围");
   });
 
   it("replaces a scope preview edge with an observed traffic edge", () => {
@@ -111,8 +111,8 @@ describe("TrafficFilterChart", () => {
         lineStyle: expect.objectContaining({ type: "solid" }),
       }),
     );
-    expect(wrapper.text()).toContain("Session:");
-    expect(wrapper.text()).toContain("Matched traffic:");
+    expect(wrapper.text()).toContain("会话：");
+    expect(wrapper.text()).toContain("匹配流量：");
     expect(wrapper.text()).toContain("2026-07-30");
     expect(wrapper.findAll("time")).toHaveLength(4);
   });
@@ -144,7 +144,7 @@ describe("TrafficFilterChart", () => {
         ],
       },
     });
-    expect(wrapper.text()).toContain("Multiple paths");
+    expect(wrapper.text()).toContain("观测到多条路径");
     const value = option as {
       series: Array<{ links: Array<{ label: string }> }>;
     };

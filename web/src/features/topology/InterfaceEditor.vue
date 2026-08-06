@@ -16,7 +16,7 @@ const driver = ref("virtio-net-pci");
 const status = ref("");
 
 async function addInterface() {
-  status.value = "Adding interface…";
+  status.value = "正在添加接口…";
   try {
     const value = await nodeOperationsApi.addInterface(
       props.nodeId,
@@ -33,7 +33,7 @@ async function addInterface() {
 
 async function removeInterface(value: NodeInterface) {
   if (value.desired_link_id) {
-    status.value = "Disconnect the cable before removing this interface.";
+    status.value = "移除此接口前请先断开链路。";
     return;
   }
   try {
@@ -50,7 +50,7 @@ async function removeInterface(value: NodeInterface) {
   <section>
     <h3>Interfaces</h3>
     <label
-      >NIC driver
+      >网卡驱动
       <Select v-model="driver">
         <option value="virtio-net-pci">VirtIO</option>
         <option value="e1000">Intel e1000</option>

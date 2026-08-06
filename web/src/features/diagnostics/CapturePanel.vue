@@ -75,7 +75,7 @@ async function start() {
     });
     capture.value = value.capture;
     taskId.value = value.task.id;
-    status.value = `Capture queued: ${value.task.id}`;
+    status.value = `抓包任务已进入队列：${value.task.id}`;
     scheduleCaptureRefresh();
   } catch (error) {
     status.value = error instanceof Error ? error.message : String(error);
@@ -117,7 +117,7 @@ async function refresh(showStatus = true) {
   if (!capture.value) return;
   try {
     capture.value = await api.getCapture(capture.value.id);
-    if (showStatus) status.value = "Capture status refreshed";
+    if (showStatus) status.value = "抓包状态已刷新";
     scheduleCaptureRefresh();
   } catch (error) {
     status.value = error instanceof Error ? error.message : String(error);
@@ -139,7 +139,7 @@ async function stop() {
   try {
     const value = await api.stopCapture(capture.value.id);
     taskId.value = value.task.id;
-    status.value = `Stop queued: ${value.task.id}`;
+    status.value = `停止任务已进入队列：${value.task.id}`;
     await refresh(false);
   } catch (error) {
     status.value = error instanceof Error ? error.message : String(error);
@@ -152,16 +152,16 @@ async function copyCommand() {
     await writeClipboard(
       wiresharkCommand(capture.value.id, window.location.origin, platform),
     );
-    status.value = "Wireshark command copied";
+    status.value = "Wireshark 命令已复制";
   } catch (error) {
-    status.value = `Unable to copy Wireshark command: ${error instanceof Error ? error.message : String(error)}`;
+    status.value = `无法复制 Wireshark 命令：${error instanceof Error ? error.message : String(error)}`;
   }
 }
 
 async function openWireshark() {
   if (!capture.value || !captureStreamable.value) return;
   busy.value = true;
-  status.value = "Checking the local Wireshark helper…";
+  status.value = "正在检查本机 Wireshark 辅助程序…";
   try {
     const health = await helperRequest<{
       allowed_origin: string;
@@ -190,7 +190,7 @@ async function openWireshark() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ stream_url: streamUrl }),
     });
-    status.value = "Wireshark opened with the live capture stream.";
+    status.value = "已使用 Wireshark 打开实时抓包流。";
   } catch (error) {
     if (error instanceof HelperResponseError) {
       showHelperIssue(
@@ -205,7 +205,7 @@ async function openWireshark() {
             ? "The browser could not connect to the local NetLab Wireshark helper. Wireshark installation alone is not enough; start the downloaded helper first."
             : error instanceof Error
               ? error.message
-              : "The local Wireshark helper could not be reached.";
+              : "无法连接本机 Wireshark 辅助程序。";
       showHelperIssue("missing", message);
     }
   } finally {
@@ -247,7 +247,7 @@ function showHelperIssue(
   helperMessage.value = message;
   helperDialogOpen.value = true;
   status.value =
-    "Local Wireshark helper unavailable. See the installation dialog.";
+    "本机 Wireshark 辅助程序不可用，请查看安装提示。";
 }
 
 async function writeClipboard(value: string) {
@@ -279,21 +279,20 @@ async function writeClipboard(value: string) {
       <div>
         <strong class="text-sm">{{ sourceLabel }}</strong>
         <p class="text-[11px] text-muted-foreground">
-          This source has independent capture controls and remains active while
-          you switch tabs.
+          此抓包源使用独立控制，切换标签页后仍会继续运行。
         </p>
       </div>
       <StatusBadge v-if="capture" :state="capture.state" />
     </div>
     <div class="grid grid-cols-3 gap-2">
-      <FormField label="Capture filter">
+      <FormField label="抓包过滤表达式">
         <Input v-model="filter" placeholder="tcp port 443" /> </FormField
-      ><FormField label="Format">
+      ><FormField label="格式">
         <Select v-model="format">
           <option value="pcap">pcap</option>
           <option value="pcapng">pcapng</option>
         </Select> </FormField
-      ><FormField label="Maximum bytes">
+      ><FormField label="最大字节数">
         <Input v-model="maxBytes" type="number" min="1048576" />
       </FormField>
     </div>
@@ -303,67 +302,59 @@ async function writeClipboard(value: string) {
         :disabled="(!interfaceId && !linkId && !objectLinkId) || busy"
         :title="
           !interfaceId && !linkId && !objectLinkId
-            ? 'Select a node interface or link before starting capture'
+            ? '开始抓包前请选择节点接口或链路'
             : busy
-              ? 'Capture request is in progress'
-              : 'Start packet capture'
+              ? '抓包请求正在处理中'
+              : '开始抓取数据包'
         "
         @click="start"
       >
-        <Radio :size="14" /> Start capture </Button
+        <Radio :size="14" /> 开始抓包 </Button
       ><Button
         size="sm"
         variant="secondary"
         :disabled="!capture"
-        :title="
-          capture
-            ? 'Refresh capture status'
-            : 'Start or discover a capture before refreshing'
-        "
+        :title="capture ? '刷新抓包状态' : '请先开始或发现一个抓包会话'"
         @click="refresh"
       >
-        Refresh </Button
+        刷新 </Button
       ><Button
         size="sm"
         variant="destructive"
         :disabled="!capture"
-        :title="
-          capture
-            ? 'Stop this capture'
-            : 'Start or discover a capture before stopping'
-        "
+        :title="capture ? '停止此抓包会话' : '请先开始或发现一个抓包会话'"
         @click="stop"
       >
-        <Square :size="14" /> Stop </Button
+        <Square :size="14" /> 停止 </Button
       ><Button
         size="sm"
         variant="outline"
         :disabled="!captureStreamable || busy"
         :title="
           captureStreamable
-            ? 'Open this live stream in local Wireshark'
-            : 'Start an active capture before opening Wireshark'
+            ? '在本机 Wireshark 中打开实时流'
+            : '请先启动抓包，再打开 Wireshark'
         "
         @click="openWireshark"
       >
-        <ExternalLink :size="14" /> Open Wireshark </Button
+        <ExternalLink :size="14" /> 使用 Wireshark 打开 </Button
       ><a
         v-if="capture"
         :href="safeCaptureStreamUrl(capture.id)"
         class="inline-flex items-center gap-1 rounded border border-border px-2 text-xs"
-        ><Download :size="13" /> Stream</a
+        ><Download :size="13" /> 实时流</a
       ><a
         v-if="capture?.artifact_id"
         :href="safeArtifactUrl(capture.artifact_id)"
         class="inline-flex items-center gap-1 rounded border border-border px-2 text-xs"
-        ><Download :size="13" /> Retained file</a
+        ><Download :size="13" /> 保留文件</a
       >
     </div>
     <p
       v-if="!interfaceId && !linkId && !objectLinkId"
       class="text-xs text-amber-300"
     >
-      Select a node interface or link before starting capture.
+      开始抓包前请选择节点接口或链路。
     </p>
     <article
       v-if="capture"
@@ -378,22 +369,22 @@ async function writeClipboard(value: string) {
         >
       </div>
       <dl class="mt-2 grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 text-xs">
-        <dt>Packets</dt>
+        <dt>数据包</dt>
         <dd>{{ capture.packets }}</dd>
-        <dt>Bytes</dt>
+        <dt>字节数</dt>
         <dd>{{ capture.bytes_written }} / {{ capture.max_bytes }}</dd>
-        <dt>Retention</dt>
+        <dt>保留方式</dt>
         <dd>
           {{
             capture.retain
-              ? `retained${capture.expires_at ? ` until ${capture.expires_at}` : ""}`
-              : "stream only"
+              ? `已保留${capture.expires_at ? `，有效期至 ${capture.expires_at}` : ""}`
+              : "仅实时流"
           }}
         </dd>
-        <dt>Completion</dt>
-        <dd>{{ capture.completion_reason || "active" }}</dd>
-        <dt>Truncated</dt>
-        <dd>{{ capture.truncated ? "Yes — quota reached" : "No" }}</dd>
+        <dt>完成状态</dt>
+        <dd>{{ capture.completion_reason || "活动中" }}</dd>
+        <dt>是否截断</dt>
+        <dd>{{ capture.truncated ? "是——已达到配额" : "否" }}</dd>
       </dl>
       <CaptureVolumeChart
         class="mt-2"
@@ -408,32 +399,31 @@ async function writeClipboard(value: string) {
     </p>
     <Dialog
       v-model="helperDialogOpen"
-      title="Wireshark integration required"
+      title="需要配置 Wireshark 集成"
       :description="helperMessage"
     >
       <div class="grid gap-3 text-sm">
         <p v-if="helperIssue === 'wireshark'" class="text-amber-300">
-          Install Wireshark, then restart the NetLab helper.
+          请安装 Wireshark，然后重启 NetLab 辅助程序。
         </p>
         <p v-else-if="helperIssue === 'origin'" class="text-amber-300">
-          Restart the helper with this NetLab address explicitly allowed.
+          请重启辅助程序，并明确允许当前 NetLab 地址。
         </p>
         <p v-else class="text-muted-foreground">
-          Wireshark installation alone is not enough. Download and keep the
-          NetLab helper running on the same computer as this browser. The
-          server-specific Windows helper can be started by double-clicking it.
+          仅安装 Wireshark 还不够。请下载 NetLab
+          辅助程序，并在当前浏览器所在计算机上持续运行。Windows
+          辅助程序可双击启动。
         </p>
         <p class="text-xs text-muted-foreground">
-          Diagnostic check: open the local helper health address. If it does not
-          show JSON, the helper is not running or was blocked by the operating
-          system.
+          诊断方法：打开本地辅助程序健康检查地址。如果没有显示
+          JSON，说明辅助程序未运行或被操作系统拦截。
         </p>
         <a
           :href="`${helperBaseUrl}/health`"
           target="_blank"
           rel="noreferrer"
           class="text-primary underline"
-          >Test local helper</a
+          >测试本地辅助程序</a
         >
         <code
           class="overflow-x-auto rounded border border-border bg-background p-2 text-xs"
@@ -443,22 +433,22 @@ async function writeClipboard(value: string) {
           <a
             class="rounded border border-border px-2 py-1 text-xs hover:bg-accent"
             href="/api/v1/client-tools/wireshark-helper/windows-amd64"
-            >Windows helper</a
+            >Windows 辅助程序</a
           >
           <a
             class="rounded border border-border px-2 py-1 text-xs hover:bg-accent"
             href="/api/v1/client-tools/wireshark-helper/linux-amd64"
-            >Linux helper</a
+            >Linux 辅助程序</a
           >
           <a
             class="rounded border border-border px-2 py-1 text-xs hover:bg-accent"
             href="/api/v1/client-tools/wireshark-helper/darwin-amd64"
-            >macOS Intel</a
+            >macOS Intel 辅助程序</a
           >
           <a
             class="rounded border border-border px-2 py-1 text-xs hover:bg-accent"
             href="/api/v1/client-tools/wireshark-helper/darwin-arm64"
-            >macOS Apple Silicon</a
+            >macOS Apple Silicon 辅助程序</a
           >
         </div>
         <a
@@ -466,12 +456,12 @@ async function writeClipboard(value: string) {
           target="_blank"
           rel="noreferrer"
           class="text-primary underline"
-          >Install Wireshark</a
+          >安装 Wireshark</a
         >
       </div>
       <template #footer>
         <Button variant="secondary" @click="copyCommand">
-          <Clipboard :size="14" /> Copy manual command
+          <Clipboard :size="14" /> 复制手动命令
         </Button>
         <Button
           variant="secondary"
@@ -479,9 +469,9 @@ async function writeClipboard(value: string) {
             helperDialogOpen = false;
             openWireshark();
           "
-          >Retry</Button
+          >重试</Button
         >
-        <Button @click="helperDialogOpen = false">Close</Button>
+        <Button @click="helperDialogOpen = false">关闭</Button>
       </template>
     </Dialog>
   </div>

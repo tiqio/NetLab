@@ -7,7 +7,7 @@ describe("ImageImportDialog", () => {
       attachTo: document.body,
       props: { modelValue: true },
     });
-    expect(document.body.textContent).toContain("Do not include credentials");
-    expect(document.body.textContent).toContain("embedded proprietary bytes");
+    expect(document.body.textContent).toContain("引用中不得包含凭据");
+    expect(document.body.textContent).toContain("嵌入专有镜像数据");
   });
 });

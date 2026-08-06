@@ -49,20 +49,16 @@ defineExpose({ refresh: load });
         <Search
           :size="14"
           class="absolute left-2 top-2 text-muted-foreground"
-        /><Input
-          v-model="query"
-          class="pl-7"
-          placeholder="Search template or family"
-        />
+        /><Input v-model="query" class="pl-7" placeholder="搜索模板或系列" />
       </div>
       <Select v-model="runtime" class="max-w-36">
-        <option value="all">All runtimes</option>
+        <option value="all">全部运行时</option>
         <option value="qemu">QEMU</option>
         <option value="docker">Docker</option>
       </Select>
     </header>
     <p v-if="loading" role="status" class="p-4 text-sm text-muted-foreground">
-      Loading template catalog…
+      正在加载模板目录…
     </p>
     <p v-if="error" role="alert" class="p-4 text-destructive">
       {{ error }}
@@ -151,13 +147,11 @@ defineExpose({ refresh: load });
       v-if="!loading && !filtered.length"
       class="grid min-h-40 place-items-center text-sm text-muted-foreground"
     >
-      <span><XCircle :size="16" class="mr-1 inline" />No templates match.</span>
+      <span><XCircle :size="16" class="mr-1 inline" />没有匹配的模板。</span>
     </div>
     <footer class="border-t border-border p-3 text-xs text-muted-foreground">
-      <ShieldCheck :size="13" class="mr-1 inline" />Image provenance, digest,
-      license notes, availability, and validation remain server-authoritative.
-      <CheckCircle2 :size="13" class="ml-2 mr-1 inline text-green-400" />No
-      image bytes or credentials are stored in the browser.
+      <ShieldCheck :size="13" class="mr-1 inline" />镜像来源、摘要、许可说明、可用性和校验结果均以服务器为准。
+      <CheckCircle2 :size="13" class="ml-2 mr-1 inline text-green-400" />浏览器不会存储镜像内容或凭据。
     </footer>
   </section>
 </template>

@@ -248,7 +248,7 @@ watch(
   <div class="flex h-full min-h-[180px] flex-col" data-global-capture-workspace>
     <nav
       class="flex shrink-0 gap-1 overflow-x-auto border-b border-border bg-muted/20 p-1"
-      aria-label="Node capture workspaces"
+      aria-label="节点抓包工作区"
     >
       <Button
         v-for="node in nodeGroups"
@@ -277,7 +277,7 @@ watch(
         :variant="activeGroupId === OBJECT_LINK_GROUP_ID ? 'default' : 'ghost'"
         @click="selectGroup(OBJECT_LINK_GROUP_ID)"
       >
-        <Cable :size="12" /> Object links
+        <Cable :size="12" /> 网络对象链路
         <span class="text-[10px] opacity-70">{{
           networkObjectLinks.length
         }}</span>
@@ -287,7 +287,7 @@ watch(
     <nav
       v-if="activeGroupId"
       class="flex shrink-0 gap-1 overflow-x-auto border-b border-border bg-muted/10 p-1"
-      aria-label="Capture sources"
+      aria-label="抓包来源"
     >
       <Button
         v-for="item in activeInterfaces"
@@ -355,8 +355,7 @@ watch(
       v-else
       class="grid min-h-0 flex-1 place-items-center px-4 text-center text-xs text-muted-foreground"
     >
-      Select a node and interface above, or right-click a topology node and
-      choose Capture.
+      请在上方选择节点和接口，或右键单击拓扑节点并选择抓包。
     </div>
   </div>
 </template>

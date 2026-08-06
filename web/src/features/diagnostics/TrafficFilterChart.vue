@@ -346,7 +346,7 @@ const option = computed(() => {
               source: link.source,
               target: link.target,
               label: `${stats.fingerprints.size} ${stats.fingerprints.size === 1 ? "packet" : "packets"}`,
-              tooltip: `${link.label}<br/>Direction unavailable for this observation<br/>${stats.observations} packet sightings · ${stats.bytes} bytes<br/>first ${stats.firstSeen}<br/>last ${stats.lastSeen}`,
+              tooltip: `${link.label}<br/>此观测记录无法确定方向<br/>${stats.observations} packet sightings · ${stats.bytes} bytes<br/>first ${stats.firstSeen}<br/>last ${stats.lastSeen}`,
               lineStyle: {
                 width: 3,
                 color: props.ambiguous ? "#f59e0b" : "#2dd4bf",
@@ -406,14 +406,14 @@ const option = computed(() => {
   <div class="flex h-full min-h-[220px] flex-col">
     <div class="grid shrink-0 gap-1 border-b border-border px-3 py-2 text-xs">
       <div class="flex flex-wrap items-center gap-x-4 gap-y-1">
-        <strong>Observation graph</strong>
+        <strong>观测图</strong>
         <span class="flex items-center gap-1.5 text-muted-foreground">
           <span class="h-0 w-6 border-t-2 border-dashed border-slate-500" />
-          Gray/dashed = listening scope
+          灰色虚线表示监听范围
         </span>
         <span class="flex items-center gap-1.5 text-muted-foreground">
           <span class="h-0 w-6 border-t-2 border-teal-400" />
-          Teal/solid = matched traffic
+          青色实线表示匹配流量
         </span>
       </div>
       <div
@@ -421,7 +421,7 @@ const option = computed(() => {
         class="flex flex-wrap gap-x-5 gap-y-1 text-[11px] text-muted-foreground"
       >
         <span>
-          Session:
+          会话：
           <time :datetime="sessionStartedAt">{{
             formatTimestamp(sessionStartedAt)
           }}</time>
@@ -433,7 +433,7 @@ const option = computed(() => {
           <span v-else>stopped</span>
         </span>
         <span v-if="observedTimeRange">
-          Matched traffic:
+          匹配流量：
           <time :datetime="observedTimeRange.first">{{
             formatTimestamp(observedTimeRange.first)
           }}</time>
@@ -442,11 +442,11 @@ const option = computed(() => {
             formatTimestamp(observedTimeRange.last)
           }}</time>
         </span>
-        <span v-else>No matching packet timestamps yet.</span>
+        <span v-else>暂时没有匹配的数据包时间戳。</span>
       </div>
     </div>
     <div class="relative min-h-0 flex-1">
-      <EChart :option="option" aria-label="Traffic Filter observation graph" />
+      <EChart :option="option" aria-label="流量过滤观测图" />
       <div
         v-if="!observations.length"
         class="pointer-events-none absolute inset-x-0 top-3 flex justify-center px-4 text-center text-xs text-muted-foreground"
@@ -458,18 +458,17 @@ const option = computed(() => {
           match arrives.
         </span>
         <span v-else-if="scopeNodes?.length || scopeLinks?.length">
-          No matching packets were observed for this session. The gray graph
-          shows its observation scope.
+          此会话尚未观测到匹配的数据包，灰色图形表示观测范围。
         </span>
         <span v-else>
-          Select interfaces or links above to preview the observation scope.
+          请在上方选择接口或链路以预览观测范围。
         </span>
       </div>
       <div
         v-if="ambiguous"
         class="absolute right-2 top-2 rounded border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-xs text-amber-200"
       >
-        Multiple paths, duplicates, or a loop were observed
+        观测到多条路径、重复项或环路
       </div>
     </div>
   </div>

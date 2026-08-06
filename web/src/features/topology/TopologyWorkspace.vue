@@ -1383,7 +1383,7 @@ onBeforeUnmount(() => {
       role="status"
       class="grid h-full place-items-center bg-background text-sm text-muted-foreground"
     >
-      Loading NetLab workspace…
+      正在加载 NetLab 工作区…
     </div>
     <LaboratoryShell
       v-else-if="store.active"
@@ -1455,35 +1455,35 @@ onBeforeUnmount(() => {
             size="sm"
             :variant="panEnabled ? 'default' : 'ghost'"
             :aria-pressed="panEnabled"
-            title="Toggle canvas pan mode"
+            title="切换画布平移模式"
             data-testid="pan-view"
             @click="panEnabled = !panEnabled"
           >
-            <Hand :size="13" /> {{ panEnabled ? "Panning" : "Pan view" }}
+            <Hand :size="13" /> {{ panEnabled ? "Panning" : "平移视图" }}
           </Button>
           <Button
             size="sm"
             variant="secondary"
-            title="Fit all resources"
+            title="适应全部资源"
             data-testid="fit-all"
             @click="fitResources()"
           >
-            <Maximize2 :size="13" /> Fit all
+            <Maximize2 :size="13" /> 适应全部
           </Button>
           <Button
             size="sm"
             variant="secondary"
-            title="Fit selected resources"
+            title="适应选中资源"
             data-testid="fit-selection"
             :disabled="!selectedIds.length"
             @click="fitResources(selectedIds)"
           >
-            <Focus :size="13" /> Fit selection
+            <Focus :size="13" /> 适应选中项
           </Button>
           <Button
             size="sm"
             variant="ghost"
-            title="Reset topology view"
+            title="重置拓扑视图"
             data-testid="reset-view"
             @click="resetViewport"
           >
@@ -1492,7 +1492,7 @@ onBeforeUnmount(() => {
           <Button
             size="sm"
             variant="ghost"
-            aria-label="Cycle topology label density"
+            aria-label="切换拓扑标签密度"
             @click="cycleLabelDensity"
           >
             Labels: {{ preferences.labelDensity }}
@@ -1583,7 +1583,7 @@ onBeforeUnmount(() => {
               v-if="['queued', 'running'].includes(activeReconnectTask.state)"
               size="sm"
               variant="ghost"
-              aria-label="Cancel reconnect"
+              aria-label="取消重连"
               @click="cancelReconnect"
             >
               <XCircle :size="13" /> Cancel
@@ -1592,7 +1592,7 @@ onBeforeUnmount(() => {
               v-if="['failed', 'cancelled'].includes(activeReconnectTask.state)"
               size="sm"
               variant="secondary"
-              aria-label="Retry reconnect"
+              aria-label="重试连接"
               @click="retryReconnect"
             >
               <RotateCcw :size="13" /> Retry
@@ -1681,7 +1681,7 @@ onBeforeUnmount(() => {
                 ? `Actions for ${contextObject.name}`
                 : contextObjectLink
                   ? `Actions for ${contextObjectLink.id}`
-                  : 'Link actions'
+                  : '链路操作'
           "
           class="fixed w-52 rounded-md border border-border bg-popover p-1 shadow-2xl"
           :style="{
@@ -1811,29 +1811,29 @@ onBeforeUnmount(() => {
     </Teleport>
     <ConfirmationDialog
       :model-value="Boolean(contextDeleteNode)"
-      title="Delete node"
+      title="删除节点"
       :resource="
         contextDeleteNode
           ? `${contextDeleteNode.name} · ${contextDeleteNode.id}`
           : ''
       "
-      description="This stops the node if it is running, then removes the node and all owned runtime resources."
-      impact="Every attached link is deleted, and active console or capture sessions for this node are closed."
-      confirm-label="Delete node"
+      description="如果节点正在运行，将先停止节点，再删除节点及其拥有的全部运行时资源。"
+      impact="所有相连链路都会删除，该节点的活动终端或抓包会话也会关闭。"
+      confirm-label="删除节点"
       @update:model-value="!$event && (contextDeleteNode = undefined)"
       @confirm="confirmContextNodeDelete"
     />
     <ConfirmationDialog
       :model-value="Boolean(contextDeleteObject)"
-      title="Delete network object"
+      title="删除网络对象"
       :resource="
         contextDeleteObject
           ? `${contextDeleteObject.name} · ${contextDeleteObject.id}`
           : ''
       "
-      description="This removes the network object and its owned host networking resources."
-      impact="Every interface attachment to this object is detached before its bridge, DHCP helper, and NAT rules are removed."
-      confirm-label="Delete network object"
+      description="这将删除网络对象及其拥有的宿主机网络资源。"
+      impact="删除网桥、DHCP 辅助进程和 NAT 规则前，会先断开该对象上的所有接口连接。"
+      confirm-label="删除网络对象"
       @update:model-value="!$event && (contextDeleteObject = undefined)"
       @confirm="confirmContextObjectDelete"
     />
@@ -1860,12 +1860,12 @@ onBeforeUnmount(() => {
       v-model="portChooserOpen"
       :title="
         portChooserMode === 'source'
-          ? 'Choose source interface'
+          ? '选择源接口'
           : portChooserMode === 'target'
-            ? 'Choose target interface'
+            ? '选择目标接口'
             : portChooserMode === 'capture'
-              ? 'Choose interface to capture'
-              : 'Choose replacement interface'
+              ? '选择抓包接口'
+              : '选择替换接口'
       "
       :description="
         portChooserMode === 'capture'

@@ -74,38 +74,38 @@ describe("DevicePalette", () => {
     const wrapper = mount(DevicePalette);
     await flushPromises();
     expect(wrapper.text()).toContain("Ubuntu");
-    expect(wrapper.text()).toContain("Ruijie L2 Switch");
-    expect(wrapper.text()).toContain("Lightweight L2 Switch");
-    expect(wrapper.text()).toContain("Lightweight L3 Switch");
-    expect(wrapper.text()).toContain("No KVM");
+    expect(wrapper.text()).toContain("锐捷二层交换机");
+    expect(wrapper.text()).toContain("轻量级二层交换机");
+    expect(wrapper.text()).toContain("轻量级三层交换机");
+    expect(wrapper.text()).toContain("无需 KVM");
     const layer2Button = wrapper
       .findAll("button")
-      .find((button) => button.text().includes("Ruijie L2 Switch"));
+      .find((button) => button.text().includes("锐捷二层交换机"));
     await layer2Button!.trigger("click");
     expect(wrapper.emitted("choose")?.[0]?.[0]).toMatchObject({
       kind: "qemu",
-      name: "Ruijie L2 Switch",
+      name: "锐捷二层交换机",
       template: { template_key: "ruijie-switch" },
       version: { version: "V1.06" },
     });
 
     const lightweightL2 = wrapper
       .findAll("button")
-      .find((button) => button.text().includes("Lightweight L2 Switch"));
+      .find((button) => button.text().includes("轻量级二层交换机"));
     await lightweightL2!.trigger("click");
     expect(wrapper.emitted("choose")?.[1]?.[0]).toMatchObject({
       kind: "switch_l2",
-      name: "Lightweight L2 Switch",
+      name: "轻量级二层交换机",
       networkObjectKind: "switch_l2",
     });
 
     const lightweightL3 = wrapper
       .findAll("button")
-      .find((button) => button.text().includes("Lightweight L3 Switch"));
+      .find((button) => button.text().includes("轻量级三层交换机"));
     await lightweightL3!.trigger("click");
     expect(wrapper.emitted("choose")?.[2]?.[0]).toMatchObject({
       kind: "switch_l3",
-      name: "Lightweight L3 Switch",
+      name: "轻量级三层交换机",
       networkObjectKind: "switch_l3",
     });
   });

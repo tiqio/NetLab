@@ -385,7 +385,7 @@ function addSerialForActiveNode() {
     <nav
       v-if="workspaces.length"
       class="flex gap-1 overflow-x-auto border-b border-border bg-muted/20 p-1"
-      aria-label="Node console workspaces"
+      aria-label="节点终端工作区"
     >
       <div
         v-for="workspace in workspaces"
@@ -402,7 +402,7 @@ function addSerialForActiveNode() {
         <Button
           size="icon"
           variant="ghost"
-          :aria-label="`Close ${label(workspace.nodeId)} console workspace`"
+          :aria-label="`关闭 ${label(workspace.nodeId)} 终端工作区`"
           @click="closeNode(workspace.nodeId)"
         >
           <X :size="12" />
@@ -412,7 +412,7 @@ function addSerialForActiveNode() {
     <nav
       v-if="activeWorkspace"
       class="flex gap-1 overflow-x-auto border-b border-border bg-muted/10 p-1"
-      aria-label="Console sessions"
+      aria-label="终端会话"
     >
       <div
         v-for="session in activeWorkspace.sessions"
@@ -441,13 +441,13 @@ function addSerialForActiveNode() {
         class="ml-auto shrink-0"
         size="icon"
         variant="ghost"
-        aria-label="Add terminal session"
+        aria-label="新增终端会话"
         :title="
           activeKind === 'docker' || activeKind === 'pc'
-            ? 'Add another container terminal session'
+            ? '新增容器终端会话'
             : canAddSSH
-              ? 'Add another SSH terminal session'
-              : 'SSH is unavailable; connect the node to a reachable network with valid bootstrap credentials'
+              ? '新增 SSH 终端会话'
+              : 'SSH 不可用；请将节点接入可达网络并配置有效的引导凭据'
         "
         :disabled="!['docker', 'pc'].includes(String(activeKind)) && !canAddSSH"
         @click="addForActiveNode"
@@ -459,12 +459,12 @@ function addSerialForActiveNode() {
         class="shrink-0"
         size="icon"
         variant="ghost"
-        aria-label="Add serial console"
+        aria-label="新增串口终端"
         :disabled="!canAddSerial || !canUseSerial"
         :title="
           canAddSerial && canUseSerial
-            ? 'Open the QEMU serial rescue console'
-            : 'QEMU exposes one serial console; switch to the existing SERIAL tab'
+            ? '打开 QEMU 串口救援终端'
+            : 'QEMU 仅提供一个串口终端；请切换到已有的串口标签页'
         "
         @click="addSerialForActiveNode"
       >
@@ -475,9 +475,9 @@ function addSerialForActiveNode() {
         class="shrink-0"
         size="icon"
         variant="ghost"
-        aria-label="Add VNC session"
+        aria-label="新增 VNC 会话"
         :disabled="!canAddVNC"
-        title="Add a VNC session for the active node"
+        title="为当前节点新增 VNC 会话"
         @click="addVNCForActiveNode"
       >
         <Monitor :size="14" />

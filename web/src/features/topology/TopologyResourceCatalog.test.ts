@@ -49,9 +49,7 @@ describe("TopologyResourceCatalog", () => {
     ]);
     const wrapper = mount(TopologyResourceCatalog);
     await flushPromises();
-    await wrapper
-      .get('[aria-label="Search device templates"]')
-      .setValue("ubuntu");
+    await wrapper.get('[aria-label="搜索设备模板"]').setValue("ubuntu");
     expect(wrapper.text()).toContain("Ubuntu QEMU");
     expect(wrapper.text()).not.toContain("BusyBox");
     await wrapper
@@ -84,7 +82,7 @@ describe("TopologyResourceCatalog", () => {
     await flushPromises();
     await wrapper
       .findAll("button")
-      .find((button) => button.text().includes("NAT bridge"))!
+      .find((button) => button.text().includes("NAT 网桥"))!
       .trigger("click");
     expect(wrapper.emitted("choose")?.[0]?.[0]).toMatchObject({
       networkObjectKind: "nat_bridge",
@@ -99,13 +97,9 @@ describe("TopologyResourceCatalog", () => {
     vi.spyOn(api, "listTemplates").mockResolvedValue([candidate]);
     const wrapper = mount(TopologyResourceCatalog);
     await flushPromises();
-    await wrapper
-      .get('[aria-label="Search device templates"]')
-      .setValue("special-key");
+    await wrapper.get('[aria-label="搜索设备模板"]').setValue("special-key");
     expect(wrapper.text()).toContain("Linux Guest");
-    await wrapper
-      .get('[aria-label="Search device templates"]')
-      .setValue("cloud-init");
+    await wrapper.get('[aria-label="搜索设备模板"]').setValue("cloud-init");
     expect(wrapper.text()).toContain("Linux Guest");
   });
 

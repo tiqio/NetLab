@@ -5,11 +5,8 @@ defineProps<{ observations: TrafficObservation[]; ambiguous?: boolean }>();
 
 <template>
   <aside aria-live="polite">
-    <h2>Observed traffic path</h2>
-    <p v-if="ambiguous">
-      The packet path is ambiguous because a loop or bidirectional observation
-      was detected.
-    </p>
+    <h2>观测到的流量路径</h2>
+    <p v-if="ambiguous">检测到环路或双向观测，无法唯一确定数据包路径。</p>
     <ol>
       <li
         v-for="item in observations"
@@ -21,8 +18,8 @@ defineProps<{ observations: TrafficObservation[]; ambiguous?: boolean }>();
           item.link_id ||
           item.interface_id
         }}
-        · {{ item.direction }} · {{ item.count }} packets ·
-        {{ item.bytes }} bytes · {{ item.first_seen }} — {{ item.last_seen }}
+        · {{ item.direction }} · {{ item.count }} 个数据包 ·
+        {{ item.bytes }} 字节 · {{ item.first_seen }} — {{ item.last_seen }}
       </li>
     </ol>
   </aside>

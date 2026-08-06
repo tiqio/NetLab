@@ -36,19 +36,14 @@ function run(id: string) {
 <template>
   <Dialog
     v-model="open"
-    title="Command palette"
-    description="All commands use the same API operations as automation clients."
+    title="命令面板"
+    description="所有命令都与自动化客户端使用相同的 API 操作。"
   >
     <div class="relative">
       <Search
         :size="15"
         class="absolute left-2 top-2 text-muted-foreground"
-      /><Input
-        v-model="query"
-        class="pl-8"
-        autofocus
-        placeholder="Type a command"
-      />
+      /><Input v-model="query" class="pl-8" autofocus placeholder="输入命令" />
     </div>
     <div class="mt-2 max-h-80 overflow-auto">
       <button
@@ -64,7 +59,7 @@ function run(id: string) {
         v-if="!filtered.length"
         class="p-4 text-center text-xs text-muted-foreground"
       >
-        No matching command.
+        没有匹配的命令。
       </p>
     </div>
   </Dialog>

@@ -162,7 +162,7 @@ watch(
             />
           </FormField>
         </div>
-        <FormField label="Tagged VLAN" hint="逗号分隔，例如 10,20,30">
+        <FormField label="带标签 VLAN" hint="逗号分隔，例如 10,20,30">
           <Input
             v-model="port.tagged"
             placeholder="10,20"

@@ -56,6 +56,6 @@ describe("TemplateCatalog", () => {
     await flushPromises();
     expect(wrapper.text()).toContain("cloud-init");
     expect(wrapper.text()).toContain("sha256:abc");
-    expect(wrapper.text()).toContain("No image bytes");
+    expect(wrapper.text()).toContain("浏览器不会存储镜像内容或凭据");
   });
 });

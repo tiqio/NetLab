@@ -30,31 +30,31 @@ const lightweight: PaletteSelection[] = [
   {
     kind: "pc",
     name: "PC",
-    description: "Linux netns host · IPv4 / IPv6",
+    description: "Linux netns 主机 · IPv4 / IPv6",
     networkObjectKind: "pc",
   },
   {
     kind: "switch_l2",
-    name: "Lightweight L2 Switch",
-    description: "Linux bridge + VLAN filtering · No KVM",
+    name: "轻量级二层交换机",
+    description: "Linux 网桥 + VLAN 过滤 · 无需 KVM",
     networkObjectKind: "switch_l2",
   },
   {
     kind: "switch_l3",
-    name: "Lightweight L3 Switch",
-    description: "Linux netns routing · No KVM",
+    name: "轻量级三层交换机",
+    description: "Linux netns 路由 · 无需 KVM",
     networkObjectKind: "switch_l3",
   },
   {
     kind: "switch_l2",
-    name: "Bridge",
-    description: "Unmanaged Linux bridge",
+    name: "网桥",
+    description: "非托管 Linux 网桥",
     networkObjectKind: "bridge",
   },
   {
     kind: "switch_l3",
-    name: "NAT bridge",
-    description: "Internet access with DHCP and NAT",
+    name: "NAT 网桥",
+    description: "通过 DHCP 和 NAT 访问互联网",
     networkObjectKind: "nat_bridge",
   },
 ];
@@ -62,13 +62,13 @@ const networkDevices = computed(() =>
   [
     {
       key: "ruijie-switch",
-      name: "Ruijie L2 Switch",
-      description: "QEMU appliance · Ruijie Switch V1.06 · KVM",
+      name: "锐捷二层交换机",
+      description: "QEMU 设备 · 锐捷交换机 V1.06 · KVM",
     },
     {
       key: "ruijie-router",
-      name: "Ruijie L3 Router",
-      description: "QEMU appliance · Ruijie Router V1.06 · KVM",
+      name: "锐捷三层路由器",
+      description: "QEMU 设备 · 锐捷路由器 V1.06 · KVM",
     },
   ]
     .map((shortcut) => ({
@@ -131,7 +131,7 @@ function enabledVersion(template: DeviceTemplate) {
       <h2
         class="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
       >
-        Add device
+        添加设备
       </h2>
       <div class="relative">
         <Search
@@ -140,14 +140,14 @@ function enabledVersion(template: DeviceTemplate) {
         /><Input
           v-model="query"
           class="pl-7"
-          placeholder="Search templates"
-          aria-label="Search device templates"
+          placeholder="搜索模板"
+          aria-label="搜索设备模板"
         />
       </div>
     </header>
     <div class="flex-1 overflow-auto p-2 netlab-scrollbar">
       <p v-if="loading" role="status" class="p-2 text-xs text-muted-foreground">
-        Loading templates…
+        正在加载模板…
       </p>
       <div
         v-if="loadError"
@@ -168,7 +168,7 @@ function enabledVersion(template: DeviceTemplate) {
         <h3
           class="px-2 py-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground"
         >
-          Ruijie appliances
+          锐捷设备
         </h3>
         <Button
           v-for="item in networkDevices"
@@ -199,7 +199,7 @@ function enabledVersion(template: DeviceTemplate) {
         <h3
           class="px-2 py-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground"
         >
-          Virtual devices
+          虚拟设备
         </h3>
         <Button
           v-for="template in filtered"

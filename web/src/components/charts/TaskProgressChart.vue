@@ -23,14 +23,14 @@ const option = computed(() => ({
       data: [percent.value],
       barWidth: 7,
       showBackground: true,
-      backgroundStyle: { color: "#1f2937", borderRadius: 4 },
+      backgroundStyle: { color: "var(--chart-track)", borderRadius: 4 },
       itemStyle: {
         color:
           props.state === "failed"
-            ? "#ef4444"
+            ? "var(--chart-danger)"
             : props.state === "cancelled"
-              ? "#f59e0b"
-              : "#2dd4bf",
+              ? "var(--chart-warning)"
+              : "var(--chart-series-primary)",
         borderRadius: 4,
       },
     },
@@ -39,9 +39,6 @@ const option = computed(() => ({
 </script>
 <template>
   <div class="h-3 w-full">
-    <EChart
-      :option="option"
-      :aria-label="`Task progress ${Math.round(percent)} percent`"
-    />
+    <EChart :option="option" :aria-label="`任务进度 ${Math.round(percent)}%`" />
   </div>
 </template>

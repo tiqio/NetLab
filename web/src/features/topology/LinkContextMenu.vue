@@ -16,10 +16,10 @@ const emit = defineEmits<{
   <DropdownMenu>
     <template #trigger>
       <Button size="sm" variant="secondary" :disabled="disabled">
-        <Cable :size="13" /> Link actions
+        <Cable :size="13" /> 链路操作
       </Button>
     </template>
-    <div class="grid gap-1" role="menu" aria-label="Link actions">
+    <div class="grid gap-1" role="menu" aria-label="链路操作">
       <Button variant="ghost" class="justify-start" @click="emit('inspect')">
         <Eye :size="13" /> Inspect
       </Button>

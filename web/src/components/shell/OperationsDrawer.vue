@@ -53,7 +53,7 @@ const value = computed({
       { value: 'tasks', label: `Tasks (${tasks.length})` },
       { value: 'console', label: 'Console' },
       { value: 'captures', label: 'Capture' },
-      { value: 'traffic-filter', label: 'Traffic Filter' },
+      { value: 'traffic-filter', label: '流量过滤' },
     ]"
     class="flex h-full flex-col"
   >
