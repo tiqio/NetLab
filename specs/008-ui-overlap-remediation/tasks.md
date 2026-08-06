@@ -159,7 +159,7 @@
 - [X] T066 [P] [US4] 修复模板页和自动化页在中文长文本及主题切换下的网格与局部滚动 `web/src/views/TemplatesView.vue` 和 `web/src/views/AutomationView.vue`
 - [X] T067 [US4] 修复图表、菜单、下拉框和拓扑语义色在主题切换后的残留颜色 `web/src/styles/theme.css`
 - [X] T068 [US4] 运行 US4 三视口、双主题、125% 和 20 次循环验收，并把结果记录到 `specs/008-ui-overlap-remediation/validation/milestones.md`
-- [ ] T069 [US4] 创建响应式与主题稳定里程碑的聚焦 Git 提交，并把提交 SHA 写入 `specs/008-ui-overlap-remediation/validation/milestones.md`
+- [X] T069 [US4] 创建响应式与主题稳定里程碑的聚焦 Git 提交，并把提交 SHA 写入 `specs/008-ui-overlap-remediation/validation/milestones.md`
 
 **Checkpoint**: US4 可独立证明所有主页面在支持矩阵中稳定、可读、可滚动和可操作。
 
