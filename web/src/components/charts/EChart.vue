@@ -229,21 +229,32 @@ function apply() {
   const themedOption = {
     ...option,
     textStyle: mergeTextStyle(option.textStyle, foreground),
-    title: mergeComponent(option.title, (entry) => ({
-      ...entry,
-      textStyle: mergeTextStyle(entry.textStyle, foreground),
-      subtextStyle: mergeTextStyle(entry.subtextStyle, muted),
-    })),
-    legend: mergeComponent(option.legend, (entry) => ({
-      ...entry,
-      textStyle: mergeTextStyle(entry.textStyle, muted),
-    })),
-    tooltip: mergeComponent(option.tooltip, (entry) => ({
-      ...entry,
-      backgroundColor: tooltip,
-      borderColor: border,
-      textStyle: mergeTextStyle(entry.textStyle, foreground),
-    })),
+    ...(option.title === undefined
+      ? {}
+      : {
+          title: mergeComponent(option.title, (entry) => ({
+            ...entry,
+            textStyle: mergeTextStyle(entry.textStyle, foreground),
+            subtextStyle: mergeTextStyle(entry.subtextStyle, muted),
+          })),
+        }),
+    legend:
+      option.legend === undefined
+        ? { show: false }
+        : mergeComponent(option.legend, (entry) => ({
+            ...entry,
+            textStyle: mergeTextStyle(entry.textStyle, muted),
+          })),
+    ...(option.tooltip === undefined
+      ? {}
+      : {
+          tooltip: mergeComponent(option.tooltip, (entry) => ({
+            ...entry,
+            backgroundColor: tooltip,
+            borderColor: border,
+            textStyle: mergeTextStyle(entry.textStyle, foreground),
+          })),
+        }),
   } as EChartsCoreOption;
   chart.value?.setOption(themedOption, {
     notMerge: props.notMerge,

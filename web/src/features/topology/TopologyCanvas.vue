@@ -624,10 +624,19 @@ const option = computed(() => ({
   tooltip: { trigger: "item", confine: true },
   legend: [
     {
-      data: ["QEMU", "Docker", "Lightweight", "Network"],
+      data: ["QEMU", "Docker", "轻量节点", "网络对象"],
       textStyle: { color: "var(--muted-foreground)", fontSize: 10 },
-      right: 12,
-      top: 10,
+      left: 12,
+      bottom: 12,
+      itemWidth: 12,
+      itemHeight: 8,
+      itemGap: 10,
+      padding: [5, 7],
+      borderWidth: 1,
+      borderRadius: 4,
+      borderColor: "var(--border)",
+      backgroundColor: "var(--chart-tooltip)",
+      selectedMode: false,
     },
   ],
   graphic: topologyGraphics.value,
@@ -665,8 +674,8 @@ const option = computed(() => ({
       categories: [
         { name: "QEMU" },
         { name: "Docker" },
-        { name: "Lightweight" },
-        { name: "Network" },
+        { name: "轻量节点" },
+        { name: "网络对象" },
       ],
       data: [
         ...props.nodes.map((node) => {

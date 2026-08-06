@@ -113,6 +113,17 @@ describe("EChart", () => {
     wrapper.unmount();
     document.documentElement.style.removeProperty("--chart-series-primary");
   });
+  it("does not create a visible legend when the caller omits one", () => {
+    const wrapper = mount(EChart, {
+      props: {
+        option: {
+          series: [{ name: "vCPU", type: "bar", data: [1] }],
+        },
+      },
+    });
+    expect(setOption.mock.calls.at(-1)?.[0].legend).toEqual({ show: false });
+    wrapper.unmount();
+  });
   it("keeps the pointer grab offset when committing a graph drag", () => {
     convertFromPixel.mockImplementation(
       (_finder: unknown, point: [number, number]) => [

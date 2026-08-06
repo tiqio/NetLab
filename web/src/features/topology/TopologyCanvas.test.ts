@@ -102,6 +102,34 @@ describe("TopologyCanvas", () => {
     });
     expect(wrapper.classes()).toContain("min-h-[320px]");
   });
+  it("keeps the topology legend away from the top toolbar and inspector toggle", () => {
+    mount(TopologyCanvas, {
+      props: {
+        nodes: [nodeFactory()],
+        interfaces: [],
+        links: [],
+        networkObjects: [],
+        preferences: defaultWorkspacePreferences("lab"),
+      },
+    });
+    const option = captured as {
+      legend: Array<Record<string, unknown>>;
+      series: Array<{ categories: Array<{ name: string }> }>;
+    };
+    expect(option.legend[0]).toMatchObject({
+      left: 12,
+      bottom: 12,
+      selectedMode: false,
+    });
+    expect(option.legend[0]).not.toHaveProperty("right");
+    expect(option.legend[0]).not.toHaveProperty("top");
+    expect(option.series[0].categories.map((item) => item.name)).toEqual([
+      "QEMU",
+      "Docker",
+      "轻量节点",
+      "网络对象",
+    ]);
+  });
   it("emits context actions for first-class object links", async () => {
     const wrapper = mount(TopologyCanvas, {
       props: {
