@@ -48,3 +48,10 @@ Pending deployment of the clean candidate to `10.72.1.7`.
 - Target baseline after cleanup: `[]`.
 - First deployment attempt was rejected safely by authoritative release validation; service was restored with correctly prefixed SHA-256 identities and matching template-readiness candidate metadata.
 - Focused QEMU Console and Docker Traffic Filter journeys remain pending because legacy page objects still locate English-only accessible names after the UI contract changed to Chinese.
+
+## Rollback exercise — 2026-08-06
+
+- Replaced the current candidate with recorded candidate `006-topology-add-drawer-convergence-7fe26728-20260806100830` and its matching template-readiness record.
+- Previous candidate reached `active` and passed `/healthz`.
+- Restored `ui-zh-theme-9009df58aea1` and its matching template-readiness record.
+- Restored candidate reached `active`, passed `/healthz`, and served `lang="zh-CN"`.

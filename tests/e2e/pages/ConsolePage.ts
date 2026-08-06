@@ -11,7 +11,9 @@ export class ConsolePage extends BasePage {
       this.page.getByRole("button", { name: `Open ${mode}` }),
     );
     await expect(
-      this.page.getByRole("navigation", { name: "Console sessions" }),
+      this.page.getByRole("navigation", {
+        name: /^(Console sessions|终端会话)$/,
+      }),
     ).toBeVisible();
   }
 
@@ -21,11 +23,14 @@ export class ConsolePage extends BasePage {
 
   async reconnect() {
     await this.activate(
-      this.page.getByRole("button", { name: "Reconnect", exact: true }),
+      this.page.getByRole("button", {
+        name: /^(Reconnect|重新连接)$/,
+        exact: true,
+      }),
     );
     await expect(
       this.page
-        .getByRole("region", { name: "Diagnostics" })
+        .getByRole("region", { name: /^(Diagnostics|诊断)$/ })
         .getByRole("status"),
     ).toContainText(/connecting|connected|reconnecting/);
   }

@@ -38,13 +38,17 @@ export class TopologyPage extends BasePage {
 
   async openResourceDrawer() {
     await this.page.getByRole("button", { name: "添加资源" }).click();
-    const drawer = this.page.getByRole("dialog", { name: "Add resource" });
+    const drawer = this.page.getByRole("dialog", {
+      name: /^(Add resource|添加资源)$/,
+    });
     await expect(drawer).toBeVisible();
     return drawer;
   }
 
   async chooseDrawerResource(name: string) {
-    const drawer = this.page.getByRole("dialog", { name: "Add resource" });
+    const drawer = this.page.getByRole("dialog", {
+      name: /^(Add resource|添加资源)$/,
+    });
     await drawer
       .getByText(name, { exact: true })
       .locator("xpath=ancestor::button[1]")
@@ -76,7 +80,9 @@ export class TopologyPage extends BasePage {
     await canvas.focus();
     await canvas.press("t");
     await expect(
-      this.page.getByRole("navigation", { name: "Console sessions" }),
+      this.page.getByRole("navigation", {
+        name: /^(Console sessions|终端会话)$/,
+      }),
     ).toBeVisible();
   }
 

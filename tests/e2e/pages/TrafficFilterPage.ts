@@ -7,7 +7,7 @@ export class TrafficFilterPage extends BasePage {
   }
 
   private diagnostics() {
-    return this.page.getByRole("region", { name: "Diagnostics" });
+    return this.page.getByRole("region", { name: /^(Diagnostics|诊断)$/ });
   }
 
   private status() {

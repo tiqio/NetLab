@@ -12,11 +12,11 @@ export class TemplatePage extends BasePage {
 
   async openPalette() {
     const search = this.page.getByRole("textbox", {
-      name: "Search device templates",
+      name: /^(Search device templates|搜索设备模板)$/,
     });
     if (!(await search.isVisible().catch(() => false))) {
       await this.page
-        .getByRole("button", { name: "Toggle device palette" })
+        .getByRole("button", { name: /^(Toggle device palette|切换设备面板)$/ })
         .click();
     }
     await expect(search).toBeVisible();
@@ -32,7 +32,7 @@ export class TemplatePage extends BasePage {
     await expect(button).toBeVisible();
     await button.click();
     return this.page.getByRole("dialog", {
-      name: new RegExp(`Add ${displayName}`, "i"),
+      name: new RegExp(`(?:Add|添加) ${displayName}`, "i"),
     });
   }
 
@@ -53,7 +53,7 @@ export class TemplatePage extends BasePage {
       })
       .click();
     return this.page.getByRole("dialog", {
-      name: new RegExp(`Add ${paletteName}`, "i"),
+      name: new RegExp(`(?:Add|添加) ${paletteName}`, "i"),
     });
   }
 
@@ -71,19 +71,22 @@ export class TemplatePage extends BasePage {
       options.displayName,
       options.runtime,
     );
-    await dialog.getByLabel("Name", { exact: true }).fill(options.nodeName);
-    await dialog.getByLabel("Device template").selectOption(options.templateId);
-    await dialog.getByLabel("Template version").selectOption(options.versionId);
+    await dialog.locator('[data-field="name"] input').fill(options.nodeName);
+    const selectors = dialog.locator("select");
+    await selectors.nth(0).selectOption(options.templateId);
+    await selectors.nth(1).selectOption(options.versionId);
     if (options.imageId) {
-      await dialog.getByLabel("Image version").selectOption(options.imageId);
+      await selectors.nth(2).selectOption(options.imageId);
     }
     if (options.interfaces) {
       await dialog
-        .getByLabel("Interfaces (count)")
+        .getByLabel(/^(Interfaces \(count\)|接口数量)$/)
         .fill(String(options.interfaces));
     }
     const before = await this.snapshot(options.laboratoryId);
-    const submit = dialog.getByRole("button", { name: "Add to topology" });
+    const submit = dialog.getByRole("button", {
+      name: /^(Add to topology|添加到拓扑)$/,
+    });
     await expect(submit).toBeEnabled();
     await submit.click();
     const node = await waitForCondition(
@@ -115,8 +118,10 @@ export class TemplatePage extends BasePage {
     name: string,
   ) {
     const dialog = await this.chooseLightweight(kind);
-    await dialog.getByLabel("Name", { exact: true }).fill(name);
-    await dialog.getByRole("button", { name: "Add to topology" }).click();
+    await dialog.getByLabel(/^(Name|名称)$/, { exact: true }).fill(name);
+    await dialog
+      .getByRole("button", { name: /^(Add to topology|添加到拓扑)$/ })
+      .click();
     const resource = await waitForCondition(
       async () => {
         const current = await this.snapshot(laboratoryId);

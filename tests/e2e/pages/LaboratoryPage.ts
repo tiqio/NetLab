@@ -36,7 +36,9 @@ export class LaboratoryPage extends BasePage {
 
   async open() {
     await this.page.goto("/");
-    await expect(this.page.getByLabel("Laboratory toolbar")).toBeVisible();
+    await expect(
+      this.page.getByLabel(/^(Laboratory toolbar|实验室工具栏)$/),
+    ).toBeVisible();
   }
 
   async list(): Promise<LaboratoryRecord[]> {
@@ -48,10 +50,14 @@ export class LaboratoryPage extends BasePage {
 
   async create(name: string): Promise<LaboratoryRecord> {
     await this.openCreateDialog();
-    const dialog = this.page.getByRole("dialog", { name: "Create laboratory" });
+    const dialog = this.page.getByRole("dialog", {
+      name: /^(Create laboratory|创建实验室)$/,
+    });
     await expect(dialog).toBeVisible();
-    await dialog.getByLabel("Name").fill(name);
-    await dialog.getByRole("button", { name: "Create laboratory" }).click();
+    await dialog.getByLabel(/^(Name|名称)$/).fill(name);
+    await dialog
+      .getByRole("button", { name: /^(Create laboratory|创建实验室)$/ })
+      .click();
     const laboratory = await waitForCondition(
       async () => (await this.list()).find((item) => item.name === name),
       (item): item is LaboratoryRecord => Boolean(item),
@@ -99,7 +105,7 @@ export class LaboratoryPage extends BasePage {
     await this.openActiveActions();
     await this.page.getByRole("menuitem", { name: "Rename" }).click();
     const dialog = this.page.getByRole("dialog", { name: "Rename laboratory" });
-    await dialog.getByLabel("Name").fill(name);
+    await dialog.getByLabel(/^(Name|名称)$/).fill(name);
     await dialog.getByRole("button", { name: "Save name" }).click();
     return waitForCondition(
       async () => (await this.list()).find((item) => item.id === current.id),
