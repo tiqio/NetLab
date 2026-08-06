@@ -62,6 +62,17 @@ const missingImages = computed(() => {
 const artifactURL = computed(() =>
   artifact.value ? api.downloadArtifact(artifact.value.id) : "",
 );
+function redactionLabel(key: string) {
+  return (
+    {
+      images_excluded: "镜像数据",
+      credentials_excluded: "凭据",
+      bootstrap_secrets_excluded: "引导密钥",
+      captures_excluded: "抓包文件",
+      terminal_output_excluded: "终端输出",
+    }[key] || key.replaceAll("_", " ")
+  );
+}
 
 function close() {
   emit("update:modelValue", false);
@@ -81,7 +92,7 @@ function parseBundle() {
     parsedBundle.value = JSON.parse(transferText.value) as ExportBundle;
   } catch {
     parsedBundle.value = undefined;
-    error.value = "Import bundle must be valid JSON.";
+    error.value = "导入数据包必须是有效的 JSON。";
   }
 }
 
@@ -99,7 +110,7 @@ async function pollTask(id: string) {
     readArtifact(value);
     emit(
       "status",
-      `${props.mode === "export" ? "Export" : "Import"}: ${value.state}`,
+      `${props.mode === "export" ? "导出" : "导入"}：${value.state}`,
     );
     if (["queued", "running", "cancelling"].includes(value.state)) {
       pollTimer = setTimeout(() => void pollTask(id), 500);
@@ -192,14 +203,14 @@ watch(
         >
           <h3 class="text-sm font-semibold">数据包元信息</h3>
           <p class="mt-1 text-xs text-muted-foreground">
-            Schema version {{ parsedBundle.schema_version || "unknown" }} ·
-            {{ referencedDigests.length }} referenced image digest(s)
+            Schema 版本 {{ parsedBundle.schema_version || "未知" }} · 引用了
+            {{ referencedDigests.length }} 个镜像摘要
           </p>
           <dl class="mt-2 grid grid-cols-2 gap-1 text-xs">
             <template v-for="(excluded, key) in redaction" :key="key">
-              <dt>{{ String(key).replaceAll("_", " ") }}</dt>
+              <dt>{{ redactionLabel(String(key)) }}</dt>
               <dd :class="excluded ? 'text-green-400' : 'text-amber-300'">
-                {{ excluded ? "excluded" : "not declared" }}
+                {{ excluded ? "已排除" : "未声明" }}
               </dd>
             </template>
           </dl>
@@ -210,11 +221,10 @@ watch(
           class="rounded-md border border-amber-400/50 bg-amber-400/10 p-3 text-xs"
         >
           <h3 class="font-semibold text-amber-300">
-            <AlertTriangle :size="14" class="mr-1 inline" />Missing images
+            <AlertTriangle :size="14" class="mr-1 inline" />缺少镜像
           </h3>
           <p class="mt-1 text-muted-foreground">
-            Import is blocked until these server-authoritative image digests are
-            available:
+            在服务器具备以下权威镜像摘要前，无法执行导入：
           </p>
           <code
             v-for="digest in missingImages"
@@ -228,7 +238,7 @@ watch(
 
       <section v-if="task" class="rounded-md border border-border p-3 text-xs">
         <div class="flex items-center justify-between gap-2">
-          <span class="font-semibold">Durable task {{ task.id }}</span>
+          <span class="font-semibold">持久任务 {{ task.id }}</span>
           <StatusBadge :state="task.state" />
         </div>
         <progress
@@ -248,11 +258,11 @@ watch(
         class="rounded-md border border-green-500/40 bg-green-500/10 p-3 text-xs"
       >
         <h3 class="font-semibold text-green-300">
-          <CheckCircle2 :size="14" class="mr-1 inline" />Export artifact ready
+          <CheckCircle2 :size="14" class="mr-1 inline" />导出产物已就绪
         </h3>
         <p class="mt-1 text-muted-foreground">
           {{ artifact.kind }} · {{ artifact.media_type }} ·
-          {{ artifact.size_bytes }} bytes
+          {{ artifact.size_bytes }} 字节
         </p>
         <p class="mt-1 break-all font-mono text-[10px]">
           {{ artifact.sha256 }}
@@ -262,7 +272,7 @@ watch(
           download
           class="mt-2 inline-flex h-7 items-center gap-2 rounded-md bg-primary px-2.5 text-xs font-medium text-primary-foreground"
         >
-          <FileArchive :size="14" />Download artifact
+          <FileArchive :size="14" />下载产物
         </a>
       </section>
 
@@ -271,7 +281,7 @@ watch(
       </p>
     </div>
     <template #footer>
-      <Button variant="secondary" @click="close">Close</Button>
+      <Button variant="secondary" @click="close">关闭</Button>
       <Button
         v-if="mode === 'export'"
         :disabled="
@@ -280,7 +290,7 @@ watch(
         "
         @click="startExport"
       >
-        <Download :size="14" />Create export
+        <Download :size="14" />创建导出
       </Button>
       <Button
         v-else
@@ -291,7 +301,7 @@ watch(
         "
         @click="startImport"
       >
-        <Upload :size="14" />Import
+        <Upload :size="14" />导入
       </Button>
     </template>
   </Dialog>

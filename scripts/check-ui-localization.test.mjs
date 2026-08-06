@@ -19,6 +19,16 @@ assert.deepEqual(
 );
 assert.deepEqual(
   scanLocalizationSource(
+    `<template><span>{{ active ? "Stop" : "Start" }}</span></template>`,
+    "Actions.vue",
+  ),
+  [
+    "Actions.vue: interpolation: Stop",
+    "Actions.vue: interpolation: Start",
+  ],
+);
+assert.deepEqual(
+  scanLocalizationSource(
     '<template><span>Wireshark · TCP 443 · IPv4</span></template>',
     "fixture.vue",
   ),

@@ -93,6 +93,15 @@ const percent = (task: OperationTask) =>
       ? (task.progress_current / task.progress_total) * 100
       : 0,
   );
+const taskStateLabel = (value: string) =>
+  ({
+    queued: "排队中",
+    running: "运行中",
+    cancelling: "正在取消",
+    succeeded: "已成功",
+    failed: "失败",
+    cancelled: "已取消",
+  })[value] || value;
 </script>
 
 <template>
@@ -121,8 +130,9 @@ const percent = (task: OperationTask) =>
           ]"
           :key="value"
           :value="value"
-          :label="value"
-        />
+        >
+          {{ taskStateLabel(value) }}
+        </option>
       </Select>
       <Select v-model="kind" class="max-w-44" aria-label="操作类型">
         <option value="all">全部操作</option>

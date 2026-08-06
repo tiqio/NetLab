@@ -109,7 +109,7 @@ async function applyConfiguration() {
       <div>
         <h3 class="text-xs font-semibold">交换机接口与配置</h3>
         <p class="text-[11px] text-muted-foreground">
-          {{ isSwitch ? "Ruijie 二层交换机" : "Ruijie 三层交换机" }} ·
+          {{ isSwitch ? "锐捷二层交换机" : "锐捷三层交换机" }} ·
           配置通过同一个串口会话下发
         </p>
       </div>

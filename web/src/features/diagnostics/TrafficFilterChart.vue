@@ -312,8 +312,8 @@ const option = computed(() => {
             y: scopeNode?.y ?? props.coordinates?.[id]?.y,
             symbolSize: 52,
             tooltip: observed
-              ? `${scopeNode?.label || props.resourceLabels?.[id] || id}<br/>Matching traffic observed`
-              : `${scopeNode?.label || props.resourceLabels?.[id] || id}<br/>Listening scope; no matching traffic yet`,
+              ? `${scopeNode?.label || props.resourceLabels?.[id] || id}<br/>已观测到匹配流量`
+              : `${scopeNode?.label || props.resourceLabels?.[id] || id}<br/>正在监听，暂未观测到匹配流量`,
             itemStyle: observed
               ? {
                   color: "#164e63",
@@ -331,8 +331,8 @@ const option = computed(() => {
           ...previewLinks.map((link) => ({
             source: link.source,
             target: link.target,
-            label: "listening",
-            tooltip: `${link.label}<br/>Listening scope; no matching traffic yet`,
+            label: "监听中",
+            tooltip: `${link.label}<br/>正在监听，暂未观测到匹配流量`,
             lineStyle: {
               width: 2,
               color: "#64748b",
@@ -452,10 +452,10 @@ const option = computed(() => {
         class="pointer-events-none absolute inset-x-0 top-3 flex justify-center px-4 text-center text-xs text-muted-foreground"
       >
         <span v-if="listening">
-          Listening for {{ expression || "matching traffic" }} on
-          {{ displayedSourceCount }} selected sources. Gray nodes and dashed
-          lines show where packets are being observed; they turn teal when a
-          match arrives.
+          正在 {{ displayedSourceCount }} 个已选来源上监听
+          {{
+            expression || "匹配流量"
+          }}。灰色节点和虚线表示监听范围；收到匹配数据包后会变为青色。
         </span>
         <span v-else-if="scopeNodes?.length || scopeLinks?.length">
           此会话尚未观测到匹配的数据包，灰色图形表示观测范围。

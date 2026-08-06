@@ -50,7 +50,7 @@ describe("TrafficFilterChart", () => {
         lineStyle: expect.objectContaining({ type: "dashed" }),
       }),
     ]);
-    expect(wrapper.text()).toContain("Listening for icmp");
+    expect(wrapper.text()).toContain("监听 icmp");
     expect(wrapper.text()).toContain("灰色虚线表示监听范围");
   });
 

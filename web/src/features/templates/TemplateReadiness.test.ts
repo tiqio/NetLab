@@ -43,6 +43,6 @@ describe("template readiness", () => {
     const wrapper = mount(TemplateCatalog);
     await flushPromises();
     expect(wrapper.text()).toContain("blocked");
-    expect(wrapper.text()).toContain("Mechanics or operator asset only");
+    expect(wrapper.text()).toContain("仅用于机制验证或运维资源");
   });
 });

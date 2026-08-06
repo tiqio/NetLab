@@ -243,8 +243,8 @@ onBeforeUnmount(closeRenderer);
             v-else
             :size="14"
           />
-          Open
-          {{ mode === "ssh" ? "SSH" : mode === "telnet" ? "Serial" : "VNC" }}
+          打开
+          {{ mode === "ssh" ? "SSH" : mode === "telnet" ? "串口" : "VNC" }}
         </Button>
       </template>
       <Button
@@ -254,7 +254,7 @@ onBeforeUnmount(closeRenderer);
         :title="
           active
             ? '重新连接当前终端会话'
-            : 'Open a console session before reconnecting'
+            : '请先打开一个终端会话，再执行重新连接'
         "
         @click="active && open(active)"
       >
@@ -287,8 +287,8 @@ onBeforeUnmount(closeRenderer);
         <Button
           size="icon"
           variant="ghost"
-          :aria-label="`Close ${session.label}`"
-          :title="`Close ${session.label}`"
+          :aria-label="`关闭 ${session.label}`"
+          :title="`关闭 ${session.label}`"
           @click="closeSession(session.id)"
         >
           <X :size="12" />
@@ -318,9 +318,10 @@ onBeforeUnmount(closeRenderer);
         class="grid h-full place-items-center text-xs text-muted-foreground"
       >
         <span
-          ><Maximize2 :size="15" class="mr-1 inline" />Open a supported console.
-          Sessions are browser-local and restore with automatic reconnect after
-          refresh.</span
+          ><Maximize2
+            :size="15"
+            class="mr-1 inline"
+          />请打开受支持的终端。会话保存在当前浏览器中，刷新后会自动恢复并重新连接。</span
         >
       </div>
     </div>

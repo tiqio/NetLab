@@ -1571,7 +1571,7 @@ onBeforeUnmount(() => {
           data-testid="reconnect-task-feedback"
         >
           <div class="flex items-center justify-between gap-2">
-            <strong>Reconnect {{ activeReconnectTask.state }}</strong>
+            <strong>重新连接：{{ activeReconnectTask.state }}</strong>
             <span class="text-muted-foreground">
               {{ activeReconnectTask.progress_current }}/{{
                 activeReconnectTask.progress_total

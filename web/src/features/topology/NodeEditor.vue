@@ -7,8 +7,8 @@ defineProps({
 </script>
 <template>
   <aside>
-    <h3>{{ nodeName || "Node" }}</h3>
-    <p>{{ interfaceCount || 0 }} interfaces</p>
+    <h3>{{ nodeName || "节点" }}</h3>
+    <p>{{ interfaceCount || 0 }} 个接口</p>
     <TemplatePicker />
   </aside>
 </template>

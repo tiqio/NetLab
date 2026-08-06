@@ -47,12 +47,12 @@ describe("LaboratoryTransferDialog", () => {
     });
     const createExport = wrapper
       .findAll("button")
-      .find((button) => button.text().includes("Create export"));
+      .find((button) => button.text().includes("创建导出"));
     expect(createExport).toBeDefined();
     await createExport!.trigger("click");
     await flushPromises();
-    expect(wrapper.text()).toContain("Export artifact ready");
-    expect(wrapper.text()).toContain("42 bytes");
+    expect(wrapper.text()).toContain("导出产物已就绪");
+    expect(wrapper.text()).toContain("42 字节");
     expect(wrapper.get("a").attributes("href")).toBe(
       "/api/v1/artifacts/artifact-1",
     );
@@ -76,11 +76,11 @@ describe("LaboratoryTransferDialog", () => {
         },
       }),
     );
-    expect(wrapper.text()).toContain("Missing images");
-    expect(wrapper.text()).toContain("credentials excluded");
+    expect(wrapper.text()).toContain("缺少镜像");
+    expect(wrapper.text()).toContain("凭据已排除");
     const importButton = wrapper
       .findAll("button")
-      .find((button) => button.text().trim() === "Import");
+      .find((button) => button.text().trim() === "导入");
     expect(importButton?.attributes("disabled")).toBeDefined();
   });
 });

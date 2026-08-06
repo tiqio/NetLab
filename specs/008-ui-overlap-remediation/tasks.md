@@ -116,23 +116,23 @@
 
 ### Tests for User Story 3
 
-- [ ] T045 [P] [US3] 为终端空状态、Serial/Reconnect/Close 和无障碍名称增加中文断言 `web/src/features/diagnostics/GlobalConsoleWorkspace.test.ts`
-- [ ] T046 [P] [US3] 为 Wireshark 无响应、来源不匹配、程序未找到和启动失败增加中文错误分层测试 `web/src/features/diagnostics/CapturePanel.test.ts`
-- [ ] T047 [P] [US3] 为任务、模板、镜像导入、接口选择和链路菜单的旧英文文案增加失败测试 `web/src/locales/locales.test.ts`
-- [ ] T048 [P] [US3] 为页面可见文本、属性、动态消息和无障碍名称增加扫描回归测试 `scripts/check-ui-localization.test.mjs`
-- [ ] T049 [P] [US3] 增加三路由及终端/抓包/流量过滤中文化浏览器旅程 `tests/e2e/frontend_localization.spec.ts`
+- [X] T045 [P] [US3] 为终端空状态、Serial/Reconnect/Close 和无障碍名称增加中文断言 `web/src/features/diagnostics/GlobalConsoleWorkspace.test.ts`
+- [X] T046 [P] [US3] 为 Wireshark 无响应、来源不匹配、程序未找到和启动失败增加中文错误分层测试 `web/src/features/diagnostics/CapturePanel.test.ts`
+- [X] T047 [P] [US3] 为任务、模板、镜像导入、接口选择和链路菜单的旧英文文案增加失败测试 `web/src/locales/locales.test.ts`
+- [X] T048 [P] [US3] 为页面可见文本、属性、动态消息和无障碍名称增加扫描回归测试 `scripts/check-ui-localization.test.mjs`
+- [X] T049 [P] [US3] 增加三路由及终端/抓包/流量过滤中文化浏览器旅程 `tests/e2e/frontend_localization.spec.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T050 [US3] 在 `web/src/locales/terminology.ts` 和 `web/src/locales/zh-CN.ts` 固化终端、抓包、流量过滤、任务、检查器、诊断及通用操作术语
-- [ ] T051 [P] [US3] 中文化底部标签、终端和诊断的标签、空状态、按钮及辅助文本 `web/src/components/shell/OperationsDrawer.vue`、`web/src/features/diagnostics/ConsoleWorkspace.vue`、`web/src/features/diagnostics/GlobalConsoleWorkspace.vue`、`web/src/features/diagnostics/DiagnosticsPanel.vue`
-- [ ] T052 [P] [US3] 中文化抓包与流量过滤的状态、错误、图表及操作文案 `web/src/features/diagnostics/CapturePanel.vue`、`web/src/features/diagnostics/GlobalCaptureWorkspace.vue`、`web/src/features/diagnostics/TrafficFilterPanel.vue`、`web/src/features/diagnostics/TrafficFilterChart.vue`
-- [ ] T053 [P] [US3] 中文化模板、目录、镜像导入和实验室传输的通用产品文案 `web/src/features/templates/TemplatePicker.vue`、`web/src/features/templates/TemplateCatalog.vue`、`web/src/features/templates/ImageImportDialog.vue`、`web/src/features/laboratories/LaboratoryTransferDialog.vue`
-- [ ] T054 [P] [US3] 中文化接口编辑、接口选择、添加抽屉、链路菜单和拓扑动态提示 `web/src/features/topology/InterfaceEditor.vue`、`web/src/features/topology/PortChooser.vue`、`web/src/features/topology/CreateTopologyResourceDrawer.vue`、`web/src/features/topology/LinkContextMenu.vue`、`web/src/features/topology/TopologyCanvas.vue`
-- [ ] T055 [P] [US3] 中文化 TaskCenter 分页、状态和空结果文案 `web/src/features/tasks/TaskCenter.vue`
-- [ ] T056 [US3] 在 `web/src/components/common/StructuredProblem.vue` 和 `web/src/locales/statusMessages.ts` 实现中文摘要、处理建议和可展开原始详情
-- [ ] T057 [US3] 更新终端、抓包、任务、拓扑和流量过滤页面对象以使用中文可访问名称 `tests/e2e/pages/ConsolePage.ts`、`tests/e2e/pages/CapturePage.ts`、`tests/e2e/pages/TaskCenterPage.ts`、`tests/e2e/pages/TopologyPage.ts`、`tests/e2e/pages/TrafficFilterPage.ts`
-- [ ] T058 [US3] 运行中文扫描、US3 组件测试和浏览器验收，并把结果记录到 `specs/008-ui-overlap-remediation/validation/milestones.md`
+- [X] T050 [US3] 在 `web/src/locales/terminology.ts` 和 `web/src/locales/zh-CN.ts` 固化终端、抓包、流量过滤、任务、检查器、诊断及通用操作术语
+- [X] T051 [P] [US3] 中文化底部标签、终端和诊断的标签、空状态、按钮及辅助文本 `web/src/components/shell/OperationsDrawer.vue`、`web/src/features/diagnostics/ConsoleWorkspace.vue`、`web/src/features/diagnostics/GlobalConsoleWorkspace.vue`、`web/src/features/diagnostics/DiagnosticsPanel.vue`
+- [X] T052 [P] [US3] 中文化抓包与流量过滤的状态、错误、图表及操作文案 `web/src/features/diagnostics/CapturePanel.vue`、`web/src/features/diagnostics/GlobalCaptureWorkspace.vue`、`web/src/features/diagnostics/TrafficFilterPanel.vue`、`web/src/features/diagnostics/TrafficFilterChart.vue`
+- [X] T053 [P] [US3] 中文化模板、目录、镜像导入和实验室传输的通用产品文案 `web/src/features/templates/TemplatePicker.vue`、`web/src/features/templates/TemplateCatalog.vue`、`web/src/features/templates/ImageImportDialog.vue`、`web/src/features/laboratories/LaboratoryTransferDialog.vue`
+- [X] T054 [P] [US3] 中文化接口编辑、接口选择、添加抽屉、链路菜单和拓扑动态提示 `web/src/features/topology/InterfaceEditor.vue`、`web/src/features/topology/PortChooser.vue`、`web/src/features/topology/CreateTopologyResourceDrawer.vue`、`web/src/features/topology/LinkContextMenu.vue`、`web/src/features/topology/TopologyCanvas.vue`
+- [X] T055 [P] [US3] 中文化 TaskCenter 分页、状态和空结果文案 `web/src/features/tasks/TaskCenter.vue`
+- [X] T056 [US3] 在 `web/src/components/common/StructuredProblem.vue` 和 `web/src/locales/statusMessages.ts` 实现中文摘要、处理建议和可展开原始详情
+- [X] T057 [US3] 更新终端、抓包、任务、拓扑和流量过滤页面对象以使用中文可访问名称 `tests/e2e/pages/ConsolePage.ts`、`tests/e2e/pages/CapturePage.ts`、`tests/e2e/pages/TaskCenterPage.ts`、`tests/e2e/pages/TopologyPage.ts`、`tests/e2e/pages/TrafficFilterPage.ts`
+- [X] T058 [US3] 运行中文扫描、US3 组件测试和浏览器验收，并把结果记录到 `specs/008-ui-overlap-remediation/validation/milestones.md`
 - [ ] T059 [US3] 创建全页面中文化里程碑的聚焦 Git 提交，并把提交 SHA 写入 `specs/008-ui-overlap-remediation/validation/milestones.md`
 
 **Checkpoint**: US3 可独立证明产品文案全中文、技术名词准确保留且错误可操作。

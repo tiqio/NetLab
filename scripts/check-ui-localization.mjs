@@ -46,6 +46,7 @@ export function localizationCandidate(value) {
     .replace(/\$\{[^}]+\}/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+  if (/\$\{/.test(value) && /[\u3400-\u9fff]/.test(value)) return undefined;
   if (!/[A-Za-z]{3,}/.test(normalized)) return undefined;
   if (falsePositive.some((pattern) => pattern.test(normalized)))
     return undefined;
@@ -65,6 +66,15 @@ function stringLiterals(expression) {
   return values;
 }
 
+function isControlLiteral(expression, literal) {
+  return (
+    /(?:===|!==|\.includes\()/.test(expression) &&
+    /^(?:requested|queued|starting|streaming|running|stopping|stopped|failed|cancelled|cancelling|succeeded|active|inactive|connected|pending|auto_restore|remain_stopped|qemu|docker|pc|link|node|network_object(?:_link)?|interface)$/i.test(
+      literal,
+    )
+  );
+}
+
 export function scanLocalizationSource(source, path = "component.vue") {
   const findings = [];
   const template = source.match(/<template>([\s\S]*?)<\/template>/)?.[1] || "";
@@ -82,15 +92,16 @@ export function scanLocalizationSource(source, path = "component.vue") {
     /\s:(?:aria-label|placeholder|title|label|description|hint)="([^"]+)"/g,
   )) {
     for (const literal of stringLiterals(match[1])) {
-      if (
-        /(?:===|!==|\.includes\()/.test(match[1]) &&
-        /^(?:requested|starting|streaming|running|stopping|stopped)$/i.test(
-          literal,
-        )
-      )
-        continue;
+      if (isControlLiteral(match[1], literal)) continue;
       const value = localizationCandidate(literal);
       if (value) findings.push(`${path}: dynamic attribute: ${value}`);
+    }
+  }
+  for (const match of template.matchAll(/\{\{([\s\S]*?)\}\}/g)) {
+    for (const literal of stringLiterals(match[1])) {
+      if (isControlLiteral(match[1], literal)) continue;
+      const value = localizationCandidate(literal);
+      if (value) findings.push(`${path}: interpolation: ${value}`);
     }
   }
   for (const match of source.matchAll(

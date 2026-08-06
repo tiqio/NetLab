@@ -133,11 +133,11 @@ defineExpose({ refresh: load });
                   >
                     {{
                       version.readiness.genuine_workload
-                        ? "Genuine workload"
-                        : "Mechanics or operator asset only"
+                        ? "真实工作负载"
+                        : "仅用于机制验证或运维资源"
                     }}
                     <span v-if="version.readiness.exception_id">
-                      · exception {{ version.readiness.exception_id }}</span
+                      · 例外编号 {{ version.readiness.exception_id }}</span
                     >
                   </p>
                 </td>

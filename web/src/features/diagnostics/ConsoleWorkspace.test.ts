@@ -32,7 +32,7 @@ describe("ConsoleWorkspace", () => {
     ]);
     const wrapper = mount(ConsoleWorkspace, { props: { nodeId: "node-1" } });
     await flushPromises();
-    expect(wrapper.text()).toContain("Open Serial");
+    expect(wrapper.text()).toContain("打开 串口");
     expect(
       wrapper
         .findAll("button")
