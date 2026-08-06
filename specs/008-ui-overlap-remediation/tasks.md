@@ -199,10 +199,10 @@
 - [X] T081 [P] 将审计覆盖率、已修复发现和允许覆盖理由回填到 `specs/008-ui-overlap-remediation/validation/audit-inventory.md`
 - [X] T082 按 `specs/008-ui-overlap-remediation/quickstart.md` 运行 lint、格式、全部前端单测、构建、浏览器矩阵、Go 单元/合同/安全和产物合规门禁
 - [X] T083 在干净提交上构建候选并将 commit SHA、candidate ID、二进制摘要、合同摘要、构建时间和无迁移状态记录到 `specs/008-ui-overlap-remediation/validation/candidate.md`
-- [ ] T084 使用已构建候选部署到 `10.72.1.7`，禁止目标机源码修改，并将部署与回滚信息记录到 `specs/008-ui-overlap-remediation/validation/target-acceptance.md`
-- [ ] T085 在 `10.72.1.7` 创建专用高密度 Lab，执行双主题、三视口、125%、QEMU/Docker/PC/Bridge/NAT/L2/L3、平行链路、失败状态、终端、抓包和 Traffic Filter 验收并输出 `specs/008-ui-overlap-remediation/validation/acceptance-evidence.json`
-- [ ] T086 删除验收 Lab 及其进程、容器、netns、接口、链路、抓包和过滤资源，确认用户 Lab 基线不变并更新 `specs/008-ui-overlap-remediation/validation/target-acceptance.md`
-- [ ] T087 使用 `specs/008-ui-overlap-remediation/contracts/acceptance-evidence.schema.json` 校验最终证据并运行仓库敏感内容扫描
+- [X] T084 使用已构建候选部署到 `10.72.1.7`，禁止目标机源码修改，并将部署与回滚信息记录到 `specs/008-ui-overlap-remediation/validation/target-acceptance.md`
+- [X] T085 在 `10.72.1.7` 创建专用高密度 Lab，执行双主题、三视口、125%、QEMU/Docker/PC/Bridge/NAT/L2/L3、平行链路、失败状态、终端、抓包和 Traffic Filter 验收并输出 `specs/008-ui-overlap-remediation/validation/acceptance-evidence.json`
+- [X] T086 删除验收 Lab 及其进程、容器、netns、接口、链路、抓包和过滤资源，确认用户 Lab 基线不变并更新 `specs/008-ui-overlap-remediation/validation/target-acceptance.md`
+- [X] T087 使用 `specs/008-ui-overlap-remediation/contracts/acceptance-evidence.schema.json` 校验最终证据并运行仓库敏感内容扫描
 - [ ] T088 创建最终验收与文档的聚焦 Git 提交，并将最终提交 SHA 与产物摘要记录到 `specs/008-ui-overlap-remediation/validation/milestones.md`
 
 ---

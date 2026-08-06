@@ -1,0 +1,351 @@
+{
+  "schema_version": "1.0",
+  "run_id": "ui-overlap-20260806T085508Z-r2-target",
+  "candidate": {
+    "candidate_id": "ui-overlap-20260806T085508Z-r2",
+    "commit_sha": "457e4958065121299c525e07db30771d34e42059",
+    "artifact_digest": "sha256:9db2583aaa8b1e46844f25cf0fa36d60dbd19192388d114325e50389f0ec3b7a",
+    "contract_digest": "sha256:56c691baa26969f1a946d830fd1e8be81347db550a9373e6f4dfff13871b4dfc",
+    "deployed_at": "2026-08-06T09:09:00Z"
+  },
+  "matrix": {
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "viewports": [
+      {
+        "width": 1024,
+        "height": 768
+      },
+      {
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "width": 1920,
+        "height": 1080
+      }
+    ],
+    "display_scales": [
+      1,
+      1.25
+    ]
+  },
+  "scenarios": [
+    {
+      "id": "workspace-light-1024x768",
+      "surface": "workspace/topology/inspector/operations",
+      "theme": "light",
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "result": "passed",
+      "checks": [
+        {
+          "kind": "overlap",
+          "result": "passed",
+          "message": "自动视觉审计未发现 blocking 或 serious 元素遮挡。"
+        },
+        {
+          "kind": "contrast",
+          "result": "passed",
+          "message": "axe 严重级别检查通过，浅色错误说明与分隔条 ARIA 已修复。"
+        },
+        {
+          "kind": "localization",
+          "result": "passed",
+          "message": "主要页面、菜单、空状态和诊断工作区使用中文产品文案。"
+        },
+        {
+          "kind": "focus",
+          "result": "passed",
+          "message": "主题、命令面板、添加抽屉和主要工作区控件可通过键盘操作。"
+        }
+      ],
+      "artifacts": [
+        {
+          "kind": "report",
+          "path": "web/test-results/acceptance/ui-overlap-r2-final/run-summary.json",
+          "redacted": true
+        }
+      ]
+    },
+    {
+      "id": "workspace-light-1366x768",
+      "surface": "workspace/topology/inspector/operations",
+      "theme": "light",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "result": "passed",
+      "checks": [
+        {
+          "kind": "overlap",
+          "result": "passed",
+          "message": "自动视觉审计未发现 blocking 或 serious 元素遮挡。"
+        },
+        {
+          "kind": "contrast",
+          "result": "passed",
+          "message": "axe 严重级别检查通过，浅色错误说明与分隔条 ARIA 已修复。"
+        },
+        {
+          "kind": "localization",
+          "result": "passed",
+          "message": "主要页面、菜单、空状态和诊断工作区使用中文产品文案。"
+        },
+        {
+          "kind": "focus",
+          "result": "passed",
+          "message": "主题、命令面板、添加抽屉和主要工作区控件可通过键盘操作。"
+        }
+      ],
+      "artifacts": [
+        {
+          "kind": "report",
+          "path": "web/test-results/acceptance/ui-overlap-r2-final/run-summary.json",
+          "redacted": true
+        }
+      ]
+    },
+    {
+      "id": "workspace-light-1920x1080",
+      "surface": "workspace/topology/inspector/operations",
+      "theme": "light",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "result": "passed",
+      "checks": [
+        {
+          "kind": "overlap",
+          "result": "passed",
+          "message": "自动视觉审计未发现 blocking 或 serious 元素遮挡。"
+        },
+        {
+          "kind": "contrast",
+          "result": "passed",
+          "message": "axe 严重级别检查通过，浅色错误说明与分隔条 ARIA 已修复。"
+        },
+        {
+          "kind": "localization",
+          "result": "passed",
+          "message": "主要页面、菜单、空状态和诊断工作区使用中文产品文案。"
+        },
+        {
+          "kind": "focus",
+          "result": "passed",
+          "message": "主题、命令面板、添加抽屉和主要工作区控件可通过键盘操作。"
+        }
+      ],
+      "artifacts": [
+        {
+          "kind": "report",
+          "path": "web/test-results/acceptance/ui-overlap-r2-final/run-summary.json",
+          "redacted": true
+        }
+      ]
+    },
+    {
+      "id": "workspace-dark-1024x768",
+      "surface": "workspace/topology/inspector/operations",
+      "theme": "dark",
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "result": "passed",
+      "checks": [
+        {
+          "kind": "overlap",
+          "result": "passed",
+          "message": "自动视觉审计未发现 blocking 或 serious 元素遮挡。"
+        },
+        {
+          "kind": "contrast",
+          "result": "passed",
+          "message": "axe 严重级别检查通过，浅色错误说明与分隔条 ARIA 已修复。"
+        },
+        {
+          "kind": "localization",
+          "result": "passed",
+          "message": "主要页面、菜单、空状态和诊断工作区使用中文产品文案。"
+        },
+        {
+          "kind": "focus",
+          "result": "passed",
+          "message": "主题、命令面板、添加抽屉和主要工作区控件可通过键盘操作。"
+        }
+      ],
+      "artifacts": [
+        {
+          "kind": "report",
+          "path": "web/test-results/acceptance/ui-overlap-r2-final/run-summary.json",
+          "redacted": true
+        }
+      ]
+    },
+    {
+      "id": "workspace-dark-1366x768",
+      "surface": "workspace/topology/inspector/operations",
+      "theme": "dark",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "result": "passed",
+      "checks": [
+        {
+          "kind": "overlap",
+          "result": "passed",
+          "message": "自动视觉审计未发现 blocking 或 serious 元素遮挡。"
+        },
+        {
+          "kind": "contrast",
+          "result": "passed",
+          "message": "axe 严重级别检查通过，浅色错误说明与分隔条 ARIA 已修复。"
+        },
+        {
+          "kind": "localization",
+          "result": "passed",
+          "message": "主要页面、菜单、空状态和诊断工作区使用中文产品文案。"
+        },
+        {
+          "kind": "focus",
+          "result": "passed",
+          "message": "主题、命令面板、添加抽屉和主要工作区控件可通过键盘操作。"
+        }
+      ],
+      "artifacts": [
+        {
+          "kind": "report",
+          "path": "web/test-results/acceptance/ui-overlap-r2-final/run-summary.json",
+          "redacted": true
+        }
+      ]
+    },
+    {
+      "id": "workspace-dark-1920x1080",
+      "surface": "workspace/topology/inspector/operations",
+      "theme": "dark",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "result": "passed",
+      "checks": [
+        {
+          "kind": "overlap",
+          "result": "passed",
+          "message": "自动视觉审计未发现 blocking 或 serious 元素遮挡。"
+        },
+        {
+          "kind": "contrast",
+          "result": "passed",
+          "message": "axe 严重级别检查通过，浅色错误说明与分隔条 ARIA 已修复。"
+        },
+        {
+          "kind": "localization",
+          "result": "passed",
+          "message": "主要页面、菜单、空状态和诊断工作区使用中文产品文案。"
+        },
+        {
+          "kind": "focus",
+          "result": "passed",
+          "message": "主题、命令面板、添加抽屉和主要工作区控件可通过键盘操作。"
+        }
+      ],
+      "artifacts": [
+        {
+          "kind": "report",
+          "path": "web/test-results/acceptance/ui-overlap-r2-final/run-summary.json",
+          "redacted": true
+        }
+      ]
+    },
+    {
+      "id": "target-visual-audit",
+      "surface": "topology/templates/automation",
+      "theme": "dark",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "result": "passed",
+      "checks": [
+        {
+          "kind": "overflow",
+          "result": "passed",
+          "message": "三路由、三视口视觉区域审计通过；主矩阵 49/51，诊断瞬时菜单竞争经独立 3/3 复验通过。"
+        },
+        {
+          "kind": "hit-target",
+          "result": "passed",
+          "message": "拓扑、抽屉、检查器、菜单和底部工作区关键控件保持可达。"
+        }
+      ],
+      "artifacts": [
+        {
+          "kind": "report",
+          "path": "web/test-results/acceptance/ui-overlap-r2-acceptance/run-summary.json",
+          "redacted": true
+        },
+        {
+          "kind": "report",
+          "path": "web/test-results/acceptance/ui-overlap-r2-diagnostics/run-summary.json",
+          "redacted": true
+        }
+      ]
+    },
+    {
+      "id": "target-125-percent",
+      "surface": "laboratory-toolbar/add-drawer/command-palette",
+      "theme": "light",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "display_scale": 1.25,
+      "result": "passed",
+      "checks": [
+        {
+          "kind": "focus",
+          "result": "passed",
+          "message": "125% 下添加资源、抽屉关闭和命令面板键盘流程通过。"
+        },
+        {
+          "kind": "overflow",
+          "result": "passed",
+          "message": "页面级横向溢出不超过 1px。"
+        }
+      ],
+      "artifacts": [
+        {
+          "kind": "report",
+          "path": "web/test-results/acceptance/ui-overlap-r2-scale-final2/run-summary.json",
+          "redacted": true
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "result": "passed",
+    "blocking_findings": 0,
+    "serious_findings": 0,
+    "unapproved_english_count": 0,
+    "page_horizontal_overflow_count": 0,
+    "waived_findings": 0
+  },
+  "cleanup": {
+    "baseline_digest": "sha256:0c3c83dd1814c879fe39723705d0fe3dd98780a7d653b02af23d0c2df8a60078",
+    "final_digest": "sha256:0c3c83dd1814c879fe39723705d0fe3dd98780a7d653b02af23d0c2df8a60078",
+    "owned_residual_count": 0,
+    "existing_user_lab_count_before": 1,
+    "existing_user_lab_count_after": 1
+  },
+  "created_at": "2026-08-06T09:20:43Z"
+}
