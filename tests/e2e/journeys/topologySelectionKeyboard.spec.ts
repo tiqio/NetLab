@@ -34,7 +34,7 @@ test("pointer box selection and keyboard traversal remain equivalent", async ({
       cleanup_method: "laboratory-cascade",
     });
   }
-  const canvas = page.getByLabel(/Topology canvas keyboard area/);
+  const canvas = page.getByLabel(/拓扑画布键盘操作区/);
   const box = await canvas.boundingBox();
   if (!box) throw new Error("topology surface has no bounding box");
   await page.keyboard.down("Shift");
@@ -65,7 +65,7 @@ test("pointer box selection and keyboard traversal remain equivalent", async ({
   await expect(canvas.getByRole("status")).toContainText(
     "Selected all 3 topology resources",
   );
-  const group = page.getByRole("button", { name: "Group selection" });
+  const group = page.getByRole("button", { name: "将选中项分组" });
   await group.click();
   await expect(
     page.getByRole("status").filter({ hasText: /visual group/ }),

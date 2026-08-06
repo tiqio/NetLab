@@ -64,14 +64,14 @@ async function activateLaboratoryOption(
 
 async function closeDialog(page: Page) {
   const dialog = page.locator('[role="dialog"]:visible');
-  const close = dialog.getByRole("button", { name: "Close dialog" });
+  const close = dialog.getByRole("button", { name: "关闭对话框" });
   await expect(close).toBeVisible();
   await close.click();
   const discard = page.getByRole("alertdialog", {
     name: "Discard unsaved changes",
   });
   if (await discard.isVisible().catch(() => false)) {
-    await discard.getByRole("button", { name: "Discard" }).click();
+    await discard.getByRole("button", { name: "放弃" }).click();
   }
   await expect(dialog).toBeHidden();
 }
@@ -133,10 +133,10 @@ test("laboratory navigation and shell controls support pointer and keyboard", as
     );
 
     const name = `matrix-${activation}-${crypto.randomUUID().slice(0, 8)}`;
-    await createDialog.getByLabel("Name").fill(name);
+    await createDialog.getByLabel("名称").fill(name);
     duration = await activate(
       page,
-      createDialog.getByRole("button", { name: "Create laboratory" }),
+      createDialog.getByRole("button", { name: "创建实验室" }),
       activation,
     );
     const laboratory = await waitForCondition(
@@ -215,17 +215,17 @@ test("laboratory navigation and shell controls support pointer and keyboard", as
     duration = await openActions();
     duration += await activate(
       page,
-      page.getByRole("menuitem", { name: "Rename" }),
+      page.getByRole("menuitem", { name: "重命名" }),
       activation,
     );
     const renameDialog = page.getByRole("dialog", {
       name: "Rename laboratory",
     });
     const renamed = `${name}-renamed`;
-    await renameDialog.getByLabel("Name").fill(renamed);
+    await renameDialog.getByLabel("名称").fill(renamed);
     await activate(
       page,
-      renameDialog.getByRole("button", { name: "Save name" }),
+      renameDialog.getByRole("button", { name: "保存名称" }),
       activation,
     );
     await waitForCondition(
@@ -270,7 +270,7 @@ test("laboratory navigation and shell controls support pointer and keyboard", as
     duration = await openActions();
     duration += await activate(
       page,
-      page.getByRole("menuitem", { name: "Duplicate" }),
+      page.getByRole("menuitem", { name: "复制" }),
       activation,
     );
     const duplicate = await waitForCondition(
@@ -301,8 +301,8 @@ test("laboratory navigation and shell controls support pointer and keyboard", as
     );
 
     const refresh = page
-      .getByLabel("Laboratory toolbar")
-      .getByRole("button", { name: "Refresh", exact: true });
+      .getByLabel("实验室工具栏")
+      .getByRole("button", { name: "刷新", exact: true });
     duration = await activate(page, refresh, activation);
     await expect(switcher).toContainText(renamed);
     record(
@@ -325,7 +325,7 @@ test("laboratory navigation and shell controls support pointer and keyboard", as
     );
     duration = await activate(
       page,
-      page.getByRole("menuitem", { name: "Delete" }),
+      page.getByRole("menuitem", { name: "删除" }),
       activation,
     );
     const deleteDialog = page.getByRole("dialog", {
@@ -333,7 +333,7 @@ test("laboratory navigation and shell controls support pointer and keyboard", as
     });
     duration += await activate(
       page,
-      deleteDialog.getByRole("button", { name: "Delete", exact: true }),
+      deleteDialog.getByRole("button", { name: "删除", exact: true }),
       activation,
     );
     await waitForCondition(
@@ -451,7 +451,7 @@ test("navigation templates and task center support pointer and keyboard", async 
     if (await qemuTemplate.isVisible()) {
       const duration = await activate(page, qemuTemplate, activation);
       await expect(
-        page.getByRole("dialog", { name: /Add Ubuntu/i }),
+        page.getByRole("dialog", { name: /添加 Ubuntu/i }),
       ).toBeVisible();
       record(
         "palette.device.choose",
@@ -466,7 +466,7 @@ test("navigation templates and task center support pointer and keyboard", async 
     await search.fill("");
     const pc = page.getByRole("button", { name: /^PC\b/ });
     const pcDuration = await activate(page, pc, activation);
-    await expect(page.getByRole("dialog", { name: /Add PC/i })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: /添加 PC/i })).toBeVisible();
     record(
       "palette.lightweight.choose",
       activation,
@@ -482,7 +482,7 @@ test("navigation templates and task center support pointer and keyboard", async 
     if ((await operationsToggle.getAttribute("aria-expanded")) !== "true") {
       await activate(page, operationsToggle, activation);
     }
-    const tasksTab = page.getByRole("tab", { name: /Tasks/ });
+    const tasksTab = page.getByRole("tab", { name: "任务" });
     let duration = await activate(page, tasksTab, activation);
     await expect(tasksTab).toHaveAttribute("aria-selected", "true");
     record(
@@ -493,7 +493,7 @@ test("navigation templates and task center support pointer and keyboard", async 
       duration,
     );
 
-    const taskSearch = page.getByRole("textbox", { name: "Filter tasks" });
+    const taskSearch = page.getByRole("textbox", { name: "筛选任务" });
     const taskSearchStarted = Date.now();
     if (activation === "pointer") await taskSearch.click();
     else await taskSearch.focus();
@@ -507,7 +507,7 @@ test("navigation templates and task center support pointer and keyboard", async 
       Date.now() - taskSearchStarted,
     );
 
-    const state = page.getByRole("combobox", { name: "Task state" });
+    const state = page.getByRole("combobox", { name: "任务状态" });
     const stateStarted = Date.now();
     if (activation === "keyboard") {
       await state.focus();
@@ -529,7 +529,7 @@ test("navigation templates and task center support pointer and keyboard", async 
 
     duration = await activate(
       page,
-      page.getByRole("button", { name: "Refresh tasks" }),
+      page.getByRole("button", { name: "刷新任务" }),
       activation,
     );
     record(

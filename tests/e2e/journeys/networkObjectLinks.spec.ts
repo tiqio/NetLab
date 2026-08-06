@@ -29,9 +29,9 @@ test("three lightweight objects form a shared browser-created path", async ({
     names[0],
   );
   const middleDialog = await templates.chooseLightweight("Layer-2 switch");
-  await middleDialog.getByLabel("Name", { exact: true }).fill(names[1]);
+  await middleDialog.getByLabel("名称", { exact: true }).fill(names[1]);
   await middleDialog.getByRole("button", { name: "添加二层端口" }).click();
-  await middleDialog.getByRole("button", { name: "Add to topology" }).click();
+  await middleDialog.getByRole("button", { name: "添加到拓扑" }).click();
   const middle = await waitForCondition(
     async () =>
       (await templates.snapshot(laboratory.id)).network_objects.find(
@@ -63,7 +63,7 @@ test("three lightweight objects form a shared browser-created path", async ({
   await secondPage.goto("/");
   await selectLaboratoryByName(secondPage, laboratory.name);
 
-  const canvas = page.getByLabel(/Topology canvas keyboard area/);
+  const canvas = page.getByLabel(/拓扑画布键盘操作区/);
   await canvas.focus();
   await focusTopologyResource(canvas, first.id);
   await canvas.press("p");

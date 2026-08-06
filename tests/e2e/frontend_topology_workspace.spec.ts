@@ -17,9 +17,7 @@ test("workspace shares topology while keeping preferences browser-local", async 
   );
   await secondPage.goto("/");
   await selectLaboratoryByName(secondPage, laboratory.name);
-  await expect(
-    secondPage.getByLabel(/Topology canvas keyboard area/),
-  ).toBeVisible();
+  await expect(secondPage.getByLabel(/拓扑画布键盘操作区/)).toBeVisible();
   await page.evaluate(
     (id) =>
       localStorage.setItem(

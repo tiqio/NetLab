@@ -25,7 +25,7 @@ test("visible empty-workspace controls are inventoried and explain unavailabilit
   const palette = page.getByRole("button", {
     name: "Toggle device palette",
   });
-  if (await page.getByText(/No laboratory yet/).isVisible()) {
+  if (await page.getByText(/暂无实验室/).isVisible()) {
     await expect(palette).toBeDisabled();
     await expect(palette).toHaveAttribute("title", /Create or select/);
     await page.getByTestId("laboratory-switcher").click();

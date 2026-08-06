@@ -309,7 +309,7 @@ function requestContextNodeCapture(node: Node) {
   closeResourceContext();
   const candidates = nodeInterfaces(node.id);
   if (!candidates.length) {
-    canvasStatus.value = "The selected node has no interfaces to capture.";
+    canvasStatus.value = "所选节点没有可抓包的接口。";
     return;
   }
   if (candidates.length === 1) {
@@ -945,7 +945,7 @@ function availableInterfaces(nodeId: string) {
 function startConnection(nodeId: string) {
   const candidates = availableInterfaces(nodeId);
   if (!candidates.length) {
-    canvasStatus.value = "The selected node has no available interfaces.";
+    canvasStatus.value = "所选节点没有可用接口。";
     return;
   }
   if (candidates.length === 1) {
@@ -963,7 +963,7 @@ async function chooseTargetNode(nodeId: string) {
     (item) => item.id !== pendingEndpoint.value,
   );
   if (!candidates.length) {
-    canvasStatus.value = "The target node has no available interfaces.";
+    canvasStatus.value = "目标节点没有可用接口。";
     return;
   }
   if (candidates.length === 1) {
@@ -1089,7 +1089,7 @@ function cancelConnection() {
 async function disconnectSelectedLink() {
   if (!selectedLink.value) return;
   await api.disconnectLink(selectedLink.value.id);
-  canvasStatus.value = "Disconnect task submitted.";
+  canvasStatus.value = "断开连接任务已提交。";
   await refreshActive();
 }
 
@@ -1103,7 +1103,7 @@ function requestReconnect() {
       item.id !== selectedLink.value?.endpoint_b_id,
   );
   if (!candidates.length) {
-    canvasStatus.value = "No available interface can replace this endpoint.";
+    canvasStatus.value = "没有可用于替换该端点的接口。";
     return;
   }
   reconnectingLink.value = selectedLink.value;
@@ -1115,7 +1115,7 @@ function requestReconnect() {
 
 function groupSelection() {
   createGroup(selectedIds.value);
-  canvasStatus.value = "Created a browser-local visual group.";
+  canvasStatus.value = "已创建当前浏览器专用的视觉分组。";
 }
 
 function toggleSelectedRoute() {
@@ -1131,8 +1131,7 @@ function toggleSelectedRoute() {
     const b = coordinates.value[ownerB] || { x: 0, y: 0 };
     setLinkRoute(link.id, [{ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 + 72 }]);
   }
-  canvasStatus.value =
-    "Drag the amber handle to adjust this browser-local route.";
+  canvasStatus.value = "拖动琥珀色控制点可调整当前浏览器专用的链路路径。";
 }
 
 function updateRoutePoint(linkId: string, point: { x: number; y: number }) {
@@ -1142,7 +1141,7 @@ function updateRoutePoint(linkId: string, point: { x: number; y: number }) {
 function finishRouteEdit() {
   editingRouteLinkId.value = "";
   routeEditOriginal.value = [];
-  canvasStatus.value = "Saved the browser-local link route.";
+  canvasStatus.value = "已保存当前浏览器专用的链路路径。";
 }
 
 function cancelRouteEdit() {
@@ -1150,7 +1149,7 @@ function cancelRouteEdit() {
   setLinkRoute(editingRouteLinkId.value, routeEditOriginal.value);
   editingRouteLinkId.value = "";
   routeEditOriginal.value = [];
-  canvasStatus.value = "Cancelled local route editing.";
+  canvasStatus.value = "已取消本地链路路径编辑。";
 }
 
 function resetRouteEdit() {
@@ -1158,14 +1157,22 @@ function resetRouteEdit() {
   setLinkRoute(editingRouteLinkId.value, []);
   editingRouteLinkId.value = "";
   routeEditOriginal.value = [];
-  canvasStatus.value = "Reset the link to automatic routing.";
+  canvasStatus.value = "已将链路恢复为自动布线。";
+}
+
+function labelDensityText(value: "comfortable" | "compact" | "minimal") {
+  return {
+    comfortable: "舒适",
+    compact: "紧凑",
+    minimal: "精简",
+  }[value];
 }
 
 function cycleLabelDensity() {
   const values = ["comfortable", "compact", "minimal"] as const;
   const index = values.indexOf(preferences.value.labelDensity);
   setLabelDensity(values[(index + 1) % values.length]);
-  canvasStatus.value = `Topology label density: ${preferences.value.labelDensity}.`;
+  canvasStatus.value = `拓扑标签密度：${labelDensityText(preferences.value.labelDensity)}。`;
 }
 
 function navigate(type: string, id: string) {
@@ -1349,7 +1356,7 @@ async function topologyKeyboard(event: KeyboardEvent) {
     );
     if (link) {
       await api.disconnectLink(link.id);
-      canvasStatus.value = "Disconnect task submitted from keyboard.";
+      canvasStatus.value = "已通过键盘提交断开连接任务。";
       await refreshActive();
     }
   }
@@ -1454,9 +1461,7 @@ onBeforeUnmount(() => {
           @keyboard="topologyKeyboard"
           @box-select="selectBox"
           @route-point="updateRoutePoint"
-          @transient-cancelled="
-            keyboardAnnouncement = 'Transient interaction cancelled.'
-          "
+          @transient-cancelled="keyboardAnnouncement = '已取消临时交互。'"
           @context="openResourceContext"
           @background="cancelOrClear"
         />
@@ -1469,7 +1474,7 @@ onBeforeUnmount(() => {
             data-testid="pan-view"
             @click="panEnabled = !panEnabled"
           >
-            <Hand :size="13" /> {{ panEnabled ? "Panning" : "平移视图" }}
+            <Hand :size="13" /> {{ panEnabled ? "正在平移" : "平移视图" }}
           </Button>
           <Button
             size="sm"
@@ -1497,7 +1502,7 @@ onBeforeUnmount(() => {
             data-testid="reset-view"
             @click="resetViewport"
           >
-            <RotateCcw :size="13" /> Reset
+            <RotateCcw :size="13" /> 重置
           </Button>
           <Button
             size="sm"
@@ -1505,7 +1510,7 @@ onBeforeUnmount(() => {
             aria-label="切换拓扑标签密度"
             @click="cycleLabelDensity"
           >
-            Labels: {{ preferences.labelDensity }}
+            标签：{{ labelDensityText(preferences.labelDensity) }}
           </Button>
           <Button
             v-if="selectedIds.length > 1"
@@ -1513,7 +1518,7 @@ onBeforeUnmount(() => {
             variant="secondary"
             @click="groupSelection"
           >
-            <Group :size="13" /> Group selection
+            <Group :size="13" /> 将选中项分组
           </Button>
           <LinkContextMenu
             v-if="selectedLink"
@@ -1535,17 +1540,17 @@ onBeforeUnmount(() => {
             variant="destructive"
             @click="retryObjectLinkDelete"
           >
-            Retry link deletion
+            重试删除链路
           </Button>
           <template v-if="editingRouteLinkId">
             <Button size="sm" variant="secondary" @click="finishRouteEdit">
-              Save route
+              保存路径
             </Button>
             <Button size="sm" variant="ghost" @click="cancelRouteEdit">
-              Cancel route
+              取消路径编辑
             </Button>
             <Button size="sm" variant="ghost" @click="resetRouteEdit">
-              Reset route
+              恢复自动布线
             </Button>
           </template>
           <Button
@@ -1555,7 +1560,7 @@ onBeforeUnmount(() => {
             variant="ghost"
             @click="toggleGroup(group.id)"
           >
-            {{ group.collapsed ? "Expand" : "Collapse" }} {{ group.label }}
+            {{ group.collapsed ? "展开" : "收起" }} {{ group.label }}
           </Button>
         </div>
         <p
@@ -1579,7 +1584,7 @@ onBeforeUnmount(() => {
             </span>
           </div>
           <p class="mt-1 text-muted-foreground">
-            Original endpoints remain authoritative until this task succeeds.
+            任务成功前，原始端点仍是服务器权威状态。
           </p>
           <p
             v-if="activeReconnectTask.error"
@@ -1596,7 +1601,7 @@ onBeforeUnmount(() => {
               aria-label="取消重连"
               @click="cancelReconnect"
             >
-              <XCircle :size="13" /> Cancel
+              <XCircle :size="13" /> 取消
             </Button>
             <Button
               v-if="['failed', 'cancelled'].includes(activeReconnectTask.state)"
@@ -1605,7 +1610,7 @@ onBeforeUnmount(() => {
               aria-label="重试连接"
               @click="retryReconnect"
             >
-              <RotateCcw :size="13" /> Retry
+              <RotateCcw :size="13" /> 重试
             </Button>
           </div>
         </div>

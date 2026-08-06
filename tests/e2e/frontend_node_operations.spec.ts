@@ -55,8 +55,10 @@ test("durable automation task is visible in the task center", async ({
   });
 
   await page.goto("/");
-  await page.getByRole("combobox", { name: "Laboratory scope" }).selectOption("all");
-  const taskCard = page.locator("article").filter({ hasText: envelope.task.id });
+  await page.getByRole("combobox", { name: "实验室范围" }).selectOption("all");
+  const taskCard = page
+    .locator("article")
+    .filter({ hasText: envelope.task.id });
   await expect(taskCard).toBeVisible();
   await expect(taskCard).toContainText(envelope.task.kind);
 });

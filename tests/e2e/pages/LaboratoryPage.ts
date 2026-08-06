@@ -93,20 +93,20 @@ export class LaboratoryPage extends BasePage {
     const activeRow = this.page.locator('[data-laboratory-row="true"]').filter({
       has: this.page.locator('[role="option"][aria-selected="true"]'),
     });
-    const actions = activeRow.getByRole("button", { name: /^Actions for / });
+    const actions = activeRow.getByRole("button", { name: / 的操作$/ });
     await expect(actions).toBeVisible();
     await actions.click();
     await expect(
-      this.page.getByRole("menu", { name: /^Actions for / }),
+      this.page.getByRole("menu", { name: / 的操作$/ }),
     ).toBeVisible();
   }
 
   async rename(current: LaboratoryRecord, name: string) {
     await this.openActiveActions();
-    await this.page.getByRole("menuitem", { name: "Rename" }).click();
-    const dialog = this.page.getByRole("dialog", { name: "Rename laboratory" });
+    await this.page.getByRole("menuitem", { name: "重命名" }).click();
+    const dialog = this.page.getByRole("dialog", { name: "重命名实验室" });
     await dialog.getByLabel(/^(Name|名称)$/).fill(name);
-    await dialog.getByRole("button", { name: "Save name" }).click();
+    await dialog.getByRole("button", { name: "保存名称" }).click();
     return waitForCondition(
       async () => (await this.list()).find((item) => item.id === current.id),
       (item) => item?.name === name,
@@ -117,7 +117,7 @@ export class LaboratoryPage extends BasePage {
   async duplicate(current: LaboratoryRecord) {
     const before = await this.list();
     await this.openActiveActions();
-    await this.page.getByRole("menuitem", { name: "Duplicate" }).click();
+    await this.page.getByRole("menuitem", { name: "复制" }).click();
     const duplicate = await waitForCondition(
       async () => {
         const currentLabs = await this.list();
@@ -135,10 +135,11 @@ export class LaboratoryPage extends BasePage {
 
   async openTransfer(mode: "Export" | "Import") {
     await this.openActiveActions();
-    await this.page.getByRole("menuitem", { name: mode }).click();
+    const translatedMode = mode === "Export" ? "导出" : "导入";
+    await this.page.getByRole("menuitem", { name: translatedMode }).click();
     await expect(
       this.page.getByRole("dialog", {
-        name: new RegExp(`${mode} laboratory`, "i"),
+        name: `${translatedMode}实验室`,
       }),
     ).toBeVisible();
   }
@@ -149,18 +150,18 @@ export class LaboratoryPage extends BasePage {
 
   async cancelDelete() {
     await this.openActiveActions();
-    await this.page.getByRole("menuitem", { name: "Delete" }).click();
-    const dialog = this.page.getByRole("dialog", { name: "Delete laboratory" });
-    await dialog.getByRole("button", { name: "Cancel" }).click();
+    await this.page.getByRole("menuitem", { name: "删除" }).click();
+    const dialog = this.page.getByRole("dialog", { name: "删除实验室" });
+    await dialog.getByRole("button", { name: "取消" }).click();
     await expect(dialog).toBeHidden();
   }
 
   async delete(laboratory: LaboratoryRecord) {
     await this.select(laboratory.id);
     await this.openActiveActions();
-    await this.page.getByRole("menuitem", { name: "Delete" }).click();
-    const dialog = this.page.getByRole("dialog", { name: "Delete laboratory" });
-    await dialog.getByRole("button", { name: "Delete" }).click();
+    await this.page.getByRole("menuitem", { name: "删除" }).click();
+    const dialog = this.page.getByRole("dialog", { name: "删除实验室" });
+    await dialog.getByRole("button", { name: "删除" }).click();
     await waitForCondition(
       async () => (await this.list()).some((item) => item.id === laboratory.id),
       (present) => !present,
@@ -170,8 +171,6 @@ export class LaboratoryPage extends BasePage {
   }
 
   async refresh() {
-    await this.page
-      .getByRole("button", { name: "Refresh", exact: true })
-      .click();
+    await this.page.getByRole("button", { name: "刷新", exact: true }).click();
   }
 }

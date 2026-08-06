@@ -90,19 +90,19 @@ test("capture and Traffic Filter stay isolated across parallel object links", as
     30_000,
   );
   await page.reload();
-  const canvas = page.getByLabel(/Topology canvas keyboard area/);
+  const canvas = page.getByLabel(/拓扑画布键盘操作区/);
   await canvas.focus();
   await focusTopologyResource(canvas, primary.id);
   await canvas.press("Enter");
 
-  const diagnostics = page.getByRole("region", { name: "Diagnostics" });
-  await page.getByRole("tab", { name: "Capture" }).click();
+  const diagnostics = page.getByRole("region", { name: "诊断" });
+  await page.getByRole("tab", { name: "抓包" }).click();
   await expect(
     diagnostics.getByRole("button", {
       name: `${objectA.name}:a0 ↔ ${objectB.name}:b0`,
     }),
   ).toBeVisible();
-  await diagnostics.getByRole("button", { name: "Start capture" }).click();
+  await diagnostics.getByRole("button", { name: "开始抓包" }).click();
   const captures = await waitForCondition(
     async () =>
       (
@@ -137,7 +137,7 @@ test("capture and Traffic Filter stay isolated across parallel object links", as
     laboratory_id: laboratory.id,
     cleanup_method: "capture-delete",
   });
-  await diagnostics.getByRole("button", { name: "Stop", exact: true }).click();
+  await diagnostics.getByRole("button", { name: "停止", exact: true }).click();
   await waitForCondition(
     async () => (await automation.get(`/api/v1/captures/${capture.id}`)).json(),
     (item: { state: string }) =>
@@ -146,7 +146,7 @@ test("capture and Traffic Filter stay isolated across parallel object links", as
     30_000,
   );
 
-  await page.getByRole("tab", { name: "Traffic Filter" }).click();
+  await page.getByRole("tab", { name: "流量过滤" }).click();
   await page.getByLabel("pcap 过滤表达式").fill("icmp");
   await page.getByLabel("最大记录数").fill("20");
   await diagnostics.getByRole("button", { name: "启动", exact: true }).click();

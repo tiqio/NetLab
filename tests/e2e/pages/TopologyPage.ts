@@ -49,12 +49,22 @@ export class TopologyPage extends BasePage {
     const drawer = this.page.getByRole("dialog", {
       name: /^(Add resource|添加资源)$/,
     });
+    const displayName =
+      name === "Bridge"
+        ? "网桥"
+        : name === "NAT bridge"
+          ? "NAT 网桥"
+          : name === "Layer-2 switch" || name === "Lightweight L2 Switch"
+            ? "轻量级二层交换机"
+            : name === "Layer-3 switch" || name === "Lightweight L3 Switch"
+              ? "轻量级三层交换机"
+              : name;
     await drawer
-      .getByText(name, { exact: true })
+      .getByText(displayName, { exact: true })
       .locator("xpath=ancestor::button[1]")
       .click();
     return this.page.getByRole("dialog", {
-      name: new RegExp(`^(?:Add ${name}|添加 ${name})$`, "i"),
+      name: new RegExp(`^(?:Add ${displayName}|添加 ${displayName})$`, "i"),
     });
   }
 

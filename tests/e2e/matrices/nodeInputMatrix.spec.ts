@@ -78,7 +78,7 @@ test("node operations execute through pointer and keyboard", async ({
   };
   const openInspector = async (nodeName: string) => {
     await page.reload();
-    const canvas = page.getByLabel(/Topology canvas keyboard area/);
+    const canvas = page.getByLabel(/拓扑画布键盘操作区/);
     await canvas.focus();
     await canvas.press("ArrowRight");
     await canvas.press("Enter");
@@ -131,10 +131,10 @@ test("node operations execute through pointer and keyboard", async ({
     await openInspector(primary.name);
 
     await page.getByLabel("vCPUs").fill(activation === "pointer" ? "1" : "2");
-    await page.getByLabel("CPU quota µs").fill("50000");
-    await page.getByLabel("Memory MiB").fill("128");
+    await page.getByLabel("CPU 配额（微秒）").fill("50000");
+    await page.getByLabel("内存（MiB）").fill("128");
     duration = await activate(
-      page.getByRole("button", { name: "Apply limits" }),
+      page.getByRole("button", { name: "应用限制" }),
       activation,
     );
     await expect(

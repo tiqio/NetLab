@@ -30,16 +30,16 @@ test("Ubuntu QEMU receives cloud-init credentials and stable interface overlays"
     selection.displayName,
     selection.runtime,
   );
-  const initialPassword = dialog.getByLabel("Initial password");
+  const initialPassword = dialog.getByLabel("初始密码");
   await expect(initialPassword).toHaveValue(/.{12,}/);
   const nodeName = `ubuntu-bootstrap-${crypto.randomUUID().slice(0, 6)}`;
-  await dialog.getByLabel("Name", { exact: true }).fill(nodeName);
-  await dialog.getByLabel("Device template").selectOption(selection.templateId);
-  await dialog.getByLabel("Template version").selectOption(selection.versionId);
+  await dialog.getByLabel("名称", { exact: true }).fill(nodeName);
+  await dialog.getByLabel("设备模板").selectOption(selection.templateId);
+  await dialog.getByLabel("模板版本").selectOption(selection.versionId);
   if (selection.imageId) {
-    await dialog.getByLabel("Image version").selectOption(selection.imageId);
+    await dialog.getByLabel("镜像版本").selectOption(selection.imageId);
   }
-  await dialog.getByRole("button", { name: "Add to topology" }).click();
+  await dialog.getByRole("button", { name: "添加到拓扑" }).click();
   await expect(dialog).toBeHidden();
 
   const snapshot = await templates.snapshot(laboratory.id);
@@ -60,13 +60,13 @@ test("Ubuntu QEMU receives cloud-init credentials and stable interface overlays"
     (item) => item.node_id === node!.id,
   );
   expect(nodeInterface).toBeTruthy();
-  const canvas = page.getByLabel(/Topology canvas keyboard area/);
+  const canvas = page.getByLabel(/拓扑画布键盘操作区/);
   await canvas.focus();
   await canvas.press("ArrowRight");
   const overlay = page.locator(`[data-interface-id="${nodeInterface!.id}"]`);
   await expect(overlay).toBeVisible();
   const before = await overlay.boundingBox();
-  const chart = page.getByRole("img", { name: /Topology canvas/ });
+  const chart = page.getByRole("img", { name: /拓扑画布/ });
   const chartBox = await chart.boundingBox();
   expect(before).toBeTruthy();
   expect(chartBox).toBeTruthy();

@@ -11,7 +11,7 @@ test("template and automation views render authoritative service data", async ({
   const templates = (await templatesResponse.json()) || [];
   const images = (await imagesResponse.json()) || [];
   await page.goto("/templates");
-  await expect(page.getByText(/Image provenance/)).toBeVisible();
+  await expect(page.getByText(/镜像来源/)).toBeVisible();
   if (templates.length)
     await expect(
       page.getByRole("heading", {
@@ -20,8 +20,9 @@ test("template and automation views render authoritative service data", async ({
       }),
     ).toBeVisible();
   const referencedImageId = templates
-    .flatMap((template: { versions?: Array<{ image_version_id?: string }> }) =>
-      template.versions || [],
+    .flatMap(
+      (template: { versions?: Array<{ image_version_id?: string }> }) =>
+        template.versions || [],
     )
     .find((version) => version.image_version_id)?.image_version_id;
   const referencedImage = images.find(
@@ -32,10 +33,10 @@ test("template and automation views render authoritative service data", async ({
       page.getByText(referencedImage.digest, { exact: true }),
     ).toBeVisible();
   await page.goto("/automation");
-  await expect(page.getByText("REST and MCP parity")).toBeVisible();
+  await expect(page.getByText("REST 与 MCP 能力一致性")).toBeVisible();
   const refresh = page
-    .getByRole("button", { name: "Refresh", exact: true })
+    .getByRole("button", { name: "刷新", exact: true })
     .first();
   await refresh.click();
-  await expect(page.getByRole("heading", { name: "Audit" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "审计" })).toBeVisible();
 });

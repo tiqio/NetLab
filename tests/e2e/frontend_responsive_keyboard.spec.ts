@@ -11,13 +11,9 @@ test("command palette has keyboard-equivalent visible outcomes", async ({
   const trigger = page.getByRole("button", { name: "⌘K" });
   await trigger.focus();
   await page.keyboard.press("Enter");
-  await expect(
-    page.getByRole("dialog", { name: "Command palette" }),
-  ).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "命令面板" })).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(
-    page.getByRole("dialog", { name: "Command palette" }),
-  ).toBeHidden();
+  await expect(page.getByRole("dialog", { name: "命令面板" })).toBeHidden();
   interactionResults.push(
     result(
       "workspace.commands",
@@ -40,23 +36,21 @@ test("topology add drawer is keyboard operable and restores trigger focus", asyn
   const trigger = page.getByRole("button", { name: "添加资源" });
   await trigger.focus();
   await page.keyboard.press("Enter");
-  await expect(
-    page.getByRole("dialog", { name: "Add resource" }),
-  ).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "添加资源" })).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("dialog", { name: "Add resource" })).toBeHidden();
+  await expect(page.getByRole("dialog", { name: "添加资源" })).toBeHidden();
   await expect(trigger).toBeFocused();
 
   await topology.openResourceDrawer();
   const form = await topology.chooseDrawerResource("PC");
-  await form.getByLabel("Name", { exact: true }).fill("keyboard draft");
+  await form.getByLabel("名称", { exact: true }).fill("keyboard draft");
   await page.keyboard.press("Escape");
   const confirmation = page.getByRole("alertdialog", {
     name: "放弃未保存的更改",
   });
   await expect(confirmation).toBeVisible();
   await confirmation.getByRole("button", { name: "继续编辑" }).press("Enter");
-  await expect(form.getByLabel("Name", { exact: true })).toHaveValue(
+  await expect(form.getByLabel("名称", { exact: true })).toHaveValue(
     "keyboard draft",
   );
 });

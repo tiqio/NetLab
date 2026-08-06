@@ -58,9 +58,7 @@ test("node controls expose lifecycle tasks and authoritative state", async ({
     90_000,
   );
   await operations.openTaskCenter();
-  await expect(
-    page.getByRole("combobox", { name: "Task state" }),
-  ).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "任务状态" })).toBeVisible();
   interactionResults.push(
     result(
       "node.start",

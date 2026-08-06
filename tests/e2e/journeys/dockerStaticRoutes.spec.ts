@@ -42,13 +42,13 @@ test("Docker routes are created, edited, and read back through the frontend", as
     selection.runtime,
   );
   const nodeName = `routes-${runId.slice(0, 6)}`;
-  await dialog.getByLabel("Name", { exact: true }).fill(nodeName);
-  await dialog.getByLabel("Device template").selectOption(selection.templateId);
-  await dialog.getByLabel("Template version").selectOption(selection.versionId);
-  await dialog.getByLabel("Image version").selectOption(selection.imageId);
+  await dialog.getByLabel("名称", { exact: true }).fill(nodeName);
+  await dialog.getByLabel("设备模板").selectOption(selection.templateId);
+  await dialog.getByLabel("模板版本").selectOption(selection.versionId);
+  await dialog.getByLabel("镜像版本").selectOption(selection.imageId);
   await dialog.getByTestId("docker-ipv4-mode").selectOption("static");
   await dialog.getByTestId("docker-ipv4-address").fill("192.0.2.10/24");
-  await dialog.getByRole("button", { name: "Add IPv4 route" }).click();
+  await dialog.getByRole("button", { name: "添加 IPv4 路由" }).click();
   await dialog
     .getByTestId("docker-route-0-destination")
     .fill("198.51.100.99/24");
@@ -56,12 +56,12 @@ test("Docker routes are created, edited, and read back through the frontend", as
   await dialog.getByTestId("docker-route-0-metric").fill("20");
   await dialog.getByTestId("docker-ipv6-mode").selectOption("static");
   await dialog.getByTestId("docker-ipv6-address").fill("2001:db8:1::10/64");
-  await dialog.getByRole("button", { name: "Add IPv6 route" }).click();
+  await dialog.getByRole("button", { name: "添加 IPv6 路由" }).click();
   await dialog
     .getByTestId("docker-route-1-destination")
     .fill("2001:db8:2::99/64");
   await dialog.getByTestId("docker-route-1-gateway").fill("2001:db8:1::1");
-  await dialog.getByRole("button", { name: "Add to topology" }).click();
+  await dialog.getByRole("button", { name: "添加到拓扑" }).click();
 
   const node = await waitForCondition(
     async () => {

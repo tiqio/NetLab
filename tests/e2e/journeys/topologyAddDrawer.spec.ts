@@ -17,7 +17,7 @@ test("the right-side add drawer creates an authoritative lightweight resource", 
     runId,
   );
   const topology = new TopologyPage(page, automation);
-  const canvas = page.getByRole("img", { name: /Topology canvas/ });
+  const canvas = page.getByRole("img", { name: /拓扑画布/ });
   const canvasBefore = await canvas.boundingBox();
   const drawer = await topology.openResourceDrawer();
   const drawerBox = await drawer.boundingBox();
@@ -33,8 +33,8 @@ test("the right-side add drawer creates an authoritative lightweight resource", 
 
   const form = await topology.chooseDrawerResource("PC");
   const name = `drawer-pc-${runId.slice(0, 6)}`;
-  await form.getByLabel("Name", { exact: true }).fill(name);
-  await form.getByRole("button", { name: "Add to topology" }).click();
+  await form.getByLabel("名称", { exact: true }).fill(name);
+  await form.getByRole("button", { name: "添加到拓扑" }).click();
 
   const resource = await waitForCondition(
     async () => {
@@ -80,7 +80,7 @@ test("the add drawer keeps long-form state and confirms dirty close", async ({
   const topology = new TopologyPage(page, automation);
   await topology.openResourceDrawer();
   const form = await topology.chooseDrawerResource("PC");
-  const name = form.getByLabel("Name", { exact: true });
+  const name = form.getByLabel("名称", { exact: true });
   await name.fill(`draft-${runId.slice(0, 6)}`);
   const pageScroll = await page.evaluate(() => window.scrollY);
   const body = page.locator("[data-sheet-body]");
@@ -119,8 +119,8 @@ test("the add drawer creates every lightweight resource kind through the real AP
     await topology.openResourceDrawer();
     const form = await topology.chooseDrawerResource(label);
     const name = `drawer-${kind}-${runId.slice(0, 6)}`;
-    await form.getByLabel("Name", { exact: true }).fill(name);
-    await form.getByRole("button", { name: "Add to topology" }).click();
+    await form.getByLabel("名称", { exact: true }).fill(name);
+    await form.getByRole("button", { name: "添加到拓扑" }).click();
     const resource = await waitForCondition(
       async () => {
         const response = await automation.get(`/api/v1/labs/${laboratory.id}`);

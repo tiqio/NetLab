@@ -75,9 +75,7 @@ test("topology controls connect and disconnect real endpoints while visible", as
   });
   await topology.panAndZoom();
   await page.reload();
-  await expect(
-    page.getByRole("img", { name: /Topology canvas/ }),
-  ).toBeVisible();
+  await expect(page.getByRole("img", { name: /拓扑画布/ })).toBeVisible();
   interactionResults.push(
     result(
       "topology.connect",

@@ -46,7 +46,7 @@ test("keyboard connection chooser reconnect and disconnect preserve authoritativ
       cleanup_method: "laboratory-cascade",
     });
   }
-  const canvas = page.getByLabel(/Topology canvas keyboard area/);
+  const canvas = page.getByLabel(/拓扑画布键盘操作区/);
   await canvas.focus();
   await canvas.press("ArrowRight");
   await canvas.press("c");
@@ -80,8 +80,8 @@ test("keyboard connection chooser reconnect and disconnect preserve authoritativ
   });
   await canvas.focus();
   await canvas.press("ArrowRight");
-  await page.getByRole("button", { name: "Link actions" }).click();
-  await page.getByRole("button", { name: "Reconnect endpoint" }).click();
+  await page.getByRole("button", { name: "链路操作" }).click();
+  await page.getByRole("button", { name: "重新连接端点" }).click();
   const reconnectChooser = page.getByRole("dialog", {
     name: "Choose replacement interface",
   });

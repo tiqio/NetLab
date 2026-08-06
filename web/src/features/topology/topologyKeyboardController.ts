@@ -88,12 +88,12 @@ export class TopologyKeyboardController {
       return {
         type: "select_all",
         resourceIds: this.resources.map((item) => item.id),
-        announcement: `Selected all ${this.resources.length} topology resources`,
+        announcement: `已选择全部 ${this.resources.length} 个拓扑资源`,
       };
     if (["+", "=", "Add"].includes(input.key))
-      return { type: "zoom_view", factor: 1.2, announcement: "Zoomed in" };
+      return { type: "zoom_view", factor: 1.2, announcement: "已放大" };
     if (["-", "_", "Subtract"].includes(input.key))
-      return { type: "zoom_view", factor: 1 / 1.2, announcement: "Zoomed out" };
+      return { type: "zoom_view", factor: 1 / 1.2, announcement: "已缩小" };
     if (input.altKey && input.key.startsWith("Arrow"))
       return movement(input.key);
     if (this.focusedPortId) return this.handlePort(input.key);
@@ -136,7 +136,7 @@ export class TopologyKeyboardController {
         return {
           type: "focus_port",
           interfaceId: port.id,
-          announcement: `Port ${port.name}`,
+          announcement: `接口 ${port.name}`,
         };
       }
     }
@@ -169,7 +169,7 @@ export class TopologyKeyboardController {
       resourceId: next.id,
       resourceType: next.type,
       extend,
-      announcement: `${next.type} ${next.id}`,
+      announcement: `${next.type === "node" ? "节点" : next.type === "link" ? "链路" : "网络对象"} ${next.id}`,
     };
   }
 
@@ -186,7 +186,7 @@ export class TopologyKeyboardController {
       return {
         type: "focus_port",
         interfaceId: next.id,
-        announcement: `Port ${next.name}`,
+        announcement: `接口 ${next.name}`,
       };
     }
     if (key === "Enter") {

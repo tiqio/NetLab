@@ -175,7 +175,7 @@ test("topology navigation persists shared coordinates across browser contexts", 
     });
   }
 
-  const canvas = page.getByLabel(/Topology canvas keyboard area/);
+  const canvas = page.getByLabel(/拓扑画布键盘操作区/);
   await canvas.focus();
   await canvas.press("ArrowRight");
   const announcement = await canvas.getByRole("status").textContent();
@@ -187,7 +187,7 @@ test("topology navigation persists shared coordinates across browser contexts", 
     `unexpected keyboard announcement: ${announcement}`,
   ).toBeTruthy();
   await canvas.press("+");
-  await expect(canvas.getByRole("status")).toContainText("Zoomed in");
+  await expect(canvas.getByRole("status")).toContainText("已放大");
   await canvas.press("Alt+ArrowRight");
   const placement = await waitForCondition(
     async () => {
@@ -202,7 +202,7 @@ test("topology navigation persists shared coordinates across browser contexts", 
     "keyboard placement",
   );
 
-  const chart = page.getByRole("img", { name: /Topology canvas/ });
+  const chart = page.getByRole("img", { name: /拓扑画布/ });
   await chart.hover();
   await page.mouse.wheel(0, -240);
   const box = await chart.boundingBox();
@@ -246,15 +246,11 @@ test("topology navigation persists shared coordinates across browser contexts", 
   }
 
   await page.reload();
-  await expect(
-    page.getByRole("img", { name: /Topology canvas/ }),
-  ).toBeVisible();
+  await expect(page.getByRole("img", { name: /拓扑画布/ })).toBeVisible();
   const secondPage = await context.newPage();
   await secondPage.goto("/");
   await selectLaboratoryByName(secondPage, laboratory.name);
-  await expect(
-    secondPage.getByRole("img", { name: /Topology canvas/ }),
-  ).toBeVisible();
+  await expect(secondPage.getByRole("img", { name: /拓扑画布/ })).toBeVisible();
   const response = await automation.get(`/api/v1/labs/${laboratory.id}`);
   const snapshot = await response.json();
   expect(
@@ -296,28 +292,28 @@ test("browser-local routes support cleanup cancel reset save and refresh", async
     .poll(async () => Object.keys((await readRoutes()).linkRoutes || {}))
     .toEqual(["link-current"]);
 
-  const canvas = page.getByLabel(/Topology canvas keyboard area/);
+  const canvas = page.getByLabel(/拓扑画布键盘操作区/);
   await canvas.focus();
   await canvas.press("ArrowRight");
   await canvas.press("ArrowRight");
   await canvas.press("ArrowRight");
-  await page.getByRole("button", { name: "Link actions" }).click();
-  await page.getByRole("button", { name: "Edit local route" }).click();
-  await page.getByRole("button", { name: "Cancel route" }).click();
+  await page.getByRole("button", { name: "链路操作" }).click();
+  await page.getByRole("button", { name: "编辑本地路由" }).click();
+  await page.getByRole("button", { name: "取消路径编辑" }).click();
   expect((await readRoutes()).linkRoutes["link-current"]).toEqual([
     { x: 0, y: 60 },
   ]);
 
-  await page.getByRole("button", { name: "Link actions" }).click();
-  await page.getByRole("button", { name: "Edit local route" }).click();
-  await page.getByRole("button", { name: "Reset route" }).click();
+  await page.getByRole("button", { name: "链路操作" }).click();
+  await page.getByRole("button", { name: "编辑本地路由" }).click();
+  await page.getByRole("button", { name: "恢复自动布线" }).click();
   await expect
     .poll(async () => (await readRoutes()).linkRoutes["link-current"])
     .toBeUndefined();
 
-  await page.getByRole("button", { name: "Link actions" }).click();
-  await page.getByRole("button", { name: "Edit local route" }).click();
-  await page.getByRole("button", { name: "Save route" }).click();
+  await page.getByRole("button", { name: "链路操作" }).click();
+  await page.getByRole("button", { name: "编辑本地路由" }).click();
+  await page.getByRole("button", { name: "保存路径" }).click();
   await expect
     .poll(async () => (await readRoutes()).linkRoutes["link-current"]?.length)
     .toBe(1);

@@ -17,7 +17,7 @@ describe("TopologyKeyboardController", () => {
     expect(controller.handle({ key: "ArrowRight" }, [])).toMatchObject({
       type: "focus_resource",
       resourceId: "a",
-      announcement: expect.stringContaining("node a"),
+      announcement: expect.stringContaining("节点 a"),
     });
     expect(
       controller.handle({ key: "ArrowRight", shiftKey: true }, ["a"]),
