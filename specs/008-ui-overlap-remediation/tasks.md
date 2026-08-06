@@ -102,7 +102,7 @@
 - [X] T041 [US2] 在 `web/src/components/shell/OperationsDrawer.vue` 和 `web/src/components/shell/LaboratoryShell.vue` 修复标签、固定区、滚动区和拓扑画布边界
 - [X] T042 [US2] 在 `web/src/features/tasks/TaskCenter.vue`、`web/src/features/diagnostics/GlobalConsoleWorkspace.vue`、`web/src/features/diagnostics/GlobalCaptureWorkspace.vue` 和 `web/src/features/diagnostics/TrafficFilterPanel.vue` 修复会话列表、工具栏和空/长历史布局
 - [X] T043 [US2] 运行 US2 聚焦测试、axe 和菜单边缘验收，并把结果记录到 `specs/008-ui-overlap-remediation/validation/milestones.md`
-- [ ] T044 [US2] 创建检查器与工作区里程碑的聚焦 Git 提交，并把提交 SHA 写入 `specs/008-ui-overlap-remediation/validation/milestones.md`
+- [X] T044 [US2] 创建检查器与工作区里程碑的聚焦 Git 提交，并把提交 SHA 写入 `specs/008-ui-overlap-remediation/validation/milestones.md`
 
 **Checkpoint**: US2 可独立验收所有检查器、菜单和底部工作区的可读性与可达性。
 
