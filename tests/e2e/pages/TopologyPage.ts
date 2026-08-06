@@ -45,7 +45,10 @@ export class TopologyPage extends BasePage {
 
   async chooseDrawerResource(name: string) {
     const drawer = this.page.getByRole("dialog", { name: "Add resource" });
-    await drawer.getByRole("button").filter({ hasText: name }).first().click();
+    await drawer
+      .getByText(name, { exact: true })
+      .locator("xpath=ancestor::button[1]")
+      .click();
     return this.page.getByRole("dialog", {
       name: new RegExp(`Add ${name}`, "i"),
     });

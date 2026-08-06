@@ -87,3 +87,19 @@
 - Evidence files: `/var/tmp/netlab-add-drawer-acceptance/resource-creation.json`, `/var/tmp/netlab-add-drawer-acceptance/multi-client.json`, `/var/tmp/netlab-add-drawer-acceptance/failure-path.json`, `/var/tmp/netlab-add-drawer-acceptance/cleanup.json`
 - Rollback required: no
 - Deployed source remains T049 commit `c10a33c194aae3093bdebad6248277a0d0c631a3`; this final commit changes evidence documents only
+
+## Convergence Validation — 2026-08-06
+
+- Local implementation commit: `7fe2672819ea443446107389355fa7a693bdbb6e`
+- Local quality gates: PASS — `go test ./...`; repository-wide Prettier; ESLint with 0 errors; Vitest 243/243; Vue type-check and production build
+- Browser coverage: PASS discovery — 10 focused drawer/keyboard cases across 1920×1080 and 1024×768; the new five-kind lightweight creation matrix passed 2/2 against the target after correcting the exact resource-title locator
+- Candidate ID: `006-topology-add-drawer-convergence-7fe26728-20260806100830`
+- Version: `0.1.0-006.7fe26728`
+- Contract digest: `sha256:08b48402d652766d00ce5b447ba89bf6b940ab61b6f1ff560f704fb16d5c44d3`
+- Binary digest: `sha256:3b194d7f96bff4c5ec5af40c8d2a7e996161333ea8dc113cd62d298ef60653b0`
+- Built at: `2026-08-06T10:08:30+08:00`
+- Target deployment: PASS — `10.72.1.7`, service active at `2026-08-06T10:09:16+08:00`, `/healthz` returned `{"status":"ok"}`
+- Migration state before deployment: schema migrations `1..12`, maximum version `12`, applied count `12`
+- Migration state after deployment: schema migrations `1..12`, maximum version `12`, applied count `12`; `PRAGMA integrity_check` returned `ok` and foreign-key check returned no rows
+- Cleanup: PASS — `GET /api/v1/labs` returned an empty list after focused target acceptance
+- Focused target evidence: `/var/tmp/netlab-add-drawer-convergence-focused`

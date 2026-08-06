@@ -240,7 +240,7 @@ US2 与 US3 在 US1 完成后可以大部分并行，但二者都可能修改 `C
 ## Phase 7: Convergence
 
 - [x] T058 **CRITICAL** 修复 `web/src/features/nodes/LightweightNodeEditor.test.ts` 的过期断言并格式化 `validation.md` 记录的五个遗留前端文件，使仓库级 `npm run format:check`、`npm test` 及适用静态检查全部通过且不弱化门禁 per Constitution VIII / Delivery Workflow (contradicts)
-- [ ] T059 **CRITICAL** 在候选构建与 `10.72.1.7` 部署证据中采集并记录实际 SQLite migration/schema state，并更新 `specs/006-topology-add-drawer/validation.md` 使 SHA、摘要、迁移状态、部署时间和目标机结果可追溯 per Constitution VIII (missing)
+- [x] T059 **CRITICAL** 在候选构建与 `10.72.1.7` 部署证据中采集并记录实际 SQLite migration/schema state，并更新 `specs/006-topology-add-drawer/validation.md` 使 SHA、摘要、迁移状态、部署时间和目标机结果可追溯 per Constitution VIII (missing)
 - [x] T060 调整 `web/src/features/topology/CreateTopologyResourceDrawer.vue` 的目录默认值收敛与初始签名时序，确保自动选择兼容镜像不会把未操作草稿标记为脏，并增加无修改关闭不弹确认的回归测试 per FR-015, US3/AC1 (contradicts)
 - [x] T061 在 `web/src/features/topology/CreateTopologyResourceDrawer.vue` 中仅展示与当前 QEMU/Docker 资源类型兼容且可用的模板，并对会清除名称、版本、镜像、凭据或配置的模板切换执行可取消确认和草稿保留测试 per FR-006, FR-009 (contradicts)
 - [x] T062 在 `web/src/features/topology/CreateTopologyResourceDrawer.vue` 提交期间禁用全部可变输入、选择器、路由编辑和类型切换，固定本次请求快照，并验证重复点击或提交中编辑不会产生不同负载或重复资源 per FR-012, T029 (partial)
@@ -250,5 +250,5 @@ US2 与 US3 在 US1 完成后可以大部分并行，但二者都可能修改 `C
 - [x] T066 扩展 `web/src/features/topology/TopologyResourceCatalog.vue` 搜索，使普通模板匹配 display name、template key、runtime kind 和说明，快捷模板匹配名称、key 和说明，并补齐中英文查询测试 per FR-005 (partial)
 - [x] T067 扩展 `web/src/features/topology/topologyResourceDraft.ts` 与 `web/src/features/topology/CreateTopologyResourceDrawer.vue`，展示并提交适用模板的 CPU 数、CPU quota、内存、存储、接口/进程限制和 NIC driver 默认值、单位、只读及依赖状态，并验证默认负载与后端语义一致 per FR-007 (partial)
 - [x] T068 在 `web/src/features/topology/TopologyWorkspace.vue` 显式保存抽屉打开前的 Inspector 可见性、宽度、选中对象和工作区焦点，所有关闭路径均恢复该快照且不改变画布或 Operations 状态，并补充集成测试 per FR-016 / plan: Workspace integration (partial)
-- [ ] T069 扩展 `web/src/features/topology/CreateTopologyResourceDrawer.test.ts`、`web/src/features/topology/TopologyWorkspace.test.ts` 与 `tests/e2e/`，覆盖七类资源、真实溢出长表单、破坏性切换、重复提交、结构化失败、三种视口和纯键盘完整提交，并使用真实创建接口验证任务终态与权威拓扑刷新 per FR-024, FR-025, SC-001/005/006 (partial)
+- [x] T069 扩展 `web/src/features/topology/CreateTopologyResourceDrawer.test.ts`、`web/src/features/topology/TopologyWorkspace.test.ts` 与 `tests/e2e/`，覆盖七类资源、真实溢出长表单、破坏性切换、重复提交、结构化失败、三种视口和纯键盘完整提交，并使用真实创建接口验证任务终态与权威拓扑刷新 per FR-024, FR-025, SC-001/005/006 (partial)
 - [x] T070 为 `web/src/features/topology/CreateTopologyResourceDrawer.vue` 增加可键盘操作的配置折叠分组和浏览器本地展开状态，确保滚动、折叠和帮助浏览不修改任何草稿字段，并补充状态保持测试 per FR-008, T027 (missing)
