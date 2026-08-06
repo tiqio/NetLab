@@ -8,6 +8,10 @@ defineEmits<{ pointerdown: [PointerEvent] }>();
   <div
     role="separator"
     :aria-orientation="orientation"
+    aria-label="调整面板大小"
+    aria-valuemin="0"
+    aria-valuemax="100"
+    aria-valuenow="50"
     tabindex="0"
     class="shrink-0 bg-border transition-colors hover:bg-primary"
     :class="
