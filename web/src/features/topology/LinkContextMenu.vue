@@ -20,41 +20,46 @@ const emit = defineEmits<{
       </Button>
     </template>
     <div class="grid gap-1" role="menu" aria-label="链路操作">
-      <Button variant="ghost" class="justify-start" @click="emit('inspect')">
-        <Eye :size="13" /> 检查
+      <Button
+        variant="ghost"
+        class="w-full justify-start"
+        @click="emit('inspect')"
+      >
+        <Eye :size="13" class="shrink-0" /> <span>检查</span>
       </Button>
       <Button
         v-if="!objectLink"
         variant="ghost"
-        class="justify-start"
+        class="w-full justify-start"
         @click="emit('reconnect')"
       >
-        <Cable :size="13" /> 重新连接端点
+        <Cable :size="13" class="shrink-0" /> <span>重新连接端点</span>
       </Button>
       <Button
         v-if="!objectLink"
         variant="ghost"
-        class="justify-start"
+        class="w-full justify-start"
         @click="emit('route')"
       >
-        <Route :size="13" /> 编辑本地路由
+        <Route :size="13" class="shrink-0" /> <span>编辑本地路由</span>
       </Button>
       <Button
         v-if="!objectLink"
         variant="destructive"
-        class="justify-start"
+        class="w-full justify-start"
         @click="emit('disconnect')"
       >
-        <Unplug :size="13" /> 断开连接
+        <Unplug :size="13" class="shrink-0" /> <span>断开连接</span>
       </Button>
       <Button
         v-else
         variant="destructive"
-        class="justify-start"
+        class="w-full justify-start"
         :disabled="pending"
         @click="emit('delete')"
       >
-        <Trash2 :size="13" /> {{ pending ? "正在删除…" : "删除链路" }}
+        <Trash2 :size="13" class="shrink-0" />
+        <span>{{ pending ? "正在删除…" : "删除链路" }}</span>
       </Button>
     </div>
   </DropdownMenu>

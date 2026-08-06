@@ -523,7 +523,10 @@ function applyExample(value: string | number | undefined) {
 
 <template>
   <div class="flex h-full min-h-0 flex-col">
-    <header class="grid shrink-0 gap-3 border-b border-border p-3">
+    <header
+      class="netlab-scrollbar grid max-h-[55%] shrink-0 gap-3 overflow-y-auto border-b border-border p-3"
+      data-layout-region="traffic-filter-controls"
+    >
       <div class="grid grid-cols-2 gap-2 xl:grid-cols-5">
         <FormField label="过滤模板">
           <Select
@@ -840,7 +843,10 @@ function applyExample(value: string | number | undefined) {
       </p>
     </header>
 
-    <div class="min-h-0 flex-1 overflow-auto p-3">
+    <div
+      class="min-h-0 flex-1 overflow-auto p-3 netlab-scrollbar"
+      data-layout-region="traffic-filter-results"
+    >
       <section class="rounded-md border border-cyan-500/30 bg-cyan-500/5 p-3">
         <div class="flex items-center gap-2">
           <Activity :size="16" class="text-cyan-300" />

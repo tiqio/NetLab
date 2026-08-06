@@ -191,6 +191,16 @@ const contextObjectLink = computed(() =>
       )
     : undefined,
 );
+const resourceContextStyle = computed(() => {
+  if (!resourceContext.value) return {};
+  const width = 224;
+  const estimatedHeight = contextNode.value ? 248 : 184;
+  return {
+    left: `${Math.max(8, Math.min(resourceContext.value.x, window.innerWidth - width - 8))}px`,
+    top: `${Math.max(8, Math.min(resourceContext.value.y, window.innerHeight - estimatedHeight - 8))}px`,
+    maxHeight: `${Math.max(120, window.innerHeight - 16)}px`,
+  };
+});
 
 function openResourceContext(
   id: string,
@@ -202,8 +212,8 @@ function openResourceContext(
   resourceContext.value = {
     id,
     type,
-    x: Math.max(8, Math.min(x, window.innerWidth - 220)),
-    y: Math.max(8, Math.min(y, window.innerHeight - 260)),
+    x,
+    y,
   };
 }
 
@@ -293,7 +303,7 @@ function openInterfaceCapture(value: NodeInterface) {
   portChooserOpen.value = false;
   setActiveBottomTab("captures");
   shell.value?.openBottom();
-  canvasStatus.value = `Ready to capture ${value.name}.`;
+  canvasStatus.value = `已选择接口 ${value.name}，可以开始抓包。`;
 }
 function requestContextNodeCapture(node: Node) {
   closeResourceContext();
@@ -1676,18 +1686,15 @@ onBeforeUnmount(() => {
           role="menu"
           :aria-label="
             contextNode
-              ? `Actions for ${contextNode.name}`
+              ? `${contextNode.name} 的操作`
               : contextObject
-                ? `Actions for ${contextObject.name}`
+                ? `${contextObject.name} 的操作`
                 : contextObjectLink
-                  ? `Actions for ${contextObjectLink.id}`
+                  ? `${contextObjectLink.id} 的操作`
                   : '链路操作'
           "
-          class="fixed w-52 rounded-md border border-border bg-popover p-1 shadow-2xl"
-          :style="{
-            left: `${resourceContext.x}px`,
-            top: `${resourceContext.y}px`,
-          }"
+          class="netlab-scrollbar fixed w-56 max-w-[calc(100vw-1rem)] overflow-y-auto rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-2xl"
+          :style="resourceContextStyle"
         >
           <template v-if="contextNode">
             <Button
@@ -1697,7 +1704,7 @@ onBeforeUnmount(() => {
               role="menuitem"
               @click="openNodeTerminal(contextNode)"
             >
-              <TerminalSquare :size="13" /> Terminal
+              <TerminalSquare :size="13" class="shrink-0" /> 终端
             </Button>
             <Button
               variant="ghost"
@@ -1707,12 +1714,12 @@ onBeforeUnmount(() => {
               :disabled="contextNode.observed_state !== 'running'"
               :title="
                 contextNode.observed_state === 'running'
-                  ? 'Choose one of this node’s interfaces for live capture'
-                  : 'Start the node before capturing an interface'
+                  ? '选择该节点的一个接口进行实时抓包'
+                  : '请先启动节点，再选择接口抓包'
               "
               @click="requestContextNodeCapture(contextNode)"
             >
-              <Radio :size="13" /> Capture interface…
+              <Radio :size="13" class="shrink-0" /> 抓取接口流量…
             </Button>
             <Button
               variant="ghost"
@@ -1723,7 +1730,7 @@ onBeforeUnmount(() => {
             >
               <Play v-if="contextNode.desired_state !== 'running'" :size="13" />
               <Square v-else :size="13" />
-              {{ contextNode.desired_state === "running" ? "Stop" : "Start" }}
+              {{ contextNode.desired_state === "running" ? "停止" : "启动" }}
             </Button>
             <Button
               variant="ghost"
@@ -1732,7 +1739,7 @@ onBeforeUnmount(() => {
               role="menuitem"
               @click="requestContextNodeDelete(contextNode)"
             >
-              <Trash2 :size="13" /> Delete
+              <Trash2 :size="13" class="shrink-0" /> 删除
             </Button>
           </template>
           <template v-else-if="contextLink">
@@ -1746,7 +1753,7 @@ onBeforeUnmount(() => {
                 requestReconnect();
               "
             >
-              <Cable :size="13" /> Reconnect endpoint
+              <Cable :size="13" class="shrink-0" /> 重新连接端点
             </Button>
             <Button
               variant="ghost"
@@ -1758,7 +1765,7 @@ onBeforeUnmount(() => {
                 toggleSelectedRoute();
               "
             >
-              Edit route
+              编辑路由
             </Button>
             <Button
               variant="ghost"
@@ -1770,7 +1777,7 @@ onBeforeUnmount(() => {
                 disconnectSelectedLink();
               "
             >
-              Disconnect
+              断开连接
             </Button>
           </template>
           <template v-else-if="contextObjectLink">
@@ -1782,7 +1789,7 @@ onBeforeUnmount(() => {
               :disabled="deletingObjectLinkIds.includes(contextObjectLink.id)"
               @click="deleteObjectLink(contextObjectLink)"
             >
-              <Trash2 :size="13" /> Delete link
+              <Trash2 :size="13" class="shrink-0" /> 删除链路
             </Button>
           </template>
           <template v-else-if="contextObject">
@@ -1794,7 +1801,7 @@ onBeforeUnmount(() => {
               role="menuitem"
               @click="openNetworkObjectTerminal(contextObject)"
             >
-              <TerminalSquare :size="13" /> Terminal
+              <TerminalSquare :size="13" class="shrink-0" /> 终端
             </Button>
             <Button
               variant="ghost"
@@ -1803,7 +1810,7 @@ onBeforeUnmount(() => {
               role="menuitem"
               @click="requestContextObjectDelete(contextObject)"
             >
-              <Trash2 :size="13" /> Delete
+              <Trash2 :size="13" class="shrink-0" /> 删除
             </Button>
           </template>
         </section>

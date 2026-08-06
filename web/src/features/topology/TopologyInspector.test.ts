@@ -1,6 +1,7 @@
 import { flushPromises, mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 import { api, type NetworkObject, type Node } from "@/api";
+import { nodeFactory } from "@/test/factories";
 import TopologyInspector from "./TopologyInspector.vue";
 import LightweightSwitchConfigEditor from "@/features/nodes/LightweightSwitchConfigEditor.vue";
 import LightweightPCConfigurationPanel from "@/features/nodes/LightweightPCConfigurationPanel.vue";
@@ -36,6 +37,14 @@ describe("TopologyInspector", () => {
       },
     ]);
     const wrapper = mount(TopologyInspector, {
+      global: {
+        stubs: {
+          NodeOperationsPanel: true,
+          ResourceCharts: {
+            template: '<div aria-label="所选节点资源分配图" />',
+          },
+        },
+      },
       props: {
         laboratoryId: "lab-1",
         interfaces: [],
@@ -496,5 +505,41 @@ describe("TopologyInspector", () => {
       wrapper.get('[aria-label="网络对象诊断结果"]').attributes("style"),
     ).toContain("display: none");
     diagnostics.mockRestore();
+  });
+
+  it("separates a long node header, chart, and scrollable inspector body", () => {
+    const wrapper = mount(TopologyInspector, {
+      global: {
+        stubs: {
+          NodeOperationsPanel: true,
+          ResourceCharts: {
+            template: '<div aria-label="所选节点资源分配图" />',
+          },
+        },
+      },
+      props: {
+        laboratoryId: "lab-1",
+        node: {
+          ...nodeFactory(),
+          name: "超长节点名称".repeat(20),
+          observed_state: "failed",
+          last_error: {
+            code: "runtime_failed",
+            message: "failure ".repeat(40),
+            retryable: true,
+          },
+        },
+        interfaces: [],
+      },
+    });
+    expect(
+      wrapper.get('[data-layout-region="inspector-header"]').classes(),
+    ).toContain("flex-wrap");
+    expect(
+      wrapper.get('[data-layout-region="inspector-content"]').classes(),
+    ).toContain("overflow-y-auto");
+    expect(
+      wrapper.get('[data-layout-region="inspector-resource-chart"]').classes(),
+    ).toContain("min-h-[240px]");
   });
 });

@@ -50,15 +50,19 @@ const value = computed({
   <Tabs
     v-model="value"
     :tabs="[
-      { value: 'tasks', label: `Tasks (${tasks.length})` },
-      { value: 'console', label: 'Console' },
-      { value: 'captures', label: 'Capture' },
+      { value: 'tasks', label: `任务 (${tasks.length})` },
+      { value: 'console', label: '终端' },
+      { value: 'captures', label: '抓包' },
       { value: 'traffic-filter', label: '流量过滤' },
     ]"
-    class="flex h-full flex-col"
+    class="flex h-full min-h-0 flex-col overflow-hidden"
+    data-layout-region="operations-drawer"
   >
     <template #default="{ value: active }">
-      <div class="min-h-0 flex-1 overflow-auto">
+      <div
+        class="min-h-0 flex-1 overflow-auto overscroll-contain netlab-scrollbar"
+        data-layout-region="operations-content"
+      >
         <TaskCenter
           v-show="active === 'tasks'"
           :tasks="tasks"

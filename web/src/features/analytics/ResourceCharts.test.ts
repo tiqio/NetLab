@@ -22,7 +22,24 @@ describe("ResourceCharts", () => {
     });
     expect(wrapper.findAll('[aria-label$="图"]')).toHaveLength(1);
     expect(wrapper.get('[aria-label="节点资源"] dl').classes()).toContain(
-      "grid-cols-3",
+      "resource-metrics",
     );
+    expect(
+      wrapper.get('[data-layout-region="resource-chart"]').classes(),
+    ).toContain("min-w-0");
+  });
+
+  it("keeps metrics outside the chart drawing region for long labels", () => {
+    const wrapper = mount(ResourceCharts, {
+      props: {
+        node: nodeFactory({ name: "超长节点名称".repeat(12) }),
+        tasks: [taskFactory()],
+      },
+    });
+    const region = wrapper.get('[data-layout-region="resource-chart"]');
+    expect(
+      region.get("dl").element.nextElementSibling?.getAttribute("aria-label"),
+    ).toBe("所选节点资源分配图");
+    expect(wrapper.classes()).toContain("resource-charts");
   });
 });

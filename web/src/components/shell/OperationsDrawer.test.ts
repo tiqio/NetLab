@@ -24,4 +24,16 @@ describe("OperationsDrawer", () => {
         ?.style.display || "",
     ).not.toBe("none");
   });
+
+  it("keeps localized tabs separate from the scrollable content region", () => {
+    const wrapper = mount(OperationsDrawer, {
+      props: { modelValue: "tasks", tasks: [], nodes: [] },
+    });
+    expect(wrapper.text()).toContain("任务 (0)");
+    expect(wrapper.text()).toContain("终端");
+    expect(wrapper.text()).toContain("抓包");
+    expect(
+      wrapper.get('[data-layout-region="operations-content"]').classes(),
+    ).toContain("overflow-auto");
+  });
 });

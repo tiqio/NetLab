@@ -87,21 +87,21 @@
 
 ### Tests for User Story 2
 
-- [ ] T032 [P] [US2] 为检查器长名称、失败状态、资源图和多按钮窄宽布局增加失败测试 `web/src/features/topology/TopologyInspector.test.ts`
-- [ ] T033 [P] [US2] 为资源图容器尺寸、指标区和主题切换重排增加失败测试 `web/src/features/analytics/ResourceCharts.test.ts`
-- [ ] T034 [P] [US2] 为 ECharts 零尺寸保护、ResizeObserver 重排和主题连续性增加失败测试 `web/src/components/charts/EChart.test.ts`
-- [ ] T035 [P] [US2] 为链路菜单视口碰撞、禁用/危险状态和键盘焦点增加失败测试 `web/src/features/topology/LinkContextMenu.test.ts`
-- [ ] T036 [P] [US2] 为任务/终端/抓包/流量过滤标签持久、内容滚动和切换连续性增加失败测试 `web/src/components/shell/OperationsDrawer.test.ts`
-- [ ] T037 [P] [US2] 增加检查器、菜单边缘和底部工作区浏览器矩阵 `tests/e2e/frontend_diagnostics.spec.ts`
+- [X] T032 [P] [US2] 为检查器长名称、失败状态、资源图和多按钮窄宽布局增加失败测试 `web/src/features/topology/TopologyInspector.test.ts`
+- [X] T033 [P] [US2] 为资源图容器尺寸、指标区和主题切换重排增加失败测试 `web/src/features/analytics/ResourceCharts.test.ts`
+- [X] T034 [P] [US2] 为 ECharts 零尺寸保护、ResizeObserver 重排和主题连续性增加失败测试 `web/src/components/charts/EChart.test.ts`
+- [X] T035 [P] [US2] 为链路菜单视口碰撞、禁用/危险状态和键盘焦点增加失败测试 `web/src/features/topology/LinkContextMenu.test.ts`
+- [X] T036 [P] [US2] 为任务/终端/抓包/流量过滤标签持久、内容滚动和切换连续性增加失败测试 `web/src/components/shell/OperationsDrawer.test.ts`
+- [X] T037 [P] [US2] 增加检查器、菜单边缘和底部工作区浏览器矩阵 `tests/e2e/frontend_diagnostics.spec.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T038 [US2] 在 `web/src/features/topology/TopologyInspector.vue` 分离标题、身份、状态、资源图、指标、表单和操作区域并加入局部滚动
-- [ ] T039 [US2] 在 `web/src/features/analytics/ResourceCharts.vue` 和 `web/src/components/charts/EChart.vue` 实现容器驱动尺寸、图例避让和主题重排
-- [ ] T040 [US2] 在 `web/src/features/topology/LinkContextMenu.vue` 与 `web/src/features/topology/TopologyWorkspace.vue` 统一节点/链路/网络对象/画布菜单定位和状态呈现
-- [ ] T041 [US2] 在 `web/src/components/shell/OperationsDrawer.vue` 和 `web/src/components/shell/LaboratoryShell.vue` 修复标签、固定区、滚动区和拓扑画布边界
-- [ ] T042 [US2] 在 `web/src/features/tasks/TaskCenter.vue`、`web/src/features/diagnostics/GlobalConsoleWorkspace.vue`、`web/src/features/diagnostics/GlobalCaptureWorkspace.vue` 和 `web/src/features/diagnostics/TrafficFilterPanel.vue` 修复会话列表、工具栏和空/长历史布局
-- [ ] T043 [US2] 运行 US2 聚焦测试、axe 和菜单边缘验收，并把结果记录到 `specs/008-ui-overlap-remediation/validation/milestones.md`
+- [X] T038 [US2] 在 `web/src/features/topology/TopologyInspector.vue` 分离标题、身份、状态、资源图、指标、表单和操作区域并加入局部滚动
+- [X] T039 [US2] 在 `web/src/features/analytics/ResourceCharts.vue` 和 `web/src/components/charts/EChart.vue` 实现容器驱动尺寸、图例避让和主题重排
+- [X] T040 [US2] 在 `web/src/features/topology/LinkContextMenu.vue` 与 `web/src/features/topology/TopologyWorkspace.vue` 统一节点/链路/网络对象/画布菜单定位和状态呈现
+- [X] T041 [US2] 在 `web/src/components/shell/OperationsDrawer.vue` 和 `web/src/components/shell/LaboratoryShell.vue` 修复标签、固定区、滚动区和拓扑画布边界
+- [X] T042 [US2] 在 `web/src/features/tasks/TaskCenter.vue`、`web/src/features/diagnostics/GlobalConsoleWorkspace.vue`、`web/src/features/diagnostics/GlobalCaptureWorkspace.vue` 和 `web/src/features/diagnostics/TrafficFilterPanel.vue` 修复会话列表、工具栏和空/长历史布局
+- [X] T043 [US2] 运行 US2 聚焦测试、axe 和菜单边缘验收，并把结果记录到 `specs/008-ui-overlap-remediation/validation/milestones.md`
 - [ ] T044 [US2] 创建检查器与工作区里程碑的聚焦 Git 提交，并把提交 SHA 写入 `specs/008-ui-overlap-remediation/validation/milestones.md`
 
 **Checkpoint**: US2 可独立验收所有检查器、菜单和底部工作区的可读性与可达性。

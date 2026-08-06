@@ -34,4 +34,17 @@ describe("LinkContextMenu", () => {
     await menu.findAll("button")[1].trigger("click");
     expect(wrapper.emitted("delete")).toHaveLength(1);
   });
+
+  it("keeps destructive and disabled states readable without icon overlap", async () => {
+    const wrapper = mount(LinkContextMenu, {
+      props: { objectLink: true, pending: true },
+    });
+    await wrapper.get("button").trigger("click");
+    const deleteButton = wrapper
+      .get('[aria-label="链路操作"]')
+      .findAll("button")[1];
+    expect(deleteButton.attributes("disabled")).toBeDefined();
+    expect(deleteButton.text()).toContain("正在删除");
+    expect(deleteButton.find("svg").classes()).toContain("shrink-0");
+  });
 });

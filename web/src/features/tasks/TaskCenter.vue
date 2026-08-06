@@ -98,7 +98,8 @@ const percent = (task: OperationTask) =>
 <template>
   <div class="flex h-full min-h-0 flex-col">
     <header
-      class="flex flex-wrap items-center gap-2 border-b border-border p-2"
+      class="netlab-scrollbar flex max-h-[45%] shrink-0 flex-wrap items-center gap-2 overflow-y-auto border-b border-border p-2"
+      data-layout-region="task-filters"
     >
       <Filter :size="14" class="text-muted-foreground" />
       <Input
@@ -155,7 +156,10 @@ const percent = (task: OperationTask) =>
         <RefreshCw :size="14" />
       </Button>
     </header>
-    <div class="flex-1 overflow-auto p-2 netlab-scrollbar">
+    <div
+      class="min-h-0 flex-1 overflow-auto p-2 netlab-scrollbar"
+      data-layout-region="task-results"
+    >
       <div
         v-if="!filtered.length"
         class="grid h-full place-items-center text-xs text-muted-foreground"

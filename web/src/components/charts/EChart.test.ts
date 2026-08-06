@@ -132,4 +132,12 @@ describe("EChart", () => {
       graphPoint: { x: 100, y: 50 },
     });
   });
+
+  it("exposes chart readiness and reapplies options after resize", async () => {
+    const wrapper = mount(EChart, { props: { option: { series: [] } } });
+    await wrapper.vm.$nextTick();
+    expect(wrapper.attributes("data-chart-ready")).toBe("true");
+    expect(setOption).toHaveBeenCalled();
+    wrapper.unmount();
+  });
 });

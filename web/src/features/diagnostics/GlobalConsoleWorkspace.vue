@@ -384,13 +384,14 @@ function addSerialForActiveNode() {
   <div class="flex h-full min-h-[180px] flex-col" data-global-console-workspace>
     <nav
       v-if="workspaces.length"
-      class="flex gap-1 overflow-x-auto border-b border-border bg-muted/20 p-1"
+      class="netlab-scrollbar flex shrink-0 gap-1 overflow-x-auto border-b border-border bg-muted/20 p-1"
+      data-layout-region="console-resources"
       aria-label="节点终端工作区"
     >
       <div
         v-for="workspace in workspaces"
         :key="workspace.nodeId"
-        class="flex items-center"
+        class="flex shrink-0 items-center"
       >
         <Button
           size="sm"
@@ -411,13 +412,14 @@ function addSerialForActiveNode() {
     </nav>
     <nav
       v-if="activeWorkspace"
-      class="flex gap-1 overflow-x-auto border-b border-border bg-muted/10 p-1"
+      class="netlab-scrollbar flex shrink-0 gap-1 overflow-x-auto border-b border-border bg-muted/10 p-1"
+      data-layout-region="console-sessions"
       aria-label="终端会话"
     >
       <div
         v-for="session in activeWorkspace.sessions"
         :key="session.id"
-        class="flex items-center"
+        class="flex shrink-0 items-center"
       >
         <Button
           size="sm"
@@ -483,7 +485,11 @@ function addSerialForActiveNode() {
         <Monitor :size="14" />
       </Button>
     </nav>
-    <div v-if="workspaces.length" class="min-h-0 flex-1">
+    <div
+      v-if="workspaces.length"
+      class="min-h-0 flex-1 overflow-hidden"
+      data-layout-region="console-content"
+    >
       <template v-for="workspace in workspaces" :key="workspace.nodeId">
         <ConsoleWorkspace
           v-for="session in workspace.sessions"

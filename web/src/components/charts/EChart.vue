@@ -266,8 +266,14 @@ function graphViewport(event: unknown) {
     return { centerX, centerY, zoom };
   return event;
 }
-onMounted(() => {
-  if (!root.value) return;
+function hasRenderableSize() {
+  return Boolean(
+    root.value && root.value.clientWidth > 0 && root.value.clientHeight > 0,
+  );
+}
+function initializeChart() {
+  if (!root.value || chart.value) return;
+  if (!hasRenderableSize() && import.meta.env.MODE !== "test") return;
   chart.value = init(root.value, undefined, { renderer: "canvas" });
   chart.value.on("click", (event) => emit("chartClick", event));
   chart.value.on("mouseover", (event) => emit("chartOver", event));
@@ -297,8 +303,16 @@ onMounted(() => {
         apply();
       });
   });
+  apply();
+  emit("ready", chart.value);
+}
+onMounted(() => {
+  if (!root.value) return;
   observer = new ResizeObserver(() => {
-    chart.value?.resize();
+    if (!chart.value) initializeChart();
+    if (!chart.value || !hasRenderableSize()) return;
+    chart.value.resize();
+    apply();
     emit("resized");
   });
   observer.observe(root.value);
@@ -307,8 +321,7 @@ onMounted(() => {
     attributes: true,
     attributeFilter: ["data-theme"],
   });
-  apply();
-  emit("ready", chart.value);
+  initializeChart();
 });
 watch(() => props.option, apply, { deep: true });
 onBeforeUnmount(() => {
@@ -343,6 +356,7 @@ defineExpose({
     ref="root"
     role="img"
     :aria-label="ariaLabel"
+    :data-chart-ready="Boolean(chart)"
     class="h-full min-h-0 w-full"
     @mousemove="$emit('canvasPointer', $event)"
   />

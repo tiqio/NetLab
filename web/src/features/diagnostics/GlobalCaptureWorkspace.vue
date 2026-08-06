@@ -247,7 +247,8 @@ watch(
 <template>
   <div class="flex h-full min-h-[180px] flex-col" data-global-capture-workspace>
     <nav
-      class="flex shrink-0 gap-1 overflow-x-auto border-b border-border bg-muted/20 p-1"
+      class="netlab-scrollbar flex shrink-0 gap-1 overflow-x-auto border-b border-border bg-muted/20 p-1"
+      data-layout-region="capture-resources"
       aria-label="节点抓包工作区"
     >
       <Button
@@ -286,7 +287,8 @@ watch(
 
     <nav
       v-if="activeGroupId"
-      class="flex shrink-0 gap-1 overflow-x-auto border-b border-border bg-muted/10 p-1"
+      class="netlab-scrollbar flex shrink-0 gap-1 overflow-x-auto border-b border-border bg-muted/10 p-1"
+      data-layout-region="capture-sources"
       aria-label="抓包来源"
     >
       <Button
@@ -336,7 +338,11 @@ watch(
       </Button>
     </nav>
 
-    <div v-if="openSources.length" class="min-h-0 flex-1 overflow-auto">
+    <div
+      v-if="openSources.length"
+      class="min-h-0 flex-1 overflow-auto netlab-scrollbar"
+      data-layout-region="capture-content"
+    >
       <CapturePanel
         v-for="source in openSources"
         v-show="source.key === activeSourceKey"
