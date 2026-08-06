@@ -9,6 +9,7 @@
 | Full Chinese UI | `256dd7d` | 49 focused component/locales tests; strengthened interpolation scan; frontend build; six three-viewport localization journeys | passed | local disposable acceptance |
 | Responsive and theme stability | `a4a2be9` | 6 shell sizing tests; 27 dual-theme/three-viewport/axe tests; 9 twenty-cycle and 125% input tests; build and localization scan | passed | local disposable acceptance |
 | Continuous audit | `fc10cf4` | 5 inventory/evidence/redaction tests; duplicate and missing-matrix injection; 9 three-viewport visual audit journeys; artifact hygiene | passed | local disposable acceptance |
+| Final local quality gates | `b280f6c` | Go lint/unit/contract/security; 282 frontend unit tests; 25 acceptance unit tests; localization/schema/artifact checks; 51 browser matrix scenarios with the single contrast finding corrected and 18/18 axe rerun passing | passed | `ui-overlap-final-matrix`, `ui-overlap-light-contrast` |
 | Target acceptance | pending | clean candidate, deployment, high-density Lab, cleanup | pending | pending |
 
 ## Recording Rules

@@ -197,7 +197,7 @@
 
 - [X] T080 [P] 将最终术语、允许英文范围、错误分层和布局约束补充到用户文档 `docs/operations/ui-workspace.md`
 - [X] T081 [P] 将审计覆盖率、已修复发现和允许覆盖理由回填到 `specs/008-ui-overlap-remediation/validation/audit-inventory.md`
-- [ ] T082 按 `specs/008-ui-overlap-remediation/quickstart.md` 运行 lint、格式、全部前端单测、构建、浏览器矩阵、Go 单元/合同/安全和产物合规门禁
+- [X] T082 按 `specs/008-ui-overlap-remediation/quickstart.md` 运行 lint、格式、全部前端单测、构建、浏览器矩阵、Go 单元/合同/安全和产物合规门禁
 - [ ] T083 在干净提交上构建候选并将 commit SHA、candidate ID、二进制摘要、合同摘要、构建时间和无迁移状态记录到 `specs/008-ui-overlap-remediation/validation/candidate.md`
 - [ ] T084 使用已构建候选部署到 `10.72.1.7`，禁止目标机源码修改，并将部署与回滚信息记录到 `specs/008-ui-overlap-remediation/validation/target-acceptance.md`
 - [ ] T085 在 `10.72.1.7` 创建专用高密度 Lab，执行双主题、三视口、125%、QEMU/Docker/PC/Bridge/NAT/L2/L3、平行链路、失败状态、终端、抓包和 Traffic Filter 验收并输出 `specs/008-ui-overlap-remediation/validation/acceptance-evidence.json`
