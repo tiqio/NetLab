@@ -26,3 +26,15 @@
 - Nonterminal tasks after acceptance: 0.
 - Each passing run reports `baseline_restored: true` and `remaining_count: 0`.
 - Final evidence: `specs/008-ui-overlap-remediation/validation/acceptance-evidence.json`.
+
+## 2026-08-06 Overlap Hotfix
+
+- Candidate: `ui-overlap-hotfix-20260806T095807Z-r2`
+- Source commit: `d5cfafde226ec351c5daef24ab8ceac84835a971`
+- Installed binary SHA-256: `cb2aa0fd2575dedbed0f0b7175a057a01f2726181a6ba9784873d6c859f70969`
+- Deployment: the project `deploy/scripts/install.sh` prebuilt-binary path atomically synchronized the service binary, release configuration and template-readiness candidate; no target source file was edited.
+- Rollback artifacts: `/usr/local/bin/netlabd.rollback-ui-overlap-hotfix-20260806T095807Z-r2`, `/etc/netlab/netlab.yaml.rollback-ui-overlap-hotfix-20260806T095807Z-r2`, and `/etc/netlab/template-readiness.json.rollback-ui-overlap-hotfix-20260806T095807Z-r2`.
+- Health: `netlab.service` active and `GET /healthz` returned `{"status":"ok"}`.
+- Release identity: the HTTP capability response reported the candidate, installed binary digest, contract digest and build timestamp above.
+- Visual verification: at 1024×768 the topology category legend rendered at the lower-left without intersecting the top toolbar or Inspector toggle; after selecting a Docker node, the vCPU, CPU quota and memory cards remained above the resource chart and the chart no longer rendered an undeclared legend over its plot area.
+- Regression gates: 69 frontend test files with 284 tests passed; 12 acceptance test files with 25 tests passed; production build, localization scan and frontend artifact hygiene passed.
