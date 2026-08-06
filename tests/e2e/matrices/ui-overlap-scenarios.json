@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "themes": ["light", "dark"],
+  "viewports": [
+    { "width": 1024, "height": 768 },
+    { "width": 1366, "height": 768 },
+    { "width": 1920, "height": 1080 }
+  ],
+  "display_scales": [1, 1.25],
+  "scenarios": [
+    { "id": "topology-empty", "surface": "topology", "density": "empty", "states": ["default"] },
+    { "id": "topology-ports-1", "surface": "topology", "density": "normal", "states": ["one-port", "hover"] },
+    { "id": "topology-ports-2", "surface": "topology", "density": "normal", "states": ["two-ports", "selected"] },
+    { "id": "topology-ports-4", "surface": "topology", "density": "normal", "states": ["four-ports", "drag"] },
+    { "id": "topology-ports-8", "surface": "topology", "density": "dense", "states": ["eight-ports", "zoom"] },
+    { "id": "topology-ports-16", "surface": "topology", "density": "dense", "states": ["sixteen-ports", "failed"] },
+    { "id": "topology-parallel-traffic", "surface": "topology", "density": "dense", "states": ["parallel-links", "traffic"] },
+    { "id": "inspector-resource-dense", "surface": "inspector", "density": "dense", "states": ["long-name", "failed", "actions"] },
+    { "id": "context-menu-edges", "surface": "context-menu", "density": "normal", "states": ["overlay-open", "disabled", "danger"] },
+    { "id": "console-empty-multiple", "surface": "console", "density": "dense", "states": ["empty", "multiple-sessions"] },
+    { "id": "capture-helper-errors", "surface": "capture", "density": "normal", "states": ["empty", "failed", "running"] },
+    { "id": "traffic-filter-history", "surface": "traffic-filter", "density": "dense", "states": ["running", "large-history"] },
+    { "id": "templates-unavailable", "surface": "templates", "density": "dense", "states": ["disabled", "long-text"] },
+    { "id": "automation-long-errors", "surface": "automation", "density": "dense", "states": ["failed", "long-text"] }
+  ]
+}

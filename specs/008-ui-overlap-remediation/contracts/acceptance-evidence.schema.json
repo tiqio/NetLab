@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://netlab.local/contracts/ui-overlap-acceptance-evidence.schema.json",
+  "title": "NetLab UI Visual and Localization Acceptance Evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "candidate",
+    "matrix",
+    "scenarios",
+    "summary",
+    "cleanup",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate_id", "commit_sha", "artifact_digest"],
+      "properties": {
+        "candidate_id": { "type": "string", "minLength": 1 },
+        "commit_sha": { "type": "string", "pattern": "^[0-9a-f]{7,64}$" },
+        "artifact_digest": { "type": "string", "minLength": 1 },
+        "contract_digest": { "type": "string" },
+        "deployed_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "matrix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["themes", "viewports", "display_scales"],
+      "properties": {
+        "themes": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": { "enum": ["light", "dark"] }
+        },
+        "viewports": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["width", "height"],
+            "properties": {
+              "width": { "type": "integer", "minimum": 1024 },
+              "height": { "type": "integer", "minimum": 768 }
+            }
+          }
+        },
+        "display_scales": {
+          "type": "array",
+          "contains": { "const": 1.25 },
+          "items": { "type": "number", "minimum": 1, "maximum": 2 }
+        }
+      }
+    },
+    "scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "surface",
+          "theme",
+          "viewport",
+          "result",
+          "checks",
+          "artifacts"
+        ],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "surface": { "type": "string", "minLength": 1 },
+          "theme": { "enum": ["light", "dark"] },
+          "viewport": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["width", "height"],
+            "properties": {
+              "width": { "type": "integer", "minimum": 1024 },
+              "height": { "type": "integer", "minimum": 768 }
+            }
+          },
+          "display_scale": { "type": "number", "minimum": 1, "maximum": 2 },
+          "result": { "enum": ["passed", "failed", "waived"] },
+          "checks": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "result", "message"],
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "overlap",
+                    "overflow",
+                    "hit-target",
+                    "contrast",
+                    "focus",
+                    "localization",
+                    "terminology",
+                    "continuity",
+                    "cleanup"
+                  ]
+                },
+                "result": { "enum": ["passed", "failed", "waived"] },
+                "message": { "type": "string", "minLength": 1 },
+                "finding_ids": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              }
+            }
+          },
+          "artifacts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "path", "redacted"],
+              "properties": {
+                "kind": { "enum": ["screenshot", "trace", "report", "log"] },
+                "path": { "type": "string", "minLength": 1 },
+                "redacted": { "type": "boolean", "const": true }
+              }
+            }
+          },
+          "waiver_reason": { "type": "string", "minLength": 1 }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": { "result": { "const": "waived" } },
+              "required": ["result"]
+            },
+            "then": {
+              "properties": {
+                "waiver_reason": { "type": "string", "minLength": 1 }
+              },
+              "required": ["waiver_reason"]
+            }
+          }
+        ]
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "result",
+        "blocking_findings",
+        "serious_findings",
+        "unapproved_english_count",
+        "page_horizontal_overflow_count"
+      ],
+      "properties": {
+        "result": { "enum": ["passed", "failed"] },
+        "blocking_findings": { "type": "integer", "minimum": 0 },
+        "serious_findings": { "type": "integer", "minimum": 0 },
+        "unapproved_english_count": { "type": "integer", "minimum": 0 },
+        "page_horizontal_overflow_count": { "type": "integer", "minimum": 0 },
+        "waived_findings": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "cleanup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baseline_digest", "final_digest", "owned_residual_count"],
+      "properties": {
+        "baseline_digest": { "type": "string", "minLength": 1 },
+        "final_digest": { "type": "string", "minLength": 1 },
+        "owned_residual_count": { "type": "integer", "minimum": 0 },
+        "existing_user_lab_count_before": { "type": "integer", "minimum": 0 },
+        "existing_user_lab_count_after": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

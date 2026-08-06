@@ -2,12 +2,12 @@
 
 ## Active Feature
 
-- Specification: `specs/006-topology-add-drawer/spec.md`
-- Plan: `specs/006-topology-add-drawer/plan.md`
+- Specification: `specs/008-ui-overlap-remediation/spec.md`
+- Plan: `specs/008-ui-overlap-remediation/plan.md`
 - Constitution: `.specify/memory/constitution.md`
-- Contracts: `specs/006-topology-add-drawer/contracts/`
-- Previous network-object links specification: `specs/005-network-object-links-routes/spec.md`
-- Previous network-object links plan: `specs/005-network-object-links-routes/plan.md`
+- Contracts: `specs/008-ui-overlap-remediation/contracts/`
+- Previous UI localization specification: `specs/007-ui-localization-theme/spec.md`
+- Previous UI localization plan: `specs/007-ui-localization-theme/plan.md`
 - Governance closure specification: `specs/002-constitution-gap-closure/spec.md`
 - Governance closure plan: `specs/002-constitution-gap-closure/plan.md`
 - Base platform specification: `specs/001-network-simulator-platform/spec.md`
