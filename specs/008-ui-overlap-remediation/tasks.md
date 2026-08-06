@@ -173,18 +173,18 @@
 
 ### Tests for User Story 5
 
-- [ ] T070 [P] [US5] 为审计场景完整性、重复 ID、矩阵覆盖和白名单约束增加测试 `tests/e2e/matrices/uiOverlapScenarioInventory.test.ts`
-- [ ] T071 [P] [US5] 增加通用页面碰撞、裁切、命中区、焦点和非白名单英文检测规格 `tests/e2e/matrices/uiVisualAudit.spec.ts`
-- [ ] T072 [P] [US5] 为验收证据汇总、Schema 校验和失败发现关联增加测试 `tests/e2e/fixtures/visualAuditEvidence.test.ts`
-- [ ] T073 [P] [US5] 扩展证据脱敏测试，拒绝密码、终端敏感输出和数据包内容 `tests/e2e/fixtures/artifactPolicy.test.ts`
+- [X] T070 [P] [US5] 为审计场景完整性、重复 ID、矩阵覆盖和白名单约束增加测试 `tests/e2e/matrices/uiOverlapScenarioInventory.test.ts`
+- [X] T071 [P] [US5] 增加通用页面碰撞、裁切、命中区、焦点和非白名单英文检测规格 `tests/e2e/matrices/uiVisualAudit.spec.ts`
+- [X] T072 [P] [US5] 为验收证据汇总、Schema 校验和失败发现关联增加测试 `tests/e2e/fixtures/visualAuditEvidence.test.ts`
+- [X] T073 [P] [US5] 扩展证据脱敏测试，拒绝密码、终端敏感输出和数据包内容 `tests/e2e/fixtures/artifactPolicy.test.ts`
 
 ### Implementation for User Story 5
 
-- [ ] T074 [US5] 在 `tests/e2e/fixtures/visualAudit.ts` 实现场景装载、布局采样、允许覆盖、严重度分类和证据生成
-- [ ] T075 [US5] 将视觉审计摘要接入现有 acceptance run summary `tests/e2e/fixtures/acceptanceFixture.ts`
-- [ ] T076 [US5] 将中文化扫描、视觉矩阵和证据 Schema 校验接入本地验收入口 `acceptance/frontend-acceptance.sh`
-- [ ] T077 [US5] 扩展前端产物合规检查以验证脱敏视觉证据和禁止敏感内容 `scripts/check-frontend-artifacts.sh`
-- [ ] T078 [US5] 运行 US5 注入失败/恢复通过测试，并把自动化回归结果记录到 `specs/008-ui-overlap-remediation/validation/milestones.md`
+- [X] T074 [US5] 在 `tests/e2e/fixtures/visualAudit.ts` 实现场景装载、布局采样、允许覆盖、严重度分类和证据生成
+- [X] T075 [US5] 将视觉审计摘要接入现有 acceptance run summary `tests/e2e/fixtures/acceptanceFixture.ts`
+- [X] T076 [US5] 将中文化扫描、视觉矩阵和证据 Schema 校验接入本地验收入口 `acceptance/frontend-acceptance.sh`
+- [X] T077 [US5] 扩展前端产物合规检查以验证脱敏视觉证据和禁止敏感内容 `scripts/check-frontend-artifacts.sh`
+- [X] T078 [US5] 运行 US5 注入失败/恢复通过测试，并把自动化回归结果记录到 `specs/008-ui-overlap-remediation/validation/milestones.md`
 - [ ] T079 [US5] 创建持续视觉与中文化回归里程碑的聚焦 Git 提交，并把提交 SHA 写入 `specs/008-ui-overlap-remediation/validation/milestones.md`
 
 **Checkpoint**: US5 可独立阻止布局碰撞、低对比度和英文文案回归。

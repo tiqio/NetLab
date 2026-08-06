@@ -31,6 +31,10 @@ trap on_signal INT TERM HUP
 
 cd "$ROOT/web"
 npm run test:acceptance-unit
+cd "$ROOT"
+./scripts/check-ui-localization.sh
+make test-acceptance-schema
+cd "$ROOT/web"
 if [[ "$PROFILE" == "target-host" ]]; then
   : "${NETLAB_ACCEPTANCE_BASE_URL:?NETLAB_ACCEPTANCE_BASE_URL is required for target-host acceptance}"
   if [[ "$NETLAB_ACCEPTANCE_BASE_URL" == *"@"* ]]; then

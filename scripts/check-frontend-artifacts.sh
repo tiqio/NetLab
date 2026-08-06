@@ -72,4 +72,11 @@ if ((${#payload_roots[@]})) && rg -n -i \
   exit 1
 fi
 
+for evidence in $(find acceptance/.runs test-results web/test-results -type f -name 'visual-audit.json' 2>/dev/null); do
+  node -e 'const fs=require("fs"); const value=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); if(!value.summary || !Array.isArray(value.results)) process.exit(1)' "$evidence" || {
+    echo "invalid visual audit evidence: $evidence" >&2
+    exit 1
+  }
+done
+
 echo 'frontend artifact hygiene check passed'
