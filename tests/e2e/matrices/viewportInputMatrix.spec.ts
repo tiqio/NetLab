@@ -8,7 +8,9 @@ test("primary shell controls are keyboard reachable at the configured viewport",
   await page.evaluate(() => {
     document.documentElement.style.zoom = "1.25";
   });
-  await activateByKeyboard(page, page.getByTestId("laboratory-switcher"));
+  const switcher = page.getByTestId("laboratory-switcher");
+  if ((await switcher.getAttribute("aria-expanded")) !== "true")
+    await activateByKeyboard(page, switcher);
   const newButton = page.getByTestId("new-laboratory");
   await activateByKeyboard(page, newButton);
   await expect(page.getByRole("dialog", { name: "创建实验室" })).toBeVisible();
