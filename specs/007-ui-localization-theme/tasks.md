@@ -150,7 +150,7 @@
 - [X] T062 扫描跟踪文件中的秘密、凭据、抓包和专有镜像并记录清洁结果于 `specs/007-ui-localization-theme/validation.md`
 - [X] T063 验证工作区清洁后创建最终验收提交并记录 commit SHA、候选 ID、contract digest、binary digest、构建时间和无迁移状态于 `specs/007-ui-localization-theme/validation.md`
 - [X] T064 从 T063 的干净提交构建部署产物并使用正式安装流程部署到 `10.72.1.7`，部署记录写入 `specs/007-ui-localization-theme/validation.md`
-- [ ] T065 在 `10.72.1.7` 创建专用验收 Lab，验证 QEMU、Docker、链路、Console、Capture、Traffic Filter 在三态主题切换和双浏览器不同主题下持续可用，证据写入 `specs/007-ui-localization-theme/validation.md`
+- [X] T065 在 `10.72.1.7` 创建专用验收 Lab，验证 QEMU、Docker、链路、Console、Capture、Traffic Filter 在三态主题切换和双浏览器不同主题下持续可用，证据写入 `specs/007-ui-localization-theme/validation.md`
 - [X] T066 删除目标机专用验收 Lab 并验证无遗留 QEMU、Docker、netns、bridge、capture、Traffic Filter 或 helper 资源，结果写入 `specs/007-ui-localization-theme/validation.md`
 - [X] T067 使用上一已记录候选执行回滚演练，验证 SPA、既有实验室与运行会话恢复后将结果归档到 `specs/007-ui-localization-theme/validation.md`
 
@@ -260,6 +260,6 @@ T050 双主题三视口浏览器矩阵
 - [X] T069 将 `web/src/features/topology/TopologyCanvas.vue`, `web/src/features/topology/TrafficPathOverlay.vue`, `web/src/features/topology/topologyVisualSemantics.ts`, `web/src/features/topology/topologySymbols.ts` 中的固定颜色迁移到浅色/深色拓扑语义调色板，并增加节点、端口、链路、箭头、粒子、选择及流量状态双主题视觉测试 per FR-013/FR-015 and US3/AC2-3 (partial)
 - [X] T070 将 `web/src/features/analytics/ResourceCharts.vue`, `web/src/components/charts/CaptureVolumeChart.vue`, `web/src/components/charts/TaskProgressChart.vue` 的固定颜色迁移到图表语义调色板，修正 `web/src/components/charts/EChart.vue` 的主题配置合并以保留调用方 title/legend/tooltip/dataZoom/selection，并扩展 `web/src/components/charts/EChart.test.ts` per FR-016 and US2/AC2 and US3/AC3 (partial)
 - [X] T071 扩展 `tests/e2e/frontend_localization.spec.ts`, `tests/e2e/frontend_theme_continuity.spec.ts`, `tests/e2e/frontend_localization_theme_accessibility.spec.ts`，在两种主题和三视口下执行 axe、全键盘、中文长文本、资源添加、链路、任务、Console、Capture、Traffic Filter 及主题切换前后权威状态/会话连续性断言 per FR-024/FR-025 and SC-003/SC-004/SC-005 (partial)
-- [ ] T072 修复 `tests/e2e/pages/TemplatePage.ts` 与相关 FormField/Select 稳定定位合同，随后在 `10.72.1.7` 创建并清理专用验收 Lab，完成 QEMU、Docker、链路、Console、Capture、Traffic Filter、三态主题和双浏览器隔离联合验收，并将证据写入 `specs/007-ui-localization-theme/validation.md` per FR-026 and T065 (missing)
+- [X] T072 修复 `tests/e2e/pages/TemplatePage.ts` 与相关 FormField/Select 稳定定位合同，随后在 `10.72.1.7` 创建并清理专用验收 Lab，完成 QEMU、Docker、链路、Console、Capture、Traffic Filter、三态主题和双浏览器隔离联合验收，并将证据写入 `specs/007-ui-localization-theme/validation.md` per FR-026 and T065 (missing)
 - [X] T073 将 `web/src/components/appearance/ThemeSwitcher.vue` 作为共享控件接入 `web/src/features/laboratories/LaboratoryToolbar.vue`, `web/src/views/TemplatesView.vue`, `web/src/views/AutomationView.vue` 的正常布局，移除 `web/src/styles/workspace.css` 中可能遮挡操作的固定悬浮入口，并增加 1024×768 中文长文本可达性测试 per FR-007/FR-019 and plan: page entries (partial)
 - [X] T074 使用安全的 `globalThis.matchMedia` 能力检测重构 `web/index.html` 和 `web/src/themeBootstrap.ts` 的首屏主题解析，并在 `web/src/themeBootstrap.test.ts` 增加无 matchMedia、无 localStorage、无明确系统偏好时深色回退且无挂载阻塞的测试 per FR-008/FR-021 (partial)
