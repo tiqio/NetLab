@@ -269,6 +269,21 @@ func TestContainerCommandRejectsNonStringArguments(t *testing.T) {
 	}
 }
 
+func TestStartPreservesNginxForegroundCommand(t *testing.T) {
+	engine := &fakeEngine{}
+	adapter := NewAdapterWithEngine(engine)
+	node := domain.Node{ID: "nginx-node", LaboratoryID: "lab-1", Config: map[string]any{
+		"image":   "nginx:1.30-alpine",
+		"command": []any{"nginx", "-g", "daemon off;"},
+	}}
+	if err := adapter.Start(context.Background(), node); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(engine.created.Config.Cmd, []string{"nginx", "-g", "daemon off;"}) {
+		t.Fatalf("nginx command=%#v", engine.created.Config.Cmd)
+	}
+}
+
 func TestOpenConsoleCreatesInteractiveShell(t *testing.T) {
 	client, server := net.Pipe()
 	defer server.Close()

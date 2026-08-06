@@ -40,7 +40,7 @@ func TestReleaseConfigPreservesOperatorSettings(t *testing.T) {
 	}
 }
 
-func TestGeneratedReadinessCoversEightBuiltIns(t *testing.T) {
+func TestGeneratedReadinessCoversBuiltIns(t *testing.T) {
 	directory := t.TempDir()
 	release := filepath.Join(directory, "release.json")
 	output := filepath.Join(directory, "readiness.json")
@@ -56,7 +56,7 @@ func TestGeneratedReadinessCoversEightBuiltIns(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, key := range []string{"fancywan", "ubuntu-qemu", "fortigate", "vyos", "ruijie-router", "ruijie-switch", "busybox-container", "ubuntu-container"} {
+	for _, key := range []string{"fancywan", "ubuntu-qemu", "fortigate", "vyos", "ruijie-router", "ruijie-switch", "busybox-container", "ubuntu-container", "nginx-container"} {
 		if !strings.Contains(string(body), `"template_key": "`+key+`"`) {
 			t.Fatalf("readiness missing %s", key)
 		}

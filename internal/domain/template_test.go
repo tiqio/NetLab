@@ -46,3 +46,14 @@ func TestBoundTemplateVersionOnlyAcceptsAssignedImage(t *testing.T) {
 		t.Fatal("a bound template version must reject other images from the same family")
 	}
 }
+
+func TestImageCompatibilitySeparatesDockerDeviceFamilies(t *testing.T) {
+	nginx := DeviceTemplate{Key: "nginx-container", DisplayName: "Nginx", RuntimeKind: RuntimeDocker}
+	version := TemplateVersion{RuntimeOptions: map[string]any{"recommended_image_name": "nginx"}}
+	if !ImageCompatibleWithTemplate(ImageVersion{RuntimeKind: RuntimeDocker, Name: "nginx", SourceReference: "nginx:1.30-alpine"}, nginx, version) {
+		t.Fatal("Nginx image should match the Nginx template")
+	}
+	if ImageCompatibleWithTemplate(ImageVersion{RuntimeKind: RuntimeDocker, Name: "busybox", SourceReference: "busybox:1.38.0"}, nginx, version) {
+		t.Fatal("BusyBox image must not match the Nginx template")
+	}
+}

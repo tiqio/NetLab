@@ -175,6 +175,8 @@ func imageFamily(value string) string {
 		return "vyos"
 	case has("busybox"):
 		return "busybox"
+	case has("nginx"):
+		return "nginx"
 	case has("ubuntu"):
 		return "ubuntu"
 	default:

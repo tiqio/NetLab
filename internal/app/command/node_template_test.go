@@ -105,6 +105,37 @@ func TestCreateNodeRejectsUnreviewedImage(t *testing.T) {
 	}
 }
 
+func TestCreateNginxNodeUsesForegroundCommandAndMatchingImage(t *testing.T) {
+	ctx := context.Background()
+	database, err := storesqlite.Open(ctx, "file:nginx-template?mode=memory&cache=shared")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer database.Close()
+	topology := storesqlite.NewTopologyRepository(database)
+	templates := storesqlite.NewTemplateRepository(database)
+	lab, _ := command.NewLaboratoryService(topology).Create(ctx, "nginx-lab", "", domain.RecoveryRemainStopped)
+	image := domain.ImageVersion{ID: domain.NewID(), RuntimeKind: domain.RuntimeDocker, Name: "nginx", Version: "1.30-alpine", Digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", SourceType: "oci_registry", SourceReference: "nginx:1.30-alpine", Format: "oci", Availability: domain.ImageAvailable, LicenseStatus: domain.LicenseReviewed, LicenseNotes: "official image", CreatedAt: time.Now().UTC()}
+	if err = templates.CreateImage(ctx, image); err != nil {
+		t.Fatal(err)
+	}
+	versionID := domain.NewID()
+	if err = templates.UpsertTemplate(ctx, domain.DeviceTemplate{Key: "nginx-container", DisplayName: "Nginx", RuntimeKind: domain.RuntimeDocker, Versions: []domain.TemplateVersion{{ID: versionID, Version: "1.30-alpine", ManifestVersion: 1, Defaults: domain.TemplateDefaults{CPUCount: 1, MemoryMiB: 128, Interfaces: 1, InterfaceNameFormat: "eth%d"}, NICDrivers: []string{"veth"}, Capabilities: []string{"http_server"}, RuntimeOptions: map[string]any{"command": []any{"nginx", "-g", "daemon off;"}, "recommended_image_name": "nginx", "recommended_image_version": "1.30-alpine"}, Enabled: true}}}); err != nil {
+		t.Fatal(err)
+	}
+	node, interfaces, err := command.NewNodeService(topology, templates).CreateConfigured(ctx, lab.ID, command.CreateNodeRequest{Name: "web", TemplateVersionID: versionID, ImageVersionID: image.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	commandValue, ok := node.Config["command"].([]any)
+	if !ok || len(commandValue) != 3 || commandValue[0] != "nginx" || commandValue[2] != "daemon off;" {
+		t.Fatalf("nginx command=%#v", node.Config["command"])
+	}
+	if node.Config["image"] != "nginx:1.30-alpine@"+image.Digest || len(interfaces) != 1 || interfaces[0].Name != "eth0" {
+		t.Fatalf("node=%+v interfaces=%+v", node, interfaces)
+	}
+}
+
 func TestCreateNodeRejectsImageFromDifferentQEMUDeviceFamily(t *testing.T) {
 	ctx := context.Background()
 	database, err := storesqlite.Open(ctx, "file:node-template-family?mode=memory&cache=shared")

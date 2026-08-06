@@ -24,7 +24,16 @@ func TestBuiltInTemplatesLoad(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(values) != 8 {
+	if len(values) != 9 {
 		t.Fatalf("templates=%d", len(values))
 	}
+	for _, template := range values {
+		if template.Key == "nginx-container" {
+			if len(template.Versions) != 2 {
+				t.Fatalf("nginx versions=%d", len(template.Versions))
+			}
+			return
+		}
+	}
+	t.Fatal("nginx-container template missing")
 }

@@ -19,6 +19,7 @@ jq -n --arg candidate "$candidate" --arg generated "$generated" '
     item("fancywan";"qemu"), item("ubuntu-qemu";"qemu"),
     item("fortigate";"qemu"), item("vyos";"qemu"),
     item("ruijie-router";"qemu"), item("ruijie-switch";"qemu"),
-    item("busybox-container";"docker"), item("ubuntu-container";"docker")
+    item("busybox-container";"docker"), item("ubuntu-container";"docker"),
+    item("nginx-container";"docker")
   ]}' >"$output"
 chmod 0644 "$output"

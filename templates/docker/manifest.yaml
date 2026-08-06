@@ -64,3 +64,23 @@ templates:
         capabilities: []
         runtime_options: {command: ["sleep", "infinity"], recommended_image_name: ubuntu, recommended_image_version: "26.04"}
         enabled: true
+  - key: nginx-container
+    display_name: Nginx
+    runtime_kind: docker
+    versions:
+      - version: "1.30-alpine"
+        manifest_version: 1
+        defaults: {cpu_count: 1, memory_mib: 128, interfaces: 1, interface_name_format: "eth%d"}
+        nic_drivers: [veth]
+        console_modes: []
+        capabilities: [http_server]
+        runtime_options: {command: ["nginx", "-g", "daemon off;"], recommended_image_name: nginx, recommended_image_version: "1.30-alpine"}
+        enabled: true
+      - version: "1.31-alpine"
+        manifest_version: 1
+        defaults: {cpu_count: 1, memory_mib: 128, interfaces: 1, interface_name_format: "eth%d"}
+        nic_drivers: [veth]
+        console_modes: []
+        capabilities: [http_server]
+        runtime_options: {command: ["nginx", "-g", "daemon off;"], recommended_image_name: nginx, recommended_image_version: "1.31-alpine"}
+        enabled: true

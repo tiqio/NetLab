@@ -24,7 +24,8 @@ type templateStoreStub struct {
 	images    []domain.ImageVersion
 }
 
-func (s *templateStoreStub) UpsertTemplate(context.Context, domain.DeviceTemplate) error {
+func (s *templateStoreStub) UpsertTemplate(_ context.Context, template domain.DeviceTemplate) error {
+	s.templates = append(s.templates, template)
 	return nil
 }
 
@@ -76,4 +77,29 @@ func TestListSeparatesUnboundQEMUImageFamilies(t *testing.T) {
 	if len(got) != 1 || got[0] != "vyos-image" {
 		t.Fatalf("VyOS compatible images=%v", got)
 	}
+}
+
+func TestLoadBuiltinsIncludesNginxForegroundRuntime(t *testing.T) {
+	store := &templateStoreStub{}
+	service := NewTemplateService(store)
+	root := filepath.Clean(filepath.Join("..", "..", "..", "templates"))
+	if err := service.LoadBuiltins(context.Background(), root); err != nil {
+		t.Fatal(err)
+	}
+	for _, template := range store.templates {
+		if template.Key != "nginx-container" {
+			continue
+		}
+		if len(template.Versions) != 2 {
+			t.Fatalf("nginx versions=%d", len(template.Versions))
+		}
+		for _, version := range template.Versions {
+			command, ok := version.RuntimeOptions["command"].([]any)
+			if !ok || len(command) != 3 || command[0] != "nginx" || command[2] != "daemon off;" {
+				t.Fatalf("nginx command=%#v", version.RuntimeOptions["command"])
+			}
+		}
+		return
+	}
+	t.Fatal("nginx-container built-in missing")
 }
