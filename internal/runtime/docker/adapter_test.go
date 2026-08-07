@@ -19,6 +19,9 @@ type fakeEngine struct {
 	inspection  container.InspectResponse
 	inspections []container.InspectResponse
 	created     dockerclient.ContainerCreateOptions
+	updated     dockerclient.ContainerUpdateOptions
+	updateCalls int
+	updateErr   error
 	startCalls  int
 	stopCalls   int
 	removeCalls int
@@ -43,6 +46,11 @@ func (f *fakeEngine) ContainerCreate(_ context.Context, options dockerclient.Con
 		}
 	}
 	return dockerclient.ContainerCreateResult{ID: "created-container"}, nil
+}
+func (f *fakeEngine) ContainerUpdate(_ context.Context, _ string, options dockerclient.ContainerUpdateOptions) (dockerclient.ContainerUpdateResult, error) {
+	f.updateCalls++
+	f.updated = options
+	return dockerclient.ContainerUpdateResult{}, f.updateErr
 }
 func (f *fakeEngine) ContainerStart(context.Context, string, dockerclient.ContainerStartOptions) (dockerclient.ContainerStartResult, error) {
 	f.startCalls++
@@ -118,8 +126,8 @@ func TestStartRunningContainerRebuildsEndpointsWithoutReplacingContainer(t *test
 	if err := adapter.Start(context.Background(), domain.Node{ID: "node-1"}); err != nil {
 		t.Fatal(err)
 	}
-	if engine.startCalls != 0 || engine.stopCalls != 0 || engine.removeCalls != 0 {
-		t.Fatalf("running container was mutated: start=%d stop=%d remove=%d", engine.startCalls, engine.stopCalls, engine.removeCalls)
+	if engine.updateCalls != 0 || engine.startCalls != 0 || engine.stopCalls != 0 || engine.removeCalls != 0 {
+		t.Fatalf("running container was mutated: update=%d start=%d stop=%d remove=%d", engine.updateCalls, engine.startCalls, engine.stopCalls, engine.removeCalls)
 	}
 	if !reflect.DeepEqual(endpoints.ensurePIDs, []int{4242}) {
 		t.Fatalf("unexpected endpoint PIDs: %#v", endpoints.ensurePIDs)
@@ -137,14 +145,39 @@ func TestStartStoppedContainerStartsThenReconcilesEndpoints(t *testing.T) {
 	endpoints := &fakeEndpoints{}
 	adapter := NewAdapterWithRuntime(engine, endpoints)
 
-	if err := adapter.Start(context.Background(), domain.Node{ID: "node-stopped"}); err != nil {
+	node := domain.Node{ID: "node-stopped", MemoryMiB: 768, CPUQuotaMicros: 50000, ProcessLimit: 123}
+	if err := adapter.Start(context.Background(), node); err != nil {
 		t.Fatal(err)
 	}
-	if engine.startCalls != 1 || engine.removeCalls != 0 {
-		t.Fatalf("start=%d remove=%d", engine.startCalls, engine.removeCalls)
+	if engine.updateCalls != 1 || engine.startCalls != 1 || engine.removeCalls != 0 {
+		t.Fatalf("update=%d start=%d remove=%d", engine.updateCalls, engine.startCalls, engine.removeCalls)
+	}
+	if engine.updated.Resources == nil {
+		t.Fatal("container resources were not updated")
+	}
+	resources := engine.updated.Resources
+	if resources.Memory != 768<<20 || resources.NanoCPUs != 500000000 || resources.PidsLimit == nil || *resources.PidsLimit != 123 {
+		t.Fatalf("unexpected updated resources: %#v", resources)
 	}
 	if !reflect.DeepEqual(endpoints.ensurePIDs, []int{4343}) {
 		t.Fatalf("endpoint PIDs=%#v", endpoints.ensurePIDs)
+	}
+}
+
+func TestStartStoppedContainerUpdateFailurePreventsStart(t *testing.T) {
+	engine := &fakeEngine{
+		items:      []container.Summary{{ID: "stopped-container", State: container.StateExited}},
+		inspection: container.InspectResponse{State: &container.State{Running: false}},
+		updateErr:  errors.New("update failed"),
+	}
+	adapter := NewAdapterWithRuntime(engine, &fakeEndpoints{})
+
+	err := adapter.Start(context.Background(), domain.Node{ID: "node-stopped", CPUQuotaMicros: 50000})
+	if !errors.Is(err, engine.updateErr) {
+		t.Fatalf("expected update failure, got %v", err)
+	}
+	if engine.updateCalls != 1 || engine.startCalls != 0 {
+		t.Fatalf("update=%d start=%d", engine.updateCalls, engine.startCalls)
 	}
 }
 

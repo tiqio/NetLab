@@ -19,6 +19,7 @@ import (
 
 type Engine interface {
 	ContainerCreate(context.Context, dockerclient.ContainerCreateOptions) (dockerclient.ContainerCreateResult, error)
+	ContainerUpdate(context.Context, string, dockerclient.ContainerUpdateOptions) (dockerclient.ContainerUpdateResult, error)
 	ContainerStart(context.Context, string, dockerclient.ContainerStartOptions) (dockerclient.ContainerStartResult, error)
 	ContainerStop(context.Context, string, dockerclient.ContainerStopOptions) (dockerclient.ContainerStopResult, error)
 	ContainerRemove(context.Context, string, dockerclient.ContainerRemoveOptions) (dockerclient.ContainerRemoveResult, error)
@@ -189,7 +190,6 @@ func (a *Adapter) Start(ctx context.Context, node domain.Node) error {
 		if commandErr != nil {
 			return commandErr
 		}
-		pidsLimit := int64(node.ProcessLimit)
 		storage := map[string]string{}
 		if node.StorageGiB > 0 {
 			storage["size"] = fmt.Sprintf("%dG", node.StorageGiB)
@@ -208,11 +208,7 @@ func (a *Adapter) Start(ctx context.Context, node domain.Node) error {
 				NetworkMode: "none",
 				CapAdd:      []string{"NET_ADMIN", "NET_RAW"},
 				StorageOpt:  storage,
-				Resources: container.Resources{
-					Memory:    int64(node.MemoryMiB) << 20,
-					NanoCPUs:  quotaToNano(node.CPUQuotaMicros),
-					PidsLimit: &pidsLimit,
-				},
+				Resources:   containerResources(node),
 			},
 		})
 		if err != nil && len(storage) > 0 && unsupportedStorageQuota(err) {
@@ -231,11 +227,7 @@ func (a *Adapter) Start(ctx context.Context, node domain.Node) error {
 				HostConfig: &container.HostConfig{
 					NetworkMode: "none",
 					CapAdd:      []string{"NET_ADMIN", "NET_RAW"},
-					Resources: container.Resources{
-						Memory:    int64(node.MemoryMiB) << 20,
-						NanoCPUs:  quotaToNano(node.CPUQuotaMicros),
-						PidsLimit: &pidsLimit,
-					},
+					Resources:   containerResources(node),
 				},
 			})
 		}
@@ -245,6 +237,12 @@ func (a *Adapter) Start(ctx context.Context, node domain.Node) error {
 		id = result.ID
 		created = true
 	}
+	if !created {
+		resources := containerResources(node)
+		if _, err = a.engine.ContainerUpdate(ctx, id, dockerclient.ContainerUpdateOptions{Resources: &resources}); err != nil {
+			return fmt.Errorf("update stopped container resources: %w", err)
+		}
+	}
 	if _, err = a.engine.ContainerStart(ctx, id, dockerclient.ContainerStartOptions{}); err != nil {
 		return err
 	}
@@ -252,6 +250,15 @@ func (a *Adapter) Start(ctx context.Context, node domain.Node) error {
 		return errors.Join(err, a.compensateStart(node, id, created))
 	}
 	return nil
+}
+
+func containerResources(node domain.Node) container.Resources {
+	pidsLimit := int64(node.ProcessLimit)
+	return container.Resources{
+		Memory:    int64(node.MemoryMiB) << 20,
+		NanoCPUs:  quotaToNano(node.CPUQuotaMicros),
+		PidsLimit: &pidsLimit,
+	}
 }
 
 func unsupportedStorageQuota(err error) bool {
