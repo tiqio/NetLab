@@ -1,10 +1,20 @@
-import bridge from "@/assets/topology/bridge.svg";
-import docker from "@/assets/topology/docker.svg";
-import nat from "@/assets/topology/nat.svg";
-import pc from "@/assets/topology/pc.svg";
-import qemu from "@/assets/topology/qemu.svg";
-import switchL2 from "@/assets/topology/switch-l2.svg";
-import switchL3 from "@/assets/topology/switch-l3.svg";
+import bridge from "@/assets/topology/bridge.svg?raw";
+import docker from "@/assets/topology/docker.svg?raw";
+import nat from "@/assets/topology/nat.svg?raw";
+import pc from "@/assets/topology/pc.svg?raw";
+import qemu from "@/assets/topology/qemu.svg?raw";
+import switchL2 from "@/assets/topology/switch-l2.svg?raw";
+import switchL3 from "@/assets/topology/switch-l3.svg?raw";
+
+export type TopologyIconTheme = "light" | "dark";
+
+export interface TopologySymbolOptions {
+  theme: TopologyIconTheme;
+  observedState: string;
+  selected?: boolean;
+  focused?: boolean;
+  trafficColor?: string;
+}
 
 const symbols: Record<string, string> = {
   qemu,
@@ -16,6 +26,122 @@ const symbols: Record<string, string> = {
   switch_l3: switchL3,
 };
 
-export function topologySymbol(kind: string): string {
-  return `image://${symbols[kind] || qemu}`;
+const mainFill: Record<string, string> = {
+  qemu: "#16324a",
+  docker: "#123b52",
+  pc: "#17354a",
+  bridge: "#164e63",
+  nat_bridge: "#164e63",
+  switch_l2: "#17354a",
+  switch_l3: "#17354a",
+};
+
+const primaryOutline: Record<string, string> = {
+  qemu: "#7dd3fc",
+  docker: "#67e8f9",
+  pc: "#93c5fd",
+  bridge: "#a5f3fc",
+  nat_bridge: "#67e8f9",
+  switch_l2: "#93c5fd",
+  switch_l3: "#c4b5fd",
+};
+
+const typeFill = {
+  dark: {
+    qemu: "#3b82f6",
+    docker: "#14b8a6",
+    lightweight: "#a78bfa",
+    network: "#f59e0b",
+  },
+  light: {
+    qemu: "#2563eb",
+    docker: "#0f766e",
+    lightweight: "#7c3aed",
+    network: "#c2410c",
+  },
+} as const;
+
+const stateOutline = {
+  dark: {
+    running: "#22c55e",
+    stopped: "#64748b",
+    transition: "#f59e0b",
+    failed: "#ef4444",
+    selected: "#f8fafc",
+    focused: "#fde047",
+    traffic: "#f59e0b",
+    detail: "#f8fafc",
+  },
+  light: {
+    running: "#15803d",
+    stopped: "#64748b",
+    transition: "#b45309",
+    failed: "#dc2626",
+    selected: "#0f172a",
+    focused: "#a16207",
+    traffic: "#c2410c",
+    detail: "#ffffff",
+  },
+} as const;
+
+function category(kind: string): keyof (typeof typeFill)["light"] {
+  if (kind === "qemu") return "qemu";
+  if (kind === "docker") return "docker";
+  if (kind === "pc" || kind === "switch_l2" || kind === "switch_l3")
+    return "lightweight";
+  return "network";
+}
+
+function outlineFor(options: TopologySymbolOptions): string {
+  const palette = stateOutline[options.theme];
+  if (options.trafficColor)
+    return options.trafficColor.startsWith("#")
+      ? options.trafficColor
+      : palette.traffic;
+  if (options.focused) return palette.focused;
+  if (options.selected) return palette.selected;
+  if (options.observedState === "failed") return palette.failed;
+  if (
+    ["starting", "stopping", "provisioning", "queued", "pending"].includes(
+      options.observedState,
+    )
+  )
+    return palette.transition;
+  if (["running", "connected", "active"].includes(options.observedState))
+    return palette.running;
+  return palette.stopped;
+}
+
+function replaceOnce(source: string, value: string, replacement: string) {
+  const index = source.indexOf(value);
+  if (index < 0) return source;
+  return `${source.slice(0, index)}${replacement}${source.slice(index + value.length)}`;
+}
+
+export function topologySymbol(
+  kind: string,
+  options: TopologySymbolOptions,
+): string {
+  const normalizedKind = kind in symbols ? kind : "qemu";
+  const fill = typeFill[options.theme][category(normalizedKind)];
+  const outline = outlineFor(options);
+  const detail = stateOutline[options.theme].detail;
+  let svg = symbols[normalizedKind];
+  svg = replaceOnce(svg, mainFill[normalizedKind], fill);
+  svg = replaceOnce(svg, primaryOutline[normalizedKind], outline);
+  for (const color of [
+    "#67e8f9",
+    "#a5f3fc",
+    "#93c5fd",
+    "#7dd3fc",
+    "#c4b5fd",
+    "#e0f2fe",
+    "#ecfeff",
+    "#dbeafe",
+    "#bfdbfe",
+    "#ede9fe",
+    "#ddd6fe",
+  ])
+    svg = svg.replaceAll(color, detail);
+  return `image://data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }

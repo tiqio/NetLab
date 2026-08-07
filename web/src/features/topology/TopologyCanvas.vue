@@ -8,6 +8,7 @@ import {
   watch,
 } from "vue";
 import EChart from "@/components/charts/EChart.vue";
+import { useThemePreference } from "@/composables/useThemePreference";
 import type {
   Link,
   NetworkAttachment,
@@ -102,6 +103,7 @@ const emit = defineEmits<{
     number,
   ];
 }>();
+const { resolvedTheme } = useThemePreference();
 const interaction = new TopologyInteractionController();
 const trafficClock = ref(Date.now());
 const trafficActivity = new Map<string, { version: string; seenAt: number }>();
@@ -715,7 +717,13 @@ const option = computed(() => ({
             x: placements.value[node.id].x,
             y: placements.value[node.id].y,
             category: topologyCategoryIndex(node.kind),
-            symbol: topologySymbol(node.kind),
+            symbol: topologySymbol(node.kind, {
+              theme: resolvedTheme.value,
+              observedState: node.observed_state,
+              selected: selected.value.has(node.id),
+              focused: props.focusedResourceId === node.id,
+              trafficColor: trafficHit ? props.trafficColor : undefined,
+            }),
             symbolSize: selected.value.has(node.id) ? 64 : 56,
             itemStyle: {
               color: semantic.color,
@@ -754,7 +762,12 @@ const option = computed(() => ({
             x: placements.value[item.id].x,
             y: placements.value[item.id].y,
             category: topologyCategoryIndex(item.kind),
-            symbol: topologySymbol(item.kind),
+            symbol: topologySymbol(item.kind, {
+              theme: resolvedTheme.value,
+              observedState: item.observed_state,
+              selected: selected.value.has(item.id),
+              focused: props.focusedResourceId === item.id,
+            }),
             symbolSize: selected.value.has(item.id) ? 62 : 54,
             itemStyle: {
               color: semantic.color,
