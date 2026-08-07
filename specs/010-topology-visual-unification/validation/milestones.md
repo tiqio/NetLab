@@ -21,7 +21,7 @@ Notes:
 ## M3 — Authoritative Collision-Free Placement
 
 ```text
-Commit SHA: 0fde2f0
+Commit SHA: 4365781
 Focused tests: go test ./internal/domain ./internal/store/sqlite ./internal/app/reconcile ./internal/api/http ./internal/api/mcp; targeted contract parity; Vue typecheck/lint; 40 drawer/workspace/store tests
 Result: PASS
 Notes: Nodes and network objects now commit resource, placement, laboratory revision, and outbox audit atomically. SPA consumes returned placement and no longer issues a post-create placement batch. Dense 20-resource allocation and same-revision concurrent admission are covered. Local Playwright remains pending because the configured webServer did not become ready within 30 seconds.
