@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
@@ -36,20 +37,33 @@ type RuntimeDispatch struct {
 func (d RuntimeDispatch) For(node domain.Node) (ports.NodeRuntime, error) {
 	switch node.Kind {
 	case "qemu":
-		if d.QEMU == nil {
+		if runtimeUnavailable(d.QEMU) {
 			return nil, fmt.Errorf("qemu runtime unavailable")
 		}
 		return d.QEMU, nil
 	case "docker":
-		if d.Docker == nil {
+		if runtimeUnavailable(d.Docker) {
 			return nil, fmt.Errorf("docker runtime unavailable")
 		}
 		return d.Docker, nil
 	default:
-		if d.Lightweight == nil {
+		if runtimeUnavailable(d.Lightweight) {
 			return nil, fmt.Errorf("lightweight runtime unavailable")
 		}
 		return d.Lightweight, nil
+	}
+}
+
+func runtimeUnavailable(runtime ports.NodeRuntime) bool {
+	if runtime == nil {
+		return true
+	}
+	value := reflect.ValueOf(runtime)
+	switch value.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return value.IsNil()
+	default:
+		return false
 	}
 }
 

@@ -737,21 +737,67 @@ describe("laboratory store", () => {
     const store = useLaboratoryStore();
     store.active = {
       laboratory: laboratoryFactory({ id: "lab", revision: 4 }),
-      nodes: [], interfaces: [], links: [], network_objects: [],
-      placements: [{ laboratory_id: "lab", resource_id: "existing", resource_type: "node", x: 10, y: 20, revision: 3 }],
+      nodes: [],
+      interfaces: [],
+      links: [],
+      network_objects: [],
+      placements: [
+        {
+          laboratory_id: "lab",
+          resource_id: "existing",
+          resource_type: "node",
+          x: 10,
+          y: 20,
+          revision: 3,
+        },
+      ],
       event_sequence: 0,
     };
     store.mergeAuthoritativeCreation({
-      networkObject: { id: "created", laboratory_id: "lab", name: "PC", kind: "pc", revision: 1, desired_state: "active", observed_state: "provisioning", config: {} },
+      networkObject: {
+        id: "created",
+        laboratory_id: "lab",
+        name: "PC",
+        kind: "pc",
+        revision: 1,
+        desired_state: "active",
+        observed_state: "provisioning",
+        config: {},
+      },
       placement_assignment: {
-        placement: { laboratory_id: "lab", resource_id: "created", resource_type: "network_object", x: 200, y: 300, revision: 1 },
-        assigned_center: { x: 200, y: 300 }, adjusted: false, reason: "preferred_available", footprint_class: "network-object-standard", algorithm_version: 1,
+        placement: {
+          laboratory_id: "lab",
+          resource_id: "created",
+          resource_type: "network_object",
+          x: 200,
+          y: 300,
+          revision: 1,
+        },
+        assigned_center: { x: 200, y: 300 },
+        adjusted: false,
+        reason: "preferred_available",
+        footprint_class: "network-object-standard",
+        algorithm_version: 1,
       },
       laboratory_revision: 5,
     });
     expect(store.active.placements).toEqual([
-      { laboratory_id: "lab", resource_id: "existing", resource_type: "node", x: 10, y: 20, revision: 3 },
-      { laboratory_id: "lab", resource_id: "created", resource_type: "network_object", x: 200, y: 300, revision: 1 },
+      {
+        laboratory_id: "lab",
+        resource_id: "existing",
+        resource_type: "node",
+        x: 10,
+        y: 20,
+        revision: 3,
+      },
+      {
+        laboratory_id: "lab",
+        resource_id: "created",
+        resource_type: "network_object",
+        x: 200,
+        y: 300,
+        revision: 1,
+      },
     ]);
     expect(store.active.laboratory.revision).toBe(5);
   });

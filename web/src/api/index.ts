@@ -160,11 +160,11 @@ export const generatedApi = {
     body: CreateNodeRequest,
     idempotencyKey?: string,
   ) =>
-    request<CreateNodeResult>(
-      `/labs/${labId}/nodes`,
-      "POST",
-      { body, revision, idempotencyKey },
-    ),
+    request<CreateNodeResult>(`/labs/${labId}/nodes`, "POST", {
+      body,
+      revision,
+      idempotencyKey,
+    }),
   getNode: (nodeId: string) => request<Node>(`/nodes/${nodeId}`),
   getNodeBootstrapCredentials: (nodeId: string) =>
     request<{ username: string; password: string; source: string }>(
@@ -359,11 +359,15 @@ export const generatedApi = {
     },
     idempotencyKey?: string,
   ) =>
-    request<CreateNetworkObjectResult>(`/labs/${labId}/network-objects`, "POST", {
-      body,
-      revision,
-      idempotencyKey,
-    }),
+    request<CreateNetworkObjectResult>(
+      `/labs/${labId}/network-objects`,
+      "POST",
+      {
+        body,
+        revision,
+        idempotencyKey,
+      },
+    ),
   getNetworkObject: (objectId: string) =>
     request<NetworkObject>(`/network-objects/${objectId}`),
   updateNetworkObject: (

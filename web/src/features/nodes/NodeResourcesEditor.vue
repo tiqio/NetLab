@@ -2,10 +2,7 @@
 import { computed, ref, watch } from "vue";
 import { api, type Node } from "@/api";
 import { Button, FormField, Input } from "@/components/ui";
-import {
-  cpuQuotaCoresToMicros,
-  cpuQuotaMicrosToCores,
-} from "@/lib/cpuQuota";
+import { cpuQuotaCoresToMicros, cpuQuotaMicrosToCores } from "@/lib/cpuQuota";
 
 const props = defineProps<{ node: Node }>();
 const emit = defineEmits<{ changed: [] }>();
@@ -69,7 +66,12 @@ async function save() {
         <Input v-model="memory" type="number" min="64" step="64" />
       </FormField>
     </div>
-    <Button class="mt-2" size="sm" type="submit" :disabled="busy || Boolean(error)">
+    <Button
+      class="mt-2"
+      size="sm"
+      type="submit"
+      :disabled="busy || Boolean(error)"
+    >
       应用限制
     </Button>
     <p role="status" class="mt-1 text-xs text-muted-foreground">{{ status }}</p>

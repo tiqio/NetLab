@@ -25,7 +25,9 @@ export interface ConnectionPresentationInput {
   networkObjectLinks: NetworkObjectLink[];
 }
 
-export function connectionStatusVisual(actualState: string): ConnectionStatusVisual {
+export function connectionStatusVisual(
+  actualState: string,
+): ConnectionStatusVisual {
   return connectionVisualSemantic(actualState);
 }
 
@@ -82,15 +84,26 @@ function present(
     routeIndex: 0,
     routeCount: 1,
     label,
-    capabilities: { selectable: true, deletable: true, capturable: true, trafficFilterable: true },
+    capabilities: {
+      selectable: true,
+      deletable: true,
+      capturable: true,
+      trafficFilterable: true,
+    },
     accessibilityLabel: `${label} · ${statusVisual.label}`,
   };
 }
 
-export function buildConnectionPresentations(input: ConnectionPresentationInput) {
+export function buildConnectionPresentations(
+  input: ConnectionPresentationInput,
+) {
   const nodes = new Map(input.nodes.map((value) => [value.id, value]));
-  const interfaces = new Map(input.interfaces.map((value) => [value.id, value]));
-  const objects = new Map(input.networkObjects.map((value) => [value.id, value]));
+  const interfaces = new Map(
+    input.interfaces.map((value) => [value.id, value]),
+  );
+  const objects = new Map(
+    input.networkObjects.map((value) => [value.id, value]),
+  );
   const values: ConnectionPresentation[] = [];
 
   for (const link of input.links) {
@@ -100,20 +113,89 @@ export function buildConnectionPresentations(input: ConnectionPresentationInput)
     const nodeA = nodes.get(interfaceA.node_id);
     const nodeB = nodes.get(interfaceB.node_id);
     if (!nodeA || !nodeB) continue;
-    values.push(present(link.id, "node_link", endpoint(nodeA.id, "node", nodeA.kind, nodeA.name, interfaceA.id, interfaceA.name), endpoint(nodeB.id, "node", nodeB.kind, nodeB.name, interfaceB.id, interfaceB.name), link.desired_state, link.observed_state));
+    values.push(
+      present(
+        link.id,
+        "node_link",
+        endpoint(
+          nodeA.id,
+          "node",
+          nodeA.kind,
+          nodeA.name,
+          interfaceA.id,
+          interfaceA.name,
+        ),
+        endpoint(
+          nodeB.id,
+          "node",
+          nodeB.kind,
+          nodeB.name,
+          interfaceB.id,
+          interfaceB.name,
+        ),
+        link.desired_state,
+        link.observed_state,
+      ),
+    );
   }
   for (const attachment of input.networkAttachments) {
     const interfaceValue = interfaces.get(attachment.interface_id);
     const node = interfaceValue ? nodes.get(interfaceValue.node_id) : undefined;
     const object = objects.get(attachment.network_object_id);
     if (!interfaceValue || !node || !object) continue;
-    values.push(present(attachment.id, "network_attachment", endpoint(node.id, "node", node.kind, node.name, interfaceValue.id, interfaceValue.name), endpoint(object.id, "network_object", object.kind, object.name, `${object.id}/${attachment.port_name || "port"}`, attachment.port_name || "接入口"), "connected", attachment.observed_state));
+    values.push(
+      present(
+        attachment.id,
+        "network_attachment",
+        endpoint(
+          node.id,
+          "node",
+          node.kind,
+          node.name,
+          interfaceValue.id,
+          interfaceValue.name,
+        ),
+        endpoint(
+          object.id,
+          "network_object",
+          object.kind,
+          object.name,
+          `${object.id}/${attachment.port_name || "port"}`,
+          attachment.port_name || "接入口",
+        ),
+        "connected",
+        attachment.observed_state,
+      ),
+    );
   }
   for (const link of input.networkObjectLinks) {
     const objectA = objects.get(link.object_a_id);
     const objectB = objects.get(link.object_b_id);
     if (!objectA || !objectB) continue;
-    values.push(present(link.id, "network_object_link", endpoint(objectA.id, "network_object", objectA.kind, objectA.name, `${objectA.id}/${link.port_a_name}`, link.port_a_name), endpoint(objectB.id, "network_object", objectB.kind, objectB.name, `${objectB.id}/${link.port_b_name}`, link.port_b_name), link.desired_state, link.observed_state));
+    values.push(
+      present(
+        link.id,
+        "network_object_link",
+        endpoint(
+          objectA.id,
+          "network_object",
+          objectA.kind,
+          objectA.name,
+          `${objectA.id}/${link.port_a_name}`,
+          link.port_a_name,
+        ),
+        endpoint(
+          objectB.id,
+          "network_object",
+          objectB.kind,
+          objectB.name,
+          `${objectB.id}/${link.port_b_name}`,
+          link.port_b_name,
+        ),
+        link.desired_state,
+        link.observed_state,
+      ),
+    );
   }
   return assignParallelRoutes(values);
 }

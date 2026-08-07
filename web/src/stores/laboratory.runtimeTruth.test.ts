@@ -222,9 +222,7 @@ describe("runtime truth event reconciliation", () => {
     refreshed.placements = [placement("node-1", 640, 360, 2)];
     store.active = refreshed;
     store.sequence = refreshed.event_sequence;
-    expect(store.active.placements).toEqual([
-      placement("node-1", 640, 360, 2),
-    ]);
+    expect(store.active.placements).toEqual([placement("node-1", 640, 360, 2)]);
   });
 });
 

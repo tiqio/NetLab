@@ -9,9 +9,11 @@ describe("NodeResourcesEditor", () => {
   afterEach(() => vi.restoreAllMocks());
 
   it("shows quota in cores and converts it back to microseconds", async () => {
-    const update = vi.spyOn(api, "updateNodeResources").mockResolvedValue(
-      nodeFactory({ cpu_count: 2, cpu_quota_micros: 75_000 }),
-    );
+    const update = vi
+      .spyOn(api, "updateNodeResources")
+      .mockResolvedValue(
+        nodeFactory({ cpu_count: 2, cpu_quota_micros: 75_000 }),
+      );
     const node = nodeFactory({
       cpu_count: 2,
       cpu_quota_micros: 50_000,

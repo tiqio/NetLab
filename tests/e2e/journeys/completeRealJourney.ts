@@ -44,8 +44,9 @@ export async function createOwnedLaboratory(
 ) {
   const laboratories = new LaboratoryPage(page, request);
   await laboratories.open();
+  const prefix = process.env.NETLAB_ACCEPTANCE_LAB_PREFIX || "accept";
   const laboratory = await laboratories.create(
-    `accept-${runId.slice(0, 8)}-${crypto.randomUUID().slice(0, 6)}`,
+    `${prefix}-${runId.slice(0, 8)}-${crypto.randomUUID().slice(0, 6)}`,
   );
   await ledger.add({
     resource_type: "laboratory",

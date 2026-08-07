@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
-import {
-  api,
-  ApiError,
-  type OperationTask,
-  type Problem,
-} from "@/api";
+import { api, ApiError, type OperationTask, type Problem } from "@/api";
 import { Button, FormField, Textarea } from "@/components/ui";
 import StatusBadge from "@/components/common/StatusBadge.vue";
 import StructuredProblem from "@/components/common/StructuredProblem.vue";
@@ -122,15 +117,21 @@ watch(
     >
       <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs">
         <span>退出码：{{ Number(completedTask.result?.exit_code ?? 0) }}</span>
-        <span>输出截断：{{ completedTask.result?.truncated ? "是" : "否" }}</span>
+        <span
+          >输出截断：{{ completedTask.result?.truncated ? "是" : "否" }}</span
+        >
       </div>
       <div v-if="stdout">
         <p class="mb-1 text-xs font-medium text-muted-foreground">标准输出</p>
-        <pre class="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded bg-background p-2 text-xs text-foreground">{{ stdout }}</pre>
+        <pre
+          class="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded bg-background p-2 text-xs text-foreground"
+          >{{ stdout }}</pre>
       </div>
       <div v-if="stderr">
         <p class="mb-1 text-xs font-medium text-destructive">标准错误</p>
-        <pre class="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded bg-background p-2 text-xs text-destructive">{{ stderr }}</pre>
+        <pre
+          class="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded bg-background p-2 text-xs text-destructive"
+          >{{ stderr }}</pre>
       </div>
       <p v-if="!stdout && !stderr" class="text-xs text-muted-foreground">
         命令没有产生输出。

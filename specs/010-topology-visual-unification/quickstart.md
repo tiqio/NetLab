@@ -170,11 +170,30 @@ npm run test:acceptance-unit
 npm run test:e2e:local
 ```
 
+Topology milestone-only local acceptance, including real process restart:
+
+```bash
+cd /home/dd/netlab
+NETLAB_ACCEPTANCE_PROFILE=local \
+NETLAB_ACCEPTANCE_SCOPE=topology-unification \
+NETLAB_ACCEPTANCE_REUSE_SERVER=1 \
+NETLAB_ACCEPTANCE_RESTART_COMMAND='pid=$(pgrep -f "^./bin/netlabd -config deploy/config/netlab.test.yaml$" | head -1); kill "$pid"; cd /home/dd/netlab; nohup ./bin/netlabd -config deploy/config/netlab.test.yaml >/tmp/netlab-placement-recovery.log 2>&1 & for i in $(seq 1 100); do curl -fsS http://127.0.0.1:8080/healthz >/dev/null 2>&1 && exit 0; sleep 0.1; done; exit 1' \
+  ./acceptance/frontend-acceptance.sh
+```
+
+The local topology profile owns only uniquely prefixed acceptance laboratories. It must leave no
+laboratory, placement, link, network-object link, runtime ownership, capture, or generated packet
+artifact behind.
+
 目标机候选部署后运行：
 
 ```bash
 cd /home/dd/netlab/web
-NETLAB_BASE_URL=http://10.72.1.7 npm run test:e2e:target
+NETLAB_ACCEPTANCE_BASE_URL=http://10.72.1.7:<deployed-port> \
+NETLAB_ACCEPTANCE_PROFILE=target-host \
+NETLAB_ACCEPTANCE_SCOPE=topology-unification \
+NETLAB_ACCEPTANCE_RESTART_COMMAND='ssh root@10.72.1.7 systemctl restart netlab' \
+  ./acceptance/frontend-acceptance.sh
 ```
 
 若目标实际端口由部署配置决定，使用现有 acceptance profile 的正式变量，不把地址或凭据写入源码。
@@ -204,3 +223,11 @@ Previous artifact / rollback command:
 ```
 
 仅将该制品部署到 `10.72.1.7`。若出现状态误导、旧坐标变化、初始重叠、多客户端不一致或清理失败，立即恢复上一已验证制品，并在本地修复、测试、提交后生成新候选。
+
+## 15. Implemented Test Files
+
+- `tests/e2e/journeys/topologyVisualRecognition.spec.ts`: mixed states, semantic legend, dynamic deletion, three parallel links at 50%/100%/200%, Traffic Filter 700 ms particle and 4 s guide decay.
+- `tests/e2e/journeys/topologyAuthoritativePlacement.spec.ts`: 20 mixed resources created at one preferred center with authoritative collision avoidance and refresh persistence.
+- `tests/e2e/journeys/concurrentClients.spec.ts`: two browser request contexts plus HTTP and MCP, ten concurrent groups, revision refresh and new-key retry, two-second UI convergence.
+- `tests/e2e/journeys/topologyPlacementRecovery.spec.ts`: exact placement/connection comparison across restart and terminal deletion cleanup.
+- `acceptance/t225-service-restart.sh`: privileged mixed-runtime identity adoption plus placement, connection, orphan and leak assertions.

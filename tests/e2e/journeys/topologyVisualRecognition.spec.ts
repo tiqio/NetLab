@@ -27,7 +27,11 @@ function mockedNode(
   };
 }
 
-async function installVisualSnapshot(page: Page) {
+async function installVisualSnapshot(
+  page: Page,
+  options: { semanticConnections?: boolean; traffic?: boolean } = {},
+) {
+  const semanticConnections = options.semanticConnections !== false;
   const nodes = Array.from({ length: 80 }, (_, index) =>
     mockedNode(
       `node-${index + 1}`,
@@ -50,8 +54,22 @@ async function installVisualSnapshot(page: Page) {
     revision: 1,
   }));
   placements.push(
-    { laboratory_id: "mock-lab", resource_id: "nat-1", resource_type: "network_object", x: -180, y: 80, revision: 1 },
-    { laboratory_id: "mock-lab", resource_id: "bridge-1", resource_type: "network_object", x: 360, y: 80, revision: 1 },
+    {
+      laboratory_id: "mock-lab",
+      resource_id: "nat-1",
+      resource_type: "network_object",
+      x: -180,
+      y: 80,
+      revision: 1,
+    },
+    {
+      laboratory_id: "mock-lab",
+      resource_id: "bridge-1",
+      resource_type: "network_object",
+      x: 360,
+      y: 80,
+      revision: 1,
+    },
   );
   await page.route("**/api/v1/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
@@ -124,22 +142,158 @@ async function installVisualSnapshot(page: Page) {
               operational_state: "up",
               revision: 1,
             },
+            {
+              id: "if-qemu-3",
+              node_id: "node-1",
+              slot: 2,
+              name: "eth2",
+              driver: "virtio-net-pci",
+              mac_address: "02:00:00:00:00:05",
+              desired_link_id: "link-parallel-b",
+              operational_state: "up",
+              revision: 1,
+            },
+            {
+              id: "if-docker-3",
+              node_id: "node-2",
+              slot: 2,
+              name: "eth3",
+              driver: "veth",
+              mac_address: "02:00:00:00:00:06",
+              desired_link_id: "link-parallel-b",
+              operational_state: "up",
+              revision: 1,
+            },
+            {
+              id: "if-qemu-4",
+              node_id: "node-1",
+              slot: 3,
+              name: "eth3",
+              driver: "virtio-net-pci",
+              mac_address: "02:00:00:00:00:07",
+              desired_link_id: "link-parallel-c",
+              operational_state: "up",
+              revision: 1,
+            },
+            {
+              id: "if-docker-4",
+              node_id: "node-2",
+              slot: 3,
+              name: "eth4",
+              driver: "veth",
+              mac_address: "02:00:00:00:00:08",
+              desired_link_id: "link-parallel-c",
+              operational_state: "up",
+              revision: 1,
+            },
           ],
           links: [
-            { id: "link-parallel-a", laboratory_id: "mock-lab", endpoint_a_id: "if-qemu-2", endpoint_b_id: "if-docker-2", revision: 1, desired_state: "connected", observed_state: "connected" },
+            {
+              id: "link-parallel-a",
+              laboratory_id: "mock-lab",
+              endpoint_a_id: "if-qemu-2",
+              endpoint_b_id: "if-docker-2",
+              revision: 1,
+              desired_state: "connected",
+              observed_state: "connected",
+            },
+            {
+              id: "link-parallel-b",
+              laboratory_id: "mock-lab",
+              endpoint_a_id: "if-qemu-3",
+              endpoint_b_id: "if-docker-3",
+              revision: 1,
+              desired_state: "connected",
+              observed_state: "connected",
+            },
+            {
+              id: "link-parallel-c",
+              laboratory_id: "mock-lab",
+              endpoint_a_id: "if-qemu-4",
+              endpoint_b_id: "if-docker-4",
+              revision: 1,
+              desired_state: "connected",
+              observed_state: "connected",
+            },
           ],
           network_objects: [
-            { id: "nat-1", laboratory_id: "mock-lab", name: "Internet NAT", kind: "nat_bridge", revision: 1, desired_state: "active", observed_state: "active", config: {} },
-            { id: "bridge-1", laboratory_id: "mock-lab", name: "Shared LAN", kind: "bridge", revision: 1, desired_state: "active", observed_state: "active", config: {} },
+            {
+              id: "nat-1",
+              laboratory_id: "mock-lab",
+              name: "Internet NAT",
+              kind: "nat_bridge",
+              revision: 1,
+              desired_state: "active",
+              observed_state: "active",
+              config: {},
+            },
+            {
+              id: "bridge-1",
+              laboratory_id: "mock-lab",
+              name: "Shared LAN",
+              kind: "bridge",
+              revision: 1,
+              desired_state: "active",
+              observed_state: "active",
+              config: {},
+            },
           ],
-          network_attachments: [
-            { id: "attachment-nat", network_object_id: "nat-1", interface_id: "if-qemu", port_name: "nat0", observed_state: "failed" },
-            { id: "attachment-bridge", network_object_id: "bridge-1", interface_id: "if-docker", port_name: "lan0", observed_state: "provisioning" },
-          ],
+          network_attachments: semanticConnections
+            ? [
+                {
+                  id: "attachment-nat",
+                  network_object_id: "nat-1",
+                  interface_id: "if-qemu",
+                  port_name: "nat0",
+                  observed_state: "failed",
+                },
+                {
+                  id: "attachment-bridge",
+                  network_object_id: "bridge-1",
+                  interface_id: "if-docker",
+                  port_name: "lan0",
+                  observed_state: "provisioning",
+                },
+              ]
+            : [],
           network_object_links: [],
           placements,
           event_sequence: 0,
         },
+      });
+    if (path === "/api/v1/traffic-filters")
+      return route.fulfill({
+        json: options.traffic
+          ? [
+              {
+                ambiguous: false,
+                traffic_filter: {
+                  id: "filter-1",
+                  laboratory_id: "mock-lab",
+                  expression: "icmp",
+                  color: "#22c55e",
+                  state: "running",
+                  max_observations: 100,
+                  link_ids: ["link-parallel-a"],
+                  observations: [
+                    {
+                      fingerprint: "icmp-one",
+                      resource_type: "link",
+                      resource_id: "link-parallel-a",
+                      interface_id: "if-qemu-2",
+                      link_id: "link-parallel-a",
+                      direction: "a_to_b",
+                      first_seen: "2026-08-07T08:00:00Z",
+                      last_seen: "2026-08-07T08:00:00Z",
+                      count: 1,
+                      bytes: 84,
+                    },
+                  ],
+                  created_at: "2026-08-07T08:00:00Z",
+                },
+              },
+            ]
+          : [],
       });
     if (["/api/v1/tasks", "/api/v1/templates", "/api/v1/images"].includes(path))
       return route.fulfill({ json: [] });
@@ -250,7 +404,9 @@ test("browser recognizes dense QEMU and Docker lifecycle labels and hovered port
   );
 });
 
-test("mixed connection states and semantic legend remain recognizable across themes", async ({ page }) => {
+test("mixed connection states and semantic legend remain recognizable across themes", async ({
+  page,
+}) => {
   await installVisualSnapshot(page);
   await page.goto("/");
   const summary = page.getByTestId("topology-a11y-summary");
@@ -270,4 +426,78 @@ test("mixed connection states and semantic legend remain recognizable across the
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await theme.selectOption("light");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+
+  await page.unroute("**/api/v1/**");
+  await installVisualSnapshot(page, { semanticConnections: false });
+  await page.reload();
+  await expect(legend).toHaveCount(0);
+});
+
+test("parallel links remain keyboard selectable at 50, 100, and 200 percent zoom", async ({
+  page,
+}) => {
+  await installVisualSnapshot(page);
+  await page.goto("/");
+  for (const zoom of [0.5, 1, 2]) {
+    await page.evaluate((value) => {
+      localStorage.setItem(
+        "netlab.workspace.v1.mock-lab",
+        JSON.stringify({
+          schemaVersion: 1,
+          laboratoryId: "mock-lab",
+          updatedAt: new Date().toISOString(),
+          panels: {
+            devicePalette: { collapsed: false, size: 260 },
+            inspector: { collapsed: false, size: 340 },
+            bottomDrawer: { collapsed: false, size: 250 },
+          },
+          viewport: { centerX: 0, centerY: 0, zoom: value },
+          groups: [],
+          linkRoutes: {},
+          labelDensity: "comfortable",
+          reducedMotion: false,
+          activeBottomTab: "tasks",
+        }),
+      );
+    }, zoom);
+    await page.reload();
+    const canvas = page.getByLabel(/拓扑画布键盘操作区/);
+    await expect(canvas).toHaveAttribute("data-viewport-zoom", String(zoom));
+    await canvas.focus();
+    const found = new Set<string>();
+    for (let index = 0; index < 90 && found.size < 3; index += 1) {
+      await canvas.press("ArrowRight");
+      const announcement =
+        (await canvas.getByRole("status").textContent()) || "";
+      for (const id of [
+        "link-parallel-a",
+        "link-parallel-b",
+        "link-parallel-c",
+      ])
+        if (announcement.includes(id)) found.add(id);
+    }
+    expect([...found].sort()).toEqual([
+      "link-parallel-a",
+      "link-parallel-b",
+      "link-parallel-c",
+    ]);
+  }
+});
+
+test("traffic particles expire before the lingering direction guide", async ({
+  page,
+}) => {
+  await installVisualSnapshot(page, { traffic: true });
+  await page.goto("/");
+  await page.getByRole("tab", { name: "流量过滤" }).click();
+  const canvas = page.getByLabel(/拓扑画布键盘操作区/);
+  await expect(canvas).toHaveAttribute("data-traffic-recent", "1");
+  await expect(canvas).toHaveAttribute("data-traffic-lingering", "1");
+  await expect(canvas).toHaveAttribute("data-traffic-recent", "0", {
+    timeout: 2_000,
+  });
+  await expect(canvas).toHaveAttribute("data-traffic-lingering", "1");
+  await expect(canvas).toHaveAttribute("data-traffic-lingering", "0", {
+    timeout: 6_000,
+  });
 });

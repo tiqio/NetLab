@@ -9,7 +9,6 @@ import {
   type Node,
   type NodeInterface,
   type OperationTask,
-  type PlacementAssignment,
   type PlacementIntent,
   type TrafficObservation,
 } from "@/api";
@@ -51,6 +50,10 @@ import { TopologyKeyboardController } from "./topologyKeyboardController";
 import { resolvePlacements } from "./topologyLayout";
 import { buildPlacementBatch } from "./topologyPlacementBatch";
 import { runObjectLinkDeletion } from "./objectLinkDeletion";
+import {
+  applyAuthoritativeCreation,
+  type AuthoritativeCreation,
+} from "./authoritativeCreation";
 import {
   captureTopologyCreateWorkspace,
   openTopologyCreateDrawer,
@@ -107,10 +110,12 @@ const selectedType = ref<
 >();
 const selectionAnchor = ref("");
 const focusedResourceId = ref("");
-const captureOverlay = ref<{ connectionIds: string[]; interfaceIds: string[] }>({
-  connectionIds: [],
-  interfaceIds: [],
-});
+const captureOverlay = ref<{ connectionIds: string[]; interfaceIds: string[] }>(
+  {
+    connectionIds: [],
+    interfaceIds: [],
+  },
+);
 const createPlacementIntent = ref<PlacementIntent>();
 const keyboardAnnouncement = ref("");
 const keyboardController = new TopologyKeyboardController();
@@ -672,25 +677,15 @@ function openCreateDrawer() {
   createOpen.value = next.open;
 }
 
-async function created(value: {
-  node?: Node;
-  interfaces?: NodeInterface[];
-  networkObject?: NetworkObject;
-  placement_assignment?: PlacementAssignment;
-  laboratory_revision?: number;
-}) {
+async function created(value: AuthoritativeCreation) {
   createSucceeded.value = true;
   if (!store.active) return;
-  store.mergeAuthoritativeCreation(value);
-  const resource = value.node || value.networkObject;
-  if (resource) {
-    const resourceType = value.node ? "node" : "network_object";
-    selectResource(resource.id, resourceType, false);
-    focusedResourceId.value = resource.id;
-    keyboardAnnouncement.value = value.placement_assignment?.adjusted
-      ? `已创建 ${resource.name}，为避免重叠已自动放置到附近空白位置。`
-      : `已创建 ${resource.name}，可使用“定位所选”查看。`;
-  }
+  applyAuthoritativeCreation(value, {
+    merge: (creation) => store.mergeAuthoritativeCreation(creation),
+    select: (id, type) => selectResource(id, type, false),
+    focus: (id) => (focusedResourceId.value = id),
+    announce: (message) => (keyboardAnnouncement.value = message),
+  });
 }
 
 function currentCreatePlacementIntent(

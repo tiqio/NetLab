@@ -21,7 +21,9 @@ describe("GuestCommandPanel", () => {
         truncated: false,
       },
     });
-    const execute = vi.spyOn(api, "executeGuestCommand").mockResolvedValue(task);
+    const execute = vi
+      .spyOn(api, "executeGuestCommand")
+      .mockResolvedValue(task);
     const wrapper = mount(GuestCommandPanel, {
       props: { nodeId: "node-1" },
       global: { plugins: [createPinia()] },
@@ -36,9 +38,9 @@ describe("GuestCommandPanel", () => {
       timeout_seconds: 30,
       output_limit: 1 << 20,
     });
-    expect(wrapper.get('[data-testid="guest-command-result"]').text()).toContain(
-      "Linux guest",
-    );
+    expect(
+      wrapper.get('[data-testid="guest-command-result"]').text(),
+    ).toContain("Linux guest");
     expect(wrapper.text()).toContain("warning");
     expect(wrapper.text()).toContain("退出码 0");
   });

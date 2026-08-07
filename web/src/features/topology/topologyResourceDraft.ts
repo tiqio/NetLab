@@ -139,7 +139,8 @@ export function createResourceDraft(
     ipv6Mode: "none",
     ipv6Address: "",
     routes: [],
-    cloudUsername: selection.template?.template_key === "vyos" ? "vyos" : "ubuntu",
+    cloudUsername:
+      selection.template?.template_key === "vyos" ? "vyos" : "ubuntu",
     cloudPassword: supportsBootstrap ? generatePassword() : "",
     bootstrapUserData: "",
     networkObjectConfig: networkObjectDefaults(selection),

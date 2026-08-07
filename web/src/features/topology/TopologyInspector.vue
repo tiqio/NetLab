@@ -517,10 +517,18 @@ async function deleteObjectLink() {
             <dd>{{ link.revision }}</dd>
           </dl>
           <div class="mt-3 flex flex-wrap gap-2">
-            <Button size="sm" variant="secondary" @click="emit('captureConnection')">
+            <Button
+              size="sm"
+              variant="secondary"
+              @click="emit('captureConnection')"
+            >
               <Radio :size="14" /> 抓包
             </Button>
-            <Button size="sm" variant="secondary" @click="emit('filterConnection')">
+            <Button
+              size="sm"
+              variant="secondary"
+              @click="emit('filterConnection')"
+            >
               <Filter :size="14" /> 流量过滤
             </Button>
           </div>
@@ -583,10 +591,18 @@ async function deleteObjectLink() {
             </template>
           </dl>
           <div class="mt-3 flex flex-wrap gap-2">
-            <Button size="sm" variant="secondary" @click="emit('captureConnection')">
+            <Button
+              size="sm"
+              variant="secondary"
+              @click="emit('captureConnection')"
+            >
               <Radio :size="14" /> 抓包
             </Button>
-            <Button size="sm" variant="secondary" @click="emit('filterConnection')">
+            <Button
+              size="sm"
+              variant="secondary"
+              @click="emit('filterConnection')"
+            >
               <Filter :size="14" /> 流量过滤
             </Button>
           </div>
@@ -662,10 +678,18 @@ async function deleteObjectLink() {
             <dd>{{ attachment.interface_id }}</dd>
           </dl>
           <div class="mt-3 flex flex-wrap gap-2">
-            <Button size="sm" variant="secondary" @click="emit('captureConnection')">
+            <Button
+              size="sm"
+              variant="secondary"
+              @click="emit('captureConnection')"
+            >
               <Radio :size="14" /> 抓包
             </Button>
-            <Button size="sm" variant="secondary" @click="emit('filterConnection')">
+            <Button
+              size="sm"
+              variant="secondary"
+              @click="emit('filterConnection')"
+            >
               <Filter :size="14" /> 流量过滤
             </Button>
           </div>

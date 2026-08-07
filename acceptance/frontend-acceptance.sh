@@ -5,6 +5,7 @@ ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 PROFILE=${NETLAB_ACCEPTANCE_PROFILE:-local}
 OUTPUT=${NETLAB_ACCEPTANCE_OUTPUT_DIR:-"$ROOT/web/test-results/acceptance"}
 RUN_ID=${NETLAB_ACCEPTANCE_RUN_ID:-"accept-$(date -u +%Y%m%dT%H%M%SZ)-$$"}
+SCOPE=${NETLAB_ACCEPTANCE_SCOPE:-full}
 export NETLAB_ACCEPTANCE_PROFILE="$PROFILE"
 export NETLAB_ACCEPTANCE_RUN_ID="$RUN_ID"
 export NETLAB_ACCEPTANCE_OUTPUT_DIR="$OUTPUT/$RUN_ID"
@@ -12,6 +13,10 @@ export NETLAB_ACCEPTANCE_OUTPUT_DIR="$OUTPUT/$RUN_ID"
 case "$PROFILE" in
   local|target-host) ;;
   *) echo "NETLAB_ACCEPTANCE_PROFILE must be local or target-host" >&2; exit 2 ;;
+esac
+case "$SCOPE" in
+  full|topology-unification) ;;
+  *) echo "NETLAB_ACCEPTANCE_SCOPE must be full or topology-unification" >&2; exit 2 ;;
 esac
 if ! [[ ${NETLAB_ACCEPTANCE_TIMEOUT_SCALE:-1} =~ ^[0-9]+([.][0-9]+)?$ ]] || [[ ${NETLAB_ACCEPTANCE_TIMEOUT_SCALE:-1} == 0 ]]; then
   echo "NETLAB_ACCEPTANCE_TIMEOUT_SCALE must be positive" >&2
@@ -35,15 +40,25 @@ cd "$ROOT"
 ./scripts/check-ui-localization.sh
 make test-acceptance-schema
 cd "$ROOT/web"
+playwright_specs=()
+if [[ "$SCOPE" == topology-unification ]]; then
+  playwright_specs=(
+    ../tests/e2e/journeys/topologyVisualRecognition.spec.ts
+    ../tests/e2e/journeys/topologyAuthoritativePlacement.spec.ts
+    ../tests/e2e/journeys/concurrentClients.spec.ts
+    ../tests/e2e/journeys/topologyPlacementRecovery.spec.ts
+  )
+  export NETLAB_ACCEPTANCE_LAB_PREFIX="topology-${RUN_ID}"
+fi
 if [[ "$PROFILE" == "target-host" ]]; then
   : "${NETLAB_ACCEPTANCE_BASE_URL:?NETLAB_ACCEPTANCE_BASE_URL is required for target-host acceptance}"
   if [[ "$NETLAB_ACCEPTANCE_BASE_URL" == *"@"* ]]; then
     echo "NETLAB_ACCEPTANCE_BASE_URL must not contain credentials" >&2
     exit 2
   fi
-  NODE_PATH="$PWD/node_modules" npx playwright test --config playwright.target.config.ts &
+  NODE_PATH="$PWD/node_modules" npx playwright test "${playwright_specs[@]}" --config playwright.target.config.ts &
 else
-  NODE_PATH="$PWD/node_modules" npx playwright test --config playwright.config.ts &
+  NODE_PATH="$PWD/node_modules" npx playwright test "${playwright_specs[@]}" --config playwright.config.ts &
 fi
 child=$!
 wait "$child" || status=$?

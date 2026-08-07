@@ -24,14 +24,53 @@ export interface VisualSemantic {
 
 export function connectionVisualSemantic(actualState: string) {
   if (["connected", "running", "active"].includes(actualState))
-    return { state: "connected" as const, label: zhCN.topologyConnection.connected, colorToken: "var(--topology-connection-success)", lineType: "solid" as const, width: 2, cue: "normal" as const };
-  if (["queued", "pending", "provisioning", "starting", "stopping"].includes(actualState))
-    return { state: "pending" as const, label: zhCN.topologyConnection.transitioning, colorToken: "var(--topology-connection-transition)", lineType: "dashed" as const, width: 2, cue: "transition" as const };
+    return {
+      state: "connected" as const,
+      label: zhCN.topologyConnection.connected,
+      colorToken: "var(--topology-connection-success)",
+      lineType: "solid" as const,
+      width: 2,
+      cue: "normal" as const,
+    };
+  if (
+    ["queued", "pending", "provisioning", "starting", "stopping"].includes(
+      actualState,
+    )
+  )
+    return {
+      state: "pending" as const,
+      label: zhCN.topologyConnection.transitioning,
+      colorToken: "var(--topology-connection-transition)",
+      lineType: "dashed" as const,
+      width: 2,
+      cue: "transition" as const,
+    };
   if (["disconnecting", "deleting"].includes(actualState))
-    return { state: "disconnecting" as const, label: zhCN.topologyConnection.disconnecting, colorToken: "var(--topology-connection-disconnecting)", lineType: "dashed" as const, width: 2, cue: "removing" as const };
+    return {
+      state: "disconnecting" as const,
+      label: zhCN.topologyConnection.disconnecting,
+      colorToken: "var(--topology-connection-disconnecting)",
+      lineType: "dashed" as const,
+      width: 2,
+      cue: "removing" as const,
+    };
   if (["failed", "error", "degraded", "missing"].includes(actualState))
-    return { state: "failed" as const, label: zhCN.topologyConnection.failed, colorToken: "var(--topology-connection-danger)", lineType: "dotted" as const, width: 2, cue: "warning" as const };
-  return { state: "unknown" as const, label: zhCN.topologyConnection.unknown, colorToken: "var(--topology-connection-neutral)", lineType: "solid" as const, width: 2, cue: "unknown" as const };
+    return {
+      state: "failed" as const,
+      label: zhCN.topologyConnection.failed,
+      colorToken: "var(--topology-connection-danger)",
+      lineType: "dotted" as const,
+      width: 2,
+      cue: "warning" as const,
+    };
+  return {
+    state: "unknown" as const,
+    label: zhCN.topologyConnection.unknown,
+    colorToken: "var(--topology-connection-neutral)",
+    lineType: "solid" as const,
+    width: 2,
+    cue: "unknown" as const,
+  };
 }
 
 const kindLabels: Record<TopologySymbolKind, string> = {

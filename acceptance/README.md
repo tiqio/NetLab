@@ -6,6 +6,22 @@ Run frontend interaction acceptance locally against the disposable real service:
 NETLAB_ACCEPTANCE_PROFILE=local ./acceptance/frontend-acceptance.sh
 ```
 
+Run only the topology-visual-unification milestone in a dedicated acceptance laboratory namespace:
+
+```bash
+NETLAB_ACCEPTANCE_PROFILE=local \
+NETLAB_ACCEPTANCE_SCOPE=topology-unification \
+NETLAB_ACCEPTANCE_REUSE_SERVER=1 \
+NETLAB_ACCEPTANCE_RESTART_COMMAND='<command that restarts the local candidate and waits for /healthz>' \
+  ./acceptance/frontend-acceptance.sh
+```
+
+This scope runs mixed connection visuals, 50%/100%/200% parallel-link keyboard selection,
+Traffic Filter particle/guide decay, 20-resource authoritative placement, ten concurrent
+browser/API/MCP creation groups, service restart recovery, and terminal laboratory deletion. Every
+test creates a uniquely prefixed acceptance laboratory, and child resources are recorded only
+against that laboratory for cascade cleanup.
+
 Run the clean-baseline target-host suite (the URL must not contain credentials):
 
 ```bash
@@ -51,6 +67,11 @@ It requires an enabled `ubuntu-qemu` image binding and the local `busybox:latest
 ```bash
 NETLAB_BASE_URL=http://127.0.0.1:8088 ./acceptance/t225-service-restart.sh
 ```
+
+The restart scenario records placement and connection summaries before restart, requires exact
+coordinate/state equality after restart, rejects orphan placements, and verifies that laboratory
+deletion removes placements, links, network-object links, runtime ownership, namespaces, TAP/veth
+devices, capture state, and console ownership.
 
 Run the complete operator-image scenario after registering one legal QEMU image plus the official
 `busybox:1.36.1` and `ubuntu:24.04` OCI images. It creates one ten-node laboratory with four QEMU,

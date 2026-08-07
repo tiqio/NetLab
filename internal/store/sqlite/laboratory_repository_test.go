@@ -69,26 +69,40 @@ func TestCreateNodeReturnsStructuredNameConflict(t *testing.T) {
 func TestCreateNodeWithPlacementRollsBackEveryRecord(t *testing.T) {
 	ctx := context.Background()
 	database, err := Open(ctx, "file:node-placement-rollback?mode=memory&cache=shared")
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer database.Close()
 	repository := NewTopologyRepository(database)
 	laboratory, err := command.NewLaboratoryService(repository).Create(ctx, "rollback", "", domain.RecoveryAutoRestore)
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	now := time.Now().UTC()
 	node := domain.Node{ID: "rollback-node", LaboratoryID: laboratory.ID, Name: "rollback", Kind: string(domain.RuntimeDocker), Revision: 1, DesiredState: domain.DesiredStopped, ObservedState: domain.ObservedStopped, CPUCount: 1, MemoryMiB: 64, InterfaceLimit: 1, ProcessLimit: 16, Config: map[string]any{}, CreatedAt: now, UpdatedAt: now}
 	interfaces := []domain.Interface{{ID: "rollback-if", NodeID: node.ID, Slot: 0, Name: "eth0", Revision: 1}}
 	_, _, err = repository.CreateNodeWithPlacement(ctx, node, interfaces, laboratory.Revision, &domain.PlacementIntent{FootprintClass: domain.FootprintNetworkObjectStandard}, "test")
-	if err == nil { t.Fatal("expected invalid footprint failure") }
+	if err == nil {
+		t.Fatal("expected invalid footprint failure")
+	}
 	for table, id := range map[string]string{"nodes": string(node.ID), "interfaces": string(interfaces[0].ID), "topology_placements": string(node.ID)} {
 		var count int
 		column := "id"
-		if table == "topology_placements" { column = "resource_id" }
-		if err = database.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM `+table+` WHERE `+column+`=?`, id).Scan(&count); err != nil || count != 0 { t.Fatalf("table=%s count=%d err=%v", table, count, err) }
+		if table == "topology_placements" {
+			column = "resource_id"
+		}
+		if err = database.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM `+table+` WHERE `+column+`=?`, id).Scan(&count); err != nil || count != 0 {
+			t.Fatalf("table=%s count=%d err=%v", table, count, err)
+		}
 	}
 	stored, err := repository.GetLaboratory(ctx, laboratory.ID)
-	if err != nil || stored.Revision != laboratory.Revision { t.Fatalf("laboratory=%+v err=%v", stored, err) }
+	if err != nil || stored.Revision != laboratory.Revision {
+		t.Fatalf("laboratory=%+v err=%v", stored, err)
+	}
 	var events int
-	if err = database.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_events WHERE resource_id IN (?,?)`, node.ID, interfaces[0].ID).Scan(&events); err != nil || events != 0 { t.Fatalf("events=%d err=%v", events, err) }
+	if err = database.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_events WHERE resource_id IN (?,?)`, node.ID, interfaces[0].ID).Scan(&events); err != nil || events != 0 {
+		t.Fatalf("events=%d err=%v", events, err)
+	}
 }
 
 func TestFinalizeLaboratoryDeletionRemovesDeleteFailedRetry(t *testing.T) {

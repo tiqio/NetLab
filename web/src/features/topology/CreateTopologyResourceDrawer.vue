@@ -37,15 +37,18 @@ import {
 } from "./topologyResourceDraft";
 import { cpuQuotaCoresToMicros, cpuQuotaMicrosToCores } from "@/lib/cpuQuota";
 
-const props = withDefaults(defineProps<{
-  modelValue: boolean;
-  laboratoryId: string;
-  laboratoryRevision?: number;
-  placementIntent?: PlacementIntent;
-  selection?: PaletteSelection;
-  nodeNames?: string[];
-  networkObjectNames?: string[];
-}>(), { laboratoryRevision: 1 });
+const props = withDefaults(
+  defineProps<{
+    modelValue: boolean;
+    laboratoryId: string;
+    laboratoryRevision?: number;
+    placementIntent?: PlacementIntent;
+    selection?: PaletteSelection;
+    nodeNames?: string[];
+    networkObjectNames?: string[];
+  }>(),
+  { laboratoryRevision: 1 },
+);
 const emit = defineEmits<{
   "update:modelValue": [boolean];
   created: [
@@ -522,10 +525,14 @@ async function submit() {
         },
       );
       if (create.kind !== "node") return;
-      const value = await api.createNode(props.laboratoryId, props.laboratoryRevision, {
-        ...create.request,
-        placement_intent: props.placementIntent,
-      });
+      const value = await api.createNode(
+        props.laboratoryId,
+        props.laboratoryRevision,
+        {
+          ...create.request,
+          placement_intent: props.placementIntent,
+        },
+      );
       emit("created", value);
     }
     open.value = false;

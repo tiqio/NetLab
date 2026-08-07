@@ -5,6 +5,7 @@ import {
   captureTopologyCreateWorkspace,
   openTopologyCreateDrawer,
 } from "./topologyCreateDrawerState";
+import { applyAuthoritativeCreation } from "./authoritativeCreation";
 
 describe("TopologyWorkspace create drawer state", () => {
   it("opens one selecting drawer from the toolbar", () => {
@@ -44,6 +45,50 @@ describe("TopologyWorkspace create drawer state", () => {
       focusedResourceId: "node-1",
       activeElement: null,
     });
+  });
+
+  it("consumes one authoritative creation without a predicted placement write", () => {
+    const calls: string[] = [];
+    const value = {
+      networkObject: {
+        id: "pc-1",
+        laboratory_id: "lab",
+        name: "PC 1",
+        kind: "pc" as const,
+        revision: 1,
+        desired_state: "active",
+        observed_state: "provisioning",
+        config: {},
+      },
+      placement_assignment: {
+        placement: {
+          laboratory_id: "lab",
+          resource_id: "pc-1",
+          resource_type: "network_object" as const,
+          x: 300,
+          y: 220,
+          revision: 1,
+        },
+        assigned_center: { x: 300, y: 220 },
+        adjusted: true,
+        reason: "collision_avoided" as const,
+        footprint_class: "network-object-standard" as const,
+        algorithm_version: 1,
+      },
+      laboratory_revision: 5,
+    };
+    applyAuthoritativeCreation(value, {
+      merge: (creation) => calls.push(`merge:${creation.laboratory_revision}`),
+      select: (id, type) => calls.push(`select:${type}:${id}`),
+      focus: (id) => calls.push(`focus:${id}`),
+      announce: (message) => calls.push(`announce:${message}`),
+    });
+    expect(calls).toEqual([
+      "merge:5",
+      "select:network_object:pc-1",
+      "focus:pc-1",
+      "announce:已创建 PC 1，为避免重叠已自动放置到附近空白位置。",
+    ]);
   });
 });
 

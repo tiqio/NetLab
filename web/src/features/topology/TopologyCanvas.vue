@@ -820,24 +820,31 @@ const option = computed(() => ({
                 ? props.trafficColor
                 : captureHit
                   ? "var(--topology-connection-capture)"
-                : selectedConnection || legendHighlighted
-                  ? "var(--topology-connection-focus)"
-                  : connection.statusVisual.colorToken,
+                  : selectedConnection || legendHighlighted
+                    ? "var(--topology-connection-focus)"
+                    : connection.statusVisual.colorToken,
               width:
-                trafficHit || captureHit || selectedConnection || legendHighlighted
+                trafficHit ||
+                captureHit ||
+                selectedConnection ||
+                legendHighlighted
                   ? 4
                   : connection.statusVisual.width,
               opacity: trafficHit ? 0.7 : 1,
-              shadowColor:
-                trafficHit
-                  ? props.trafficColor
-                  : captureHit
-                    ? "var(--topology-connection-capture)"
+              shadowColor: trafficHit
+                ? props.trafficColor
+                : captureHit
+                  ? "var(--topology-connection-capture)"
                   : selectedConnection || legendHighlighted
                     ? "var(--topology-connection-focus)"
                     : undefined,
               shadowBlur:
-                trafficHit || captureHit || selectedConnection || legendHighlighted ? 7 : 0,
+                trafficHit ||
+                captureHit ||
+                selectedConnection ||
+                legendHighlighted
+                  ? 7
+                  : 0,
               type: connection.statusVisual.lineType,
               curveness: nodeLink
                 ? routeCurveness(nodeLink)
@@ -1128,9 +1135,7 @@ function refreshOverlays() {
         connectionPresentations.value.find((item) => item.id === link.id)
           ?.curveness || 0;
       const curveness =
-        sourceId === link.object_a_id
-          ? -baseCurveness
-          : baseCurveness;
+        sourceId === link.object_a_id ? -baseCurveness : baseCurveness;
       trafficPaths.push({
         id: `traffic:${link.id}`,
         connectionId: link.id,
@@ -1445,6 +1450,7 @@ defineExpose({
     :data-pan-enabled="panEnabled"
     :data-dense-topology="denseTopology"
     :data-label-density="effectiveLabelDensity"
+    :data-viewport-zoom="preferences.viewport.zoom"
     :data-reduced-motion="preferences.reducedMotion"
     :data-traffic-active="trafficActive"
     :data-traffic-observations="traffic.length"

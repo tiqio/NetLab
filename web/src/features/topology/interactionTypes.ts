@@ -8,20 +8,13 @@ export type TopologyResourceType =
   | "network_object_link";
 
 export type TopologyConnectionKind =
-  | "node_link"
-  | "network_attachment"
-  | "network_object_link";
+  "node_link" | "network_attachment" | "network_object_link";
 
 export type TopologyConnectionState =
-  | "pending"
-  | "connected"
-  | "failed"
-  | "disconnecting"
-  | "unknown";
+  "pending" | "connected" | "failed" | "disconnecting" | "unknown";
 
 export type TopologyConnectionSemanticMarker =
-  | "managed-nat-uplink"
-  | "shared-broadcast-domain";
+  "managed-nat-uplink" | "shared-broadcast-domain";
 
 export interface ConnectionEndpointPresentation {
   resourceId: string;

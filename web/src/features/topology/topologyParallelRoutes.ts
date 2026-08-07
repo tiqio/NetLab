@@ -20,14 +20,21 @@ export function assignParallelRoutes(
   }
   const routeById = new Map<
     string,
-    Pick<RoutedConnectionPresentation, "routeGroupKey" | "routeIndex" | "routeCount" | "curveness">
+    Pick<
+      RoutedConnectionPresentation,
+      "routeGroupKey" | "routeIndex" | "routeCount" | "curveness"
+    >
   >();
   for (const [key, group] of groups) {
-    const sorted = [...group].sort((left, right) => left.id.localeCompare(right.id));
-    const spacing = sorted.length < 2 ? 0 : Math.min(0.22, 0.66 / (sorted.length - 1));
+    const sorted = [...group].sort((left, right) =>
+      left.id.localeCompare(right.id),
+    );
+    const spacing =
+      sorted.length < 2 ? 0 : Math.min(0.22, 0.66 / (sorted.length - 1));
     sorted.forEach((value, index) => {
       const offset = (index - (sorted.length - 1) / 2) * spacing;
-      const direction = value.source.resourceId <= value.target.resourceId ? 1 : -1;
+      const direction =
+        value.source.resourceId <= value.target.resourceId ? 1 : -1;
       routeById.set(value.id, {
         routeGroupKey: key,
         routeIndex: index,

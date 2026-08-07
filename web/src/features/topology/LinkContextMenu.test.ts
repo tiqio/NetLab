@@ -23,7 +23,7 @@ describe("LinkContextMenu", () => {
 
   it("offers inspect and delete only for an object link", async () => {
     const wrapper = mount(LinkContextMenu, {
-      props: { objectLink: true },
+      props: { kind: "network_object_link" },
     });
     await wrapper.get("button").trigger("click");
     const menu = wrapper.get('[aria-label="链路操作"]');
@@ -31,20 +31,26 @@ describe("LinkContextMenu", () => {
     expect(menu.text()).toContain("删除链路");
     expect(menu.text()).not.toContain("重新连接端点");
     expect(menu.text()).not.toContain("编辑本地路由");
-    await menu.findAll("button")[1].trigger("click");
+    const deleteButton = menu
+      .findAll("button")
+      .find((button) => button.text().includes("删除链路"));
+    expect(deleteButton).toBeDefined();
+    await deleteButton!.trigger("click");
     expect(wrapper.emitted("delete")).toHaveLength(1);
   });
 
   it("keeps destructive and disabled states readable without icon overlap", async () => {
     const wrapper = mount(LinkContextMenu, {
-      props: { objectLink: true, pending: true },
+      props: { kind: "network_object_link", pending: true },
     });
     await wrapper.get("button").trigger("click");
     const deleteButton = wrapper
       .get('[aria-label="链路操作"]')
-      .findAll("button")[1];
-    expect(deleteButton.attributes("disabled")).toBeDefined();
-    expect(deleteButton.text()).toContain("正在删除");
-    expect(deleteButton.find("svg").classes()).toContain("shrink-0");
+      .findAll("button")
+      .find((button) => button.text().includes("正在删除"));
+    expect(deleteButton).toBeDefined();
+    expect(deleteButton!.attributes("disabled")).toBeDefined();
+    expect(deleteButton!.text()).toContain("正在删除");
+    expect(deleteButton!.find("svg").classes()).toContain("shrink-0");
   });
 });

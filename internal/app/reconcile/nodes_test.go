@@ -47,6 +47,13 @@ type countingDockerRuntime struct {
 	startErr   error
 }
 
+func TestRuntimeDispatchRejectsTypedNilRuntime(t *testing.T) {
+	var runtime *countingDockerRuntime
+	if _, err := (RuntimeDispatch{Docker: runtime}).For(domain.Node{Kind: "docker"}); err == nil {
+		t.Fatal("expected typed nil runtime to be unavailable")
+	}
+}
+
 type restoringNamespaceRuntime struct {
 	running bool
 }

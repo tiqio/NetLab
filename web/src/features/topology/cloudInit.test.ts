@@ -55,7 +55,9 @@ describe("Ubuntu cloud-init bootstrap", () => {
     });
     expect(document).toContain('"vyos_config_commands"');
     expect(document).toContain("set system host-name 'branch-router'");
-    expect(document).toContain("set interfaces ethernet eth0 address '192.0.2.1/24'");
+    expect(document).toContain(
+      "set interfaces ethernet eth0 address '192.0.2.1/24'",
+    );
     expect(document).toContain("set protocols static route '0.0.0.0/0'");
   });
 

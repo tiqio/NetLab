@@ -142,7 +142,12 @@ export const useLaboratoryStore = defineStore("laboratory", {
     }) {
       if (!this.active) return;
       if (value.node)
-        this.upsert(this.active.nodes, value.node.id, value.node, value.node.revision);
+        this.upsert(
+          this.active.nodes,
+          value.node.id,
+          value.node,
+          value.node.revision,
+        );
       for (const item of value.interfaces || [])
         this.upsert(this.active.interfaces, item.id, item, item.revision);
       if (value.networkObject)

@@ -35,13 +35,15 @@ describe("topology layout", () => {
   });
 
   it("does not retain fallback coordinates for deleted resources", () => {
-    const resources = [
-      { id: "node-a", name: "A", kind: "docker" },
-    ] as never[];
-    const resolved = resolvePlacements(resources, {}, {
-      "node-a": { x: 10, y: 20 },
-      deleted: { x: 30, y: 40 },
-    });
+    const resources = [{ id: "node-a", name: "A", kind: "docker" }] as never[];
+    const resolved = resolvePlacements(
+      resources,
+      {},
+      {
+        "node-a": { x: 10, y: 20 },
+        deleted: { x: 30, y: 40 },
+      },
+    );
     expect(resolved).toEqual({ "node-a": { x: 10, y: 20 } });
   });
 });

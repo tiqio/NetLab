@@ -68,11 +68,12 @@ export function buildTemplateCloudInit(input: {
   ipv4Address: string;
   routes: Array<{ family: string; destination: string; gateway: string }>;
 }) {
-  const hostname = input.hostname
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 63) || "netlab-node";
+  const hostname =
+    input.hostname
+      .toLowerCase()
+      .replace(/[^a-z0-9-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 63) || "netlab-node";
   if (input.templateKey === "vyos") {
     const commands = [
       `set system host-name '${hostname}'`,
@@ -80,7 +81,9 @@ export function buildTemplateCloudInit(input: {
       `set system login user '${input.username}' authentication plaintext-password '${input.password}'`,
     ];
     if (input.ipv4Mode === "dhcpv4")
-      commands.push(`set interfaces ethernet ${input.interfaceName} address dhcp`);
+      commands.push(
+        `set interfaces ethernet ${input.interfaceName} address dhcp`,
+      );
     if (input.ipv4Mode === "static" && input.ipv4Address)
       commands.push(
         `set interfaces ethernet ${input.interfaceName} address '${input.ipv4Address}'`,
@@ -97,11 +100,7 @@ export function buildTemplateCloudInit(input: {
     }
     return `#cloud-config\n${JSON.stringify({ vyos_config_commands: commands }, null, 2)}\n`;
   }
-  return standardLinuxCloudInit(
-    hostname,
-    input.username,
-    input.password,
-  );
+  return standardLinuxCloudInit(hostname, input.username, input.password);
 }
 
 export function buildUbuntuPasswordCloudInit(

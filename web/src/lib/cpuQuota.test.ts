@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  cpuQuotaCoresToMicros,
-  cpuQuotaMicrosToCores,
-} from "./cpuQuota";
+import { cpuQuotaCoresToMicros, cpuQuotaMicrosToCores } from "./cpuQuota";
 
 describe("CPU quota unit conversion", () => {
   it("converts between host-core units and cgroup period microseconds", () => {

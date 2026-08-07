@@ -55,24 +55,38 @@ func TestNetworkObservedStateAndEventCommitTogether(t *testing.T) {
 func TestCreateNetworkObjectWithPlacementCommitsAndRollsBackAtomically(t *testing.T) {
 	ctx := context.Background()
 	database, err := Open(ctx, "file:network-placement-atomic?mode=memory&cache=shared")
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer database.Close()
 	topology := NewTopologyRepository(database)
 	now := time.Now().UTC()
 	laboratory := domain.Laboratory{ID: domain.NewID(), Name: "network placement", Revision: 1, RecoveryPolicy: domain.RecoveryAutoRestore, LifecycleState: "active", CreatedAt: now, UpdatedAt: now}
-	if err = topology.CreateLaboratory(ctx, laboratory); err != nil { t.Fatal(err) }
+	if err = topology.CreateLaboratory(ctx, laboratory); err != nil {
+		t.Fatal(err)
+	}
 	repositories := NewRepositories(database)
 	object := domain.NetworkObject{ID: domain.NewID(), LaboratoryID: laboratory.ID, Name: "bridge", Kind: domain.NetworkBridge, Revision: 1, DesiredState: "active", ObservedState: "provisioning", Config: map[string]any{}, CreatedAt: now, UpdatedAt: now}
 	assignment, revision, err := repositories.CreateNetworkObjectWithPlacement(ctx, object, laboratory.Revision, nil, "test")
-	if err != nil || revision != 2 || assignment.Placement.ResourceID != object.ID { t.Fatalf("assignment=%+v revision=%d err=%v", assignment, revision, err) }
+	if err != nil || revision != 2 || assignment.Placement.ResourceID != object.ID {
+		t.Fatalf("assignment=%+v revision=%d err=%v", assignment, revision, err)
+	}
 	var events int
-	if err = database.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_events WHERE resource_id IN (?,?)`, object.ID, laboratory.ID).Scan(&events); err != nil || events < 2 { t.Fatalf("events=%d err=%v", events, err) }
+	if err = database.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_events WHERE resource_id IN (?,?)`, object.ID, laboratory.ID).Scan(&events); err != nil || events < 2 {
+		t.Fatalf("events=%d err=%v", events, err)
+	}
 	failed := domain.NetworkObject{ID: domain.NewID(), LaboratoryID: laboratory.ID, Name: "failed", Kind: domain.NetworkBridge, Revision: 1, DesiredState: "active", ObservedState: "provisioning", Config: map[string]any{}, CreatedAt: now, UpdatedAt: now}
 	_, _, err = repositories.CreateNetworkObjectWithPlacement(ctx, failed, revision, &domain.PlacementIntent{FootprintClass: domain.FootprintNodeStandard}, "test")
-	if err == nil { t.Fatal("expected invalid footprint failure") }
+	if err == nil {
+		t.Fatal("expected invalid footprint failure")
+	}
 	var count int
-	if err = database.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM network_objects WHERE id=?`, failed.ID).Scan(&count); err != nil || count != 0 { t.Fatalf("objects=%d err=%v", count, err) }
-	if err = database.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM topology_placements WHERE resource_id=?`, failed.ID).Scan(&count); err != nil || count != 0 { t.Fatalf("placements=%d err=%v", count, err) }
+	if err = database.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM network_objects WHERE id=?`, failed.ID).Scan(&count); err != nil || count != 0 {
+		t.Fatalf("objects=%d err=%v", count, err)
+	}
+	if err = database.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM topology_placements WHERE resource_id=?`, failed.ID).Scan(&count); err != nil || count != 0 {
+		t.Fatalf("placements=%d err=%v", count, err)
+	}
 }
 
 func TestNetworkObjectLinkCreatePublishesRevisionedEvent(t *testing.T) {

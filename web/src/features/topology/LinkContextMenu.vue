@@ -1,13 +1,24 @@
 <script setup lang="ts">
-import { Cable, Eye, Filter, Radio, Route, Trash2, Unplug } from "lucide-vue-next";
+import {
+  Cable,
+  Eye,
+  Filter,
+  Radio,
+  Route,
+  Trash2,
+  Unplug,
+} from "lucide-vue-next";
 import { Button, DropdownMenu } from "@/components/ui";
 
-const props = withDefaults(defineProps<{
-  disabled?: boolean;
-  kind?: "node_link" | "network_attachment" | "network_object_link";
-  pending?: boolean;
-  deleteDisabledReason?: string;
-}>(), { kind: "node_link" });
+const props = withDefaults(
+  defineProps<{
+    disabled?: boolean;
+    kind?: "node_link" | "network_attachment" | "network_object_link";
+    pending?: boolean;
+    deleteDisabledReason?: string;
+  }>(),
+  { kind: "node_link" },
+);
 const emit = defineEmits<{
   inspect: [];
   reconnect: [];
@@ -87,7 +98,9 @@ const emit = defineEmits<{
         variant="destructive"
         class="w-full justify-start"
         disabled
-        :title="deleteDisabledReason || '网络附件当前需从所连接对象的设置中解除。'"
+        :title="
+          deleteDisabledReason || '网络附件当前需从所连接对象的设置中解除。'
+        "
       >
         <Unplug :size="13" class="shrink-0" /> <span>解除附件</span>
       </Button>
