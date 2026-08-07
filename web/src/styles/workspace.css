@@ -8,8 +8,8 @@
   border-radius: var(--radius);
   background: color-mix(in srgb, var(--popover) 94%, transparent);
   color: var(--foreground);
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--foreground) 12%, transparent);
-  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 30px var(--shadow-color);
+  backdrop-filter: blur(12px);
 }
 
 .theme-switcher select {
@@ -64,7 +64,7 @@
   border: 1px solid var(--border);
   background: var(--surface-elevated);
   color: var(--foreground);
-  box-shadow: 0 16px 40px var(--shadow-color);
+  box-shadow: 0 20px 56px var(--shadow-color);
 }
 
 .netlab-overlay {

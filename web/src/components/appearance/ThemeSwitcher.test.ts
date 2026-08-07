@@ -26,5 +26,8 @@ describe("ThemeSwitcher", () => {
     expect(document.documentElement.dataset.theme).toBe("light");
     expect(wrapper.attributes("data-resolved-theme")).toBe("light");
     expect(wrapper.attributes("title")).toBe("当前生效：浅色主题");
+    expect(wrapper.get('span[aria-hidden="true"]').classes()).toContain(
+      "bg-primary",
+    );
   });
 });

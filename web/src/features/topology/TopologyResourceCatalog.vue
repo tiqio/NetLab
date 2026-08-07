@@ -186,7 +186,10 @@ function enabledVersion(template: DeviceTemplate) {
             })
           "
         >
-          <Network :size="18" class="text-emerald-300" />
+          <Network
+            :size="18"
+            class="text-[color:var(--topology-kind-network)]"
+          />
           <span class="min-w-0 text-left">
             <strong class="block truncate text-xs">{{ item.name }}</strong>
             <small class="text-[10px] text-muted-foreground">{{
@@ -245,7 +248,7 @@ function enabledVersion(template: DeviceTemplate) {
           class="palette-item h-auto justify-start"
           @click="emit('choose', item)"
         >
-          <Box :size="18" class="text-sky-300" />
+          <Box :size="18" class="text-[color:var(--topology-kind-qemu)]" />
           <span class="min-w-0 text-left">
             <strong class="block truncate text-xs">{{ item.name }}</strong>
             <small class="text-[10px] text-muted-foreground">{{

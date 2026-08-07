@@ -477,7 +477,7 @@ function openDelete() {
         v-if="actionLab"
         variant="ghost"
         size="sm"
-        class="w-full justify-start text-red-300 hover:text-red-200"
+        class="w-full justify-start text-destructive hover:text-destructive"
         role="menuitem"
         @click="openDelete"
       >

@@ -1572,7 +1572,7 @@ onBeforeUnmount(() => {
           </p>
           <p
             v-if="activeReconnectTask.error"
-            class="mt-2 text-red-300"
+            class="mt-2 text-destructive"
             role="alert"
           >
             {{ activeReconnectTask.error.message }}
@@ -1601,7 +1601,7 @@ onBeforeUnmount(() => {
         <div
           v-if="store.error"
           role="alert"
-          class="absolute bottom-3 left-3 rounded border border-destructive/40 bg-card p-2 text-xs text-red-300"
+          class="absolute bottom-3 left-3 rounded border border-destructive/40 bg-card p-2 text-xs text-destructive"
         >
           {{ store.error }}
         </div>
@@ -1722,7 +1722,7 @@ onBeforeUnmount(() => {
             <Button
               variant="ghost"
               size="sm"
-              class="w-full justify-start text-red-300"
+              class="w-full justify-start text-destructive"
               role="menuitem"
               @click="requestContextNodeDelete(contextNode)"
             >
@@ -1757,7 +1757,7 @@ onBeforeUnmount(() => {
             <Button
               variant="ghost"
               size="sm"
-              class="w-full justify-start text-red-300"
+              class="w-full justify-start text-destructive"
               role="menuitem"
               @click="
                 closeResourceContext();
@@ -1771,7 +1771,7 @@ onBeforeUnmount(() => {
             <Button
               variant="ghost"
               size="sm"
-              class="w-full justify-start text-red-300"
+              class="w-full justify-start text-destructive"
               role="menuitem"
               :disabled="deletingObjectLinkIds.includes(contextObjectLink.id)"
               @click="deleteObjectLink(contextObjectLink)"
@@ -1793,7 +1793,7 @@ onBeforeUnmount(() => {
             <Button
               variant="ghost"
               size="sm"
-              class="w-full justify-start text-red-300"
+              class="w-full justify-start text-destructive"
               role="menuitem"
               @click="requestContextObjectDelete(contextObject)"
             >

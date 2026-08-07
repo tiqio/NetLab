@@ -847,9 +847,11 @@ function applyExample(value: string | number | undefined) {
       class="min-h-0 flex-1 overflow-auto p-3 netlab-scrollbar"
       data-layout-region="traffic-filter-results"
     >
-      <section class="rounded-md border border-cyan-500/30 bg-cyan-500/5 p-3">
+      <section
+        class="rounded-md border border-[color:var(--info)]/30 bg-[color:var(--info)]/5 p-3"
+      >
         <div class="flex items-center gap-2">
-          <Activity :size="16" class="text-cyan-300" />
+          <Activity :size="16" class="text-[color:var(--info)]" />
           <h3 class="text-sm font-semibold">拓扑流量高亮</h3>
           <StatusBadge
             :state="active ? 'running' : filter?.state || 'stopped'"

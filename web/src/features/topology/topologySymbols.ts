@@ -48,39 +48,39 @@ const primaryOutline: Record<string, string> = {
 
 const typeFill = {
   dark: {
-    qemu: "#3b82f6",
-    docker: "#14b8a6",
-    lightweight: "#a78bfa",
-    network: "#f59e0b",
+    qemu: "#8290a3",
+    docker: "#7f988e",
+    lightweight: "#968a9f",
+    network: "#a58e70",
   },
   light: {
-    qemu: "#2563eb",
-    docker: "#0f766e",
-    lightweight: "#7c3aed",
-    network: "#c2410c",
+    qemu: "#708096",
+    docker: "#6f877e",
+    lightweight: "#877b90",
+    network: "#927b5d",
   },
 } as const;
 
 const stateOutline = {
   dark: {
-    running: "#22c55e",
-    stopped: "#64748b",
-    transition: "#f59e0b",
-    failed: "#ef4444",
-    selected: "#f8fafc",
-    focused: "#fde047",
-    traffic: "#f59e0b",
-    detail: "#f8fafc",
+    running: "#86a087",
+    stopped: "#77756f",
+    transition: "#b29a72",
+    failed: "#bf7773",
+    selected: "#ece7dc",
+    focused: "#c5ad79",
+    traffic: "#b6905d",
+    detail: "#f0ece4",
   },
   light: {
-    running: "#15803d",
-    stopped: "#64748b",
-    transition: "#b45309",
-    failed: "#dc2626",
-    selected: "#0f172a",
-    focused: "#a16207",
-    traffic: "#c2410c",
-    detail: "#0f172a",
+    running: "#657d68",
+    stopped: "#817d75",
+    transition: "#92744f",
+    failed: "#a75f5d",
+    selected: "#302e29",
+    focused: "#88724f",
+    traffic: "#8d6e49",
+    detail: "#302e29",
   },
 } as const;
 

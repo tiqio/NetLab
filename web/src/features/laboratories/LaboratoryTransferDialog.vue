@@ -209,7 +209,13 @@ watch(
           <dl class="mt-2 grid grid-cols-2 gap-1 text-xs">
             <template v-for="(excluded, key) in redaction" :key="key">
               <dt>{{ redactionLabel(String(key)) }}</dt>
-              <dd :class="excluded ? 'text-green-400' : 'text-amber-300'">
+              <dd
+                :class="
+                  excluded
+                    ? 'text-[color:var(--success)]'
+                    : 'text-[color:var(--warning)]'
+                "
+              >
                 {{ excluded ? "已排除" : "未声明" }}
               </dd>
             </template>
@@ -218,9 +224,9 @@ watch(
         <section
           v-if="missingImages.length"
           role="alert"
-          class="rounded-md border border-amber-400/50 bg-amber-400/10 p-3 text-xs"
+          class="rounded-md border border-[color:var(--warning)]/50 bg-[color:var(--warning)]/10 p-3 text-xs"
         >
-          <h3 class="font-semibold text-amber-300">
+          <h3 class="font-semibold text-[color:var(--warning)]">
             <AlertTriangle :size="14" class="mr-1 inline" />缺少镜像
           </h3>
           <p class="mt-1 text-muted-foreground">

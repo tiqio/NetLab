@@ -305,7 +305,7 @@ onBeforeUnmount(() => clearTimeout(copiedTimer));
     <div
       v-if="!stopped"
       role="status"
-      class="rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-xs text-amber-200"
+      class="rounded-md border border-[color:var(--warning)]/40 bg-[color:var(--warning)]/10 p-2 text-xs text-[color:var(--warning)]"
     >
       当前节点正在运行。资源限制仍可热修改；名称、网卡驱动和 IP 预配置已锁定。
     </div>
@@ -501,7 +501,7 @@ onBeforeUnmount(() => clearTimeout(copiedTimer));
       <p
         v-else-if="credentialsMessage"
         role="status"
-        class="text-xs text-amber-300"
+        class="text-xs text-[color:var(--warning)]"
       >
         {{ credentialsMessage }}
       </p>

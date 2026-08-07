@@ -14,7 +14,13 @@
     margin: 0;
   }
   body {
-    background: var(--background);
+    background:
+      radial-gradient(
+        circle at 12% -10%,
+        color-mix(in srgb, var(--primary) 7%, transparent),
+        transparent 34rem
+      ),
+      var(--background);
     color: var(--foreground);
     font-family:
       Inter,
@@ -25,7 +31,13 @@
       "Segoe UI",
       sans-serif;
     font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
     overflow: hidden;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--primary) 28%, transparent);
+    color: var(--foreground);
   }
   button,
   input,
@@ -60,7 +72,7 @@
     scrollbar-width: thin;
   }
   .netlab-panel {
-    background: color-mix(in srgb, var(--card) 96%, transparent);
+    background: color-mix(in srgb, var(--card) 97%, transparent);
     border-color: var(--border);
   }
 }

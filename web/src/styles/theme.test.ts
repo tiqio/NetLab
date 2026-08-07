@@ -42,6 +42,29 @@ describe("semantic theme", () => {
     }
   });
 
+  it("使用统一的低饱和暖中性色调", () => {
+    for (const token of [
+      "--background: #151512",
+      "--primary: #b7a37b",
+      "--topology-kind-qemu: #8290a3",
+      "--background: #efede8",
+      "--primary: #806d4f",
+      "--topology-kind-qemu: #708096",
+      "--radius: 0.6rem",
+    ])
+      expect(css).toContain(token);
+    for (const saturatedColor of [
+      "#2dd4bf",
+      "#3b82f6",
+      "#14b8a6",
+      "#a78bfa",
+      "#f59e0b",
+    ])
+      expect(css).not.toContain(saturatedColor);
+    expect(indexCss).toContain("radial-gradient(");
+    expect(workspaceCss).toContain("var(--shadow-color)");
+  });
+
   it("让原生下拉框和选项跟随当前主题", () => {
     expect(indexCss).toContain("select option");
     expect(indexCss).toContain("background-color: var(--popover)");

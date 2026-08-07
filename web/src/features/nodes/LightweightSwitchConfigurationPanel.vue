@@ -83,7 +83,9 @@ async function save() {
       <p class="text-[11px] text-muted-foreground">
         VLAN、地址、路由和转发配置会保存到数据库，并重新应用到该 netns。
       </p>
-      <p v-if="success" class="text-xs text-emerald-400">{{ success }}</p>
+      <p v-if="success" class="text-xs text-[color:var(--success)]">
+        {{ success }}
+      </p>
       <p v-if="error" role="alert" class="text-xs text-destructive">
         {{ error }}
       </p>

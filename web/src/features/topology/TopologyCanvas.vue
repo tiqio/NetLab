@@ -1740,7 +1740,7 @@ defineExpose({
     <div
       v-if="selectionRectangle"
       data-selection-rectangle
-      class="pointer-events-none absolute border border-cyan-300 bg-cyan-300/10"
+      class="pointer-events-none absolute border border-[color:var(--info)] bg-[color:var(--info)]/10"
       :style="{
         left: `${selectionRectangle.left}px`,
         top: `${selectionRectangle.top}px`,

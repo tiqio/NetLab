@@ -149,9 +149,10 @@ function sourceState(sourceKey: string) {
 function stateClass(sourceKey: string) {
   const state = sourceState(sourceKey);
   if (["running", "streaming", "starting", "requested"].includes(state))
-    return "bg-emerald-400";
-  if (["failed", "cancelled"].includes(state)) return "bg-red-400";
-  if (["stopping"].includes(state)) return "bg-amber-400";
+    return "bg-[color:var(--success)]";
+  if (["failed", "cancelled"].includes(state))
+    return "bg-[color:var(--destructive)]";
+  if (["stopping"].includes(state)) return "bg-[color:var(--warning)]";
   return "bg-muted-foreground/40";
 }
 

@@ -19,7 +19,7 @@ const classes = computed(() =>
     props.size === "default" && "h-8 px-3 text-sm",
     props.size === "icon" && "h-8 w-8",
     props.variant === "default" &&
-      "bg-primary text-primary-foreground hover:brightness-110",
+      "bg-primary text-primary-foreground hover:brightness-105",
     props.variant === "secondary" &&
       "bg-secondary text-secondary-foreground hover:bg-accent",
     props.variant === "ghost" &&
@@ -27,7 +27,7 @@ const classes = computed(() =>
     props.variant === "outline" &&
       "border-border bg-transparent text-foreground hover:bg-accent",
     props.variant === "destructive" &&
-      "bg-destructive text-white hover:brightness-110",
+      "bg-destructive text-white hover:brightness-105",
     props.class,
   ),
 );

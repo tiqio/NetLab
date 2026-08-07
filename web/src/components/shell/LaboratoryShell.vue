@@ -199,7 +199,7 @@ defineExpose({
   padding: 0.3rem 0.5rem;
   color: var(--muted-foreground);
   font-size: 0.68rem;
-  box-shadow: 0 4px 14px #0008;
+  box-shadow: 0 8px 24px var(--shadow-color);
 }
 .shell-toggle:hover {
   color: var(--foreground);

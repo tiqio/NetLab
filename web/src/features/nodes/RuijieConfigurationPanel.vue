@@ -206,7 +206,7 @@ async function applyConfiguration() {
       </Button>
       <p
         v-if="node.observed_state !== 'running'"
-        class="text-xs text-amber-300"
+        class="text-xs text-[color:var(--warning)]"
       >
         请先启动交换机，再应用 CLI 配置。
       </p>
@@ -216,7 +216,7 @@ async function applyConfiguration() {
       <p
         v-if="success"
         role="status"
-        class="flex items-center gap-1 text-xs text-emerald-300"
+        class="flex items-center gap-1 text-xs text-[color:var(--success)]"
       >
         <CheckCircle2 :size="13" /> {{ success }}
       </p>

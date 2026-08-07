@@ -9,7 +9,14 @@ import {
   type NodeInterface,
   type NetworkObject,
 } from "@/api";
-import { Button, FormField, Input, Select, Sheet, Textarea } from "@/components/ui";
+import {
+  Button,
+  FormField,
+  Input,
+  Select,
+  Sheet,
+  Textarea,
+} from "@/components/ui";
 import LightweightSwitchConfigEditor from "@/features/nodes/LightweightSwitchConfigEditor.vue";
 import { type LightweightSwitchKind } from "@/features/nodes/lightweightSwitchConfig";
 import TopologyResourceCatalog, {
@@ -26,10 +33,7 @@ import {
   validateResourceDraft,
   type ResourceCreateDraft,
 } from "./topologyResourceDraft";
-import {
-  cpuQuotaCoresToMicros,
-  cpuQuotaMicrosToCores,
-} from "@/lib/cpuQuota";
+import { cpuQuotaCoresToMicros, cpuQuotaMicrosToCores } from "@/lib/cpuQuota";
 
 const props = defineProps<{
   modelValue: boolean;
@@ -682,12 +686,7 @@ async function submit() {
               :error="fieldErrors.cpuQuotaMicros"
               hint="1 表示最多使用一个宿主机核心的 CPU 时间；0 表示不限制。"
             >
-              <Input
-                v-model="cpuQuotaCores"
-                type="number"
-                min="0"
-                step="0.1"
-              />
+              <Input v-model="cpuQuotaCores" type="number" min="0" step="0.1" />
             </FormField>
             <FormField
               data-field="memoryMiB"
@@ -959,7 +958,11 @@ async function submit() {
       <p v-if="error" role="alert" class="text-xs text-destructive">
         {{ error }}
       </p>
-      <p v-if="staleMessage" role="alert" class="text-xs text-amber-300">
+      <p
+        v-if="staleMessage"
+        role="alert"
+        class="text-xs text-[color:var(--warning)]"
+      >
         {{ staleMessage }}
       </p>
     </form>

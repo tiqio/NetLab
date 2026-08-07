@@ -325,7 +325,7 @@ onBeforeUnmount(() => {
     <p
       v-if="error"
       role="alert"
-      class="border-b border-destructive/30 bg-destructive/10 p-2 text-xs text-red-300"
+      class="border-b border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive"
     >
       {{ error }}
     </p>

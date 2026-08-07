@@ -351,7 +351,7 @@ async function writeClipboard(value: string) {
     </div>
     <p
       v-if="!interfaceId && !linkId && !objectLinkId"
-      class="text-xs text-amber-300"
+      class="text-xs text-[color:var(--warning)]"
     >
       开始抓包前请选择节点接口或链路。
     </p>
@@ -402,10 +402,16 @@ async function writeClipboard(value: string) {
       :description="helperMessage"
     >
       <div class="grid gap-3 text-sm">
-        <p v-if="helperIssue === 'wireshark'" class="text-amber-300">
+        <p
+          v-if="helperIssue === 'wireshark'"
+          class="text-[color:var(--warning)]"
+        >
           请安装 Wireshark，然后重启 NetLab 辅助程序。
         </p>
-        <p v-else-if="helperIssue === 'origin'" class="text-amber-300">
+        <p
+          v-else-if="helperIssue === 'origin'"
+          class="text-[color:var(--warning)]"
+        >
           请重启辅助程序，并明确允许当前 NetLab 地址。
         </p>
         <p v-else class="text-muted-foreground">

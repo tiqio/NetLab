@@ -454,8 +454,8 @@ async function deleteObjectLink() {
                   selectedNodeRouteReadiness?.state === 'failed'
                     ? 'text-destructive'
                     : selectedNodeRouteReadiness?.state === 'applied'
-                      ? 'text-emerald-300'
-                      : 'text-amber-300'
+                      ? 'text-[color:var(--success)]'
+                      : 'text-[color:var(--warning)]'
                 "
               >
                 {{ selectedNodeRouteReadiness?.label }}

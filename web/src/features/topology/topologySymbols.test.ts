@@ -9,12 +9,12 @@ function decodeSymbol(symbol: string) {
 
 describe("topology symbols", () => {
   it.each([
-    ["qemu", "#2563eb"],
-    ["docker", "#0f766e"],
-    ["pc", "#7c3aed"],
-    ["switch_l3", "#7c3aed"],
-    ["bridge", "#c2410c"],
-    ["nat_bridge", "#c2410c"],
+    ["qemu", "#708096"],
+    ["docker", "#6f877e"],
+    ["pc", "#877b90"],
+    ["switch_l3", "#877b90"],
+    ["bridge", "#927b5d"],
+    ["nat_bridge", "#927b5d"],
   ])("renders %s with its light-theme type fill", (kind, fill) => {
     expect(
       decodeSymbol(
@@ -35,9 +35,9 @@ describe("topology symbols", () => {
     const svg = decodeSymbol(
       topologySymbol(kind, { theme: "light", observedState: "stopped" }),
     );
-    expect(svg).toContain("#0f172a");
+    expect(svg).toContain("#302e29");
     expect(svg).not.toContain("#ffffff");
-    expect(svg).not.toContain("#f8fafc");
+    expect(svg).not.toContain("#f0ece4");
   });
 
   it("keeps QEMU SVG details light in the dark theme", () => {
@@ -48,7 +48,7 @@ describe("topology symbols", () => {
           observedState: "stopped",
         }),
       ),
-    ).toContain("#f8fafc");
+    ).toContain("#f0ece4");
   });
 
   it("uses runtime state, selection, and traffic as the icon outline", () => {
@@ -59,7 +59,7 @@ describe("topology symbols", () => {
           observedState: "running",
         }),
       ),
-    ).toContain('stroke="#22c55e"');
+    ).toContain('stroke="#86a087"');
     expect(
       decodeSymbol(
         topologySymbol("docker", {
@@ -67,7 +67,7 @@ describe("topology symbols", () => {
           observedState: "failed",
         }),
       ),
-    ).toContain('stroke="#dc2626"');
+    ).toContain('stroke="#a75f5d"');
     expect(
       decodeSymbol(
         topologySymbol("pc", {
@@ -76,7 +76,7 @@ describe("topology symbols", () => {
           selected: true,
         }),
       ),
-    ).toContain('stroke="#0f172a"');
+    ).toContain('stroke="#302e29"');
     expect(
       decodeSymbol(
         topologySymbol("nat_bridge", {

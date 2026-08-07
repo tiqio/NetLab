@@ -292,7 +292,9 @@ async function save() {
         与 EVE-NG 的 VPCS 使用习惯类似：接口负责 DHCP
         或静态地址；高级场景可同时配置 IPv6 SLAAC、DHCPv6、DNS 和静态路由。
       </p>
-      <p v-if="success" class="text-xs text-emerald-400">{{ success }}</p>
+      <p v-if="success" class="text-xs text-[color:var(--success)]">
+        {{ success }}
+      </p>
       <p v-if="error" role="alert" class="text-xs text-destructive">
         {{ error }}
       </p>

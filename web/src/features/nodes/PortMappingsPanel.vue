@@ -435,7 +435,7 @@ watch(
             <Button
               variant="ghost"
               size="sm"
-              class="text-red-300"
+              class="text-destructive"
               :disabled="busy"
               @click="remove(mapping)"
             >

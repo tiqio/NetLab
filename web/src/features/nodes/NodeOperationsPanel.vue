@@ -144,8 +144,8 @@ onBeforeUnmount(() => {
             routeReadiness.state === 'failed'
               ? 'border-destructive/50 text-destructive'
               : routeReadiness.state === 'applied'
-                ? 'border-emerald-500/40 text-emerald-300'
-                : 'border-amber-500/40 text-amber-300'
+                ? 'border-[color:var(--success)]/40 text-[color:var(--success)]'
+                : 'border-[color:var(--warning)]/40 text-[color:var(--warning)]'
           "
         >
           {{ routeReadiness.label }}

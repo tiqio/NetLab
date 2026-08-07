@@ -56,8 +56,7 @@ const resolvedLabel = computed(() =>
       </option>
     </select>
     <span
-      class="h-2 w-2 shrink-0 rounded-full border border-border"
-      :class="resolvedTheme === 'light' ? 'bg-amber-400' : 'bg-indigo-400'"
+      class="h-2 w-2 shrink-0 rounded-full border border-border bg-primary"
       aria-hidden="true"
     />
     <span class="sr-only" role="status">当前生效：{{ resolvedLabel }}</span>
