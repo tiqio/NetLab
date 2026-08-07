@@ -20,6 +20,7 @@ import {
 import { Button, FormField, Input, Select } from "@/components/ui";
 import StatusBadge from "@/components/common/StatusBadge.vue";
 import StructuredProblem from "@/components/common/StructuredProblem.vue";
+import { problemContext } from "@/locales";
 
 const props = defineProps<{ nodeId: string }>();
 const protocol = ref<"tcp" | "udp">("tcp");
@@ -145,7 +146,7 @@ async function create() {
     const failure = errorProblem(error);
     await load();
     problem.value = failure;
-    status.value = `创建失败 · ${failure.message}`;
+    status.value = `创建失败 · ${problemContext(failure.code)}`;
   } finally {
     busy.value = false;
   }
@@ -167,7 +168,7 @@ async function remove(mapping: PortMapping) {
   } catch (error) {
     const failure = errorProblem(error);
     problem.value = failure;
-    status.value = `移除失败 · ${failure.message}`;
+    status.value = `移除失败 · ${problemContext(failure.code)}`;
   } finally {
     busy.value = false;
   }
@@ -212,7 +213,7 @@ async function detectGuestAddress() {
   } catch (error) {
     const failure = errorProblem(error);
     problem.value = failure;
-    status.value = `地址探测失败 · ${failure.message}`;
+    status.value = `地址探测失败 · ${problemContext(failure.code)}`;
   } finally {
     detecting.value = false;
   }

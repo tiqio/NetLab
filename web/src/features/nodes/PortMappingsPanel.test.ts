@@ -144,7 +144,9 @@ describe("PortMappingsPanel", () => {
       .trigger("click");
     await flushPromises();
 
-    expect(wrapper.text()).toContain("创建失败 · no guest address found");
+    expect(wrapper.text()).toContain(
+      "创建失败 · 未找到节点的可达地址。请先把节点连接到 NAT 网桥并启用 DHCP，或配置静态地址。",
+    );
     expect(wrapper.text()).toContain(
       "未找到节点的可达地址。请先把节点连接到 NAT 网桥并启用 DHCP，或配置静态地址。",
     );
