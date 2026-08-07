@@ -40,6 +40,7 @@ const emit = defineEmits<{
   refreshTasks: [];
   navigate: [string, string];
   trafficOverlay: [TrafficObservation[], boolean, string];
+  captureOverlay: [{ connectionIds: string[]; interfaceIds: string[] }];
 }>();
 const value = computed({
   get: () => props.modelValue,
@@ -90,6 +91,7 @@ const value = computed({
           :console-request-network-object-id="consoleRequestNetworkObjectId"
           :console-request-key="consoleRequestKey"
           @traffic-overlay="(...args) => $emit('trafficOverlay', ...args)"
+          @capture-overlay="$emit('captureOverlay', $event)"
         />
       </div>
     </template>

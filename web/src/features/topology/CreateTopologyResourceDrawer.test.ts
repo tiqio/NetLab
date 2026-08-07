@@ -961,4 +961,45 @@ describe("CreateTopologyResourceDrawer", () => {
     expect(name.value).toBe("kept-name");
     wrapper.unmount();
   });
+
+  it("submits viewport placement intent and returns the authoritative assignment", async () => {
+    vi.mocked(api.createNetworkObject).mockResolvedValue({
+      network_object: {
+        id: "pc-authoritative",
+        laboratory_id: "lab-1",
+        name: "PC",
+        kind: "pc",
+        revision: 1,
+        desired_state: "active",
+        observed_state: "provisioning",
+        config: {},
+      },
+      placement_assignment: {
+        placement: { laboratory_id: "lab-1", resource_id: "pc-authoritative", resource_type: "network_object", x: 260, y: 140, revision: 1 },
+        requested_center: { x: 200, y: 100 },
+        assigned_center: { x: 260, y: 140 },
+        adjusted: true,
+        reason: "collision_avoided",
+        footprint_class: "network-object-standard",
+        algorithm_version: 1,
+      },
+      laboratory_revision: 8,
+      task: {} as never,
+    });
+    const wrapper = mount(CreateTopologyResourceDrawer, {
+      attachTo: document.body,
+      props: {
+        modelValue: true,
+        laboratoryId: "lab-1",
+        laboratoryRevision: 7,
+        placementIntent: { preferred_x: 200, preferred_y: 100, footprint_class: "network-object-standard" },
+        selection: { kind: "pc", name: "PC", networkObjectKind: "pc" },
+      },
+    });
+    document.body.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await flushPromises();
+    expect(api.createNetworkObject).toHaveBeenCalledWith("lab-1", 7, expect.objectContaining({ placement_intent: { preferred_x: 200, preferred_y: 100, footprint_class: "network-object-standard" } }));
+    expect(wrapper.emitted("created")?.[0]?.[0]).toMatchObject({ laboratory_revision: 8, placement_assignment: { adjusted: true, assigned_center: { x: 260, y: 140 } } });
+    wrapper.unmount();
+  });
 });

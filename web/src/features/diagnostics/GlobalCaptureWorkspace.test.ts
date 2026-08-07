@@ -28,6 +28,7 @@ function mountWorkspace(requestInterfaceId = "if-1") {
         CapturePanel: {
           name: "CapturePanel",
           props: ["interfaceId", "linkId", "sourceLabel"],
+          emits: ["captureChange"],
           template:
             '<div data-testid="capture-panel">{{ sourceLabel }} / {{ interfaceId || linkId }}</div>',
         },
@@ -64,5 +65,38 @@ describe("GlobalCaptureWorkspace", () => {
       .trigger("click");
     expect(wrapper.findAll('[data-testid="capture-panel"]')).toHaveLength(3);
     expect(wrapper.text()).toContain("BusyBox · eth0");
+  });
+
+  it("reports active capture sources without changing stream or artifact semantics", async () => {
+    const wrapper = mountWorkspace();
+    const panel = wrapper.findComponent({ name: "CapturePanel" });
+    panel.vm.$emit("captureChange", {
+      id: "capture-1",
+      source_type: "interface",
+      source_id: "if-1",
+      state: "streaming",
+      format: "pcap",
+      retain: true,
+      max_bytes: 1024,
+      bytes_written: 128,
+      packets: 2,
+      truncated: false,
+      artifact_url: "/api/v1/artifacts/capture-1",
+      created_at: "2026-08-07T00:00:00Z",
+    });
+    await wrapper.vm.$nextTick();
+    expect(wrapper.emitted("captureOverlay")?.at(-1)?.[0]).toEqual({
+      connectionIds: [],
+      interfaceIds: ["if-1"],
+    });
+    panel.vm.$emit("captureChange", {
+      id: "capture-1",
+      state: "completed",
+    });
+    await wrapper.vm.$nextTick();
+    expect(wrapper.emitted("captureOverlay")?.at(-1)?.[0]).toEqual({
+      connectionIds: [],
+      interfaceIds: [],
+    });
   });
 });

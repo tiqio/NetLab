@@ -13,6 +13,9 @@ export const terminology = {
   diagnostics: "诊断",
   desiredState: "期望状态",
   actualState: "实际状态",
+  connectionSemantics: "连接语义",
+  managedNATUplink: "NAT 管理上联",
+  sharedBroadcastDomain: "共享广播域",
 } as const;
 
 export const technicalTerms = [

@@ -40,14 +40,23 @@ export function deterministicPlacement(
 export function resolvePlacements(
   resources: Array<Node | NetworkObject>,
   stored: Record<string, Placement>,
+  previous: Record<string, { x: number; y: number }> = {},
 ) {
   const resolved: Record<string, { x: number; y: number }> = {};
-  for (const resource of [...resources].sort((a, b) =>
-    a.id.localeCompare(b.id),
-  )) {
-    resolved[resource.id] =
-      stored[resource.id] ||
-      deterministicPlacement(resource.id, Object.values(resolved));
+  const ordered = [...resources].sort((a, b) => a.id.localeCompare(b.id));
+  for (const resource of ordered) {
+    if (stored[resource.id]) resolved[resource.id] = stored[resource.id];
+  }
+  for (const resource of ordered) {
+    if (!stored[resource.id] && previous[resource.id])
+      resolved[resource.id] = previous[resource.id];
+  }
+  for (const resource of ordered) {
+    if (!resolved[resource.id])
+      resolved[resource.id] = deterministicPlacement(
+        resource.id,
+        Object.values(resolved),
+      );
   }
   return resolved;
 }

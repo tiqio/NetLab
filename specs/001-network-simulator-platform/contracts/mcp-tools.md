@@ -14,7 +14,8 @@ tasks, and errors as `/api/v1`. Every mutating tool accepts optional `idempotenc
 | `netlab.labs.delete` | Delete lab and owned resources | `lab_id` | operation task |
 | `netlab.labs.export` | Create redacted export | `lab_id` | operation task and artifact metadata |
 | `netlab.labs.import` | Import validated bundle | artifact handle | operation task |
-| `netlab.nodes.create` | Add node from template or lightweight kind | lab, template/version, resources | node/task |
+| `netlab.nodes.create` | Add node from template or lightweight kind with authoritative initial placement | lab, revision, idempotency key, template/version, resources, optional placement intent | node, interfaces, placement assignment, updated lab revision |
+| `netlab.network_objects.create` | Add PC, Bridge, NAT, L2, or L3 object with authoritative initial placement | lab, revision, idempotency key, kind, config, optional placement intent | network object, task, placement assignment, updated lab revision |
 | `netlab.nodes.set_state` | Start or stop node | node, desired state | operation task |
 | `netlab.nodes.delete` | Delete node | node | operation task |
 | `netlab.nodes.exec` | Execute guest-agent command | node, argv, timeout, output limit | operation task |
@@ -23,7 +24,7 @@ tasks, and errors as `/api/v1`. Every mutating tool accepts optional `idempotenc
 | `netlab.links.connect` | Connect two interfaces live | endpoints | operation task |
 | `netlab.links.disconnect` | Disconnect link live | link | operation task |
 | `netlab.links.reconnect` | Replace one endpoint atomically with rollback | link, revision, retained endpoint, replacement endpoint | operation task |
-| `netlab.topology.set_positions` | Update shared node/network-object coordinates | lab, revision, 1-100 placements | updated revision and placements |
+| `netlab.topology.set_positions` | Manually move already-created node/network-object coordinates; never performs initial placement | lab, revision, 1-100 placements | updated revision and authoritative placements |
 | `netlab.port_mappings.create` | Publish guest endpoint | node, protocol, host/guest ports | operation task |
 | `netlab.port_mappings.delete` | Remove mapping | mapping | operation task |
 | `netlab.consoles.get` | Discover Telnet/VNC session | node, mode | bounded session descriptor |

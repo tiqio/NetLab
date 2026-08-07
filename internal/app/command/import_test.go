@@ -12,11 +12,13 @@ import (
 type routeImportRepository struct {
 	nodes              []domain.Node
 	networkObjectLinks []domain.NetworkObjectLink
+	placements         []domain.TopologyPlacement
 }
 
-func (r *routeImportRepository) ImportTopology(_ context.Context, _ domain.Laboratory, nodes []domain.Node, _ []domain.Interface, _ []domain.Link, _ []domain.NetworkObject, objectLinks []domain.NetworkObjectLink) error {
+func (r *routeImportRepository) ImportTopology(_ context.Context, _ domain.Laboratory, nodes []domain.Node, _ []domain.Interface, _ []domain.Link, _ []domain.NetworkObject, objectLinks []domain.NetworkObjectLink, placements []domain.TopologyPlacement) error {
 	r.nodes = nodes
 	r.networkObjectLinks = objectLinks
+	r.placements = placements
 	return nil
 }
 
@@ -48,5 +50,35 @@ func TestImportPreservesAndCanonicalizesDockerStaticRoutes(t *testing.T) {
 	body, _ := json.Marshal(repository.nodes[0].Config)
 	if !strings.Contains(string(body), `"destination":"198.51.100.0/24"`) {
 		t.Fatalf("config=%s", body)
+	}
+}
+
+func TestImportPreservesExportedPlacementAndAllocatesOnlyMissingResources(t *testing.T) {
+	repository := &routeImportRepository{}
+	bundle := LaboratoryExport{
+		SchemaVersion: 1,
+		Laboratory:    ExportLaboratory{Name: "placements", RecoveryPolicy: domain.RecoveryRemainStopped},
+		Nodes: []ExportNode{
+			{ExportID: "node-a", Name: "A", Kind: "docker", Config: map[string]any{}},
+			{ExportID: "node-b", Name: "B", Kind: "docker", Config: map[string]any{}},
+		},
+		Placements: []ExportPlacement{{ResourceExportID: "node-a", ResourceType: domain.PlacementNode, X: 320, Y: -140, Revision: 4}},
+		Redaction:  ExportRedaction{ImagesExcluded: true, CredentialsExcluded: true, BootstrapSecretsExcluded: true, CapturesExcluded: true},
+	}
+	if _, err := NewImportService(repository, nil).ImportAs(context.Background(), "lab", bundle); err != nil {
+		t.Fatal(err)
+	}
+	if len(repository.placements) != 2 {
+		t.Fatalf("placements=%+v", repository.placements)
+	}
+	byID := map[domain.ID]domain.TopologyPlacement{}
+	for _, placement := range repository.placements {
+		byID[placement.ResourceID] = placement
+	}
+	if preserved := byID[repository.nodes[0].ID]; preserved.X != 320 || preserved.Y != -140 || preserved.Revision != 4 {
+		t.Fatalf("preserved=%+v", preserved)
+	}
+	if fallback := byID[repository.nodes[1].ID]; fallback.Revision != 1 || (fallback.X == 320 && fallback.Y == -140) {
+		t.Fatalf("fallback=%+v", fallback)
 	}
 }

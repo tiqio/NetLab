@@ -43,6 +43,7 @@ import {
   resourceVisualSemantic,
   topologyCategoryIndex,
 } from "./topologyVisualSemantics";
+import type { TrafficPathOverlay } from "./trafficPathTypes";
 
 const props = withDefaults(
   defineProps<{
@@ -64,6 +65,8 @@ const props = withDefaults(
     traffic?: TrafficObservation[];
     trafficActive?: boolean;
     trafficColor?: string;
+    captureConnectionIds?: string[];
+    captureInterfaceIds?: string[];
   }>(),
   {
     networkAttachments: () => [],
@@ -71,6 +74,8 @@ const props = withDefaults(
     traffic: () => [],
     trafficActive: false,
     trafficColor: "var(--topology-traffic)",
+    captureConnectionIds: () => [],
+    captureInterfaceIds: () => [],
   },
 );
 const emit = defineEmits<{
@@ -122,24 +127,7 @@ const connectionPreview = ref<{
   targetX: number;
   targetY: number;
 }>();
-const trafficPathOverlays = ref<
-  Array<{
-    id: string;
-    x1: number;
-    y1: number;
-    x2: number;
-    y2: number;
-    pathData: string;
-    mode: "single" | "bidirectional" | "unknown";
-    guideMode: "single" | "initiator" | "none";
-    particleMode: "single" | "bidirectional" | "unknown";
-    particlesActive: boolean;
-    sourceId: string;
-    targetId: string;
-    count: number;
-    bytes: number;
-  }>
->([]);
+const trafficPathOverlays = ref<TrafficPathOverlay[]>([]);
 const portOverlays = ref<
   Array<{
     id: string;
@@ -215,6 +203,7 @@ const placements = computed(() => {
         { x: item.x, y: item.y, pinned: true, updatedAt: "" },
       ]),
     ),
+    placementCache,
   );
   return placementCache;
 });
@@ -795,12 +784,11 @@ const option = computed(() => ({
       links: [
         ...connectionPresentations.value.map((connection) => {
           const hit = trafficLinks.value.get(connection.id);
-          const sourceInterfaceTraffic =
-            connection.persistedKind === "network_attachment" &&
-            trafficInterfaceIds.value.has(connection.source.portId);
-          const trafficHit = Boolean(
-            props.trafficActive && (hit || sourceInterfaceTraffic),
-          );
+          const trafficHit = Boolean(props.trafficActive && hit);
+          const captureHit =
+            props.captureConnectionIds.includes(connection.id) ||
+            (connection.persistedKind === "network_attachment" &&
+              props.captureInterfaceIds.includes(connection.source.portId));
           const trafficMode = !hit?.pairs.size
             ? "unknown"
             : hit.pairs.size === 1
@@ -830,22 +818,26 @@ const option = computed(() => ({
             lineStyle: {
               color: trafficHit
                 ? props.trafficColor
+                : captureHit
+                  ? "var(--topology-connection-capture)"
                 : selectedConnection || legendHighlighted
                   ? "var(--topology-connection-focus)"
                   : connection.statusVisual.colorToken,
               width:
-                trafficHit || selectedConnection || legendHighlighted
+                trafficHit || captureHit || selectedConnection || legendHighlighted
                   ? 4
                   : connection.statusVisual.width,
               opacity: trafficHit ? 0.7 : 1,
               shadowColor:
                 trafficHit
                   ? props.trafficColor
+                  : captureHit
+                    ? "var(--topology-connection-capture)"
                   : selectedConnection || legendHighlighted
                     ? "var(--topology-connection-focus)"
                     : undefined,
               shadowBlur:
-                trafficHit || selectedConnection || legendHighlighted ? 7 : 0,
+                trafficHit || captureHit || selectedConnection || legendHighlighted ? 7 : 0,
               type: connection.statusVisual.lineType,
               curveness: nodeLink
                 ? routeCurveness(nodeLink)
@@ -1032,7 +1024,7 @@ function refreshOverlays() {
       ? { ownerId: selectedConnectorNode.value.id, x: pixel.x + 72, y: pixel.y }
       : undefined;
   } else connectorOverlay.value = undefined;
-  const trafficPaths: typeof trafficPathOverlays.value = [];
+  const trafficPaths: TrafficPathOverlay[] = [];
   if (props.trafficActive) {
     for (const link of props.links) {
       const hit = trafficLinks.value.get(link.id);
@@ -1059,6 +1051,7 @@ function refreshOverlays() {
           : routeCurveness(link);
       trafficPaths.push({
         id: `traffic:${link.id}`,
+        connectionId: link.id,
         x1: source.x,
         y1: source.y,
         x2: target.x,
@@ -1086,6 +1079,7 @@ function refreshOverlays() {
         targetId,
         count: hit.count,
         bytes: hit.bytes,
+        expiresAt: trafficClock.value + TRAFFIC_DIRECTION_LINGER_MS,
       });
     }
     for (const attachment of props.networkAttachments) {
@@ -1102,6 +1096,7 @@ function refreshOverlays() {
       );
       trafficPaths.push({
         id: `traffic:${attachment.id}`,
+        connectionId: attachment.id,
         x1: source.x,
         y1: source.y,
         x2: target.x,
@@ -1117,6 +1112,7 @@ function refreshOverlays() {
         targetId: attachment.network_object_id,
         count: observations.reduce((total, item) => total + item.count, 0),
         bytes: observations.reduce((total, item) => total + item.bytes, 0),
+        expiresAt: trafficClock.value + TRAFFIC_DIRECTION_LINGER_MS,
       });
     }
     for (const link of props.networkObjectLinks) {
@@ -1137,6 +1133,7 @@ function refreshOverlays() {
           : baseCurveness;
       trafficPaths.push({
         id: `traffic:${link.id}`,
+        connectionId: link.id,
         x1: source.x,
         y1: source.y,
         x2: target.x,
@@ -1150,6 +1147,7 @@ function refreshOverlays() {
         targetId,
         count: hit.count,
         bytes: hit.bytes,
+        expiresAt: trafficClock.value + TRAFFIC_DIRECTION_LINGER_MS,
       });
     }
   }

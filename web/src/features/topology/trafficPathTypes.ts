@@ -11,3 +11,24 @@ export interface TrafficObservation {
   count: number;
   bytes: number;
 }
+
+export type TrafficDirectionMode = "single" | "bidirectional" | "unknown";
+
+export interface TrafficPathOverlay {
+  id: string;
+  connectionId: string;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  pathData: string;
+  mode: TrafficDirectionMode;
+  guideMode: "single" | "initiator" | "none";
+  particleMode: TrafficDirectionMode;
+  particlesActive: boolean;
+  sourceId: string;
+  targetId: string;
+  count: number;
+  bytes: number;
+  expiresAt: number;
+}

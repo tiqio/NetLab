@@ -11,6 +11,7 @@ import {
   type OperationTask,
   type PlacementAssignment,
   type RuntimeCapabilityObservation,
+  type TopologyPlacement,
   type TopologySnapshot,
 } from "../api";
 
@@ -46,7 +47,20 @@ function normalizeSnapshot(snapshot: TopologySnapshot): TopologySnapshot {
     network_objects: snapshot.network_objects || [],
     network_attachments: snapshot.network_attachments || [],
     network_object_links: snapshot.network_object_links || [],
+    placements: snapshot.placements || [],
   };
+}
+
+function mergePlacement(
+  placements: TopologyPlacement[],
+  placement: TopologyPlacement,
+) {
+  const current = placements.find(
+    (item) => item.resource_id === placement.resource_id,
+  );
+  if (!current) placements.push(placement);
+  else if (placement.revision >= current.revision)
+    Object.assign(current, placement);
 }
 
 export const useLaboratoryStore = defineStore("laboratory", {
@@ -139,14 +153,7 @@ export const useLaboratoryStore = defineStore("laboratory", {
           value.networkObject.revision,
         );
       const placement = value.placement_assignment?.placement;
-      if (placement) {
-        const current = this.active.placements.find(
-          (item) => item.resource_id === placement.resource_id,
-        );
-        if (!current) this.active.placements.push(placement);
-        else if (placement.revision >= current.revision)
-          Object.assign(current, placement);
-      }
+      if (placement) mergePlacement(this.active.placements, placement);
       if (
         value.laboratory_revision !== undefined &&
         value.laboratory_revision >= this.active.laboratory.revision
@@ -205,6 +212,21 @@ export const useLaboratoryStore = defineStore("laboratory", {
       }
       if (!this.active || event.laboratory_id !== this.active.laboratory.id)
         return;
+      if (event.type === "topology.placements_changed") {
+        const placements = Array.isArray(event.data.placements)
+          ? (event.data.placements as TopologyPlacement[])
+          : [];
+        for (const placement of placements)
+          mergePlacement(this.active.placements, placement);
+        if (event.revision >= this.active.laboratory.revision) {
+          this.active.laboratory.revision = event.revision;
+          const laboratory = this.labs.find(
+            (item) => item.id === this.active?.laboratory.id,
+          );
+          if (laboratory) laboratory.revision = event.revision;
+        }
+        return;
+      }
       if (event.resource_type === "laboratory") {
         if (event.revision < this.active.laboratory.revision) return;
         Object.assign(this.active.laboratory, event.data, {

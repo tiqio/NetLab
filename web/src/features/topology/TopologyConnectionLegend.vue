@@ -1,19 +1,39 @@
 <script setup lang="ts">
+import { ref } from "vue";
+import { ChevronDown, ChevronUp } from "lucide-vue-next";
+import { zhCN } from "@/locales/zh-CN";
 import type { TopologyConnectionLegendItem } from "./topologyConnectionLegend";
 
 defineProps<{ items: TopologyConnectionLegendItem[] }>();
 const emit = defineEmits<{ highlight: [string[]]; clear: [] }>();
+const collapsed = ref(false);
 </script>
 
 <template>
   <aside
     v-if="items.length"
     data-testid="topology-connection-legend"
-    class="absolute bottom-16 left-3 z-20 max-h-40 w-64 overflow-auto rounded-lg border border-border bg-card/95 p-2 shadow-sm backdrop-blur"
-    aria-label="连接语义图例"
+    class="absolute bottom-16 left-3 z-20 w-64 rounded-lg border border-border bg-card/95 p-2 text-card-foreground shadow-sm backdrop-blur"
+    :aria-label="zhCN.topologyConnection.legendLabel"
+    :data-collapsed="collapsed"
   >
-    <p class="px-1 pb-1 text-[11px] font-medium text-foreground">连接语义</p>
-    <button
+    <div class="flex items-center gap-2 px-1 pb-1">
+      <p class="min-w-0 flex-1 text-[11px] font-medium text-foreground">
+        {{ zhCN.topologyConnection.legendTitle }}
+      </p>
+      <button
+        type="button"
+        class="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        :aria-label="collapsed ? zhCN.topologyConnection.expandLegend : zhCN.topologyConnection.collapseLegend"
+        :aria-expanded="!collapsed"
+        @click="collapsed = !collapsed"
+      >
+        <ChevronDown v-if="collapsed" :size="13" />
+        <ChevronUp v-else :size="13" />
+      </button>
+    </div>
+    <div v-show="!collapsed" class="max-h-32 overflow-y-auto netlab-scrollbar">
+      <button
       v-for="item in items"
       :key="item.key"
       type="button"
@@ -25,7 +45,7 @@ const emit = defineEmits<{ highlight: [string[]]; clear: [] }>();
       @mouseleave="emit('clear')"
       @focus="emit('highlight', item.connectionIds)"
       @blur="emit('clear')"
-    >
+      >
       <span
         class="mt-1 h-2.5 w-6 shrink-0 rounded-full border border-[color:var(--topology-connection-focus)] bg-[color:var(--topology-connection-success)]"
         aria-hidden="true"
@@ -38,6 +58,7 @@ const emit = defineEmits<{ highlight: [string[]]; clear: [] }>();
           {{ item.description }}
         </span>
       </span>
-    </button>
+      </button>
+    </div>
   </aside>
 </template>

@@ -9,7 +9,7 @@ import (
 	"github.com/netlab/netlab/internal/domain"
 )
 
-func (r *TopologyRepository) ImportTopology(ctx context.Context, lab domain.Laboratory, nodes []domain.Node, interfaces []domain.Interface, links []domain.Link, networkObjects []domain.NetworkObject, networkObjectLinks []domain.NetworkObjectLink) error {
+func (r *TopologyRepository) ImportTopology(ctx context.Context, lab domain.Laboratory, nodes []domain.Node, interfaces []domain.Interface, links []domain.Link, networkObjects []domain.NetworkObject, networkObjectLinks []domain.NetworkObjectLink, placements []domain.TopologyPlacement) error {
 	return r.database.Write(ctx, func(tx *sql.Tx) error {
 		if _, err := tx.ExecContext(ctx, `INSERT INTO laboratories(id,name,description,revision,recovery_policy,lifecycle_state,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)`, lab.ID, lab.Name, lab.Description, lab.Revision, lab.RecoveryPolicy, lab.LifecycleState, lab.CreatedAt.Format(time.RFC3339Nano), lab.UpdatedAt.Format(time.RFC3339Nano)); err != nil {
 			return err
@@ -55,6 +55,14 @@ func (r *TopologyRepository) ImportTopology(ctx context.Context, lab domain.Labo
 				}
 			}
 		}
-		return appendEvent(ctx, tx, "laboratory.imported", lab.ID, "laboratory", lab.ID, lab.Revision, "", map[string]any{"nodes": len(nodes), "links": len(links), "network_objects": len(networkObjects), "network_object_links": len(networkObjectLinks)})
+		for _, placement := range placements {
+			if placement.LaboratoryID != lab.ID {
+				return domain.Problem{Code: "invalid_placement", Message: "placement laboratory does not match import", ResourceType: string(placement.ResourceType), ResourceID: placement.ResourceID}
+			}
+			if _, err := tx.ExecContext(ctx, `INSERT INTO topology_placements(laboratory_id,resource_id,resource_type,x,y,revision,updated_at) VALUES(?,?,?,?,?,?,?)`, placement.LaboratoryID, placement.ResourceID, placement.ResourceType, placement.X, placement.Y, placement.Revision, time.Now().UTC().Format(time.RFC3339Nano)); err != nil {
+				return err
+			}
+		}
+		return appendEvent(ctx, tx, "laboratory.imported", lab.ID, "laboratory", lab.ID, lab.Revision, "", map[string]any{"nodes": len(nodes), "links": len(links), "network_objects": len(networkObjects), "network_object_links": len(networkObjectLinks), "placements": len(placements)})
 	})
 }

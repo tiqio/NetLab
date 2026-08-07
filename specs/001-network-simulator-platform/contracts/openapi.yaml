@@ -41,7 +41,7 @@ paths:
         '200': {description: Labs, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Laboratory'}}}}}
     post:
       operationId: createLab
-      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CreateLab'}}}}
       responses:
         '201': {description: Created, content: {application/json: {schema: {$ref: '#/components/schemas/Laboratory'}}}}
@@ -64,7 +64,10 @@ paths:
       operationId: deleteLab
       parameters: [{$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
       responses:
-        '202': {$ref: '#/components/responses/AcceptedTask'}
+        '201': {description: Node created with authoritative placement, content: {application/json: {schema: {$ref: '#/components/schemas/CreateNodeResult'}}}}
+        '409': {description: Idempotency conflict}
+        '412': {$ref: '#/components/responses/PreconditionFailed'}
+        '428': {description: If-Match is required}
   /labs/{labId}/nodes:
     parameters: [{$ref: '#/components/parameters/LabId'}]
     post:
@@ -370,10 +373,13 @@ paths:
         '200': {description: Network objects, content: {application/json: {schema: {type: array, items: {type: object}}}}}
     post:
       operationId: createNetworkObject
-      parameters: [{$ref: '#/components/parameters/LabId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
-      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [name, kind]}}}}
+      parameters: [{$ref: '#/components/parameters/LabId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CreateNetworkObject'}}}}
       responses:
-        '202': {$ref: '#/components/responses/AcceptedTask'}
+        '202': {description: Network object admitted with authoritative placement and runtime task, content: {application/json: {schema: {$ref: '#/components/schemas/CreateNetworkObjectResult'}}}}
+        '409': {description: Idempotency conflict}
+        '412': {$ref: '#/components/responses/PreconditionFailed'}
+        '428': {description: If-Match is required}
   /network-objects/{objectId}:
     get:
       operationId: getNetworkObject
@@ -480,7 +486,11 @@ components:
     CreateNode:
       type: object
       required: [name]
-      properties: {name: {type: string}, kind: {enum: [qemu, docker, pc, switch_l2, switch_l3]}, template_version_id: {type: string, format: uuid}, image_version_id: {type: string, format: uuid}, cpu_count: {type: integer}, cpu_quota_micros: {type: integer}, memory_mib: {type: integer}, storage_gib: {type: integer}, interface_limit: {type: integer}, process_limit: {type: integer}, interface_count: {type: integer}, config: {type: object}, bootstrap: {type: object, properties: {user_data: {type: string}, meta_data: {type: string}, network_config: {type: string}}}}
+      properties: {name: {type: string}, kind: {enum: [qemu, docker, pc, switch_l2, switch_l3]}, template_version_id: {type: string, format: uuid}, image_version_id: {type: string, format: uuid}, cpu_count: {type: integer}, cpu_quota_micros: {type: integer}, memory_mib: {type: integer}, storage_gib: {type: integer}, interface_limit: {type: integer}, process_limit: {type: integer}, interface_count: {type: integer}, config: {type: object}, bootstrap: {type: object, properties: {user_data: {type: string}, meta_data: {type: string}, network_config: {type: string}}}, placement_intent: {$ref: '#/components/schemas/PlacementIntent'}}
+    CreateNodeResult:
+      type: object
+      required: [node, interfaces, placement_assignment, laboratory_revision]
+      properties: {node: {$ref: '#/components/schemas/Node'}, interfaces: {type: array, items: {$ref: '#/components/schemas/NodeInterface'}}, placement_assignment: {$ref: '#/components/schemas/PlacementAssignment'}, laboratory_revision: {type: integer, minimum: 1}}
     NodeInterface:
       type: object
       required: [id, node_id, slot, name, driver, mac_address, revision]
@@ -493,6 +503,14 @@ components:
       type: object
       required: [laboratory_id, resource_id, resource_type, x, y, revision]
       properties: {laboratory_id: {type: string, format: uuid}, resource_id: {type: string, format: uuid}, resource_type: {enum: [node, network_object]}, x: {type: number}, y: {type: number}, revision: {type: integer, minimum: 0}}
+    PlacementIntent:
+      type: object
+      properties: {preferred_x: {type: number}, preferred_y: {type: number}, footprint_class: {enum: [node-standard, node-wide, network-object-standard, network-object-wide]}}
+      dependentRequired: {preferred_x: [preferred_y], preferred_y: [preferred_x]}
+    PlacementAssignment:
+      type: object
+      required: [placement, assigned_center, adjusted, reason, footprint_class, algorithm_version]
+      properties: {placement: {$ref: '#/components/schemas/TopologyPlacement'}, requested_center: {type: object, properties: {x: {type: number}, y: {type: number}}}, assigned_center: {type: object, required: [x, y], properties: {x: {type: number}, y: {type: number}}}, adjusted: {type: boolean}, reason: {enum: [preferred_available, collision_avoided, default_anchor, viewport_adjusted]}, footprint_class: {type: string}, algorithm_version: {type: integer, minimum: 1}}
     PlacementUpdate:
       type: object
       required: [resource_id, resource_type, x, y]
@@ -509,6 +527,14 @@ components:
       type: object
       required: [id, laboratory_id, name, kind, revision, desired_state, observed_state, config]
       properties: {id: {type: string, format: uuid}, laboratory_id: {type: string, format: uuid}, name: {type: string}, kind: {enum: [bridge, nat_bridge, pc, switch_l2, switch_l3]}, revision: {type: integer}, desired_state: {type: string}, observed_state: {type: string}, config: {type: object}}
+    CreateNetworkObject:
+      type: object
+      required: [name, kind]
+      properties: {name: {type: string, minLength: 1, maxLength: 128}, kind: {enum: [bridge, nat_bridge, pc, switch_l2, switch_l3]}, config: {type: object}, placement_intent: {$ref: '#/components/schemas/PlacementIntent'}}
+    CreateNetworkObjectResult:
+      type: object
+      required: [network_object, task, placement_assignment, laboratory_revision]
+      properties: {network_object: {$ref: '#/components/schemas/NetworkObject'}, task: {$ref: '#/components/schemas/OperationTask'}, placement_assignment: {$ref: '#/components/schemas/PlacementAssignment'}, laboratory_revision: {type: integer, minimum: 1}}
     CreatePortMapping:
       type: object
       required: [protocol, guest_port]

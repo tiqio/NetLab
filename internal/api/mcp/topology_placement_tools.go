@@ -28,7 +28,7 @@ func TopologyPlacementTools(service TopologyPlacementCommand) []Tool {
 		"required": []string{"resource_id", "resource_type", "x", "y"},
 	}
 	return []Tool{{
-		Name: "netlab.topology.set_positions", Description: "Atomically update shared node and network-object positions.",
+		Name: "netlab.topology.set_positions", Description: "Atomically update authoritative shared positions after an explicit manual move. This tool never performs initial placement; create tools return the authoritative initial assignment.",
 		InputSchema: mutationSchema(map[string]any{
 			"laboratory_id": stringProperty("Laboratory ID"),
 			"placements":    map[string]any{"type": "array", "minItems": 1, "maxItems": 100, "items": placementSchema},

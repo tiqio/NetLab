@@ -5,7 +5,9 @@ import {
   ChevronDown,
   ChevronUp,
   Database,
+  Filter,
   Info,
+  Radio,
   Trash2,
 } from "lucide-vue-next";
 import {
@@ -62,6 +64,8 @@ const emit = defineEmits<{
   diagnosticsLoaded: [string];
   terminal: [Node];
   networkObjectTerminal: [NetworkObject];
+  captureConnection: [];
+  filterConnection: [];
 }>();
 const attachNode = ref("");
 const attachInterface = ref("");
@@ -512,6 +516,14 @@ async function deleteObjectLink() {
             <dt>修订版本</dt>
             <dd>{{ link.revision }}</dd>
           </dl>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <Button size="sm" variant="secondary" @click="emit('captureConnection')">
+              <Radio :size="14" /> 抓包
+            </Button>
+            <Button size="sm" variant="secondary" @click="emit('filterConnection')">
+              <Filter :size="14" /> 流量过滤
+            </Button>
+          </div>
           <Button
             class="mt-3"
             variant="destructive"
@@ -570,6 +582,14 @@ async function deleteObjectLink() {
               <dd>{{ objectLinkCapture.completion_reason || "进行中" }}</dd>
             </template>
           </dl>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <Button size="sm" variant="secondary" @click="emit('captureConnection')">
+              <Radio :size="14" /> 抓包
+            </Button>
+            <Button size="sm" variant="secondary" @click="emit('filterConnection')">
+              <Filter :size="14" /> 流量过滤
+            </Button>
+          </div>
           <div
             v-if="objectLinkCapture"
             class="mt-3 flex flex-wrap gap-2 text-xs"
@@ -641,6 +661,14 @@ async function deleteObjectLink() {
             <dt>监听接口</dt>
             <dd>{{ attachment.interface_id }}</dd>
           </dl>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <Button size="sm" variant="secondary" @click="emit('captureConnection')">
+              <Radio :size="14" /> 抓包
+            </Button>
+            <Button size="sm" variant="secondary" @click="emit('filterConnection')">
+              <Filter :size="14" /> 流量过滤
+            </Button>
+          </div>
           <p
             class="mt-3 rounded border border-primary/30 bg-primary/5 p-2 text-xs text-muted-foreground"
           >

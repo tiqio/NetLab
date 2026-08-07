@@ -49,6 +49,10 @@ async function installVisualSnapshot(page: Page) {
     y: Math.floor(index / 10) * 100,
     revision: 1,
   }));
+  placements.push(
+    { laboratory_id: "mock-lab", resource_id: "nat-1", resource_type: "network_object", x: -180, y: 80, revision: 1 },
+    { laboratory_id: "mock-lab", resource_id: "bridge-1", resource_type: "network_object", x: 360, y: 80, revision: 1 },
+  );
   await page.route("**/api/v1/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
     if (path === "/api/v1/labs")
@@ -98,9 +102,41 @@ async function installVisualSnapshot(page: Page) {
               operational_state: "up",
               revision: 1,
             },
+            {
+              id: "if-qemu-2",
+              node_id: "node-1",
+              slot: 1,
+              name: "eth1",
+              driver: "virtio-net-pci",
+              mac_address: "02:00:00:00:00:03",
+              desired_link_id: "link-parallel-a",
+              operational_state: "up",
+              revision: 1,
+            },
+            {
+              id: "if-docker-2",
+              node_id: "node-2",
+              slot: 1,
+              name: "eth2",
+              driver: "veth",
+              mac_address: "02:00:00:00:00:04",
+              desired_link_id: "link-parallel-a",
+              operational_state: "up",
+              revision: 1,
+            },
           ],
-          links: [],
-          network_objects: [],
+          links: [
+            { id: "link-parallel-a", laboratory_id: "mock-lab", endpoint_a_id: "if-qemu-2", endpoint_b_id: "if-docker-2", revision: 1, desired_state: "connected", observed_state: "connected" },
+          ],
+          network_objects: [
+            { id: "nat-1", laboratory_id: "mock-lab", name: "Internet NAT", kind: "nat_bridge", revision: 1, desired_state: "active", observed_state: "active", config: {} },
+            { id: "bridge-1", laboratory_id: "mock-lab", name: "Shared LAN", kind: "bridge", revision: 1, desired_state: "active", observed_state: "active", config: {} },
+          ],
+          network_attachments: [
+            { id: "attachment-nat", network_object_id: "nat-1", interface_id: "if-qemu", port_name: "nat0", observed_state: "failed" },
+            { id: "attachment-bridge", network_object_id: "bridge-1", interface_id: "if-docker", port_name: "lan0", observed_state: "provisioning" },
+          ],
+          network_object_links: [],
           placements,
           event_sequence: 0,
         },
@@ -212,4 +248,26 @@ test("browser recognizes dense QEMU and Docker lifecycle labels and hovered port
       "pointer",
     ),
   );
+});
+
+test("mixed connection states and semantic legend remain recognizable across themes", async ({ page }) => {
+  await installVisualSnapshot(page);
+  await page.goto("/");
+  const summary = page.getByTestId("topology-a11y-summary");
+  await expect(summary).toContainText("QEMU router:eth0 ↔ Internet NAT:nat0");
+  await expect(summary).toContainText("失败");
+  await expect(summary).toContainText("Docker host:eth1 ↔ Shared LAN:lan0");
+  await expect(summary).toContainText("状态转换中");
+  const legend = page.getByTestId("topology-connection-legend");
+  await expect(legend).toContainText("NAT 管理上联");
+  await expect(legend).toContainText("共享广播域");
+  await legend.getByRole("button", { name: /收起连接语义图例/ }).click();
+  await expect(legend).toHaveAttribute("data-collapsed", "true");
+  await legend.getByRole("button", { name: /展开连接语义图例/ }).press("Enter");
+  await expect(legend).toHaveAttribute("data-collapsed", "false");
+  const theme = page.locator('select[aria-label="外观主题"]');
+  await theme.selectOption("dark");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await theme.selectOption("light");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 });

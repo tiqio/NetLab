@@ -1,14 +1,21 @@
 <script setup lang="ts">
-import { Cable, Eye, Route, Trash2, Unplug } from "lucide-vue-next";
+import { Cable, Eye, Filter, Radio, Route, Trash2, Unplug } from "lucide-vue-next";
 import { Button, DropdownMenu } from "@/components/ui";
 
-defineProps<{ disabled?: boolean; objectLink?: boolean; pending?: boolean }>();
+const props = withDefaults(defineProps<{
+  disabled?: boolean;
+  kind?: "node_link" | "network_attachment" | "network_object_link";
+  pending?: boolean;
+  deleteDisabledReason?: string;
+}>(), { kind: "node_link" });
 const emit = defineEmits<{
   inspect: [];
   reconnect: [];
   disconnect: [];
   route: [];
   delete: [];
+  capture: [];
+  trafficFilter: [];
 }>();
 </script>
 
@@ -28,7 +35,21 @@ const emit = defineEmits<{
         <Eye :size="13" class="shrink-0" /> <span>检查</span>
       </Button>
       <Button
-        v-if="!objectLink"
+        variant="ghost"
+        class="w-full justify-start"
+        @click="emit('capture')"
+      >
+        <Radio :size="13" class="shrink-0" /> <span>抓包</span>
+      </Button>
+      <Button
+        variant="ghost"
+        class="w-full justify-start"
+        @click="emit('trafficFilter')"
+      >
+        <Filter :size="13" class="shrink-0" /> <span>流量过滤</span>
+      </Button>
+      <Button
+        v-if="props.kind === 'node_link'"
         variant="ghost"
         class="w-full justify-start"
         @click="emit('reconnect')"
@@ -36,7 +57,7 @@ const emit = defineEmits<{
         <Cable :size="13" class="shrink-0" /> <span>重新连接端点</span>
       </Button>
       <Button
-        v-if="!objectLink"
+        v-if="props.kind === 'node_link'"
         variant="ghost"
         class="w-full justify-start"
         @click="emit('route')"
@@ -44,7 +65,7 @@ const emit = defineEmits<{
         <Route :size="13" class="shrink-0" /> <span>编辑本地路由</span>
       </Button>
       <Button
-        v-if="!objectLink"
+        v-if="props.kind === 'node_link'"
         variant="destructive"
         class="w-full justify-start"
         @click="emit('disconnect')"
@@ -52,7 +73,7 @@ const emit = defineEmits<{
         <Unplug :size="13" class="shrink-0" /> <span>断开连接</span>
       </Button>
       <Button
-        v-else
+        v-else-if="props.kind === 'network_object_link'"
         variant="destructive"
         class="w-full justify-start"
         :disabled="pending"
@@ -60,6 +81,15 @@ const emit = defineEmits<{
       >
         <Trash2 :size="13" class="shrink-0" />
         <span>{{ pending ? "正在删除…" : "删除链路" }}</span>
+      </Button>
+      <Button
+        v-else
+        variant="destructive"
+        class="w-full justify-start"
+        disabled
+        :title="deleteDisabledReason || '网络附件当前需从所连接对象的设置中解除。'"
+      >
+        <Unplug :size="13" class="shrink-0" /> <span>解除附件</span>
       </Button>
     </div>
   </DropdownMenu>

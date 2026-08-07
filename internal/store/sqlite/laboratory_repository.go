@@ -208,7 +208,12 @@ func (r *TopologyRepository) CreateNodeWithPlacement(ctx context.Context, node d
 		if assignment, err = allocateInitialPlacementTx(ctx, tx, node.LaboratoryID, node.ID, domain.PlacementNode, intent); err != nil {
 			return err
 		}
-		return appendEvent(ctx, tx, "topology.placements_changed", node.LaboratoryID, "laboratory", node.LaboratoryID, laboratoryRevision, "", map[string]any{"placements": []domain.TopologyPlacement{assignment.Placement}, "entry": entry, "placement_assignment": assignment})
+		if err = appendEvent(ctx, tx, "topology.placements_changed", node.LaboratoryID, "laboratory", node.LaboratoryID, laboratoryRevision, "", map[string]any{"placements": []domain.TopologyPlacement{assignment.Placement}, "entry": entry, "placement_assignment": assignment}); err != nil {
+			return err
+		}
+		data := eventData(node)
+		data["interfaces"] = interfaces
+		return appendEvent(ctx, tx, "node.created", node.LaboratoryID, "node", node.ID, node.Revision, "", data)
 	})
 	return assignment, laboratoryRevision, err
 }

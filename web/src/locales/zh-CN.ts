@@ -24,6 +24,25 @@ export const zhCN = {
     copy: "复制",
     settings: "设置",
   },
+  topologyConnection: {
+    legendTitle: "连接语义",
+    legendLabel: "连接语义图例",
+    expandLegend: "展开连接语义图例",
+    collapseLegend: "收起连接语义图例",
+    connected: "已连接",
+    transitioning: "状态转换中",
+    disconnecting: "正在断开",
+    failed: "失败",
+    unknown: "未连接或状态未知",
+    managedNATUplink: {
+      label: "NAT 管理上联",
+      description: "该连接接入 NetLab 管理的地址转换和互联网出口。",
+    },
+    sharedBroadcastDomain: {
+      label: "共享广播域",
+      description: "该连接进入可承载多个端点的二层共享网段。",
+    },
+  },
 } as const;
 
 export const exactTranslations: Record<string, string> = {

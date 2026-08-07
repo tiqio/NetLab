@@ -3,6 +3,7 @@ package command
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -11,7 +12,7 @@ import (
 )
 
 type ImportRepository interface {
-	ImportTopology(context.Context, domain.Laboratory, []domain.Node, []domain.Interface, []domain.Link, []domain.NetworkObject, []domain.NetworkObjectLink) error
+	ImportTopology(context.Context, domain.Laboratory, []domain.Node, []domain.Interface, []domain.Link, []domain.NetworkObject, []domain.NetworkObjectLink, []domain.TopologyPlacement) error
 }
 
 type ImportLaboratoryReader interface {
@@ -172,7 +173,71 @@ func (s *ImportService) ImportAs(ctx context.Context, laboratoryID domain.ID, bu
 		}
 		networkObjectLinks = append(networkObjectLinks, domain.NetworkObjectLink{ID: domain.NewID(), LaboratoryID: lab.ID, ObjectAID: objectAID, PortAName: exported.PortAName, ObjectBID: objectBID, PortBName: exported.PortBName, Revision: 1, DesiredState: desiredState, ObservedState: "pending"})
 	}
-	return lab, s.repository.ImportTopology(ctx, lab, nodes, interfaces, links, networkObjects, networkObjectLinks)
+	placements, err := resolveImportedPlacements(lab.ID, bundle.Placements, nodeIDs, networkObjectIDs)
+	if err != nil {
+		return domain.Laboratory{}, err
+	}
+	return lab, s.repository.ImportTopology(ctx, lab, nodes, interfaces, links, networkObjects, networkObjectLinks, placements)
+}
+
+func resolveImportedPlacements(laboratoryID domain.ID, exported []ExportPlacement, nodeIDs, networkObjectIDs map[string]domain.ID) ([]domain.TopologyPlacement, error) {
+	type resource struct {
+		exportID string
+		id       domain.ID
+		kind     domain.PlacementResourceType
+	}
+	resources := make([]resource, 0, len(nodeIDs)+len(networkObjectIDs))
+	for exportID, id := range nodeIDs {
+		resources = append(resources, resource{exportID: exportID, id: id, kind: domain.PlacementNode})
+	}
+	for exportID, id := range networkObjectIDs {
+		resources = append(resources, resource{exportID: exportID, id: id, kind: domain.PlacementNetworkObject})
+	}
+	sort.Slice(resources, func(i, j int) bool { return resources[i].exportID < resources[j].exportID })
+
+	byExportID := make(map[string]ExportPlacement, len(exported))
+	for _, placement := range exported {
+		if placement.ResourceExportID == "" {
+			return nil, fmt.Errorf("placement resource_export_id required")
+		}
+		if _, exists := byExportID[placement.ResourceExportID]; exists {
+			return nil, fmt.Errorf("duplicate placement for %s", placement.ResourceExportID)
+		}
+		byExportID[placement.ResourceExportID] = placement
+	}
+
+	allocator := domain.NewTopologyPlacementAllocator()
+	occupied := make([]domain.PlacementOccupancy, 0, len(resources))
+	placements := make([]domain.TopologyPlacement, 0, len(resources))
+	for _, value := range resources {
+		if exportedPlacement, exists := byExportID[value.exportID]; exists {
+			if exportedPlacement.ResourceType != "" && exportedPlacement.ResourceType != value.kind {
+				return nil, fmt.Errorf("placement %s has resource type %s, expected %s", value.exportID, exportedPlacement.ResourceType, value.kind)
+			}
+			update := domain.PlacementUpdate{ResourceID: value.id, ResourceType: value.kind, X: exportedPlacement.X, Y: exportedPlacement.Y}
+			if err := domain.ValidatePlacementBatch([]domain.PlacementUpdate{update}); err != nil {
+				return nil, fmt.Errorf("placement %s: %w", value.exportID, err)
+			}
+			revision := exportedPlacement.Revision
+			if revision < 1 {
+				revision = 1
+			}
+			placements = append(placements, domain.TopologyPlacement{LaboratoryID: laboratoryID, ResourceID: value.id, ResourceType: value.kind, X: exportedPlacement.X, Y: exportedPlacement.Y, Revision: revision})
+			occupied = append(occupied, domain.PlacementOccupancy{ResourceID: value.id, X: exportedPlacement.X, Y: exportedPlacement.Y, FootprintClass: domain.DefaultPlacementFootprintClass(value.kind)})
+			delete(byExportID, value.exportID)
+			continue
+		}
+		assignment, err := allocator.Allocate(value.kind, nil, occupied)
+		if err != nil {
+			return nil, err
+		}
+		placements = append(placements, domain.TopologyPlacement{LaboratoryID: laboratoryID, ResourceID: value.id, ResourceType: value.kind, X: assignment.AssignedCenter.X, Y: assignment.AssignedCenter.Y, Revision: 1})
+		occupied = append(occupied, domain.PlacementOccupancy{ResourceID: value.id, X: assignment.AssignedCenter.X, Y: assignment.AssignedCenter.Y, FootprintClass: assignment.FootprintClass})
+	}
+	if len(byExportID) > 0 {
+		return nil, fmt.Errorf("placement references missing resource")
+	}
+	return placements, nil
 }
 
 func exportedText(value any) string {

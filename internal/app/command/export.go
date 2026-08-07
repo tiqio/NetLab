@@ -57,6 +57,14 @@ type ExportNetworkObjectLink struct {
 	DesiredState    string `json:"desired_state"`
 }
 
+type ExportPlacement struct {
+	ResourceExportID string                       `json:"resource_export_id"`
+	ResourceType     domain.PlacementResourceType `json:"resource_type"`
+	X                float64                      `json:"x"`
+	Y                float64                      `json:"y"`
+	Revision         domain.Revision              `json:"revision,omitempty"`
+}
+
 type LaboratoryExport struct {
 	SchemaVersion      int                       `json:"schema_version"`
 	ExportedAt         time.Time                 `json:"exported_at"`
@@ -66,6 +74,7 @@ type LaboratoryExport struct {
 	Links              []ExportLink              `json:"links"`
 	NetworkObjects     []map[string]any          `json:"network_objects"`
 	NetworkObjectLinks []ExportNetworkObjectLink `json:"network_object_links,omitempty"`
+	Placements         []ExportPlacement         `json:"placements,omitempty"`
 	Redaction          ExportRedaction           `json:"redaction"`
 }
 
@@ -144,6 +153,12 @@ func (s *ExportService) Build(ctx context.Context, labID domain.ID) (LaboratoryE
 	for _, link := range snapshot.NetworkObjectLinks {
 		value.NetworkObjectLinks = append(value.NetworkObjectLinks, ExportNetworkObjectLink{ObjectAExportID: string(link.ObjectAID), PortAName: link.PortAName, ObjectBExportID: string(link.ObjectBID), PortBName: link.PortBName, DesiredState: link.DesiredState})
 	}
+	for _, placement := range snapshot.Placements {
+		value.Placements = append(value.Placements, ExportPlacement{ResourceExportID: string(placement.ResourceID), ResourceType: placement.ResourceType, X: placement.X, Y: placement.Y, Revision: placement.Revision})
+	}
+	sort.Slice(value.Placements, func(i, j int) bool {
+		return value.Placements[i].ResourceExportID < value.Placements[j].ResourceExportID
+	})
 	for _, dependency := range dependencies {
 		value.TemplateVersions = append(value.TemplateVersions, dependency)
 	}

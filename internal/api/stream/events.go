@@ -12,6 +12,7 @@ import (
 )
 
 const (
+	EventTopologyPlacementsChanged         = "topology.placements_changed"
 	EventNetworkObjectObservedStateChanged = "network_object.observed_state_changed"
 	EventNodeCapabilityChanged             = "node.capability_changed"
 	EventNetworkObjectLinkCreated          = events.EventNetworkObjectLinkCreated

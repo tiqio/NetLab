@@ -107,6 +107,10 @@ const selectedType = ref<
 >();
 const selectionAnchor = ref("");
 const focusedResourceId = ref("");
+const captureOverlay = ref<{ connectionIds: string[]; interfaceIds: string[] }>({
+  connectionIds: [],
+  interfaceIds: [],
+});
 const createPlacementIntent = ref<PlacementIntent>();
 const keyboardAnnouncement = ref("");
 const keyboardController = new TopologyKeyboardController();
@@ -321,6 +325,20 @@ function requestContextNodeCapture(node: Node) {
   portChooserMode.value = "capture";
   portChooserInterfaces.value = candidates;
   portChooserOpen.value = true;
+}
+function openSelectedConnectionCapture() {
+  if (selectedAttachment.value)
+    selectedInterfaceId.value = selectedAttachment.value.interface_id;
+  setActiveBottomTab("captures");
+  shell.value?.openBottom();
+  canvasStatus.value = "已打开所选连接的抓包工作区。";
+}
+function openSelectedConnectionTrafficFilter() {
+  if (selectedAttachment.value)
+    selectedInterfaceId.value = selectedAttachment.value.interface_id;
+  setActiveBottomTab("traffic-filter");
+  shell.value?.openBottom();
+  canvasStatus.value = "已打开所选连接的流量过滤工作区。";
 }
 async function confirmContextNodeDelete() {
   if (!contextDeleteNode.value) return;
@@ -1425,6 +1443,8 @@ onBeforeUnmount(() => {
           :traffic="trafficObservations"
           :traffic-active="trafficOverlayActive"
           :traffic-color="trafficOverlayColor"
+          :capture-connection-ids="captureOverlay.connectionIds"
+          :capture-interface-ids="captureOverlay.interfaceIds"
           @select="selectResource"
           @connector="startConnection"
           @move="moveResource"
@@ -1495,17 +1515,30 @@ onBeforeUnmount(() => {
           </Button>
           <LinkContextMenu
             v-if="selectedLink"
+            kind="node_link"
             @inspect="shell?.openInspector()"
             @reconnect="requestReconnect"
             @disconnect="disconnectSelectedLink"
             @route="toggleSelectedRoute"
+            @capture="openSelectedConnectionCapture"
+            @traffic-filter="openSelectedConnectionTrafficFilter"
           />
           <LinkContextMenu
             v-else-if="selectedObjectLink"
-            object-link
+            kind="network_object_link"
             :pending="deletingObjectLinkIds.includes(selectedObjectLink.id)"
             @inspect="shell?.openInspector()"
             @delete="deleteObjectLink(selectedObjectLink)"
+            @capture="openSelectedConnectionCapture"
+            @traffic-filter="openSelectedConnectionTrafficFilter"
+          />
+          <LinkContextMenu
+            v-else-if="selectedAttachment"
+            kind="network_attachment"
+            delete-disabled-reason="网络附件当前需从所连接网络对象的设置中解除。"
+            @inspect="shell?.openInspector()"
+            @capture="openSelectedConnectionCapture"
+            @traffic-filter="openSelectedConnectionTrafficFilter"
           />
           <Button
             v-if="failedObjectLinkDelete"
@@ -1612,6 +1645,8 @@ onBeforeUnmount(() => {
           @clear="clearSelection"
           @terminal="openNodeTerminal"
           @network-object-terminal="openNetworkObjectTerminal"
+          @capture-connection="openSelectedConnectionCapture"
+          @filter-connection="openSelectedConnectionTrafficFilter"
           @diagnostics-loaded="canvasStatus = `${$event} 的运行诊断已加载。`"
         />
       </template>
@@ -1648,6 +1683,7 @@ onBeforeUnmount(() => {
               trafficOverlayColor = color || '#f59e0b';
             }
           "
+          @capture-overlay="captureOverlay = $event"
         />
       </template>
     </LaboratoryShell>

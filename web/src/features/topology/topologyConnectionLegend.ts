@@ -2,6 +2,7 @@ import type {
   ConnectionPresentation,
   TopologyConnectionSemanticMarker,
 } from "./interactionTypes";
+import { zhCN } from "@/locales/zh-CN";
 
 export interface TopologyConnectionLegendItem {
   key: TopologyConnectionSemanticMarker;
@@ -16,12 +17,12 @@ const descriptions: Record<
   Pick<TopologyConnectionLegendItem, "label" | "description">
 > = {
   "managed-nat-uplink": {
-    label: "NAT 管理上联",
-    description: "该连接接入 NetLab 管理的地址转换和互联网出口。",
+    label: zhCN.topologyConnection.managedNATUplink.label,
+    description: zhCN.topologyConnection.managedNATUplink.description,
   },
   "shared-broadcast-domain": {
-    label: "共享广播域",
-    description: "该连接进入可承载多个端点的二层共享网段。",
+    label: zhCN.topologyConnection.sharedBroadcastDomain.label,
+    description: zhCN.topologyConnection.sharedBroadcastDomain.description,
   },
 };
 

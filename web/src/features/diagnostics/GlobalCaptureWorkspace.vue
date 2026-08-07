@@ -27,6 +27,9 @@ const props = defineProps<{
   requestLinkId?: string;
   requestObjectLinkId?: string;
 }>();
+const emit = defineEmits<{
+  captureOverlay: [{ connectionIds: string[]; interfaceIds: string[] }];
+}>();
 
 type SourceType = "interface" | "link" | "network_object_link";
 
@@ -158,6 +161,15 @@ function stateClass(sourceKey: string) {
 
 function updateCapture(sourceKey: string, capture?: CaptureSession) {
   captureStates.value[sourceKey] = capture?.state || "idle";
+  const active = new Set(["requested", "starting", "running", "streaming"]);
+  const connectionIds: string[] = [];
+  const interfaceIds: string[] = [];
+  for (const source of openSources.value) {
+    if (!active.has(captureStates.value[source.key])) continue;
+    if (source.type === "interface") interfaceIds.push(source.id);
+    else connectionIds.push(source.id);
+  }
+  emit("captureOverlay", { connectionIds, interfaceIds });
 }
 
 function interfaceLabel(interfaceId: string) {
@@ -196,6 +208,7 @@ watch(
     openSources.value = [];
     captureStates.value = {};
     lastSourceByGroup.value = {};
+    emit("captureOverlay", { connectionIds: [], interfaceIds: [] });
   },
 );
 

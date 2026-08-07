@@ -36,7 +36,10 @@ func (r *Repositories) CreateNetworkObjectWithPlacement(ctx context.Context, val
 		if assignment, err = allocateInitialPlacementTx(ctx, tx, value.LaboratoryID, value.ID, domain.PlacementNetworkObject, intent); err != nil {
 			return err
 		}
-		return appendEvent(ctx, tx, "topology.placements_changed", value.LaboratoryID, "laboratory", value.LaboratoryID, laboratoryRevision, "", map[string]any{"placements": []domain.TopologyPlacement{assignment.Placement}, "entry": entry, "placement_assignment": assignment})
+		if err = appendEvent(ctx, tx, "topology.placements_changed", value.LaboratoryID, "laboratory", value.LaboratoryID, laboratoryRevision, "", map[string]any{"placements": []domain.TopologyPlacement{assignment.Placement}, "entry": entry, "placement_assignment": assignment}); err != nil {
+			return err
+		}
+		return appendEvent(ctx, tx, "network_object.created", value.LaboratoryID, "network_object", value.ID, value.Revision, "", eventData(value))
 	})
 	return assignment, laboratoryRevision, err
 }

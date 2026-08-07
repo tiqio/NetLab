@@ -19,7 +19,12 @@ func NewTopologyPlacementService(reader TopologyPlacementReader) *TopologyPlacem
 }
 
 func (s *TopologyPlacementService) List(ctx context.Context, laboratoryID domain.ID) ([]domain.TopologyPlacement, error) {
-	return s.reader.ListPlacements(ctx, laboratoryID)
+	placements, err := s.reader.ListPlacements(ctx, laboratoryID)
+	if err != nil {
+		return nil, err
+	}
+	sort.Slice(placements, func(left, right int) bool { return placements[left].ResourceID < placements[right].ResourceID })
+	return placements, nil
 }
 
 func ResolveTopologyPlacements(snapshot domain.TopologySnapshot) []domain.TopologyPlacement {

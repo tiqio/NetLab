@@ -42,6 +42,7 @@ const props = withDefaults(
 );
 defineEmits<{
   trafficOverlay: [TrafficObservation[], boolean, string];
+  captureOverlay: [{ connectionIds: string[]; interfaceIds: string[] }];
 }>();
 const section = computed(() =>
   props.initialSection === "captures"
@@ -107,6 +108,7 @@ watch(
       :request-interface-id="section === 'capture' ? interfaceId : undefined"
       :request-link-id="section === 'capture' ? linkId : undefined"
       :request-object-link-id="section === 'capture' ? objectLinkId : undefined"
+      @capture-overlay="$emit('captureOverlay', $event)"
     /><TrafficFilterPanel
       v-if="trafficActivated"
       v-show="section === 'traffic-filter'"
