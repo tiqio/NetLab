@@ -89,6 +89,7 @@ func (s *NodeService) CreateConfigured(ctx context.Context, labID domain.ID, req
 	cpuCount, cpuQuota, memoryMiB := request.CPUCount, request.CPUQuotaMicros, request.MemoryMiB
 	storageGiB, interfaceLimit, processLimit := request.StorageGiB, request.InterfaceLimit, request.ProcessLimit
 	var templateVersion domain.TemplateVersion
+	var templateKey string
 	if request.TemplateVersionID != "" {
 		if s.templates == nil {
 			return domain.Node{}, nil, domain.Problem{Code: "capability_unsupported", Message: "template resolver unavailable"}
@@ -101,6 +102,7 @@ func (s *NodeService) CreateConfigured(ctx context.Context, labID domain.ID, req
 			return domain.Node{}, nil, domain.Problem{Code: "template_disabled", Message: "template version is disabled"}
 		}
 		templateVersion = version
+		templateKey = template.Key
 		kind = string(template.RuntimeKind)
 		config["template_key"] = template.Key
 		if s.readiness != nil {
@@ -228,6 +230,14 @@ func (s *NodeService) CreateConfigured(ctx context.Context, labID domain.ID, req
 		descriptors = append(descriptors, map[string]any{"id": string(iface.ID), "slot": iface.Slot, "name": iface.Name, "driver": iface.Driver, "mac_address": iface.MACAddress, "internal": iface.Slot < internalInterfaceCount})
 	}
 	node.Config["interfaces"] = descriptors
+	if templateKey == "ubuntu-qemu" && templateVersion.HasCapability("cloud_init") {
+		if request.Bootstrap.UserData == "" {
+			request.Bootstrap.UserData = "#cloud-config\n{}\n"
+		}
+		if request.Bootstrap.VendorData == "" {
+			request.Bootstrap.VendorData = ubuntuQGAVendorData
+		}
+	}
 	if request.Bootstrap.UserData != "" {
 		if !templateVersion.HasCapability("cloud_init") {
 			return domain.Node{}, nil, domain.Problem{Code: "capability_unsupported", Message: "template does not support cloud-init"}
@@ -256,6 +266,14 @@ func (s *NodeService) CreateConfigured(ctx context.Context, labID domain.ID, req
 	}
 	return node, interfaces, nil
 }
+
+const ubuntuQGAVendorData = `#cloud-config
+package_update: true
+packages:
+  - qemu-guest-agent
+runcmd:
+  - [systemctl, enable, --now, qemu-guest-agent.service]
+`
 
 func normalizeNodeNetworkConfig(config map[string]any) error {
 	raw, ok := config["network_interfaces"]

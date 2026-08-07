@@ -191,18 +191,21 @@ func TestCreateQEMUNodeBuildsMACMatchedCloudInitNetworkConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	versionID := domain.NewID()
-	if err = templates.UpsertTemplate(ctx, domain.DeviceTemplate{Key: "ubuntu-network", DisplayName: "Ubuntu", RuntimeKind: domain.RuntimeQEMU, Versions: []domain.TemplateVersion{{ID: versionID, Version: "24.04", ManifestVersion: 1, ImageVersionID: image.ID, Defaults: domain.TemplateDefaults{CPUCount: 1, MemoryMiB: 1024, Interfaces: 1, InterfaceNameFormat: "ens%d"}, Capabilities: []string{"cloud_init"}, NICDrivers: []string{"virtio-net-pci"}, Enabled: true}}}); err != nil {
+	if err = templates.UpsertTemplate(ctx, domain.DeviceTemplate{Key: "ubuntu-qemu", DisplayName: "Ubuntu", RuntimeKind: domain.RuntimeQEMU, Versions: []domain.TemplateVersion{{ID: versionID, Version: "24.04", ManifestVersion: 1, ImageVersionID: image.ID, Defaults: domain.TemplateDefaults{CPUCount: 1, MemoryMiB: 1024, Interfaces: 1, InterfaceNameFormat: "ens%d"}, Capabilities: []string{"cloud_init"}, NICDrivers: []string{"virtio-net-pci"}, Enabled: true}}}); err != nil {
 		t.Fatal(err)
 	}
 	builder := &capturingSeedBuilder{}
 	service := command.NewNodeService(topology, templates)
 	service.SetSeedBuilder(builder)
-	_, interfaces, err := service.CreateConfigured(ctx, lab.ID, command.CreateNodeRequest{Name: "ubuntu", TemplateVersionID: versionID, Bootstrap: qemuRuntime.SeedSpec{UserData: "#cloud-config\n{}"}, Config: map[string]any{"network_interfaces": []any{map[string]any{"name": "ens0", "modes": []any{"static", "slaac"}, "addresses": []any{"192.0.2.10/24", "2001:db8::10/64"}}}}})
+	_, interfaces, err := service.CreateConfigured(ctx, lab.ID, command.CreateNodeRequest{Name: "ubuntu", TemplateVersionID: versionID, Config: map[string]any{"network_interfaces": []any{map[string]any{"name": "ens0", "modes": []any{"static", "slaac"}, "addresses": []any{"192.0.2.10/24", "2001:db8::10/64"}}}}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(interfaces) != 1 || builder.spec.NetworkConfig == "" {
+	if len(interfaces) != 1 || builder.spec.NetworkConfig == "" || builder.spec.UserData == "" {
 		t.Fatalf("interfaces=%+v network_config=%q", interfaces, builder.spec.NetworkConfig)
+	}
+	if !strings.Contains(builder.spec.VendorData, "qemu-guest-agent") || !strings.Contains(builder.spec.VendorData, "enable, --now") {
+		t.Fatalf("vendor_data=%q", builder.spec.VendorData)
 	}
 	for _, expected := range []string{interfaces[0].MACAddress, `"set-name":"ens0"`, `"192.0.2.10/24"`, `"accept-ra":true`} {
 		if !strings.Contains(builder.spec.NetworkConfig, expected) {

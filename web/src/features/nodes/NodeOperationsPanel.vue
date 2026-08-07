@@ -198,7 +198,7 @@ onBeforeUnmount(() => {
       :interfaces="interfaces"
       @changed="$emit('changed')"
     />
-    <GuestCommandPanel :node-id="node.id" />
+    <GuestCommandPanel v-if="node.kind === 'qemu'" :node-id="node.id" />
     <NodeCapabilityPanel :node-id="node.id" />
   </div>
 </template>

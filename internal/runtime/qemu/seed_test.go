@@ -36,6 +36,34 @@ exit 1
 	}
 }
 
+func TestSeedManagerIncludesAndRemovesVendorData(t *testing.T) {
+	root := t.TempDir()
+	xorriso := filepath.Join(root, "xorriso")
+	script := `#!/bin/sh
+output=""
+vendor=0
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "-output" ]; then shift; output="$1"
+  elif [ "$(basename "$1")" = "vendor-data" ]; then vendor=1
+  fi
+  shift
+done
+[ "$vendor" -eq 1 ] || exit 2
+printf seed > "$output"
+`
+	if err := os.WriteFile(xorriso, []byte(script), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	manager := &SeedManager{Root: filepath.Join(root, "bootstrap"), Xorriso: xorriso}
+	path, err := manager.Build(context.Background(), domain.ID("lab-a"), domain.ID("node-a"), SeedSpec{UserData: "#cloud-config\n{}", VendorData: "#cloud-config\npackages: [qemu-guest-agent]"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = os.Stat(filepath.Join(filepath.Dir(path), "vendor-data")); !os.IsNotExist(err) {
+		t.Fatal("plaintext vendor-data retained")
+	}
+}
+
 func TestBuildArgsAttachesSeedISO(t *testing.T) {
 	adapter := &Adapter{Root: t.TempDir()}
 	args, _ := adapter.BuildArgs(domain.Node{ID: "node-a", CPUCount: 1, MemoryMiB: 512, Config: map[string]any{"seed_iso": "/run/netlab/seed.iso"}}, "/var/lib/netlab/base.qcow2")

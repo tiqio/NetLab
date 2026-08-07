@@ -16,6 +16,7 @@ type SeedSpec struct {
 	UserData      string
 	MetaData      string
 	NetworkConfig string
+	VendorData    string
 }
 
 type SeedManager struct {
@@ -71,6 +72,9 @@ func (m *SeedManager) buildInDirectory(ctx context.Context, directory string, no
 	if spec.NetworkConfig != "" {
 		files["network-config"] = spec.NetworkConfig
 	}
+	if spec.VendorData != "" {
+		files["vendor-data"] = spec.VendorData
+	}
 	for name, body := range files {
 		if err := os.WriteFile(filepath.Join(directory, name), []byte(body), 0o600); err != nil {
 			cleanup()
@@ -79,8 +83,10 @@ func (m *SeedManager) buildInDirectory(ctx context.Context, directory string, no
 	}
 	isoPath := filepath.Join(directory, "seed.iso")
 	args := []string{"-as", "mkisofs", "-volid", "cidata", "-joliet", "-rock", "-output", isoPath, filepath.Join(directory, "user-data"), filepath.Join(directory, "meta-data")}
-	if spec.NetworkConfig != "" {
-		args = append(args, filepath.Join(directory, "network-config"))
+	for _, name := range []string{"network-config", "vendor-data"} {
+		if _, ok := files[name]; ok {
+			args = append(args, filepath.Join(directory, name))
+		}
 	}
 	if output, err := exec.CommandContext(ctx, m.Xorriso, args...).CombinedOutput(); err != nil {
 		cleanup()
@@ -156,6 +162,10 @@ func (m *SeedManager) PrepareNetworkConfig(ctx context.Context, seedPath, networ
 			return nil, fmt.Errorf("extract cloud-init %s: %s: %w", name, output, extractErr)
 		}
 	}
+	vendorDataPath := filepath.Join(directory, "vendor-data")
+	if _, extractErr := exec.CommandContext(ctx, m.Xorriso, "-osirrox", "on", "-indev", seedPath, "-extract", "/vendor-data", vendorDataPath).CombinedOutput(); extractErr != nil {
+		_ = os.Remove(vendorDataPath)
+	}
 	metaDataPath := filepath.Join(directory, "meta-data")
 	metaData, err := os.ReadFile(metaDataPath)
 	if err != nil {
@@ -184,6 +194,9 @@ func (m *SeedManager) PrepareNetworkConfig(ctx context.Context, seedPath, networ
 	}
 	temporaryPath := filepath.Join(directory, "seed.iso")
 	args := []string{"-as", "mkisofs", "-volid", "cidata", "-joliet", "-rock", "-output", temporaryPath, filepath.Join(directory, "user-data"), filepath.Join(directory, "meta-data"), filepath.Join(directory, "network-config")}
+	if _, statErr := os.Stat(vendorDataPath); statErr == nil {
+		args = append(args, vendorDataPath)
+	}
 	if output, buildErr := exec.CommandContext(ctx, m.Xorriso, args...).CombinedOutput(); buildErr != nil {
 		cleanup()
 		return nil, fmt.Errorf("rebuild cloud-init seed: %s: %w", output, buildErr)
