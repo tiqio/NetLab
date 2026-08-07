@@ -27,6 +27,10 @@ export function localizeState(value: string): string {
 
 export function problemContext(code?: string): string {
   if (!code) return "操作未成功，请检查详细信息后重试。";
+  if (code === "guest_address_unavailable")
+    return "未找到节点的可达地址。请先把节点连接到 NAT 网桥并启用 DHCP，或配置静态地址。";
+  if (code === "host_address_unavailable")
+    return "该宿主机监听地址不属于 NetLab 服务器，请改用当前服务器地址、127.0.0.1 或 0.0.0.0。";
   if (/timeout/i.test(code))
     return "操作超时，请检查运行状态和网络连接后重试。";
   if (/conflict|revision/i.test(code))

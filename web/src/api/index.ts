@@ -69,6 +69,7 @@ interface RequestOptions {
   revision?: number;
   idempotencyKey?: string;
   contentType?: string;
+  timeoutMs?: number;
 }
 
 function request<T>(
@@ -83,11 +84,29 @@ function request<T>(
     headers["If-Match"] = String(options.revision);
   if (!["GET", "HEAD"].includes(method))
     headers["Idempotency-Key"] = options.idempotencyKey || randomUUID();
+  const controller = options.timeoutMs ? new AbortController() : undefined;
+  const timeout = options.timeoutMs
+    ? window.setTimeout(() => controller?.abort(), options.timeoutMs)
+    : undefined;
   return fetch(`/api/v1${path}`, {
     method,
     headers,
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
-  }).then(decode<T>);
+    signal: controller?.signal,
+  })
+    .then(decode<T>)
+    .catch((error: unknown) => {
+      if (controller?.signal.aborted)
+        throw new ApiError(504, {
+          code: "request_timeout",
+          message: `请求在 ${Math.round((options.timeoutMs || 0) / 1000)} 秒内未返回，请刷新映射列表确认最终状态。`,
+          retryable: true,
+        });
+      throw error;
+    })
+    .finally(() => {
+      if (timeout !== undefined) window.clearTimeout(timeout);
+    });
 }
 
 export const generatedApi = {
@@ -211,7 +230,7 @@ export const generatedApi = {
     request<{ port_mapping: PortMapping; task: OperationTask }>(
       `/nodes/${nodeId}/port-mappings`,
       "POST",
-      { body },
+      { body, timeoutMs: 15_000 },
     ),
   deletePortMapping: (mappingId: string) =>
     request<TaskEnvelope>(`/port-mappings/${mappingId}`, "DELETE").then(

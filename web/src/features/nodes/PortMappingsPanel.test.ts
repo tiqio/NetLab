@@ -1,6 +1,6 @@
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { api, type OperationTask, type PortMapping } from "@/api";
+import { api, ApiError, type OperationTask, type PortMapping } from "@/api";
 import PortMappingsPanel from "./PortMappingsPanel.vue";
 
 const mapping: PortMapping = {
@@ -126,5 +126,28 @@ describe("PortMappingsPanel", () => {
     expect(wrapper.text()).toContain("正在创建端口映射");
     resolveCreate({ port_mapping: mapping, task: task() });
     await flushPromises();
+  });
+
+  it("replaces the pending message with a persistent address error", async () => {
+    vi.spyOn(api, "createPortMapping").mockRejectedValue(
+      new ApiError(400, {
+        code: "guest_address_unavailable",
+        message: "no guest address found",
+      }),
+    );
+    const wrapper = mount(PortMappingsPanel, { props: { nodeId: "node-1" } });
+    await flushPromises();
+
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("保存并生效"))!
+      .trigger("click");
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("创建失败 · no guest address found");
+    expect(wrapper.text()).toContain(
+      "未找到节点的可达地址。请先把节点连接到 NAT 网桥并启用 DHCP，或配置静态地址。",
+    );
+    expect(wrapper.text()).not.toContain("正在创建端口映射");
   });
 });

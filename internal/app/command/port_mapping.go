@@ -109,6 +109,9 @@ func (s *PortMappingService) Create(ctx context.Context, value domain.PortMappin
 }
 
 func (s *PortMappingService) allocateHostPort(ctx context.Context, address, protocol string) (int, error) {
+	if err := s.runtime.CheckHostPort(address, protocol, 0); err != nil {
+		return 0, domain.Problem{Code: "host_address_unavailable", Message: err.Error(), ResourceType: "port_mapping", OperatorHint: "choose an address assigned to the NetLab host, 127.0.0.1, or 0.0.0.0"}
+	}
 	values, err := s.repository.ListAllPortMappings(ctx)
 	if err != nil {
 		return 0, err

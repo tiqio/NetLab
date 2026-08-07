@@ -142,8 +142,10 @@ async function create() {
     await load();
     status.value = `端口映射已生效 · ${accessText(value.port_mapping)}`;
   } catch (error) {
-    problem.value = errorProblem(error);
+    const failure = errorProblem(error);
     await load();
+    problem.value = failure;
+    status.value = `创建失败 · ${failure.message}`;
   } finally {
     busy.value = false;
   }
@@ -163,7 +165,9 @@ async function remove(mapping: PortMapping) {
     status.value = "端口映射已移除";
     await revealCreateForm();
   } catch (error) {
-    problem.value = errorProblem(error);
+    const failure = errorProblem(error);
+    problem.value = failure;
+    status.value = `移除失败 · ${failure.message}`;
   } finally {
     busy.value = false;
   }
@@ -206,7 +210,9 @@ async function detectGuestAddress() {
     guestAddress.value = addresses[0];
     status.value = `已选择客户机 IPv4：${addresses[0]}`;
   } catch (error) {
-    problem.value = errorProblem(error);
+    const failure = errorProblem(error);
+    problem.value = failure;
+    status.value = `地址探测失败 · ${failure.message}`;
   } finally {
     detecting.value = false;
   }
