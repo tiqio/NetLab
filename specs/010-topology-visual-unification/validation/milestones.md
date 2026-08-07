@@ -21,19 +21,19 @@ Notes: State and semantic text is centralized in Chinese terminology. The dynami
 ## M3 — Authoritative Collision-Free Placement
 
 ```text
-Commit SHA: 4365781
-Focused tests: go test ./internal/domain ./internal/store/sqlite ./internal/app/reconcile ./internal/api/http ./internal/api/mcp; targeted contract parity; Vue typecheck/lint; 40 drawer/workspace/store tests
+Commit SHA: 4365781, 95097ee
+Focused tests: Go domain/SQLite/reconcile/HTTP/MCP; authoritative HTTP contract; 20-resource Playwright; drawer/workspace/store tests
 Result: PASS
-Notes: Nodes and network objects now commit resource, placement, laboratory revision, and outbox audit atomically. SPA consumes returned placement and no longer issues a post-create placement batch. Dense 20-resource allocation and same-revision concurrent admission are covered. Local Playwright remains pending because the configured webServer did not become ready within 30 seconds.
+Notes: Nodes and network objects commit resource, placement, laboratory revision, and ordered outbox events atomically. SPA consumes the returned placement without a second position write. Twenty mixed resources created at one center remain footprint-safe and stable after refresh.
 ```
 
 ## M4 — Control-Plane Parity and Recovery
 
 ```text
-Commit SHA: 550cf74
-Focused tests: Go command/query/SQLite/HTTP/MCP/stream packages; 87 focused Vitest tests; Vue typecheck; stable local Playwright visual scenarios
-Result: PARTIAL PASS
-Notes: Import/export preserves placements and deterministically fills only missing legacy coordinates. Atomic create now publishes placement before resource creation so other clients converge without temporary (0,0). MCP conflicts, restart persistence, stale/duplicate placement events, and local fallback stability are covered. Concurrent browser and target-host recovery acceptance remain pending.
+Commit SHA: 550cf74, 95097ee
+Focused tests: Go command/query/SQLite/HTTP/MCP/stream; 334 Vitest; 25 acceptance-unit; two-browser/API/MCP concurrency; real service restart and deletion cleanup
+Result: PASS
+Notes: Import/export preserves placements and fills only missing legacy coordinates. Creation publishes placement before resource events, preventing temporary (0,0). Ten concurrent four-client groups converge within two seconds using revision refresh and new idempotency keys. Exact placements and connection summaries survive restart, then terminal laboratory deletion removes owned state.
 ```
 
 ## Deployment Candidate

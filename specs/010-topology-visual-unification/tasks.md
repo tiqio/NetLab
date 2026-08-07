@@ -54,7 +54,7 @@
 - [X] T010 [P] [US1] 扩展 `web/src/features/topology/topologyVisualSemantics.test.ts`，覆盖处理中、失败、断开、选中、聚焦、抓包和 Traffic Filter 的视觉优先级
 - [X] T011 [P] [US1] 扩展 `web/src/features/topology/TopologyCanvas.test.ts`，验证三类连接共享渲染路径、端点标签和独立点击/右键区域
 - [X] T012 [P] [US1] 扩展 `web/src/features/topology/TopologyCanvas.a11y.test.ts`、`web/src/features/topology/TopologyCanvas.performance.test.ts`、`web/src/features/diagnostics/GlobalCaptureWorkspace.test.ts` 与 `web/src/features/diagnostics/TrafficFilterPanel.test.ts`，覆盖非颜色状态、键盘聚焦、observation 更新不触发节点重布局且抓包/Wireshark 制品语义不变
-- [ ] T013 [P] [US1] 在 `tests/e2e/journeys/topologyVisualRecognition.spec.ts` 增加混合连接状态、50%/100%/200% 平行线选择和 Traffic Filter 衰减场景
+- [X] T013 [P] [US1] 在 `tests/e2e/journeys/topologyVisualRecognition.spec.ts` 增加混合连接状态、50%/100%/200% 平行线选择和 Traffic Filter 衰减场景
 
 ### Implementation for User Story 1
 
@@ -65,7 +65,7 @@
 - [X] T018 [US1] 更新 `web/src/features/topology/linkPresentation.ts`，统一使用 `资源名:端口 ↔ 资源名:端口` 标签、逻辑接入口名称和状态文本
 - [X] T019 [US1] 更新 `web/src/features/topology/trafficPathTypes.ts` 与 `web/src/features/topology/TopologyCanvas.vue`，把 Traffic Filter 粒子、方向提示和 capture active 实现为有期限覆盖层且只归属具体连接 ID
 - [X] T020 [US1] 更新 `web/src/features/topology/LinkContextMenu.vue` 与 `web/src/features/topology/TopologyInspector.vue`，让三类连接使用一致选择、检查、删除、抓包能力展示和禁用原因
-- [ ] T021 [US1] 运行 US1 的 Vitest、Playwright、lint 和 build 门禁，将结果写入 `specs/010-topology-visual-unification/validation/milestones.md` 并创建“统一连接状态视觉”聚焦 Git 提交
+- [X] T021 [US1] 运行 US1 的 Vitest、Playwright、lint 和 build 门禁，将结果写入 `specs/010-topology-visual-unification/validation/milestones.md` 并创建“统一连接状态视觉”聚焦 Git 提交
 
 **Checkpoint**: US1 可独立交付；用户无需理解内部连接类型即可判断状态和观察平行线路。
 
@@ -82,7 +82,7 @@
 - [X] T022 [P] [US2] 为 NAT 管理上联、共享广播域和普通点到点连接的 marker 派生规则编写失败单测到 `web/src/features/topology/topologyConnectionSemantics.test.ts`
 - [X] T023 [P] [US2] 为动态项生成、删除后消失、数量统计和匹配连接集合编写失败单测到 `web/src/features/topology/topologyConnectionLegend.test.ts`
 - [X] T024 [P] [US2] 为折叠、滚动、hover/focus 强调、浅色/深色和 accessible name 编写失败组件测试到 `web/src/features/topology/TopologyConnectionLegend.test.ts`
-- [ ] T025 [P] [US2] 在 `tests/e2e/journeys/topologyVisualRecognition.spec.ts` 增加 NAT/Bridge 语义标记、动态图例删除和双主题键盘验收场景
+- [X] T025 [P] [US2] 在 `tests/e2e/journeys/topologyVisualRecognition.spec.ts` 增加 NAT/Bridge 语义标记、动态图例删除和双主题键盘验收场景
 
 ### Implementation for User Story 2
 
@@ -91,7 +91,7 @@
 - [X] T028 [US2] 新建 `web/src/features/topology/TopologyConnectionLegend.vue`，实现中文说明、折叠/滚动、键盘聚焦和非破坏性匹配连接强调
 - [X] T029 [US2] 更新 `web/src/features/topology/TopologyCanvas.vue` 与 `web/src/features/topology/TopologyWorkspace.vue`，渲染语义徽标并把动态图例放入左下角现有图例布局而不遮挡画布控件
 - [X] T030 [P] [US2] 将状态、NAT 上联、共享广播域及差异原因文案集中到 `web/src/locales/zh-CN.ts` 与 `web/src/locales/terminology.ts`
-- [ ] T031 [US2] 运行 US2 的 Vitest、axe、Playwright、主题和布局门禁，将结果写入 `specs/010-topology-visual-unification/validation/milestones.md` 并创建“连接语义与动态图例”聚焦 Git 提交
+- [X] T031 [US2] 运行 US2 的 Vitest、axe、Playwright、主题和布局门禁，将结果写入 `specs/010-topology-visual-unification/validation/milestones.md` 并创建“连接语义与动态图例”聚焦 Git 提交
 
 **Checkpoint**: US2 可独立验收；未解释的特殊样式数量为零，普通拓扑不产生多余图例。
 
@@ -112,8 +112,8 @@
 - [X] T036 [P] [US3] 扩展 `internal/store/sqlite/network_state_repository_test.go`，先验证网络对象、placement、实验室 revision 和 outbox 原子提交或全部回滚
 - [X] T037 [P] [US3] 新建 `internal/api/http/topology_creation_contract_test.go`，先覆盖节点/网络对象 placement intent、adjustment metadata、If-Match、幂等冲突和结构化错误
 - [X] T038 [P] [US3] 扩展 `web/src/features/topology/CreateTopologyResourceDrawer.test.ts`，先验证创建请求携带画布中心 intent 且 UI 使用响应中的权威 placement
-- [ ] T039 [P] [US3] 扩展 `web/src/features/topology/TopologyWorkspace.test.ts` 与 `web/src/stores/laboratory.test.ts`，先验证创建后不再二次补写预测位置、权威位置收敛和“定位新资源”
-- [ ] T040 [P] [US3] 新建 `tests/e2e/journeys/topologyAuthoritativePlacement.spec.ts`，先覆盖 20 个混合资源、标签/端口/加号足迹、拥挤区域扩展和刷新后坐标保持
+- [X] T039 [P] [US3] 扩展 `web/src/features/topology/TopologyWorkspace.test.ts` 与 `web/src/stores/laboratory.test.ts`，先验证创建后不再二次补写预测位置、权威位置收敛和“定位新资源”
+- [X] T040 [P] [US3] 新建 `tests/e2e/journeys/topologyAuthoritativePlacement.spec.ts`，先覆盖 20 个混合资源、标签/端口/加号足迹、拥挤区域扩展和刷新后坐标保持
 
 ### Implementation for User Story 3
 
@@ -130,7 +130,7 @@
 - [X] T051 [US3] 更新 `web/src/features/topology/CreateTopologyResourceDrawer.vue`，从画布上下文提交 placement intent 并展示非阻断“已避让现有资源”反馈
 - [X] T052 [US3] 更新 `web/src/features/topology/TopologyWorkspace.vue`，删除创建后调用 placement batch 的两阶段流程，以返回 assignment 为准且不移动已有资源
 - [X] T053 [US3] 更新 `web/src/stores/laboratory.ts`，按实验室 revision 和 placement revision 幂等合并创建响应/事件，并提供新资源定位目标而不自动平移全图
-- [ ] T054 [US3] 运行 US3 的 Go 单元/SQLite 并发/HTTP 合同/Vitest/Playwright 门禁，将结果写入 `specs/010-topology-visual-unification/validation/milestones.md` 并创建“权威无碰撞初始位置”聚焦 Git 提交
+- [X] T054 [US3] 运行 US3 的 Go 单元/SQLite 并发/HTTP 合同/Vitest/Playwright 门禁，将结果写入 `specs/010-topology-visual-unification/validation/milestones.md` 并创建“权威无碰撞初始位置”聚焦 Git 提交
 
 **Checkpoint**: US3 可独立交付；连续创建 20 个资源无初始重叠，创建失败和取消无幽灵 placement。
 
@@ -148,9 +148,9 @@
 - [X] T056 [P] [US4] 扩展 `internal/app/query/topology_placement_test.go` 并新建 `internal/app/query/laboratory_test.go`，先验证重启查询保留旧坐标和全部新 placement
 - [X] T057 [P] [US4] 扩展 `internal/store/sqlite/import_repository_test.go`，先验证导入旧实验室不重新计算已有坐标且新资源避开旧重叠区域
 - [X] T058 [P] [US4] 扩展 `web/src/stores/laboratory.runtimeTruth.test.ts`，先验证乱序/重复 placement 事件、多客户端创建和刷新恢复最终收敛
-- [ ] T059 [P] [US4] 扩展 `tests/e2e/journeys/concurrentClients.spec.ts`，先覆盖两个浏览器加 HTTP/MCP 的 10 组并发创建和 2 秒布局收敛
-- [ ] T060 [P] [US4] 新建 `tests/e2e/journeys/topologyPlacementRecovery.spec.ts`，先覆盖旧坐标升级对比、服务重启、旧连接视觉恢复和实验室删除清理
-- [ ] T061 [P] [US4] 扩展 `acceptance/t225-service-restart.sh`，先加入 placement 数量/坐标摘要、连接状态、孤立 placement 和删除后资源泄漏断言
+- [X] T059 [P] [US4] 扩展 `tests/e2e/journeys/concurrentClients.spec.ts`，先覆盖两个浏览器加 HTTP/MCP 的 10 组并发创建和 2 秒布局收敛
+- [X] T060 [P] [US4] 新建 `tests/e2e/journeys/topologyPlacementRecovery.spec.ts`，先覆盖旧坐标升级对比、服务重启、旧连接视觉恢复和实验室删除清理
+- [X] T061 [P] [US4] 扩展 `acceptance/t225-service-restart.sh`，先加入 placement 数量/坐标摘要、连接状态、孤立 placement 和删除后资源泄漏断言
 
 ### Implementation for User Story 4
 
@@ -160,8 +160,8 @@
 - [X] T065 [US4] 更新 `internal/api/stream/events.go` 与 `web/src/stores/laboratory.ts`，让资源创建/placement 事件按 sequence 幂等收敛且不产生 `(0,0)` 临时事实
 - [X] T066 [US4] 更新 `internal/store/sqlite/import_repository.go`，导入时原样保留已有 placement，并为缺失 placement 的旧资源采用兼容 fallback 而不重排已定位资源
 - [X] T067 [US4] 更新 `web/src/features/topology/topologyLayout.ts` 与 `web/src/features/topology/TopologyCanvas.vue`，仅对真正缺失 placement 的旧资源使用稳定 fallback，收到权威位置后局部收敛且不触发全图 relayout
-- [ ] T068 [US4] 在 `acceptance/frontend-acceptance.sh` 增加混合资源、控制面并发创建、重启恢复和删除清理场景，并将资源台账限制到专用 acceptance Lab
-- [ ] T069 [US4] 运行 US4 的 MCP/查询/导入/store/并发/recovery/leak 门禁，将结果写入 `specs/010-topology-visual-unification/validation/milestones.md` 并创建“控制面一致与恢复”聚焦 Git 提交
+- [X] T068 [US4] 在 `acceptance/frontend-acceptance.sh` 增加混合资源、控制面并发创建、重启恢复和删除清理场景，并将资源台账限制到专用 acceptance Lab
+- [X] T069 [US4] 运行 US4 的 MCP/查询/导入/store/并发/recovery/leak 门禁，将结果写入 `specs/010-topology-visual-unification/validation/milestones.md` 并创建“控制面一致与恢复”聚焦 Git 提交
 
 **Checkpoint**: 四个故事全部可用；旧实验室坐标不变，所有控制面和客户端共享同一权威位置与连接视觉。
 
@@ -171,10 +171,10 @@
 
 **Purpose**: 完成合同同步、全量质量门禁、可复现制品、目标机混合拓扑验收和回滚证据。
 
-- [ ] T070 [P] 更新 `specs/010-topology-visual-unification/quickstart.md`，使最终命令、测试文件、候选记录和目标机端口与实现一致
-- [ ] T071 [P] 更新 `acceptance/README.md`，说明视觉统一、20 资源 placement、并发客户端、Traffic Filter 衰减、重启和清理验收方法
-- [ ] T072 运行 `go test ./...` 及仓库规定的格式、静态分析、合同、恢复和资源泄漏测试，并把结果写入 `specs/010-topology-visual-unification/validation/final-local.md`
-- [ ] T073 运行 `npm run format:check`、`npm run lint`、`npm run build`、`npm test`、`npm run test:acceptance-unit` 和本地 Playwright，并把结果写入 `specs/010-topology-visual-unification/validation/final-local.md`
+- [X] T070 [P] 更新 `specs/010-topology-visual-unification/quickstart.md`，使最终命令、测试文件、候选记录和目标机端口与实现一致
+- [X] T071 [P] 更新 `acceptance/README.md`，说明视觉统一、20 资源 placement、并发客户端、Traffic Filter 衰减、重启和清理验收方法
+- [X] T072 运行 `go test ./...` 及仓库规定的格式、静态分析、合同、恢复和资源泄漏测试，并把结果写入 `specs/010-topology-visual-unification/validation/final-local.md`
+- [X] T073 运行 `npm run format:check`、`npm run lint`、`npm run build`、`npm test`、`npm run test:acceptance-unit` 和本地 Playwright，并把结果写入 `specs/010-topology-visual-unification/validation/final-local.md`
 - [ ] T074 从干净 Git 提交构建部署候选，记录 commit SHA、制品摘要、迁移状态、合同版本和上一制品到 `specs/010-topology-visual-unification/validation/deployment.md`
 - [ ] T075 将已记录候选部署到 `10.72.1.7`，按 `specs/010-topology-visual-unification/quickstart.md` 验证混合连接、平行线、动态图例、20 资源、双客户端/API/MCP、Traffic Filter 衰减、重启恢复和实验室删除清理
 - [ ] T076 将目标机结果、证据路径和资源清理摘要写入 `specs/010-topology-visual-unification/validation/target-acceptance.md`；若失败则回滚上一制品并返回本地修复、测试和新提交
