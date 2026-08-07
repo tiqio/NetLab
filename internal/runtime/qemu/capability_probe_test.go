@@ -32,3 +32,23 @@ func TestCapabilityProbeReportsImageAndMissingGuestAgentTruthfully(t *testing.T)
 		t.Fatalf("qga=%s guest=%s", states[domain.CapabilityQGA], states[domain.CapabilityGuestExec])
 	}
 }
+
+func TestBootstrapRequiredOnlyForValidatedUbuntuTemplate(t *testing.T) {
+	tests := []struct {
+		templateKey string
+		required    bool
+	}{
+		{templateKey: "ubuntu-qemu", required: true},
+		{templateKey: "vyos", required: false},
+		{templateKey: "fancywan", required: false},
+		{templateKey: "fortigate", required: false},
+	}
+	for _, test := range tests {
+		t.Run(test.templateKey, func(t *testing.T) {
+			node := domain.Node{Config: map[string]any{"template_key": test.templateKey}}
+			if got := bootstrapRequired(node); got != test.required {
+				t.Fatalf("bootstrapRequired()=%t, want %t", got, test.required)
+			}
+		})
+	}
+}

@@ -9,7 +9,7 @@ templates:
         defaults: {cpu_count: 2, memory_mib: 2048, disk_gib: 20, interfaces: 4, interface_name_format: "eth%d"}
         nic_drivers: [virtio-net-pci, e1000]
         console_modes: [telnet, vnc]
-        capabilities: [cloud_init, guest_exec, nic_hotplug]
+        capabilities: [guest_exec, nic_hotplug]
         runtime_options: {machine: pc, cpu: host}
         enabled: true
       - version: v1-stable
@@ -17,7 +17,7 @@ templates:
         defaults: {cpu_count: 2, memory_mib: 4096, disk_gib: 20, interfaces: 4, interface_name_format: "eth%d"}
         nic_drivers: [virtio-net-pci, e1000]
         console_modes: [telnet, vnc]
-        capabilities: [cloud_init, guest_exec, nic_hotplug]
+        capabilities: [guest_exec, nic_hotplug]
         runtime_options: {machine: pc, cpu: host, recommended_image_name: fancywan, recommended_image_version: v1-stable}
         enabled: true
       - version: "2025.02.20-165226"
@@ -25,7 +25,7 @@ templates:
         defaults: {cpu_count: 2, memory_mib: 4096, disk_gib: 20, interfaces: 4, interface_name_format: "eth%d"}
         nic_drivers: [virtio-net-pci, e1000]
         console_modes: [telnet, vnc]
-        capabilities: [cloud_init, guest_exec, nic_hotplug]
+        capabilities: [guest_exec, nic_hotplug]
         runtime_options: {machine: pc, cpu: host, recommended_image_name: fancywan, recommended_image_version: "2025.02.20-165226"}
         enabled: true
   - key: ubuntu-qemu
@@ -77,7 +77,7 @@ templates:
         defaults: {cpu_count: 1, memory_mib: 1024, disk_gib: 10, interfaces: 4, interface_name_format: "eth%d"}
         nic_drivers: [virtio-net-pci, e1000]
         console_modes: [telnet]
-        capabilities: [cloud_init, guest_exec, nic_hotplug]
+        capabilities: [guest_exec, nic_hotplug]
         runtime_options: {machine: q35, cpu: host}
         enabled: true
   - key: ruijie-router

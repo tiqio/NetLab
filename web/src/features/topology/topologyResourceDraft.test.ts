@@ -214,4 +214,44 @@ describe("topology resource draft", () => {
       ),
     ).toMatchObject({ name: "当前实验室内已存在同名资源，请更换名称。" });
   });
+
+  it.each(["vyos", "fancywan"])(
+    "omits unsupported bootstrap configuration for %s",
+    (templateKey) => {
+      const unsupportedVersion: TemplateVersion = {
+        ...version,
+        id: `${templateKey}-version`,
+        template_id: `${templateKey}-template`,
+        capabilities: ["guest_exec", "nic_hotplug"],
+      };
+      const unsupportedTemplate: DeviceTemplate = {
+        ...template,
+        id: `${templateKey}-template`,
+        template_key: templateKey,
+        display_name: templateKey,
+        versions: [unsupportedVersion],
+      };
+      const selection: PaletteSelection = {
+        kind: "qemu",
+        name: templateKey,
+        template: unsupportedTemplate,
+        version: unsupportedVersion,
+      };
+      const draft = createResourceDraft(selection, () => "Secret-123456");
+      draft.ipv4Mode = "static";
+      draft.ipv4Address = "192.0.2.10/24";
+
+      const result = buildResourceCreateRequest(selection, draft, {
+        template: unsupportedTemplate,
+        version: unsupportedVersion,
+        image,
+      });
+
+      expect(result.kind).toBe("node");
+      if (result.kind === "node") {
+        expect(result.request.bootstrap).toBeUndefined();
+        expect(result.request.config?.network_interfaces).toBeUndefined();
+      }
+    },
+  );
 });

@@ -915,8 +915,7 @@ async function submit() {
             <div>
               <p class="text-xs font-medium">自动配置与初始登录信息</p>
               <p class="text-[11px] text-muted-foreground">
-                创建时生成节点独立的 cloud-init seed ISO。VyOS 使用
-                vyos_config_commands，Ubuntu 与 FancyWAN 使用标准 cloud-config。
+                仅对已验证支持 cloud-init 的模板版本生成节点独立的 seed ISO。
               </p>
             </div>
             <Button

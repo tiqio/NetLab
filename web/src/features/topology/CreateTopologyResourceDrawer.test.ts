@@ -64,6 +64,37 @@ function qemuCatalog(id = "ubuntu-qemu") {
 }
 
 describe("CreateTopologyResourceDrawer", () => {
+  it.each(["vyos", "fancywan"])(
+    "hides unsupported bootstrap controls for %s",
+    async (templateKey) => {
+      const { template, version, image } = qemuCatalog(templateKey);
+      version.capabilities = ["guest_exec", "nic_hotplug"];
+      vi.mocked(api.listTemplates).mockResolvedValue([template]);
+      vi.mocked(api.listImages).mockResolvedValue([image]);
+      const wrapper = mount(CreateTopologyResourceDrawer, {
+        attachTo: document.body,
+        props: {
+          modelValue: true,
+          laboratoryId: "lab-1",
+          selection: {
+            kind: "qemu",
+            name: templateKey,
+            template,
+            version,
+          },
+        },
+      });
+      await flushPromises();
+
+      expect(document.body.textContent).not.toContain("自动配置与初始登录信息");
+      expect(document.body.textContent).not.toContain("高级 user-data（可选）");
+      expect(
+        document.body.querySelector('[data-testid="docker-ipv4-mode"]'),
+      ).toBeNull();
+      wrapper.unmount();
+    },
+  );
+
   it("suggests the next available name for repeated template additions", async () => {
     const { template, version } = qemuCatalog();
     const wrapper = mount(CreateTopologyResourceDrawer, {
