@@ -26,6 +26,10 @@ import {
   validateResourceDraft,
   type ResourceCreateDraft,
 } from "./topologyResourceDraft";
+import {
+  cpuQuotaCoresToMicros,
+  cpuQuotaMicrosToCores,
+} from "@/lib/cpuQuota";
 
 const props = defineProps<{
   modelValue: boolean;
@@ -52,6 +56,12 @@ const versionId = ref("");
 const imageVersionId = ref("");
 const cpuCount = ref(1);
 const cpuQuotaMicros = ref(0);
+const cpuQuotaCores = computed({
+  get: () => cpuQuotaMicrosToCores(cpuQuotaMicros.value),
+  set: (value: number | string) => {
+    cpuQuotaMicros.value = cpuQuotaCoresToMicros(value);
+  },
+});
 const memoryMiB = ref(512);
 const storageGiB = ref(0);
 const interfaceLimit = ref(64);
@@ -665,15 +675,15 @@ async function submit() {
             </FormField>
             <FormField
               data-field="cpuQuotaMicros"
-              label="CPU 配额（微秒/100ms）"
+              label="CPU 配额（核心）"
               :error="fieldErrors.cpuQuotaMicros"
-              hint="0 表示使用模板/平台默认值。"
+              hint="1 表示最多使用一个宿主机核心的 CPU 时间；0 表示不限制。"
             >
               <Input
-                v-model="cpuQuotaMicros"
+                v-model="cpuQuotaCores"
                 type="number"
                 min="0"
-                step="1000"
+                step="0.1"
               />
             </FormField>
             <FormField
