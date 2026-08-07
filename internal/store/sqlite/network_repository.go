@@ -15,35 +15,60 @@ func (r *Repositories) CreateNetworkObject(ctx context.Context, value domain.Net
 		return err
 	}
 	config, _ := json.Marshal(value.Config)
-	return r.database.Write(ctx, func(tx *sql.Tx) error {
-		if value.Kind == domain.NetworkNAT {
-			var requested domain.NATConfig
-			_ = json.Unmarshal(config, &requested)
-			rows, err := tx.QueryContext(ctx, `SELECT config_json FROM network_objects WHERE kind='nat_bridge'`)
-			if err != nil {
-				return err
-			}
-			for rows.Next() {
-				var raw []byte
-				if err = rows.Scan(&raw); err != nil {
-					rows.Close()
-					return err
-				}
-				var existing domain.NATConfig
-				_ = json.Unmarshal(raw, &existing)
-				if domain.PrefixesOverlap(requested.IPv4Prefix, existing.IPv4Prefix) || (requested.IPv6Prefix != "" && domain.PrefixesOverlap(requested.IPv6Prefix, existing.IPv6Prefix)) {
-					rows.Close()
-					return fmt.Errorf("NAT prefix overlaps an existing network object")
-				}
-			}
-			rows.Close()
+	return r.database.Write(ctx, func(tx *sql.Tx) error { return insertNetworkObjectTx(ctx, tx, value, config) })
+}
+
+func (r *Repositories) CreateNetworkObjectWithPlacement(ctx context.Context, value domain.NetworkObject, expected domain.Revision, intent *domain.PlacementIntent, entry string) (domain.PlacementAssignment, domain.Revision, error) {
+	if err := domain.ValidateNetworkKind(value.Kind); err != nil {
+		return domain.PlacementAssignment{}, 0, err
+	}
+	config, _ := json.Marshal(value.Config)
+	var assignment domain.PlacementAssignment
+	var laboratoryRevision domain.Revision
+	err := r.database.Write(ctx, func(tx *sql.Tx) error {
+		var err error
+		if laboratoryRevision, err = advanceLaboratoryRevisionTx(ctx, tx, value.LaboratoryID, expected); err != nil {
+			return err
 		}
-		_, err := tx.ExecContext(ctx, `INSERT INTO network_objects(id,laboratory_id,name,kind,revision,desired_state,observed_state,config_json,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)`, value.ID, value.LaboratoryID, value.Name, value.Kind, value.Revision, value.DesiredState, value.ObservedState, config, value.CreatedAt.Format(time.RFC3339Nano), value.UpdatedAt.Format(time.RFC3339Nano))
+		if err = insertNetworkObjectTx(ctx, tx, value, config); err != nil {
+			return err
+		}
+		if assignment, err = allocateInitialPlacementTx(ctx, tx, value.LaboratoryID, value.ID, domain.PlacementNetworkObject, intent); err != nil {
+			return err
+		}
+		return appendEvent(ctx, tx, "topology.placements_changed", value.LaboratoryID, "laboratory", value.LaboratoryID, laboratoryRevision, "", map[string]any{"placements": []domain.TopologyPlacement{assignment.Placement}, "entry": entry, "placement_assignment": assignment})
+	})
+	return assignment, laboratoryRevision, err
+}
+
+func insertNetworkObjectTx(ctx context.Context, tx *sql.Tx, value domain.NetworkObject, config []byte) error {
+	if value.Kind == domain.NetworkNAT {
+		var requested domain.NATConfig
+		_ = json.Unmarshal(config, &requested)
+		rows, err := tx.QueryContext(ctx, `SELECT config_json FROM network_objects WHERE kind='nat_bridge'`)
 		if err != nil {
 			return err
 		}
-		return appendEvent(ctx, tx, "network_object.created", value.LaboratoryID, "network_object", value.ID, value.Revision, "", eventData(value))
-	})
+		for rows.Next() {
+			var raw []byte
+			if err = rows.Scan(&raw); err != nil {
+				rows.Close()
+				return err
+			}
+			var existing domain.NATConfig
+			_ = json.Unmarshal(raw, &existing)
+			if domain.PrefixesOverlap(requested.IPv4Prefix, existing.IPv4Prefix) || (requested.IPv6Prefix != "" && domain.PrefixesOverlap(requested.IPv6Prefix, existing.IPv6Prefix)) {
+				rows.Close()
+				return fmt.Errorf("NAT prefix overlaps an existing network object")
+			}
+		}
+		rows.Close()
+	}
+	_, err := tx.ExecContext(ctx, `INSERT INTO network_objects(id,laboratory_id,name,kind,revision,desired_state,observed_state,config_json,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)`, value.ID, value.LaboratoryID, value.Name, value.Kind, value.Revision, value.DesiredState, value.ObservedState, config, value.CreatedAt.Format(time.RFC3339Nano), value.UpdatedAt.Format(time.RFC3339Nano))
+	if err != nil {
+		return err
+	}
+	return appendEvent(ctx, tx, "network_object.created", value.LaboratoryID, "network_object", value.ID, value.Revision, "", eventData(value))
 }
 
 func (r *Repositories) UpdateNetworkObject(ctx context.Context, value domain.NetworkObject, expected domain.Revision) (domain.NetworkObject, error) {

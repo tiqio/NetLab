@@ -134,7 +134,7 @@ func Tools(services Services) []Tool {
 			}
 			return map[string]any{"task": taskValue}, nil
 		}},
-		{Name: "netlab.nodes.create", Description: "Create a template-pinned QEMU/Docker or lightweight node.", InputSchema: mutationSchema(map[string]any{"lab_id": stringProperty("Laboratory ID"), "name": stringProperty("Node name"), "kind": stringProperty("Runtime kind"), "template_version_id": stringProperty("Template version ID"), "image_version_id": stringProperty("Image version ID"), "cpu_count": integerProperty(0), "cpu_quota_micros": integerProperty(0), "memory_mib": integerProperty(0), "storage_gib": integerProperty(0), "interface_limit": integerProperty(0), "process_limit": integerProperty(0), "nic_driver": stringProperty("NIC driver"), "interface_count": integerProperty(0), "config": nodeConfigProperty(), "bootstrap": map[string]any{"type": "object"}}, "lab_id", "name"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
+		{Name: "netlab.nodes.create", Description: "Create a template-pinned QEMU/Docker or lightweight node with authoritative placement.", InputSchema: mutationSchema(map[string]any{"lab_id": stringProperty("Laboratory ID"), "name": stringProperty("Node name"), "kind": stringProperty("Runtime kind"), "template_version_id": stringProperty("Template version ID"), "image_version_id": stringProperty("Image version ID"), "cpu_count": integerProperty(0), "cpu_quota_micros": integerProperty(0), "memory_mib": integerProperty(0), "storage_gib": integerProperty(0), "interface_limit": integerProperty(0), "process_limit": integerProperty(0), "nic_driver": stringProperty("NIC driver"), "interface_count": integerProperty(0), "config": nodeConfigProperty(), "bootstrap": map[string]any{"type": "object"}, "placement_intent": map[string]any{"type": "object"}}, "lab_id", "name", "expected_revision"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
 			labID, err := argumentString(args, "lab_id")
 			if err != nil {
 				return nil, err
@@ -143,16 +143,23 @@ func Tools(services Services) []Tool {
 			if err != nil {
 				return nil, err
 			}
-			request := command.CreateNodeRequest{Name: name, Kind: optionalString(args, "kind"), TemplateVersionID: domain.ID(optionalString(args, "template_version_id")), ImageVersionID: domain.ID(optionalString(args, "image_version_id")), CPUCount: intArgument(args, "cpu_count"), CPUQuotaMicros: int64(intArgument(args, "cpu_quota_micros")), MemoryMiB: intArgument(args, "memory_mib"), StorageGiB: intArgument(args, "storage_gib"), InterfaceLimit: intArgument(args, "interface_limit"), ProcessLimit: intArgument(args, "process_limit"), NICDriver: optionalString(args, "nic_driver"), InterfaceCount: intArgument(args, "interface_count")}
+			placementResult := command.CreateNodePlacementResult{}
+			request := command.CreateNodeRequest{Name: name, Kind: optionalString(args, "kind"), TemplateVersionID: domain.ID(optionalString(args, "template_version_id")), ImageVersionID: domain.ID(optionalString(args, "image_version_id")), CPUCount: intArgument(args, "cpu_count"), CPUQuotaMicros: int64(intArgument(args, "cpu_quota_micros")), MemoryMiB: intArgument(args, "memory_mib"), StorageGiB: intArgument(args, "storage_gib"), InterfaceLimit: intArgument(args, "interface_limit"), ProcessLimit: intArgument(args, "process_limit"), NICDriver: optionalString(args, "nic_driver"), InterfaceCount: intArgument(args, "interface_count"), ExpectedLabRevision: revisionArgument(args), Entry: "mcp", PlacementResult: &placementResult}
 			if config, ok := args["config"].(map[string]any); ok {
 				request.Config = config
 			}
 			_ = decodeArgument(args["bootstrap"], &request.Bootstrap)
+			if args["placement_intent"] != nil {
+				request.PlacementIntent = &domain.PlacementIntent{}
+				if err = decodeArgument(args["placement_intent"], request.PlacementIntent); err != nil {
+					return nil, err
+				}
+			}
 			node, interfaces, err := services.Nodes.CreateConfigured(c, domain.ID(labID), request)
 			if err != nil {
 				return nil, err
 			}
-			return map[string]any{"node": node, "interfaces": interfaces}, nil
+			return map[string]any{"node": node, "interfaces": interfaces, "placement_assignment": placementResult.PlacementAssignment, "laboratory_revision": placementResult.LaboratoryRevision}, nil
 		}},
 		{Name: "netlab.nodes.update_settings", Description: "Update a stopped Docker node, including typed IPv4 and IPv6 static routes.", InputSchema: mutationSchema(map[string]any{"node_id": stringProperty("Node ID"), "name": stringProperty("Node name"), "cpu_count": integerProperty(1), "cpu_quota_micros": integerProperty(0), "memory_mib": integerProperty(64), "interface_limit": integerProperty(1), "process_limit": integerProperty(1), "network_interfaces": nodeNetworkInterfacesProperty()}, "node_id", "name", "cpu_count", "memory_mib", "interface_limit", "process_limit", "network_interfaces", "expected_revision"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
 			if services.NodeSettings == nil {

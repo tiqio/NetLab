@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/netlab/netlab/internal/app/reconcile"
@@ -142,12 +143,18 @@ func (h *NetworkHandlers) list(c *gin.Context) {
 }
 
 func (h *NetworkHandlers) create(c *gin.Context) {
-	var body struct {
-		Name   string         `json:"name"`
-		Kind   string         `json:"kind"`
-		Config map[string]any `json:"config"`
+	revision, err := ParseRevision(c.GetHeader("If-Match"))
+	if err != nil {
+		writeProblem(c, http.StatusPreconditionRequired, domain.Problem{Code: "precondition_required", Message: "valid If-Match revision required"})
+		return
 	}
-	if err := c.ShouldBindJSON(&body); err != nil {
+	var body struct {
+		Name            string                  `json:"name"`
+		Kind            string                  `json:"kind"`
+		Config          map[string]any          `json:"config"`
+		PlacementIntent *domain.PlacementIntent `json:"placement_intent"`
+	}
+	if err = c.ShouldBindJSON(&body); err != nil {
 		handleError(c, err)
 		return
 	}
@@ -155,12 +162,13 @@ func (h *NetworkHandlers) create(c *gin.Context) {
 		handleError(c, domain.Problem{Code: "operation_unavailable", Message: "network object automation unavailable"})
 		return
 	}
-	value, taskValue, err := h.operations.Create(c, domain.ID(c.Param("labId")), body.Name, body.Kind, body.Config, c.GetHeader("Idempotency-Key"))
+	value, assignment, laboratoryRevision, taskValue, err := h.operations.CreateWithPlacement(c, domain.ID(c.Param("labId")), revision, body.Name, body.Kind, body.Config, body.PlacementIntent, c.GetHeader("Idempotency-Key"), "http")
 	if err != nil {
 		handleError(c, err)
 		return
 	}
-	c.JSON(http.StatusAccepted, gin.H{"network_object": value, "task": taskValue})
+	c.Header("ETag", strconv.FormatInt(int64(laboratoryRevision), 10))
+	c.JSON(http.StatusAccepted, gin.H{"network_object": value, "task": taskValue, "placement_assignment": assignment, "laboratory_revision": laboratoryRevision})
 }
 
 func (h *NetworkHandlers) get(c *gin.Context) {

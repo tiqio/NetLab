@@ -9,6 +9,8 @@ import {
   type Node,
   type NodeInterface,
   type OperationTask,
+  type PlacementAssignment,
+  type PlacementIntent,
   type TrafficObservation,
 } from "@/api";
 import {
@@ -105,6 +107,7 @@ const selectedType = ref<
 >();
 const selectionAnchor = ref("");
 const focusedResourceId = ref("");
+const createPlacementIntent = ref<PlacementIntent>();
 const keyboardAnnouncement = ref("");
 const keyboardController = new TopologyKeyboardController();
 const createOpen = ref(false);
@@ -637,6 +640,7 @@ async function laboratoryDeleteAccepted(id: string) {
 
 function choose(selection: PaletteSelection) {
   captureCreateSnapshot();
+  createPlacementIntent.value = currentCreatePlacementIntent(selection.kind);
   const next = openTopologyCreateDrawer(selection);
   paletteSelection.value = next.selection;
   createOpen.value = next.open;
@@ -644,6 +648,7 @@ function choose(selection: PaletteSelection) {
 
 function openCreateDrawer() {
   captureCreateSnapshot();
+  createPlacementIntent.value = currentCreatePlacementIntent();
   const next = openTopologyCreateDrawer();
   paletteSelection.value = next.selection;
   createOpen.value = next.open;
@@ -653,51 +658,35 @@ async function created(value: {
   node?: Node;
   interfaces?: NodeInterface[];
   networkObject?: NetworkObject;
+  placement_assignment?: PlacementAssignment;
+  laboratory_revision?: number;
 }) {
   createSucceeded.value = true;
   if (!store.active) return;
-  const center = topologyCanvas.value?.viewportCenter?.() || { x: 0, y: 0 };
-  await refreshActive();
-  if (
-    value.node &&
-    !store.active.nodes.some((item) => item.id === value.node!.id)
-  )
-    store.active.nodes.push(value.node);
-  for (const item of value.interfaces || [])
-    if (!store.active.interfaces.some((current) => current.id === item.id))
-      store.active.interfaces.push(item);
-  if (
-    value.networkObject &&
-    !store.active.network_objects.some(
-      (item) => item.id === value.networkObject!.id,
-    )
-  )
-    store.active.network_objects.push(value.networkObject);
+  store.mergeAuthoritativeCreation(value);
   const resource = value.node || value.networkObject;
   if (resource) {
     const resourceType = value.node ? "node" : "network_object";
-    const result = await api.updateTopologyPlacements(
-      store.active.laboratory.id,
-      store.active.laboratory.revision,
-      [
-        {
-          resource_id: resource.id,
-          resource_type: resourceType,
-          x: center.x,
-          y: center.y,
-        },
-      ],
-    );
-    store.active.laboratory.revision = result.laboratory_revision;
-    for (const placement of result.placements) {
-      const index = store.active.placements.findIndex(
-        (item) => item.resource_id === placement.resource_id,
-      );
-      if (index >= 0) store.active.placements[index] = placement;
-      else store.active.placements.push(placement);
-    }
     selectResource(resource.id, resourceType, false);
+    focusedResourceId.value = resource.id;
+    keyboardAnnouncement.value = value.placement_assignment?.adjusted
+      ? `已创建 ${resource.name}，为避免重叠已自动放置到附近空白位置。`
+      : `已创建 ${resource.name}，可使用“定位所选”查看。`;
   }
+}
+
+function currentCreatePlacementIntent(
+  kind?: PaletteSelection["kind"],
+): PlacementIntent {
+  const center = topologyCanvas.value?.viewportCenter?.() || { x: 0, y: 0 };
+  return {
+    preferred_x: center.x,
+    preferred_y: center.y,
+    footprint_class:
+      kind === "qemu" || kind === "docker"
+        ? "node-standard"
+        : "network-object-standard",
+  };
 }
 
 function captureCreateSnapshot() {
@@ -1875,6 +1864,8 @@ onBeforeUnmount(() => {
       ref="createDrawer"
       :model-value="createOpen"
       :laboratory-id="store.active.laboratory.id"
+      :laboratory-revision="store.active.laboratory.revision"
+      :placement-intent="createPlacementIntent"
       :selection="paletteSelection"
       :node-names="store.active.nodes.map((node) => node.name)"
       :network-object-names="

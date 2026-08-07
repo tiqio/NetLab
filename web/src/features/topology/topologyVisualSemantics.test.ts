@@ -1,11 +1,20 @@
 import { describe, expect, it } from "vitest";
 import {
+  connectionVisualSemantic,
   normalizeTopologyKind,
   resourceVisualSemantic,
   topologyCategoryIndex,
 } from "./topologyVisualSemantics";
 
 describe("topology visual semantics", () => {
+  it.each([
+    ["connected", "connected", "solid"],
+    ["pending", "pending", "dashed"],
+    ["failed", "failed", "dotted"],
+    ["disconnecting", "disconnecting", "dashed"],
+  ])("normalizes connection state %s", (actual, state, lineType) => {
+    expect(connectionVisualSemantic(actual)).toMatchObject({ state, lineType });
+  });
   it.each([
     ["qemu", "QEMU 虚拟机"],
     ["docker", "Docker 容器"],

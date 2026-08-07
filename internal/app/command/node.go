@@ -28,20 +28,33 @@ type NodeTemplateRepository interface {
 }
 
 type CreateNodeRequest struct {
-	Name              string
-	Kind              string
-	TemplateVersionID domain.ID
-	ImageVersionID    domain.ID
-	CPUCount          int
-	CPUQuotaMicros    int64
-	MemoryMiB         int
-	StorageGiB        int
-	InterfaceLimit    int
-	ProcessLimit      int
-	NICDriver         string
-	InterfaceCount    int
-	Config            map[string]any
-	Bootstrap         qemuRuntime.SeedSpec
+	Name                string
+	Kind                string
+	TemplateVersionID   domain.ID
+	ImageVersionID      domain.ID
+	CPUCount            int
+	CPUQuotaMicros      int64
+	MemoryMiB           int
+	StorageGiB          int
+	InterfaceLimit      int
+	ProcessLimit        int
+	NICDriver           string
+	InterfaceCount      int
+	Config              map[string]any
+	Bootstrap           qemuRuntime.SeedSpec
+	ExpectedLabRevision domain.Revision
+	PlacementIntent     *domain.PlacementIntent
+	Entry               string
+	PlacementResult     *CreateNodePlacementResult
+}
+
+type CreateNodePlacementResult struct {
+	PlacementAssignment *domain.PlacementAssignment `json:"placement_assignment,omitempty"`
+	LaboratoryRevision  domain.Revision             `json:"laboratory_revision,omitempty"`
+}
+
+type nodePlacementRepository interface {
+	CreateNodeWithPlacement(context.Context, domain.Node, []domain.Interface, domain.Revision, *domain.PlacementIntent, string) (domain.PlacementAssignment, domain.Revision, error)
 }
 
 type SeedBuilder interface {
@@ -258,11 +271,27 @@ func (s *NodeService) CreateConfigured(ctx context.Context, labID domain.ID, req
 		}
 		config["seed_iso"] = seedPath
 	}
-	if err := s.repository.CreateNode(ctx, node, interfaces); err != nil {
+	var createErr error
+	if request.ExpectedLabRevision > 0 {
+		placementRepository, ok := s.repository.(nodePlacementRepository)
+		if !ok {
+			createErr = domain.Problem{Code: "capability_unsupported", Message: "authoritative placement is unavailable", ResourceType: "laboratory", ResourceID: labID}
+		} else {
+			assignment, laboratoryRevision, err := placementRepository.CreateNodeWithPlacement(ctx, node, interfaces, request.ExpectedLabRevision, request.PlacementIntent, request.Entry)
+			createErr = err
+			if err == nil && request.PlacementResult != nil {
+				request.PlacementResult.PlacementAssignment = &assignment
+				request.PlacementResult.LaboratoryRevision = laboratoryRevision
+			}
+		}
+	} else {
+		createErr = s.repository.CreateNode(ctx, node, interfaces)
+	}
+	if createErr != nil {
 		if seedPath, ok := config["seed_iso"].(string); ok {
 			_ = os.RemoveAll(filepath.Dir(seedPath))
 		}
-		return node, interfaces, err
+		return node, interfaces, createErr
 	}
 	return node, interfaces, nil
 }

@@ -6,6 +6,66 @@ export type TopologyResourceType =
   | "link"
   | "network_attachment"
   | "network_object_link";
+
+export type TopologyConnectionKind =
+  | "node_link"
+  | "network_attachment"
+  | "network_object_link";
+
+export type TopologyConnectionState =
+  | "pending"
+  | "connected"
+  | "failed"
+  | "disconnecting"
+  | "unknown";
+
+export type TopologyConnectionSemanticMarker =
+  | "managed-nat-uplink"
+  | "shared-broadcast-domain";
+
+export interface ConnectionEndpointPresentation {
+  resourceId: string;
+  resourceType: "node" | "network_object";
+  resourceKind: string;
+  resourceName: string;
+  portId: string;
+  portName: string;
+  endpointKey: string;
+  symbolRole?: "nat" | "shared-domain" | "router";
+}
+
+export interface ConnectionStatusVisual {
+  state: TopologyConnectionState;
+  label: string;
+  colorToken: string;
+  lineType: "solid" | "dashed" | "dotted";
+  width: number;
+  cue: "normal" | "transition" | "warning" | "removing" | "unknown";
+}
+
+export interface ConnectionPresentationCapabilities {
+  selectable: boolean;
+  deletable: boolean;
+  capturable: boolean;
+  trafficFilterable: boolean;
+}
+
+export interface ConnectionPresentation {
+  id: string;
+  persistedKind: TopologyConnectionKind;
+  source: ConnectionEndpointPresentation;
+  target: ConnectionEndpointPresentation;
+  desiredState: string;
+  actualState: string;
+  statusVisual: ConnectionStatusVisual;
+  semanticMarkers: TopologyConnectionSemanticMarker[];
+  routeGroupKey: string;
+  routeIndex: number;
+  routeCount: number;
+  label: string;
+  capabilities: ConnectionPresentationCapabilities;
+  accessibilityLabel: string;
+}
 export type TopologyInteractionMode =
   | "idle"
   | "pressing"

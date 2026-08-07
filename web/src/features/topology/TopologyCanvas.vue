@@ -8,6 +8,7 @@ import {
   watch,
 } from "vue";
 import EChart from "@/components/charts/EChart.vue";
+import TopologyConnectionLegend from "./TopologyConnectionLegend.vue";
 import { useThemePreference } from "@/composables/useThemePreference";
 import type {
   Link,
@@ -21,9 +22,10 @@ import type {
 } from "@/api";
 import {
   networkObjectLinkDisplayName,
-  parallelNetworkObjectLinkCurveness,
   trafficObservationLinkId,
 } from "./linkPresentation";
+import { buildConnectionPresentations } from "./topologyConnectionPresentation";
+import { buildConnectionLegend } from "./topologyConnectionLegend";
 import type { WorkspacePreferences } from "@/types/workspace";
 import { resolvePlacements } from "./topologyLayout";
 import {
@@ -186,9 +188,6 @@ const ownerByInterface = computed(() =>
 const interfaceById = computed(() =>
   Object.fromEntries(props.interfaces.map((item) => [item.id, item])),
 );
-const nodeById = computed(() =>
-  Object.fromEntries(props.nodes.map((item) => [item.id, item])),
-);
 const interfacesByOwner = computed(() => {
   const result: Record<string, NodeInterface[]> = {};
   for (const item of props.interfaces) {
@@ -318,44 +317,26 @@ function showObjectPortDetails(objectId: string) {
     Boolean(props.connectionSourceObjectPortId)
   );
 }
-function endpointLabel(interfaceId: string) {
-  const interfaceValue = interfaceById.value[interfaceId];
-  if (!interfaceValue) return interfaceId;
-  const node = nodeById.value[interfaceValue.node_id];
-  return `${node?.name || interfaceValue.node_id}:${interfaceValue.name}`;
+const connectionPresentations = computed(() =>
+  buildConnectionPresentations({
+    nodes: props.nodes,
+    interfaces: props.interfaces,
+    networkObjects: props.networkObjects,
+    links: props.links,
+    networkAttachments: props.networkAttachments,
+    networkObjectLinks: props.networkObjectLinks,
+  }),
+);
+const connectionLegend = computed(() =>
+  buildConnectionLegend(connectionPresentations.value),
+);
+const legendHighlightedConnectionIds = ref(new Set<string>());
+function highlightLegendConnections(ids: string[]) {
+  legendHighlightedConnectionIds.value = new Set(ids);
 }
-const automaticLinkCurveness = computed(() => {
-  const groups = new Map<string, Link[]>();
-  const result = new Map<string, number>();
-  for (const link of props.links) {
-    const ownerA = ownerByInterface.value[link.endpoint_a_id];
-    const ownerB = ownerByInterface.value[link.endpoint_b_id];
-    if (!ownerA || !ownerB || ownerA === ownerB) {
-      result.set(link.id, 0);
-      continue;
-    }
-    const pair =
-      ownerA <= ownerB ? `${ownerA}:${ownerB}` : `${ownerB}:${ownerA}`;
-    const siblings = groups.get(pair) || [];
-    siblings.push(link);
-    groups.set(pair, siblings);
-  }
-  for (const siblings of groups.values()) {
-    siblings.sort((left, right) => left.id.localeCompare(right.id));
-    if (siblings.length < 2) {
-      result.set(siblings[0].id, 0);
-      continue;
-    }
-    const spacing = Math.min(0.24, 0.84 / (siblings.length - 1));
-    siblings.forEach((link, index) => {
-      const ownerA = ownerByInterface.value[link.endpoint_a_id];
-      const ownerB = ownerByInterface.value[link.endpoint_b_id];
-      const offset = (index - (siblings.length - 1) / 2) * spacing;
-      result.set(link.id, ownerA <= ownerB ? offset : -offset);
-    });
-  }
-  return result;
-});
+function clearLegendConnections() {
+  legendHighlightedConnectionIds.value = new Set();
+}
 const macOwners = computed(() => {
   const result: Record<string, string> = {};
   for (const item of props.interfaces)
@@ -593,7 +574,11 @@ const topologyGraphics = computed(() => [
 ]);
 function routeCurveness(link: Link) {
   const point = props.preferences.linkRoutes[link.id]?.[0];
-  if (!point) return automaticLinkCurveness.value.get(link.id) || 0;
+  if (!point)
+    return (
+      connectionPresentations.value.find((item) => item.id === link.id)
+        ?.curveness || 0
+    );
   const source = placements.value[ownerByInterface.value[link.endpoint_a_id]];
   const target = placements.value[ownerByInterface.value[link.endpoint_b_id]];
   if (!source || !target) return 0.12;
@@ -808,130 +793,66 @@ const option = computed(() => ({
         },
       ],
       links: [
-        ...props.links.map((link) => {
-          const hit = trafficLinks.value.get(link.id);
+        ...connectionPresentations.value.map((connection) => {
+          const hit = trafficLinks.value.get(connection.id);
+          const sourceInterfaceTraffic =
+            connection.persistedKind === "network_attachment" &&
+            trafficInterfaceIds.value.has(connection.source.portId);
+          const trafficHit = Boolean(
+            props.trafficActive && (hit || sourceInterfaceTraffic),
+          );
           const trafficMode = !hit?.pairs.size
             ? "unknown"
             : hit.pairs.size === 1
               ? "single"
               : "bidirectional";
-          const endpointA = endpointLabel(link.endpoint_a_id);
-          const endpointB = endpointLabel(link.endpoint_b_id);
+          const selectedConnection = selected.value.has(connection.id);
+          const legendHighlighted = legendHighlightedConnectionIds.value.has(
+            connection.id,
+          );
+          const nodeLink =
+            connection.persistedKind === "node_link"
+              ? props.links.find((item) => item.id === connection.id)
+              : undefined;
           return {
-            id: link.id,
-            source:
-              ownerByInterface.value[link.endpoint_a_id] || link.endpoint_a_id,
-            target:
-              ownerByInterface.value[link.endpoint_b_id] || link.endpoint_b_id,
-            label: `${endpointA} ↔ ${endpointB}`,
-            resourceType: "link",
+            id: connection.id,
+            source: connection.source.resourceId,
+            target: connection.target.resourceId,
+            label: connection.label,
+            resourceType:
+              connection.persistedKind === "node_link"
+                ? "link"
+                : connection.persistedKind,
+            connectionState: connection.statusVisual.state,
+            accessibilityLabel: connection.accessibilityLabel,
             symbol: ["none", "none"],
-            symbolSize: props.trafficActive && hit ? 13 : 0,
+            symbolSize: trafficHit ? 13 : 0,
             lineStyle: {
-              color:
-                props.trafficActive && hit
-                  ? props.trafficColor
-                  : link.observed_state === "connected"
-                    ? "var(--topology-link)"
-                    : link.observed_state === "pending"
-                      ? "var(--topology-transition)"
-                      : "var(--topology-failed)",
-              width: props.trafficActive && hit ? 4 : 2,
-              opacity: props.trafficActive && hit ? 0.68 : 1,
+              color: trafficHit
+                ? props.trafficColor
+                : selectedConnection || legendHighlighted
+                  ? "var(--topology-connection-focus)"
+                  : connection.statusVisual.colorToken,
+              width:
+                trafficHit || selectedConnection || legendHighlighted
+                  ? 4
+                  : connection.statusVisual.width,
+              opacity: trafficHit ? 0.7 : 1,
               shadowColor:
-                props.trafficActive && hit ? props.trafficColor : undefined,
-              shadowBlur: props.trafficActive && hit ? 7 : 0,
-              type: link.observed_state === "connected" ? "solid" : "dashed",
-              curveness: routeCurveness(link),
-            },
-            tooltip: {
-              formatter: `${endpointA} ↔ ${endpointB}<br/>${link.observed_state}${hit ? `<br/>${hit.count} 个数据包 · ${hit.bytes} 字节 · ${trafficMode}${hit.initiatorSource && hit.initiatorTarget ? `<br/>发起方向 ${hit.initiatorSource} → ${hit.initiatorTarget}` : ""}` : ""}`,
-            },
-          };
-        }),
-        ...props.networkAttachments.flatMap((attachment) => {
-          const attachedInterface =
-            interfaceById.value[attachment.interface_id];
-          if (!attachedInterface) return [];
-          const node = nodeById.value[attachedInterface.node_id];
-          const networkObject = props.networkObjects.find(
-            (item) => item.id === attachment.network_object_id,
-          );
-          if (!node || !networkObject) return [];
-          const healthy = !["failed", "missing"].includes(
-            attachment.observed_state,
-          );
-          const trafficHit =
-            props.trafficActive &&
-            trafficInterfaceIds.value.has(attachment.interface_id);
-          const attachmentSelected = selected.value.has(attachment.id);
-          return [
-            {
-              id: attachment.id,
-              source: node.id,
-              target: networkObject.id,
-              label: `${node.name}:${attachedInterface.name} → ${networkObject.name}`,
-              resourceType: "network_attachment",
-              lineStyle: {
-                color: trafficHit
+                trafficHit
                   ? props.trafficColor
-                  : attachmentSelected
-                    ? "var(--topology-emphasis)"
-                    : healthy
-                      ? "var(--topology-active)"
-                      : "var(--topology-failed)",
-                width: trafficHit || attachmentSelected ? 4 : 2,
-                opacity: trafficHit ? 0.68 : 1,
-                type: healthy ? "dashed" : "dotted",
-                curveness: 0.06,
-                shadowColor: trafficHit
-                  ? props.trafficColor
-                  : attachmentSelected
-                    ? "var(--topology-emphasis)"
+                  : selectedConnection || legendHighlighted
+                    ? "var(--topology-connection-focus)"
                     : undefined,
-                shadowBlur: trafficHit || attachmentSelected ? 7 : 0,
-              },
-              tooltip: {
-                formatter: `${node.name}:${attachedInterface.name} ↔ ${networkObject.name}:${attachment.port_name || "端口"}<br/>网络接入 · ${attachment.observed_state}<br/>点击后可用于抓包或流量过滤`,
-              },
-            },
-          ];
-        }),
-        ...props.networkObjectLinks.map((link) => {
-          const hit = trafficLinks.value.get(link.id);
-          const selectedLink = selected.value.has(link.id);
-          return {
-            id: link.id,
-            source: link.object_a_id,
-            target: link.object_b_id,
-            label: networkObjectLinkDisplayName(link, props.networkObjects),
-            resourceType: "network_object_link",
-            lineStyle: {
-              color: hit
-                ? props.trafficColor
-                : selectedLink
-                  ? "var(--topology-emphasis)"
-                  : link.observed_state === "connected"
-                    ? "var(--topology-active)"
-                    : link.observed_state === "pending"
-                      ? "var(--topology-transition)"
-                      : "var(--topology-failed)",
-              width: hit || selectedLink ? 4 : 2,
-              opacity: hit ? 0.72 : 1,
-              type: link.observed_state === "connected" ? "solid" : "dashed",
-              curveness: parallelNetworkObjectLinkCurveness(
-                link,
-                props.networkObjectLinks,
-              ),
-              shadowColor: hit
-                ? props.trafficColor
-                : selectedLink
-                  ? "var(--topology-emphasis)"
-                  : undefined,
-              shadowBlur: hit || selectedLink ? 8 : 0,
+              shadowBlur:
+                trafficHit || selectedConnection || legendHighlighted ? 7 : 0,
+              type: connection.statusVisual.lineType,
+              curveness: nodeLink
+                ? routeCurveness(nodeLink)
+                : connection.curveness,
             },
             tooltip: {
-              formatter: `${networkObjectLinkDisplayName(link, props.networkObjects)}<br/>对象间链路 · ${link.observed_state}<br/>可用于抓包和 Traffic Filter`,
+              formatter: `${connection.label}<br/>${connection.statusVisual.label}${connection.semanticMarkers.length ? `<br/>${connection.semanticMarkers.join("、")}` : ""}${hit ? `<br/>${hit.count} 个数据包 · ${hit.bytes} 字节 · ${trafficMode}${hit.initiatorSource && hit.initiatorTarget ? `<br/>发起方向 ${hit.initiatorSource} → ${hit.initiatorTarget}` : ""}` : ""}`,
             },
           };
         }),
@@ -1207,10 +1128,13 @@ function refreshOverlays() {
       const source = chart.value?.graphItemPixel?.(sourceId);
       const target = chart.value?.graphItemPixel?.(targetId);
       if (!source || !target) continue;
+      const baseCurveness =
+        connectionPresentations.value.find((item) => item.id === link.id)
+          ?.curveness || 0;
       const curveness =
         sourceId === link.object_a_id
-          ? -parallelNetworkObjectLinkCurveness(link, props.networkObjectLinks)
-          : parallelNetworkObjectLinkCurveness(link, props.networkObjectLinks);
+          ? -baseCurveness
+          : baseCurveness;
       trafficPaths.push({
         id: `traffic:${link.id}`,
         x1: source.x,
@@ -1556,6 +1480,11 @@ defineExpose({
       @node-drag="handleDrag"
       @graph-roam="handleRoam"
     />
+    <TopologyConnectionLegend
+      :items="connectionLegend"
+      @highlight="highlightLegendConnections"
+      @clear="clearLegendConnections"
+    />
     <svg
       class="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
       aria-hidden="true"
@@ -1789,6 +1718,13 @@ defineExpose({
         {{ networkObjectLinkDisplayName(link, networkObjects) }}:
         {{ link.observed_state
         }}{{ selectedIds?.includes(link.id) ? "，已选择" : "" }}
+      </li>
+      <li
+        v-for="connection in connectionPresentations"
+        :key="`connection-a11y:${connection.id}`"
+      >
+        {{ connection.accessibilityLabel }}
+        {{ connection.semanticMarkers.join("，") }}
       </li>
     </ul>
     <div

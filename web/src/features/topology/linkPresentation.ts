@@ -6,6 +6,14 @@ import type {
   NodeInterface,
   TrafficObservation,
 } from "@/api";
+import type { ConnectionEndpointPresentation } from "./interactionTypes";
+
+export function connectionDisplayName(
+  source: ConnectionEndpointPresentation,
+  target: ConnectionEndpointPresentation,
+) {
+  return `${source.resourceName}:${source.portName} ↔ ${target.resourceName}:${target.portName}`;
+}
 
 export function trafficObservationLinkId(observation: TrafficObservation) {
   if (observation.network_object_link_id)

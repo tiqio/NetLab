@@ -8,6 +8,59 @@ import (
 	"github.com/netlab/netlab/internal/domain"
 )
 
+func allocateInitialPlacementTx(ctx context.Context, tx *sql.Tx, laboratoryID, resourceID domain.ID, resourceType domain.PlacementResourceType, intent *domain.PlacementIntent) (domain.PlacementAssignment, error) {
+	rows, err := tx.QueryContext(ctx, `SELECT resource_id,resource_type,x,y FROM topology_placements WHERE laboratory_id=? ORDER BY resource_id`, laboratoryID)
+	if err != nil {
+		return domain.PlacementAssignment{}, err
+	}
+	defer rows.Close()
+	var occupied []domain.PlacementOccupancy
+	for rows.Next() {
+		var value domain.PlacementOccupancy
+		var existingType domain.PlacementResourceType
+		if err = rows.Scan(&value.ResourceID, &existingType, &value.X, &value.Y); err != nil {
+			return domain.PlacementAssignment{}, err
+		}
+		value.FootprintClass = domain.DefaultPlacementFootprintClass(existingType)
+		occupied = append(occupied, value)
+	}
+	if err = rows.Err(); err != nil {
+		return domain.PlacementAssignment{}, err
+	}
+	assignment, err := domain.NewTopologyPlacementAllocator().Allocate(resourceType, intent, occupied)
+	if err != nil {
+		return domain.PlacementAssignment{}, err
+	}
+	placement := domain.TopologyPlacement{LaboratoryID: laboratoryID, ResourceID: resourceID, ResourceType: resourceType, X: assignment.AssignedCenter.X, Y: assignment.AssignedCenter.Y, Revision: 1}
+	if _, err = tx.ExecContext(ctx, `INSERT INTO topology_placements(laboratory_id,resource_id,resource_type,x,y,revision,updated_at) VALUES(?,?,?,?,?,?,?)`, laboratoryID, resourceID, resourceType, placement.X, placement.Y, placement.Revision, time.Now().UTC().Format(time.RFC3339Nano)); err != nil {
+		return domain.PlacementAssignment{}, err
+	}
+	assignment.Placement = placement
+	return assignment, nil
+}
+
+func advanceLaboratoryRevisionTx(ctx context.Context, tx *sql.Tx, laboratoryID domain.ID, expected domain.Revision) (domain.Revision, error) {
+	var current domain.Revision
+	if err := tx.QueryRowContext(ctx, `SELECT revision FROM laboratories WHERE id=?`, laboratoryID).Scan(&current); err != nil {
+		if err == sql.ErrNoRows {
+			return 0, ErrNotFound
+		}
+		return 0, err
+	}
+	if current != expected {
+		return 0, domain.Problem{Code: "revision_conflict", Message: "laboratory revision changed", Retryable: true, ResourceType: "laboratory", ResourceID: laboratoryID}
+	}
+	next := current.Next()
+	result, err := tx.ExecContext(ctx, `UPDATE laboratories SET revision=?,updated_at=? WHERE id=? AND revision=?`, next, time.Now().UTC().Format(time.RFC3339Nano), laboratoryID, current)
+	if err != nil {
+		return 0, err
+	}
+	if affected, _ := result.RowsAffected(); affected != 1 {
+		return 0, domain.Problem{Code: "revision_conflict", Message: "laboratory revision changed", Retryable: true, ResourceType: "laboratory", ResourceID: laboratoryID}
+	}
+	return next, nil
+}
+
 func (r *TopologyRepository) ListPlacements(ctx context.Context, laboratoryID domain.ID) ([]domain.TopologyPlacement, error) {
 	rows, err := r.database.DB.QueryContext(ctx, `SELECT laboratory_id,resource_id,resource_type,x,y,revision FROM topology_placements WHERE laboratory_id=? ORDER BY resource_id`, laboratoryID)
 	if err != nil {

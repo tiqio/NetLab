@@ -1,0 +1,288 @@
+openapi: 3.1.0
+info:
+  title: NetLab Topology Visual Unification Contract Delta
+  version: 0.1.0
+  description: >-
+    Feature delta for authoritative initial placement. Existing create-node,
+    create-network-object and manual placement endpoints remain otherwise compatible.
+paths:
+  /api/v1/labs/{labId}/nodes:
+    post:
+      summary: Create a node with an authoritative initial placement
+      parameters:
+        - $ref: '#/components/parameters/LabId'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/ExistingCreateNodeRequest'
+                - type: object
+                  properties:
+                    placement_intent:
+                      $ref: '#/components/schemas/PlacementIntent'
+      responses:
+        '201':
+          description: Node and placement committed atomically
+          headers:
+            ETag:
+              $ref: '#/components/headers/Revision'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateNodeWithPlacementResult'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/PlacementRejected'
+  /api/v1/labs/{labId}/network-objects:
+    post:
+      summary: Create a network object with an authoritative initial placement
+      parameters:
+        - $ref: '#/components/parameters/LabId'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/ExistingCreateNetworkObjectRequest'
+                - type: object
+                  properties:
+                    placement_intent:
+                      $ref: '#/components/schemas/PlacementIntent'
+      responses:
+        '201':
+          description: Network object and placement committed atomically
+          headers:
+            ETag:
+              $ref: '#/components/headers/Revision'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateNetworkObjectWithPlacementResult'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/PlacementRejected'
+  /api/v1/labs/{labId}/placements:
+    put:
+      summary: Move existing resources; retained unchanged for drag/group movement
+      parameters:
+        - $ref: '#/components/parameters/LabId'
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExistingPlacementBatchRequest'
+      responses:
+        '200':
+          description: Existing placements updated
+        '409':
+          $ref: '#/components/responses/Conflict'
+components:
+  parameters:
+    LabId:
+      name: labId
+      in: path
+      required: true
+      schema:
+        type: string
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      description: Expected laboratory revision.
+      schema:
+        type: string
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Repeating an equivalent create request returns the same resource and placement.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+  headers:
+    Revision:
+      description: New laboratory revision after the atomic create.
+      schema:
+        type: string
+  schemas:
+    ExistingCreateNodeRequest:
+      type: object
+      description: Placeholder reference to the existing base-platform create-node schema.
+      required: [name]
+      properties:
+        name:
+          type: string
+      additionalProperties: true
+    ExistingCreateNetworkObjectRequest:
+      type: object
+      description: Placeholder reference to the existing base-platform network-object schema.
+      required: [name, kind]
+      properties:
+        name:
+          type: string
+        kind:
+          type: string
+      additionalProperties: true
+    ExistingPlacementBatchRequest:
+      type: object
+      required: [placements]
+      properties:
+        placements:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            type: object
+            required: [resource_id, resource_type, x, y]
+            properties:
+              resource_id: { type: string }
+              resource_type: { type: string, enum: [node, network_object] }
+              x: { type: number }
+              y: { type: number }
+              revision: { type: integer, format: int64, minimum: 0 }
+    PlacementIntent:
+      type: object
+      additionalProperties: false
+      properties:
+        preferred_x:
+          type: number
+          minimum: -1000000
+          maximum: 1000000
+        preferred_y:
+          type: number
+          minimum: -1000000
+          maximum: 1000000
+        footprint_class:
+          $ref: '#/components/schemas/FootprintClass'
+        viewport_hint:
+          $ref: '#/components/schemas/ViewportHint'
+      dependentRequired:
+        preferred_x: [preferred_y]
+        preferred_y: [preferred_x]
+    FootprintClass:
+      type: string
+      enum:
+        - node-standard
+        - node-wide
+        - network-object-standard
+        - network-object-wide
+    ViewportHint:
+      type: object
+      additionalProperties: false
+      required: [min_x, min_y, max_x, max_y]
+      properties:
+        min_x: { type: number, minimum: -1000000, maximum: 1000000 }
+        min_y: { type: number, minimum: -1000000, maximum: 1000000 }
+        max_x: { type: number, minimum: -1000000, maximum: 1000000 }
+        max_y: { type: number, minimum: -1000000, maximum: 1000000 }
+    TopologyPlacement:
+      type: object
+      required: [laboratory_id, resource_id, resource_type, x, y, revision]
+      properties:
+        laboratory_id: { type: string }
+        resource_id: { type: string }
+        resource_type: { type: string, enum: [node, network_object] }
+        x: { type: number }
+        y: { type: number }
+        revision: { type: integer, format: int64, minimum: 1 }
+    PlacementPoint:
+      type: object
+      required: [x, y]
+      properties:
+        x: { type: number }
+        y: { type: number }
+    PlacementAssignment:
+      type: object
+      required:
+        - placement
+        - assigned_center
+        - adjusted
+        - reason
+        - footprint_class
+        - algorithm_version
+      properties:
+        placement:
+          $ref: '#/components/schemas/TopologyPlacement'
+        requested_center:
+          oneOf:
+            - $ref: '#/components/schemas/PlacementPoint'
+            - type: 'null'
+        assigned_center:
+          $ref: '#/components/schemas/PlacementPoint'
+        adjusted:
+          type: boolean
+        reason:
+          type: string
+          enum: [preferred_available, collision_avoided, default_anchor, viewport_adjusted]
+        footprint_class:
+          $ref: '#/components/schemas/FootprintClass'
+        algorithm_version:
+          type: integer
+          minimum: 1
+    CreateNodeWithPlacementResult:
+      type: object
+      required: [node, interfaces, placement_assignment, laboratory_revision]
+      properties:
+        node:
+          type: object
+          additionalProperties: true
+        interfaces:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        placement_assignment:
+          $ref: '#/components/schemas/PlacementAssignment'
+        laboratory_revision:
+          type: integer
+          format: int64
+    CreateNetworkObjectWithPlacementResult:
+      type: object
+      required: [network_object, placement_assignment, laboratory_revision]
+      properties:
+        network_object:
+          type: object
+          additionalProperties: true
+        placement_assignment:
+          $ref: '#/components/schemas/PlacementAssignment'
+        laboratory_revision:
+          type: integer
+          format: int64
+    Problem:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        retryable: { type: boolean, default: false }
+        resource_type: { type: string }
+        resource_id: { type: string }
+        current_revision: { type: integer, format: int64 }
+        details:
+          type: object
+          additionalProperties: true
+  responses:
+    Conflict:
+      description: Revision or idempotency conflict; no resource or placement is partially committed.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    PlacementRejected:
+      description: Placement intent is invalid or the bounded candidate search is exhausted.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'

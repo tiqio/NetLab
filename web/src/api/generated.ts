@@ -136,6 +136,48 @@ export interface TopologyPlacementResult {
   placements: TopologyPlacement[];
 }
 
+export interface PlacementPoint {
+  x: number;
+  y: number;
+}
+
+export interface PlacementIntent {
+  preferred_x?: number;
+  preferred_y?: number;
+  footprint_class?:
+    | "node-standard"
+    | "node-wide"
+    | "network-object-standard"
+    | "network-object-wide";
+}
+
+export interface PlacementAssignment {
+  placement: TopologyPlacement;
+  requested_center?: PlacementPoint;
+  assigned_center: PlacementPoint;
+  adjusted: boolean;
+  reason:
+    | "preferred_available"
+    | "collision_avoided"
+    | "default_anchor"
+    | "viewport_adjusted";
+  footprint_class: NonNullable<PlacementIntent["footprint_class"]>;
+  algorithm_version: number;
+}
+
+export interface CreateNodeResult {
+  node: Node;
+  interfaces: NodeInterface[];
+  placement_assignment: PlacementAssignment;
+  laboratory_revision: number;
+}
+
+export interface CreateNetworkObjectResult extends TaskEnvelope {
+  network_object: NetworkObject;
+  placement_assignment: PlacementAssignment;
+  laboratory_revision: number;
+}
+
 export interface TopologySnapshot {
   laboratory: Laboratory;
   nodes: Node[];
@@ -404,6 +446,7 @@ export interface CreateNodeRequest {
     meta_data?: string;
     network_config?: string;
   };
+  placement_intent?: PlacementIntent;
 }
 
 export interface DockerStaticRoute {

@@ -5,6 +5,8 @@ import {
   ApiError,
   type DeviceTemplate,
   type ImageVersion,
+  type PlacementIntent,
+  type CreateNodeResult,
   type Node,
   type NodeInterface,
   type NetworkObject,
@@ -35,13 +37,15 @@ import {
 } from "./topologyResourceDraft";
 import { cpuQuotaCoresToMicros, cpuQuotaMicrosToCores } from "@/lib/cpuQuota";
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   modelValue: boolean;
   laboratoryId: string;
+  laboratoryRevision?: number;
+  placementIntent?: PlacementIntent;
   selection?: PaletteSelection;
   nodeNames?: string[];
   networkObjectNames?: string[];
-}>();
+}>(), { laboratoryRevision: 1 });
 const emit = defineEmits<{
   "update:modelValue": [boolean];
   created: [
@@ -49,6 +53,8 @@ const emit = defineEmits<{
       node?: Node;
       interfaces?: NodeInterface[];
       networkObject?: NetworkObject;
+      placement_assignment?: CreateNodeResult["placement_assignment"];
+      laboratory_revision?: number;
     },
   ];
   selectionChanged: [PaletteSelection | undefined];
@@ -464,9 +470,14 @@ async function submit() {
       if (create.kind !== "network-object") return;
       const value = await api.createNetworkObject(
         props.laboratoryId,
-        create.request,
+        props.laboratoryRevision,
+        { ...create.request, placement_intent: props.placementIntent },
       );
-      emit("created", { networkObject: value.network_object });
+      emit("created", {
+        networkObject: value.network_object,
+        placement_assignment: value.placement_assignment,
+        laboratory_revision: value.laboratory_revision,
+      });
     } else {
       const chosenTemplateId = templateId.value;
       const chosenVersionId = versionId.value;
@@ -511,7 +522,10 @@ async function submit() {
         },
       );
       if (create.kind !== "node") return;
-      const value = await api.createNode(props.laboratoryId, create.request);
+      const value = await api.createNode(props.laboratoryId, props.laboratoryRevision, {
+        ...create.request,
+        placement_intent: props.placementIntent,
+      });
       emit("created", value);
     }
     open.value = false;

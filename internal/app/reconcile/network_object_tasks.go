@@ -170,28 +170,92 @@ func (s *NetworkObjectTaskService) Update(ctx context.Context, id domain.ID, rev
 }
 
 func (s *NetworkObjectTaskService) Create(ctx context.Context, laboratoryID domain.ID, name, kind string, config map[string]any, idempotencyKey string) (domain.NetworkObject, domain.OperationTask, error) {
-	name = strings.TrimSpace(name)
-	if name == "" || len(name) > 128 {
-		return domain.NetworkObject{}, domain.OperationTask{}, fmt.Errorf("network object name must be 1-128 characters")
+	if idempotencyKey != "" {
+		if existing, lookupErr := s.runner.GetByIdempotency(ctx, "network_object.create", idempotencyKey); lookupErr == nil {
+			existingConfig, _ := networkTaskMap(existing.Input["config"])
+			requestedConfig, _ := json.Marshal(config)
+			storedConfig, _ := json.Marshal(existingConfig)
+			if domain.ID(networkTaskText(existing.Input["laboratory_id"])) != laboratoryID || networkTaskText(existing.Input["name"]) != strings.TrimSpace(name) || networkTaskText(existing.Input["kind"]) != kind || string(requestedConfig) != string(storedConfig) {
+				return domain.NetworkObject{}, domain.OperationTask{}, domain.Problem{Code: "idempotency_conflict", Message: "idempotency key was already used with a different create request", ResourceType: "network_object", ResourceID: existing.ResourceID, TaskID: existing.ID, Phase: "create_admission"}
+			}
+			object, err := s.service.Get(ctx, existing.ResourceID)
+			return object, existing, err
+		}
 	}
-	if err := domain.ValidateNetworkKind(kind); err != nil {
-		return domain.NetworkObject{}, domain.OperationTask{}, err
-	}
-	object := domain.NetworkObject{ID: domain.NewID(), LaboratoryID: laboratoryID, Name: name, Kind: kind, Revision: 1, DesiredState: "active", ObservedState: "provisioning", Config: config}
-	input := map[string]any{"laboratory_id": laboratoryID, "name": name, "kind": kind, "config": config}
-	value := networkObjectOperation("network_object.create", object.ID, idempotencyKey, input)
-	queued, err := s.runner.EnqueueOrGet(ctx, value)
+	revision, err := s.service.LaboratoryRevision(ctx, laboratoryID)
 	if err != nil {
 		return domain.NetworkObject{}, domain.OperationTask{}, err
 	}
-	if queued.ID != value.ID {
-		object.ID = queued.ResourceID
-		object.LaboratoryID = domain.ID(networkTaskText(queued.Input["laboratory_id"]))
-		object.Name = networkTaskText(queued.Input["name"])
-		object.Kind = networkTaskText(queued.Input["kind"])
-		object.Config, _ = networkTaskMap(queued.Input["config"])
+	object, _, _, taskValue, err := s.CreateWithPlacement(ctx, laboratoryID, revision, name, kind, config, nil, idempotencyKey, "application")
+	return object, taskValue, err
+}
+
+func (s *NetworkObjectTaskService) CreateWithPlacement(ctx context.Context, laboratoryID domain.ID, expectedRevision domain.Revision, name, kind string, config map[string]any, intent *domain.PlacementIntent, idempotencyKey, entry string) (domain.NetworkObject, domain.PlacementAssignment, domain.Revision, domain.OperationTask, error) {
+	name = strings.TrimSpace(name)
+	if name == "" || len(name) > 128 {
+		return domain.NetworkObject{}, domain.PlacementAssignment{}, 0, domain.OperationTask{}, fmt.Errorf("network object name must be 1-128 characters")
 	}
-	return object, queued, nil
+	if err := domain.ValidateNetworkKind(kind); err != nil {
+		return domain.NetworkObject{}, domain.PlacementAssignment{}, 0, domain.OperationTask{}, err
+	}
+	object := domain.NetworkObject{ID: domain.NewID(), LaboratoryID: laboratoryID, Name: name, Kind: kind, Revision: 1, DesiredState: "active", ObservedState: "provisioning", Config: config}
+	input := map[string]any{"laboratory_id": laboratoryID, "laboratory_revision": int64(expectedRevision), "name": name, "kind": kind, "config": config, "placement_intent": intent}
+	value := networkObjectOperation("network_object.create", object.ID, idempotencyKey, input)
+	if idempotencyKey != "" {
+		if existing, lookupErr := s.runner.GetByIdempotency(ctx, value.Kind, idempotencyKey); lookupErr == nil {
+			if existing.RequestFingerprint != value.RequestFingerprint {
+				return domain.NetworkObject{}, domain.PlacementAssignment{}, 0, domain.OperationTask{}, domain.Problem{Code: "idempotency_conflict", Message: "idempotency key was already used with a different create request", ResourceType: "network_object", ResourceID: existing.ResourceID, TaskID: existing.ID, Phase: "create_admission"}
+			}
+			existingObject, getErr := s.service.Get(ctx, existing.ResourceID)
+			if getErr != nil {
+				return domain.NetworkObject{}, domain.PlacementAssignment{}, 0, domain.OperationTask{}, getErr
+			}
+			assignment, decodeErr := networkTaskPlacementAssignment(existing.Input["placement_assignment"])
+			if decodeErr != nil {
+				return domain.NetworkObject{}, domain.PlacementAssignment{}, 0, domain.OperationTask{}, decodeErr
+			}
+			return existingObject, assignment, domain.Revision(networkTaskInt64(existing.Input["assigned_laboratory_revision"])), existing, nil
+		}
+	}
+	created, assignment, laboratoryRevision, err := s.service.CreateRecordWithPlacement(ctx, object.ID, laboratoryID, name, kind, config, expectedRevision, intent, entry)
+	if err != nil {
+		return domain.NetworkObject{}, domain.PlacementAssignment{}, 0, domain.OperationTask{}, err
+	}
+	value.Input["placement_assignment"] = assignment
+	value.Input["assigned_laboratory_revision"] = int64(laboratoryRevision)
+	value.Input["entry"] = entry
+	queued, err := s.runner.EnqueueOrGet(ctx, value)
+	if err != nil {
+		_ = s.service.Delete(context.Background(), created.ID, created.Revision)
+		return domain.NetworkObject{}, domain.PlacementAssignment{}, 0, domain.OperationTask{}, err
+	}
+	if queued.ID != value.ID {
+		created, err = s.service.Get(ctx, queued.ResourceID)
+		if err != nil {
+			return domain.NetworkObject{}, domain.PlacementAssignment{}, 0, domain.OperationTask{}, err
+		}
+		assignment, err = networkTaskPlacementAssignment(queued.Input["placement_assignment"])
+		if err != nil {
+			return domain.NetworkObject{}, domain.PlacementAssignment{}, 0, domain.OperationTask{}, err
+		}
+		laboratoryRevision = domain.Revision(networkTaskInt64(queued.Input["assigned_laboratory_revision"]))
+	}
+	return created, assignment, laboratoryRevision, queued, nil
+}
+
+func networkTaskPlacementAssignment(raw any) (domain.PlacementAssignment, error) {
+	encoded, err := json.Marshal(raw)
+	if err != nil {
+		return domain.PlacementAssignment{}, err
+	}
+	var assignment domain.PlacementAssignment
+	if err = json.Unmarshal(encoded, &assignment); err != nil {
+		return domain.PlacementAssignment{}, err
+	}
+	if assignment.Placement.ResourceID == "" {
+		return domain.PlacementAssignment{}, fmt.Errorf("task placement assignment is unavailable")
+	}
+	return assignment, nil
 }
 
 func (s *NetworkObjectTaskService) Delete(ctx context.Context, id domain.ID, revision domain.Revision, idempotencyKey string) (domain.OperationTask, error) {

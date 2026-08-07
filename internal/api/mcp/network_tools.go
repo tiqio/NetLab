@@ -62,7 +62,7 @@ func NetworkTools(service *reconcile.NetworkObjectService, operations *reconcile
 			}
 			return map[string]any{"network_object_link": link, "task": taskValue}, nil
 		}},
-		{Name: "netlab.network_objects.create", Description: "Create a PC, switch, bridge, or NAT network object.", InputSchema: mutationSchema(map[string]any{"lab_id": stringProperty("Laboratory ID"), "name": stringProperty("Object name"), "kind": map[string]any{"type": "string", "enum": []string{"pc", "switch_l2", "switch_l3", "bridge", "nat_bridge"}}, "config": map[string]any{"type": "object"}}, "lab_id", "name", "kind"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
+		{Name: "netlab.network_objects.create", Description: "Create a PC, switch, bridge, or NAT network object with authoritative placement.", InputSchema: mutationSchema(map[string]any{"lab_id": stringProperty("Laboratory ID"), "name": stringProperty("Object name"), "kind": map[string]any{"type": "string", "enum": []string{"pc", "switch_l2", "switch_l3", "bridge", "nat_bridge"}}, "config": map[string]any{"type": "object"}, "placement_intent": map[string]any{"type": "object"}}, "lab_id", "name", "kind", "expected_revision"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
 			if operations == nil {
 				return unavailable("network object create")
 			}
@@ -79,11 +79,18 @@ func NetworkTools(service *reconcile.NetworkObjectService, operations *reconcile
 				return nil, err
 			}
 			config, _ := args["config"].(map[string]any)
-			object, taskValue, err := operations.Create(c, domain.ID(labID), name, kind, config, optionalString(args, "idempotency_key"))
+			var intent *domain.PlacementIntent
+			if args["placement_intent"] != nil {
+				intent = &domain.PlacementIntent{}
+				if err = decodeArgument(args["placement_intent"], intent); err != nil {
+					return nil, err
+				}
+			}
+			object, assignment, laboratoryRevision, taskValue, err := operations.CreateWithPlacement(c, domain.ID(labID), revisionArgument(args), name, kind, config, intent, optionalString(args, "idempotency_key"), "mcp")
 			if err != nil {
 				return nil, err
 			}
-			return map[string]any{"network_object": object, "task": taskValue}, nil
+			return map[string]any{"network_object": object, "task": taskValue, "placement_assignment": assignment, "laboratory_revision": laboratoryRevision}, nil
 		}},
 		{Name: "netlab.network_objects.get", Description: "Get network object state and configuration.", InputSchema: requiredObject(map[string]any{"object_id": stringProperty("Network object ID")}, "object_id"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
 			id, err := argumentString(args, "object_id")

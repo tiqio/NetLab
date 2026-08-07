@@ -22,6 +22,18 @@ export interface VisualSemantic {
   traffic: boolean;
 }
 
+export function connectionVisualSemantic(actualState: string) {
+  if (["connected", "running", "active"].includes(actualState))
+    return { state: "connected" as const, label: "已连接", colorToken: "var(--topology-connection-success)", lineType: "solid" as const, width: 2, cue: "normal" as const };
+  if (["queued", "pending", "provisioning", "starting", "stopping"].includes(actualState))
+    return { state: "pending" as const, label: "状态转换中", colorToken: "var(--topology-connection-transition)", lineType: "dashed" as const, width: 2, cue: "transition" as const };
+  if (["disconnecting", "deleting"].includes(actualState))
+    return { state: "disconnecting" as const, label: "正在断开", colorToken: "var(--topology-connection-disconnecting)", lineType: "dashed" as const, width: 2, cue: "removing" as const };
+  if (["failed", "error", "degraded", "missing"].includes(actualState))
+    return { state: "failed" as const, label: "失败", colorToken: "var(--topology-connection-danger)", lineType: "dotted" as const, width: 2, cue: "warning" as const };
+  return { state: "unknown" as const, label: "未连接或状态未知", colorToken: "var(--topology-connection-neutral)", lineType: "solid" as const, width: 2, cue: "unknown" as const };
+}
+
 const kindLabels: Record<TopologySymbolKind, string> = {
   qemu: "QEMU 虚拟机",
   docker: "Docker 容器",

@@ -28,6 +28,14 @@ type NetworkObjectRepository interface {
 	DeleteNetworkObjectLink(context.Context, domain.ID) error
 }
 
+type networkObjectPlacementRepository interface {
+	CreateNetworkObjectWithPlacement(context.Context, domain.NetworkObject, domain.Revision, *domain.PlacementIntent, string) (domain.PlacementAssignment, domain.Revision, error)
+}
+
+type laboratoryRevisionRepository interface {
+	GetLaboratory(context.Context, domain.ID) (domain.Laboratory, error)
+}
+
 type natObservationRepository interface {
 	SaveNATServiceObservation(context.Context, domain.NATServiceObservation) error
 	DeleteNATServiceObservation(context.Context, domain.ID) error
@@ -83,6 +91,36 @@ func NewNetworkObjectService(repository NetworkObjectRepository, runtimes Networ
 
 func (s *NetworkObjectService) Create(ctx context.Context, labID domain.ID, name, kind string, config map[string]any) (domain.NetworkObject, error) {
 	return s.CreateAs(ctx, domain.NewID(), labID, name, kind, config)
+}
+
+func (s *NetworkObjectService) LaboratoryRevision(ctx context.Context, laboratoryID domain.ID) (domain.Revision, error) {
+	repository, ok := s.repository.(laboratoryRevisionRepository)
+	if !ok {
+		return 0, domain.Problem{Code: "capability_unsupported", Message: "laboratory revision lookup is unavailable", ResourceType: "laboratory", ResourceID: laboratoryID}
+	}
+	laboratory, err := repository.GetLaboratory(ctx, laboratoryID)
+	if err != nil {
+		return 0, err
+	}
+	return laboratory.Revision, nil
+}
+
+func (s *NetworkObjectService) CreateRecordWithPlacement(ctx context.Context, id, laboratoryID domain.ID, name, kind string, config map[string]any, expectedRevision domain.Revision, intent *domain.PlacementIntent, entry string) (domain.NetworkObject, domain.PlacementAssignment, domain.Revision, error) {
+	name = strings.TrimSpace(name)
+	if name == "" || len(name) > 128 {
+		return domain.NetworkObject{}, domain.PlacementAssignment{}, 0, fmt.Errorf("network object name must be 1-128 characters")
+	}
+	if err := domain.ValidateNetworkKind(kind); err != nil {
+		return domain.NetworkObject{}, domain.PlacementAssignment{}, 0, err
+	}
+	repository, ok := s.repository.(networkObjectPlacementRepository)
+	if !ok {
+		return domain.NetworkObject{}, domain.PlacementAssignment{}, 0, domain.Problem{Code: "capability_unsupported", Message: "authoritative placement is unavailable", ResourceType: "laboratory", ResourceID: laboratoryID}
+	}
+	now := time.Now().UTC()
+	value := domain.NetworkObject{ID: id, LaboratoryID: laboratoryID, Name: name, Kind: kind, Revision: 1, DesiredState: "active", ObservedState: "provisioning", Config: config, CreatedAt: now, UpdatedAt: now}
+	assignment, laboratoryRevision, err := repository.CreateNetworkObjectWithPlacement(ctx, value, expectedRevision, intent, entry)
+	return value, assignment, laboratoryRevision, err
 }
 
 func (s *NetworkObjectService) CreateAs(ctx context.Context, id, labID domain.ID, name, kind string, config map[string]any) (value domain.NetworkObject, err error) {

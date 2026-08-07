@@ -170,13 +170,14 @@ describe("CreateTopologyResourceDrawer", () => {
       .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
     await flushPromises();
 
-    expect(api.createNetworkObject).toHaveBeenCalledWith("lab-1", {
+    expect(api.createNetworkObject).toHaveBeenCalledWith("lab-1", 1, {
       name: "Configured L2",
       kind: "switch_l2",
       config: {
         vlan_filtering: true,
         ports: [{ name: "lan0", pvid: 10, tagged: [20, 30] }],
       },
+      placement_intent: undefined,
     });
     wrapper.unmount();
   });
@@ -233,10 +234,11 @@ describe("CreateTopologyResourceDrawer", () => {
       .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
     await flushPromises();
 
-    expect(api.createNetworkObject).toHaveBeenCalledWith("lab-1", {
+    expect(api.createNetworkObject).toHaveBeenCalledWith("lab-1", 1, {
       name: scenario.name,
       kind: scenario.kind,
       config: scenario.expectedConfig,
+      placement_intent: undefined,
     });
     expect(wrapper.emitted("created")?.[0]?.[0]).toMatchObject({
       networkObject: { kind: scenario.kind },
@@ -435,7 +437,7 @@ describe("CreateTopologyResourceDrawer", () => {
     vi.mocked(api.createNode).mockResolvedValue({
       node: {} as never,
       interfaces: [],
-    });
+    } as never);
     const wrapper = mount(CreateTopologyResourceDrawer, {
       attachTo: document.body,
       props: {
@@ -501,6 +503,7 @@ describe("CreateTopologyResourceDrawer", () => {
 
     expect(api.createNode).toHaveBeenCalledWith(
       "lab-1",
+      1,
       expect.objectContaining({
         image_version_id: "image-nettools",
         config: {
@@ -574,7 +577,7 @@ describe("CreateTopologyResourceDrawer", () => {
     vi.mocked(api.createNode).mockResolvedValue({
       node: {} as never,
       interfaces: [],
-    });
+    } as never);
     const wrapper = mount(CreateTopologyResourceDrawer, {
       attachTo: document.body,
       props: {
@@ -618,6 +621,7 @@ describe("CreateTopologyResourceDrawer", () => {
 
     expect(api.createNode).toHaveBeenCalledWith(
       "lab-1",
+      1,
       expect.objectContaining({
         config: {
           network_interfaces: [

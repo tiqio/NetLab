@@ -2,7 +2,9 @@ import type {
   AuditEvent,
   CaptureSession,
   ConsoleDescriptor,
+  CreateNodeResult,
   CreateNodeRequest,
+  CreateNetworkObjectResult,
   DeviceTemplate,
   ImageVersion,
   Laboratory,
@@ -152,11 +154,16 @@ export const generatedApi = {
     request<TaskEnvelope>(`/labs/${lab.id}`, "DELETE", {
       revision: lab.revision,
     }),
-  createNode: (labId: string, body: CreateNodeRequest) =>
-    request<{ node: Node; interfaces: NodeInterface[] }>(
+  createNode: (
+    labId: string,
+    revision: number,
+    body: CreateNodeRequest,
+    idempotencyKey?: string,
+  ) =>
+    request<CreateNodeResult>(
       `/labs/${labId}/nodes`,
       "POST",
-      { body },
+      { body, revision, idempotencyKey },
     ),
   getNode: (nodeId: string) => request<Node>(`/nodes/${nodeId}`),
   getNodeBootstrapCredentials: (nodeId: string) =>
@@ -345,12 +352,17 @@ export const generatedApi = {
     request<NetworkObject[]>(`/labs/${labId}/network-objects`),
   createNetworkObject: (
     labId: string,
+    revision: number,
     body: Pick<NetworkObject, "name" | "kind"> & {
       config?: Record<string, unknown>;
+      placement_intent?: import("./generated").PlacementIntent;
     },
+    idempotencyKey?: string,
   ) =>
-    request<TaskEnvelope>(`/labs/${labId}/network-objects`, "POST", {
+    request<CreateNetworkObjectResult>(`/labs/${labId}/network-objects`, "POST", {
       body,
+      revision,
+      idempotencyKey,
     }),
   getNetworkObject: (objectId: string) =>
     request<NetworkObject>(`/network-objects/${objectId}`),

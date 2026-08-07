@@ -34,7 +34,7 @@ func TestSharedTopologyContract(t *testing.T) {
 		t.Fatal(err)
 	}
 	id := lab["id"].(string)
-	request(t, server.Engine(), http.MethodPost, "/api/v1/labs/"+id+"/nodes", "", map[string]any{"name": "pc1", "kind": "pc", "interface_count": 2}, http.StatusCreated)
+	request(t, server.Engine(), http.MethodPost, "/api/v1/labs/"+id+"/nodes", "1", map[string]any{"name": "pc1", "kind": "pc", "interface_count": 2}, http.StatusCreated)
 	snapshot := request(t, server.Engine(), http.MethodGet, "/api/v1/labs/"+id, "", nil, http.StatusOK)
 	if snapshot.Header().Get("X-Event-Sequence") == "" {
 		t.Fatal("missing event sequence")

@@ -190,6 +190,7 @@ func TestDurableNetworkObjectCreateReturnsSameRESTAndMCPTaskEnvelope(t *testing.
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/labs/"+string(lab.ID)+"/network-objects", bytes.NewBufferString(`{"name":"bridge","kind":"bridge","config":{}}`))
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Idempotency-Key", "shared-network-key")
+	request.Header.Set("If-Match", "1")
 	response := httptest.NewRecorder()
 	engine.ServeHTTP(response, request)
 	if response.Code != http.StatusAccepted {
@@ -213,7 +214,7 @@ func TestDurableNetworkObjectCreateReturnsSameRESTAndMCPTaskEnvelope(t *testing.
 		t.Fatal("network create MCP tool missing")
 	}
 	mcpContext, _ := gin.CreateTestContext(httptest.NewRecorder())
-	result, err := createTool.Handler(mcpContext, map[string]any{"lab_id": string(lab.ID), "name": "bridge", "kind": "bridge", "config": map[string]any{}, "idempotency_key": "shared-network-key"})
+	result, err := createTool.Handler(mcpContext, map[string]any{"lab_id": string(lab.ID), "name": "bridge", "kind": "bridge", "config": map[string]any{}, "expected_revision": float64(1), "idempotency_key": "shared-network-key"})
 	if err != nil {
 		t.Fatal(err)
 	}

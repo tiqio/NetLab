@@ -9,6 +9,7 @@ import {
   type Node,
   type NodeInterface,
   type OperationTask,
+  type PlacementAssignment,
   type RuntimeCapabilityObservation,
   type TopologySnapshot,
 } from "../api";
@@ -117,6 +118,45 @@ export const useLaboratoryStore = defineStore("laboratory", {
         this.active.network_object_links = (
           this.active.network_object_links || []
         ).filter((link) => link.id !== id);
+    },
+    mergeAuthoritativeCreation(value: {
+      node?: Node;
+      interfaces?: NodeInterface[];
+      networkObject?: NetworkObject;
+      placement_assignment?: PlacementAssignment;
+      laboratory_revision?: number;
+    }) {
+      if (!this.active) return;
+      if (value.node)
+        this.upsert(this.active.nodes, value.node.id, value.node, value.node.revision);
+      for (const item of value.interfaces || [])
+        this.upsert(this.active.interfaces, item.id, item, item.revision);
+      if (value.networkObject)
+        this.upsert(
+          this.active.network_objects,
+          value.networkObject.id,
+          value.networkObject,
+          value.networkObject.revision,
+        );
+      const placement = value.placement_assignment?.placement;
+      if (placement) {
+        const current = this.active.placements.find(
+          (item) => item.resource_id === placement.resource_id,
+        );
+        if (!current) this.active.placements.push(placement);
+        else if (placement.revision >= current.revision)
+          Object.assign(current, placement);
+      }
+      if (
+        value.laboratory_revision !== undefined &&
+        value.laboratory_revision >= this.active.laboratory.revision
+      ) {
+        this.active.laboratory.revision = value.laboratory_revision;
+        const laboratory = this.labs.find(
+          (item) => item.id === this.active?.laboratory.id,
+        );
+        if (laboratory) laboratory.revision = value.laboratory_revision;
+      }
     },
     unhideNetworkObjectLink(id: string) {
       this.hiddenNetworkObjectLinkIds = this.hiddenNetworkObjectLinkIds.filter(

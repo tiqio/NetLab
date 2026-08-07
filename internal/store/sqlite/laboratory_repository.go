@@ -190,35 +190,58 @@ func (r *TopologyRepository) DeleteArtifacts(ctx context.Context, ids []domain.I
 
 func (r *TopologyRepository) CreateNode(ctx context.Context, node domain.Node, interfaces []domain.Interface) error {
 	return r.database.Write(ctx, func(tx *sql.Tx) error {
-		var duplicateCount int
-		if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM nodes WHERE laboratory_id=? AND name=?`, node.LaboratoryID, node.Name).Scan(&duplicateCount); err != nil {
-			return err
-		}
-		if duplicateCount > 0 {
-			return domain.Problem{
-				Code:         "node_name_conflict",
-				Message:      "当前实验室内已存在同名节点，请更换名称。",
-				ResourceType: "laboratory",
-				ResourceID:   node.LaboratoryID,
-				Details: map[string]any{
-					"fields": map[string]string{"name": "当前实验室内已存在同名节点，请更换名称。"},
-				},
-			}
-		}
-		config, _ := json.Marshal(node.Config)
-		_, err := tx.ExecContext(ctx, `INSERT INTO nodes(id,laboratory_id,name,kind,template_version_id,revision,desired_state,observed_state,cpu_count,cpu_quota_micros,memory_mib,storage_gib,interface_limit,process_limit,config_json,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, node.ID, node.LaboratoryID, node.Name, node.Kind, nullable(string(node.TemplateVersionID)), node.Revision, node.DesiredState, node.ObservedState, node.CPUCount, node.CPUQuotaMicros, node.MemoryMiB, node.StorageGiB, node.InterfaceLimit, node.ProcessLimit, config, node.CreatedAt.Format(time.RFC3339Nano), node.UpdatedAt.Format(time.RFC3339Nano))
-		if err != nil {
-			return err
-		}
-		for _, iface := range interfaces {
-			if _, err = tx.ExecContext(ctx, `INSERT INTO interfaces(id,node_id,slot,name,driver,mac_address,oper_state,revision) VALUES(?,?,?,?,?,?,?,?)`, iface.ID, iface.NodeID, iface.Slot, iface.Name, iface.Driver, iface.MACAddress, iface.OperationalState, iface.Revision); err != nil {
-				return err
-			}
-		}
-		data := eventData(node)
-		data["interfaces"] = interfaces
-		return appendEvent(ctx, tx, "node.created", node.LaboratoryID, "node", node.ID, node.Revision, "", data)
+		return insertNodeTx(ctx, tx, node, interfaces)
 	})
+}
+
+func (r *TopologyRepository) CreateNodeWithPlacement(ctx context.Context, node domain.Node, interfaces []domain.Interface, expected domain.Revision, intent *domain.PlacementIntent, entry string) (domain.PlacementAssignment, domain.Revision, error) {
+	var assignment domain.PlacementAssignment
+	var laboratoryRevision domain.Revision
+	err := r.database.Write(ctx, func(tx *sql.Tx) error {
+		var err error
+		if laboratoryRevision, err = advanceLaboratoryRevisionTx(ctx, tx, node.LaboratoryID, expected); err != nil {
+			return err
+		}
+		if err = insertNodeTx(ctx, tx, node, interfaces); err != nil {
+			return err
+		}
+		if assignment, err = allocateInitialPlacementTx(ctx, tx, node.LaboratoryID, node.ID, domain.PlacementNode, intent); err != nil {
+			return err
+		}
+		return appendEvent(ctx, tx, "topology.placements_changed", node.LaboratoryID, "laboratory", node.LaboratoryID, laboratoryRevision, "", map[string]any{"placements": []domain.TopologyPlacement{assignment.Placement}, "entry": entry, "placement_assignment": assignment})
+	})
+	return assignment, laboratoryRevision, err
+}
+
+func insertNodeTx(ctx context.Context, tx *sql.Tx, node domain.Node, interfaces []domain.Interface) error {
+	var duplicateCount int
+	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM nodes WHERE laboratory_id=? AND name=?`, node.LaboratoryID, node.Name).Scan(&duplicateCount); err != nil {
+		return err
+	}
+	if duplicateCount > 0 {
+		return domain.Problem{
+			Code:         "node_name_conflict",
+			Message:      "当前实验室内已存在同名节点，请更换名称。",
+			ResourceType: "laboratory",
+			ResourceID:   node.LaboratoryID,
+			Details: map[string]any{
+				"fields": map[string]string{"name": "当前实验室内已存在同名节点，请更换名称。"},
+			},
+		}
+	}
+	config, _ := json.Marshal(node.Config)
+	_, err := tx.ExecContext(ctx, `INSERT INTO nodes(id,laboratory_id,name,kind,template_version_id,revision,desired_state,observed_state,cpu_count,cpu_quota_micros,memory_mib,storage_gib,interface_limit,process_limit,config_json,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, node.ID, node.LaboratoryID, node.Name, node.Kind, nullable(string(node.TemplateVersionID)), node.Revision, node.DesiredState, node.ObservedState, node.CPUCount, node.CPUQuotaMicros, node.MemoryMiB, node.StorageGiB, node.InterfaceLimit, node.ProcessLimit, config, node.CreatedAt.Format(time.RFC3339Nano), node.UpdatedAt.Format(time.RFC3339Nano))
+	if err != nil {
+		return err
+	}
+	for _, iface := range interfaces {
+		if _, err = tx.ExecContext(ctx, `INSERT INTO interfaces(id,node_id,slot,name,driver,mac_address,oper_state,revision) VALUES(?,?,?,?,?,?,?,?)`, iface.ID, iface.NodeID, iface.Slot, iface.Name, iface.Driver, iface.MACAddress, iface.OperationalState, iface.Revision); err != nil {
+			return err
+		}
+	}
+	data := eventData(node)
+	data["interfaces"] = interfaces
+	return appendEvent(ctx, tx, "node.created", node.LaboratoryID, "node", node.ID, node.Revision, "", data)
 }
 
 func (r *TopologyRepository) GetNode(ctx context.Context, id domain.ID) (domain.Node, error) {

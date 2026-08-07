@@ -156,36 +156,44 @@ func (h *TopologyHandlers) deleteLab(c *gin.Context) {
 	c.JSON(http.StatusAccepted, gin.H{"task": value})
 }
 func (h *TopologyHandlers) createNode(c *gin.Context) {
+	revision, err := ParseRevision(c.GetHeader("If-Match"))
+	if err != nil {
+		writeProblem(c, http.StatusPreconditionRequired, domain.Problem{Code: "precondition_required", Message: "valid If-Match revision required"})
+		return
+	}
 	var body struct {
-		Name              string         `json:"name"`
-		Kind              string         `json:"kind"`
-		TemplateVersionID domain.ID      `json:"template_version_id"`
-		ImageVersionID    domain.ID      `json:"image_version_id"`
-		CPUCount          int            `json:"cpu_count"`
-		CPUQuotaMicros    int64          `json:"cpu_quota_micros"`
-		MemoryMiB         int            `json:"memory_mib"`
-		StorageGiB        int            `json:"storage_gib"`
-		InterfaceLimit    int            `json:"interface_limit"`
-		ProcessLimit      int            `json:"process_limit"`
-		NICDriver         string         `json:"nic_driver"`
-		InterfaceCount    int            `json:"interface_count"`
-		Config            map[string]any `json:"config"`
+		Name              string                  `json:"name"`
+		Kind              string                  `json:"kind"`
+		TemplateVersionID domain.ID               `json:"template_version_id"`
+		ImageVersionID    domain.ID               `json:"image_version_id"`
+		CPUCount          int                     `json:"cpu_count"`
+		CPUQuotaMicros    int64                   `json:"cpu_quota_micros"`
+		MemoryMiB         int                     `json:"memory_mib"`
+		StorageGiB        int                     `json:"storage_gib"`
+		InterfaceLimit    int                     `json:"interface_limit"`
+		ProcessLimit      int                     `json:"process_limit"`
+		NICDriver         string                  `json:"nic_driver"`
+		InterfaceCount    int                     `json:"interface_count"`
+		Config            map[string]any          `json:"config"`
+		PlacementIntent   *domain.PlacementIntent `json:"placement_intent"`
 		Bootstrap         struct {
 			UserData      string `json:"user_data"`
 			MetaData      string `json:"meta_data"`
 			NetworkConfig string `json:"network_config"`
 		} `json:"bootstrap"`
 	}
-	if err := c.ShouldBindJSON(&body); err != nil {
+	if err = c.ShouldBindJSON(&body); err != nil {
 		handleError(c, err)
 		return
 	}
-	node, interfaces, err := h.nodes.CreateConfigured(c, domain.ID(c.Param("labId")), command.CreateNodeRequest{Name: body.Name, Kind: body.Kind, TemplateVersionID: body.TemplateVersionID, ImageVersionID: body.ImageVersionID, CPUCount: body.CPUCount, CPUQuotaMicros: body.CPUQuotaMicros, MemoryMiB: body.MemoryMiB, StorageGiB: body.StorageGiB, InterfaceLimit: body.InterfaceLimit, ProcessLimit: body.ProcessLimit, NICDriver: body.NICDriver, InterfaceCount: body.InterfaceCount, Config: body.Config, Bootstrap: qemuRuntime.SeedSpec{UserData: body.Bootstrap.UserData, MetaData: body.Bootstrap.MetaData, NetworkConfig: body.Bootstrap.NetworkConfig}})
+	placementResult := command.CreateNodePlacementResult{}
+	node, interfaces, err := h.nodes.CreateConfigured(c, domain.ID(c.Param("labId")), command.CreateNodeRequest{Name: body.Name, Kind: body.Kind, TemplateVersionID: body.TemplateVersionID, ImageVersionID: body.ImageVersionID, CPUCount: body.CPUCount, CPUQuotaMicros: body.CPUQuotaMicros, MemoryMiB: body.MemoryMiB, StorageGiB: body.StorageGiB, InterfaceLimit: body.InterfaceLimit, ProcessLimit: body.ProcessLimit, NICDriver: body.NICDriver, InterfaceCount: body.InterfaceCount, Config: body.Config, Bootstrap: qemuRuntime.SeedSpec{UserData: body.Bootstrap.UserData, MetaData: body.Bootstrap.MetaData, NetworkConfig: body.Bootstrap.NetworkConfig}, ExpectedLabRevision: revision, PlacementIntent: body.PlacementIntent, Entry: "http", PlacementResult: &placementResult})
 	if err != nil {
 		handleError(c, err)
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"node": node, "interfaces": interfaces})
+	c.Header("ETag", strconv.FormatInt(int64(placementResult.LaboratoryRevision), 10))
+	c.JSON(http.StatusCreated, gin.H{"node": node, "interfaces": interfaces, "placement_assignment": placementResult.PlacementAssignment, "laboratory_revision": placementResult.LaboratoryRevision})
 }
 func (h *TopologyHandlers) setNodeState(c *gin.Context) {
 	revision, err := ParseRevision(c.GetHeader("If-Match"))

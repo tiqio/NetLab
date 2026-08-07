@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NetLab topology visual unification MCP contract delta",
+  "definitions": {
+    "placementIntent": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "preferred_x": { "type": "number", "minimum": -1000000, "maximum": 1000000 },
+        "preferred_y": { "type": "number", "minimum": -1000000, "maximum": 1000000 },
+        "footprint_class": {
+          "type": "string",
+          "enum": ["node-standard", "node-wide", "network-object-standard", "network-object-wide"]
+        },
+        "viewport_hint": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["min_x", "min_y", "max_x", "max_y"],
+          "properties": {
+            "min_x": { "type": "number" },
+            "min_y": { "type": "number" },
+            "max_x": { "type": "number" },
+            "max_y": { "type": "number" }
+          }
+        }
+      },
+      "dependentRequired": {
+        "preferred_x": ["preferred_y"],
+        "preferred_y": ["preferred_x"]
+      }
+    },
+    "placementAssignment": {
+      "type": "object",
+      "required": ["placement", "assigned_center", "adjusted", "reason", "footprint_class", "algorithm_version"],
+      "properties": {
+        "placement": {
+          "type": "object",
+          "required": ["laboratory_id", "resource_id", "resource_type", "x", "y", "revision"]
+        },
+        "requested_center": { "type": ["object", "null"] },
+        "assigned_center": {
+          "type": "object",
+          "required": ["x", "y"],
+          "properties": { "x": { "type": "number" }, "y": { "type": "number" } }
+        },
+        "adjusted": { "type": "boolean" },
+        "reason": {
+          "type": "string",
+          "enum": ["preferred_available", "collision_avoided", "default_anchor", "viewport_adjusted"]
+        },
+        "footprint_class": { "type": "string" },
+        "algorithm_version": { "type": "integer", "minimum": 1 }
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "netlab_create_node",
+      "description": "Creates a node and atomically assigns its authoritative non-overlapping topology placement.",
+      "inputSchema": {
+        "type": "object",
+        "required": ["laboratory_id", "laboratory_revision", "idempotency_key", "node"],
+        "properties": {
+          "laboratory_id": { "type": "string" },
+          "laboratory_revision": { "type": "integer", "minimum": 1 },
+          "idempotency_key": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "node": { "type": "object" },
+          "placement_intent": { "$ref": "#/definitions/placementIntent" }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": ["node", "interfaces", "placement_assignment", "laboratory_revision"],
+        "properties": {
+          "node": { "type": "object" },
+          "interfaces": { "type": "array", "items": { "type": "object" } },
+          "placement_assignment": { "$ref": "#/definitions/placementAssignment" },
+          "laboratory_revision": { "type": "integer" }
+        }
+      }
+    },
+    {
+      "name": "netlab_create_network_object",
+      "description": "Creates a Bridge, NAT, PC, L2 or L3 network object and atomically assigns its authoritative placement.",
+      "inputSchema": {
+        "type": "object",
+        "required": ["laboratory_id", "laboratory_revision", "idempotency_key", "network_object"],
+        "properties": {
+          "laboratory_id": { "type": "string" },
+          "laboratory_revision": { "type": "integer", "minimum": 1 },
+          "idempotency_key": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "network_object": { "type": "object" },
+          "placement_intent": { "$ref": "#/definitions/placementIntent" }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": ["network_object", "placement_assignment", "laboratory_revision"],
+        "properties": {
+          "network_object": { "type": "object" },
+          "placement_assignment": { "$ref": "#/definitions/placementAssignment" },
+          "laboratory_revision": { "type": "integer" }
+        }
+      }
+    },
+    {
+      "name": "netlab_get_topology",
+      "description": "Returns the shared topology snapshot. Clients derive the same connection presentation and legend from typed connection state and endpoints.",
+      "inputSchema": {
+        "type": "object",
+        "required": ["laboratory_id"],
+        "properties": { "laboratory_id": { "type": "string" } }
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": ["laboratory", "nodes", "network_objects", "connections", "placements"],
+        "properties": {
+          "laboratory": { "type": "object" },
+          "nodes": { "type": "array", "items": { "type": "object" } },
+          "network_objects": { "type": "array", "items": { "type": "object" } },
+          "connections": {
+            "type": "object",
+            "required": ["node_links", "network_attachments", "network_object_links"],
+            "properties": {
+              "node_links": { "type": "array", "items": { "type": "object" } },
+              "network_attachments": { "type": "array", "items": { "type": "object" } },
+              "network_object_links": { "type": "array", "items": { "type": "object" } }
+            }
+          },
+          "placements": { "type": "array", "items": { "type": "object" } }
+        }
+      }
+    }
+  ],
+  "invariants": [
+    "UI, HTTP and MCP create operations use the same application command handler.",
+    "The returned placement is authoritative; callers must not overwrite it with a client-predicted coordinate.",
+    "Equivalent retries with the same idempotency key return the same resource and placement.",
+    "Connection presentation and legend are derived; MCP does not mutate colors, line styles or legend entries."
+  ]
+}

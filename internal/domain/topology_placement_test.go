@@ -23,3 +23,21 @@ func TestValidatePlacementBatch(t *testing.T) {
 		})
 	}
 }
+
+func TestValidatePlacementIntent(t *testing.T) {
+	x, y := 10.0, -20.0
+	if err := ValidatePlacementIntent(PlacementNode, &PlacementIntent{PreferredX: &x, PreferredY: &y, FootprintClass: FootprintNodeStandard}); err != nil {
+		t.Fatal(err)
+	}
+	for name, intent := range map[string]PlacementIntent{
+		"partial": {PreferredX: &x},
+		"bounds":  {PreferredX: func() *float64 { value := float64(MaxPlacementCoordinate + 1); return &value }(), PreferredY: &y},
+		"class":   {PreferredX: &x, PreferredY: &y, FootprintClass: FootprintNetworkObjectStandard},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if err := ValidatePlacementIntent(PlacementNode, &intent); err == nil {
+				t.Fatal("expected validation error")
+			}
+		})
+	}
+}
