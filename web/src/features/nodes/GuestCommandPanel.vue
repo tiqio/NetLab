@@ -92,8 +92,8 @@ watch(
       <StatusBadge v-if="completedTask" :state="completedTask.state" />
     </div>
     <FormField
-      label="Shell 命令"
-      hint="通过 QEMU Guest Agent 在客户机内使用 /bin/sh -lc 执行，支持管道、重定向和命令组合。"
+      label="命令解释器命令"
+      hint="通过 QEMU 客户机代理交给客户机内的系统命令解释器执行，支持管道、重定向和命令组合。"
     >
       <Textarea
         v-model="command"
@@ -104,7 +104,7 @@ watch(
       />
     </FormField>
     <Button class="mt-2" size="sm" type="submit" :disabled="busy">
-      {{ busy ? "正在执行…" : "通过 QEMU Guest Agent 执行" }}
+      {{ busy ? "正在执行…" : "通过 QEMU 客户机代理执行" }}
     </Button>
     <p role="status" class="mt-2 text-xs text-muted-foreground">
       {{ status }}
