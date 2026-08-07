@@ -126,7 +126,7 @@ func TestDockerEndpointEnsureAndRollback(t *testing.T) {
 		t.Fatal(err)
 	}
 	joined := strings.Join(executor.commands, "\n")
-	for _, expected := range []string{"link add", "netns 42", "nsenter -t 42 -n", "eth0 up", "address replace 192.0.2.10/24 dev eth0", "address replace 2001:db8::10/64 dev eth0", "accept_ra=2", "systemd-run", "dhclient -d -v -4", "dhclient -d -v -6", "NETLAB_CONTAINER_PID=42"} {
+	for _, expected := range []string{"link add", "netns 42", "nsenter -t 42 -n", "eth0 up", "address replace 192.0.2.10/24 dev eth0", "address replace 2001:db8::10/64 dev eth0", "accept_ra=2", "systemd-run", "dhclient -d -v -4", "dhclient -d -v -6", "BindPaths=/proc/42/root/etc/resolv.conf:/etc/resolv.conf"} {
 		if !strings.Contains(joined, expected) {
 			t.Fatalf("missing %q in %s", expected, joined)
 		}
@@ -164,13 +164,13 @@ func TestDockerEndpointDHCPUsesHostClientWithoutContainerMountNamespace(t *testi
 			t.Fatalf("missing %q:\n%s", expected, joined)
 		}
 	}
-	script, err := os.ReadFile(runtime.dhclientScriptPath())
-	if err != nil {
-		t.Fatal(err)
+	for _, expected := range []string{"--property=PrivateMounts=yes", "BindPaths=/proc/42/root/etc/resolv.conf:/etc/resolv.conf", "BindReadOnlyPaths=", "/etc/dhcp/dhclient-enter-hooks.d", "/etc/dhcp/dhclient-exit-hooks.d"} {
+		if !strings.Contains(joined, expected) {
+			t.Fatalf("missing DHCP mount isolation %q:\n%s", expected, joined)
+		}
 	}
-	text := string(script)
-	if strings.Contains(text, ": > /etc/resolv.conf") || !strings.Contains(text, `/proc/${NETLAB_CONTAINER_PID}/root/etc/resolv.conf`) {
-		t.Fatalf("DHCP script must only target the owned container resolver: %s", text)
+	if strings.Contains(joined, " -sf ") {
+		t.Fatalf("host dhclient must use its AppArmor-approved system script:\n%s", joined)
 	}
 }
 
