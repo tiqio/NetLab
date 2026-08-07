@@ -53,7 +53,7 @@
 - [X] T009 [P] [US1] 为跨连接类别 route group、稳定排序和 2/3/4 条平行线对称曲率编写失败单测到 `web/src/features/topology/topologyParallelRoutes.test.ts`
 - [X] T010 [P] [US1] 扩展 `web/src/features/topology/topologyVisualSemantics.test.ts`，覆盖处理中、失败、断开、选中、聚焦、抓包和 Traffic Filter 的视觉优先级
 - [X] T011 [P] [US1] 扩展 `web/src/features/topology/TopologyCanvas.test.ts`，验证三类连接共享渲染路径、端点标签和独立点击/右键区域
-- [ ] T012 [P] [US1] 扩展 `web/src/features/topology/TopologyCanvas.a11y.test.ts`、`web/src/features/topology/TopologyCanvas.performance.test.ts`、`web/src/features/diagnostics/GlobalCaptureWorkspace.test.ts` 与 `web/src/features/diagnostics/TrafficFilterPanel.test.ts`，覆盖非颜色状态、键盘聚焦、observation 更新不触发节点重布局且抓包/Wireshark 制品语义不变
+- [X] T012 [P] [US1] 扩展 `web/src/features/topology/TopologyCanvas.a11y.test.ts`、`web/src/features/topology/TopologyCanvas.performance.test.ts`、`web/src/features/diagnostics/GlobalCaptureWorkspace.test.ts` 与 `web/src/features/diagnostics/TrafficFilterPanel.test.ts`，覆盖非颜色状态、键盘聚焦、observation 更新不触发节点重布局且抓包/Wireshark 制品语义不变
 - [ ] T013 [P] [US1] 在 `tests/e2e/journeys/topologyVisualRecognition.spec.ts` 增加混合连接状态、50%/100%/200% 平行线选择和 Traffic Filter 衰减场景
 
 ### Implementation for User Story 1
@@ -63,8 +63,8 @@
 - [X] T016 [US1] 在 `web/src/features/topology/topologyParallelRoutes.ts` 实现无方向 route group、稳定组内排序和跨类型对称路径偏移
 - [X] T017 [US1] 重构 `web/src/features/topology/TopologyCanvas.vue`，让 ECharts 基础边只消费统一投影和平行路径结果，并保持 `layout: none` 与权威节点坐标
 - [X] T018 [US1] 更新 `web/src/features/topology/linkPresentation.ts`，统一使用 `资源名:端口 ↔ 资源名:端口` 标签、逻辑接入口名称和状态文本
-- [ ] T019 [US1] 更新 `web/src/features/topology/trafficPathTypes.ts` 与 `web/src/features/topology/TopologyCanvas.vue`，把 Traffic Filter 粒子、方向提示和 capture active 实现为有期限覆盖层且只归属具体连接 ID
-- [ ] T020 [US1] 更新 `web/src/features/topology/LinkContextMenu.vue` 与 `web/src/features/topology/TopologyInspector.vue`，让三类连接使用一致选择、检查、删除、抓包能力展示和禁用原因
+- [X] T019 [US1] 更新 `web/src/features/topology/trafficPathTypes.ts` 与 `web/src/features/topology/TopologyCanvas.vue`，把 Traffic Filter 粒子、方向提示和 capture active 实现为有期限覆盖层且只归属具体连接 ID
+- [X] T020 [US1] 更新 `web/src/features/topology/LinkContextMenu.vue` 与 `web/src/features/topology/TopologyInspector.vue`，让三类连接使用一致选择、检查、删除、抓包能力展示和禁用原因
 - [ ] T021 [US1] 运行 US1 的 Vitest、Playwright、lint 和 build 门禁，将结果写入 `specs/010-topology-visual-unification/validation/milestones.md` 并创建“统一连接状态视觉”聚焦 Git 提交
 
 **Checkpoint**: US1 可独立交付；用户无需理解内部连接类型即可判断状态和观察平行线路。
@@ -81,7 +81,7 @@
 
 - [X] T022 [P] [US2] 为 NAT 管理上联、共享广播域和普通点到点连接的 marker 派生规则编写失败单测到 `web/src/features/topology/topologyConnectionSemantics.test.ts`
 - [X] T023 [P] [US2] 为动态项生成、删除后消失、数量统计和匹配连接集合编写失败单测到 `web/src/features/topology/topologyConnectionLegend.test.ts`
-- [ ] T024 [P] [US2] 为折叠、滚动、hover/focus 强调、浅色/深色和 accessible name 编写失败组件测试到 `web/src/features/topology/TopologyConnectionLegend.test.ts`
+- [X] T024 [P] [US2] 为折叠、滚动、hover/focus 强调、浅色/深色和 accessible name 编写失败组件测试到 `web/src/features/topology/TopologyConnectionLegend.test.ts`
 - [ ] T025 [P] [US2] 在 `tests/e2e/journeys/topologyVisualRecognition.spec.ts` 增加 NAT/Bridge 语义标记、动态图例删除和双主题键盘验收场景
 
 ### Implementation for User Story 2
@@ -90,7 +90,7 @@
 - [X] T027 [US2] 在 `web/src/features/topology/topologyConnectionLegend.ts` 从当前 `ConnectionPresentation[]` 派生状态项、动态语义项、数量、分类依据和可聚焦连接集合，供图例与诊断审计复用
 - [X] T028 [US2] 新建 `web/src/features/topology/TopologyConnectionLegend.vue`，实现中文说明、折叠/滚动、键盘聚焦和非破坏性匹配连接强调
 - [X] T029 [US2] 更新 `web/src/features/topology/TopologyCanvas.vue` 与 `web/src/features/topology/TopologyWorkspace.vue`，渲染语义徽标并把动态图例放入左下角现有图例布局而不遮挡画布控件
-- [ ] T030 [P] [US2] 将状态、NAT 上联、共享广播域及差异原因文案集中到 `web/src/locales/zh-CN.ts` 与 `web/src/locales/terminology.ts`
+- [X] T030 [P] [US2] 将状态、NAT 上联、共享广播域及差异原因文案集中到 `web/src/locales/zh-CN.ts` 与 `web/src/locales/terminology.ts`
 - [ ] T031 [US2] 运行 US2 的 Vitest、axe、Playwright、主题和布局门禁，将结果写入 `specs/010-topology-visual-unification/validation/milestones.md` 并创建“连接语义与动态图例”聚焦 Git 提交
 
 **Checkpoint**: US2 可独立验收；未解释的特殊样式数量为零，普通拓扑不产生多余图例。
@@ -108,10 +108,10 @@
 - [X] T032 [P] [US3] 扩展 `internal/domain/topology_placement_test.go`，先覆盖 placement intent、受控 footprint class、坐标边界和首选坐标成对校验
 - [X] T033 [P] [US3] 新建 `internal/domain/topology_placement_allocator_test.go`，先覆盖最近候选、稳定方形螺旋、clearance、密集扩展、候选耗尽和不移动既有 placement
 - [X] T034 [P] [US3] 扩展 `internal/store/sqlite/topology_placement_repository_test.go`，先覆盖 SQLite 写事务中的碰撞裁决、20 次创建、并发创建、revision 和回滚
-- [ ] T035 [P] [US3] 扩展 `internal/store/sqlite/laboratory_repository_test.go`，先验证节点、接口、placement、实验室 revision 和 outbox 原子提交或全部回滚
-- [ ] T036 [P] [US3] 扩展 `internal/store/sqlite/network_state_repository_test.go`，先验证网络对象、placement、实验室 revision 和 outbox 原子提交或全部回滚
-- [ ] T037 [P] [US3] 新建 `internal/api/http/topology_creation_contract_test.go`，先覆盖节点/网络对象 placement intent、adjustment metadata、If-Match、幂等冲突和结构化错误
-- [ ] T038 [P] [US3] 扩展 `web/src/features/topology/CreateTopologyResourceDrawer.test.ts`，先验证创建请求携带画布中心 intent 且 UI 使用响应中的权威 placement
+- [X] T035 [P] [US3] 扩展 `internal/store/sqlite/laboratory_repository_test.go`，先验证节点、接口、placement、实验室 revision 和 outbox 原子提交或全部回滚
+- [X] T036 [P] [US3] 扩展 `internal/store/sqlite/network_state_repository_test.go`，先验证网络对象、placement、实验室 revision 和 outbox 原子提交或全部回滚
+- [X] T037 [P] [US3] 新建 `internal/api/http/topology_creation_contract_test.go`，先覆盖节点/网络对象 placement intent、adjustment metadata、If-Match、幂等冲突和结构化错误
+- [X] T038 [P] [US3] 扩展 `web/src/features/topology/CreateTopologyResourceDrawer.test.ts`，先验证创建请求携带画布中心 intent 且 UI 使用响应中的权威 placement
 - [ ] T039 [P] [US3] 扩展 `web/src/features/topology/TopologyWorkspace.test.ts` 与 `web/src/stores/laboratory.test.ts`，先验证创建后不再二次补写预测位置、权威位置收敛和“定位新资源”
 - [ ] T040 [P] [US3] 新建 `tests/e2e/journeys/topologyAuthoritativePlacement.spec.ts`，先覆盖 20 个混合资源、标签/端口/加号足迹、拥挤区域扩展和刷新后坐标保持
 
@@ -125,7 +125,7 @@
 - [X] T046 [US3] 扩展 `internal/app/command/node.go`，让节点创建接受 placement intent、expected revision 和 idempotency key，并返回 `PlacementAssignment`
 - [X] T047 [US3] 扩展 `internal/app/reconcile/network_object_tasks.go`，让网络对象创建通过同一 placement allocator 和事务合同返回权威 assignment
 - [X] T048 [US3] 更新 `internal/api/http/topology_handlers.go` 与 `internal/api/http/network_handlers.go`，解析 placement intent/If-Match/Idempotency-Key 并返回资源、权威 placement、实验室 revision 和调整原因
-- [ ] T049 [US3] 将 feature delta 合并到正式 `specs/001-network-simulator-platform/contracts/openapi.yaml`，同步节点与网络对象创建的 placement、revision、幂等和错误合同
+- [X] T049 [US3] 将 feature delta 合并到正式 `specs/001-network-simulator-platform/contracts/openapi.yaml`，同步节点与网络对象创建的 placement、revision、幂等和错误合同
 - [X] T050 [US3] 更新 `web/src/api/generated.ts` 与 `web/src/api/index.ts`，加入 `PlacementIntent`、`PlacementAssignment` 和两个创建响应类型，并传递 If-Match/idempotency
 - [X] T051 [US3] 更新 `web/src/features/topology/CreateTopologyResourceDrawer.vue`，从画布上下文提交 placement intent 并展示非阻断“已避让现有资源”反馈
 - [X] T052 [US3] 更新 `web/src/features/topology/TopologyWorkspace.vue`，删除创建后调用 placement batch 的两阶段流程，以返回 assignment 为准且不移动已有资源
@@ -144,10 +144,10 @@
 
 ### Tests for User Story 4
 
-- [ ] T055 [P] [US4] 扩展 `internal/api/mcp/server_test.go`，先覆盖节点/网络对象创建工具的 placement intent、revision、幂等、权威 assignment 和结构化冲突
-- [ ] T056 [P] [US4] 扩展 `internal/app/query/topology_placement_test.go` 并新建 `internal/app/query/laboratory_test.go`，先验证重启查询保留旧坐标和全部新 placement
-- [ ] T057 [P] [US4] 扩展 `internal/store/sqlite/import_repository_test.go`，先验证导入旧实验室不重新计算已有坐标且新资源避开旧重叠区域
-- [ ] T058 [P] [US4] 扩展 `web/src/stores/laboratory.runtimeTruth.test.ts`，先验证乱序/重复 placement 事件、多客户端创建和刷新恢复最终收敛
+- [X] T055 [P] [US4] 扩展 `internal/api/mcp/server_test.go`，先覆盖节点/网络对象创建工具的 placement intent、revision、幂等、权威 assignment 和结构化冲突
+- [X] T056 [P] [US4] 扩展 `internal/app/query/topology_placement_test.go` 并新建 `internal/app/query/laboratory_test.go`，先验证重启查询保留旧坐标和全部新 placement
+- [X] T057 [P] [US4] 扩展 `internal/store/sqlite/import_repository_test.go`，先验证导入旧实验室不重新计算已有坐标且新资源避开旧重叠区域
+- [X] T058 [P] [US4] 扩展 `web/src/stores/laboratory.runtimeTruth.test.ts`，先验证乱序/重复 placement 事件、多客户端创建和刷新恢复最终收敛
 - [ ] T059 [P] [US4] 扩展 `tests/e2e/journeys/concurrentClients.spec.ts`，先覆盖两个浏览器加 HTTP/MCP 的 10 组并发创建和 2 秒布局收敛
 - [ ] T060 [P] [US4] 新建 `tests/e2e/journeys/topologyPlacementRecovery.spec.ts`，先覆盖旧坐标升级对比、服务重启、旧连接视觉恢复和实验室删除清理
 - [ ] T061 [P] [US4] 扩展 `acceptance/t225-service-restart.sh`，先加入 placement 数量/坐标摘要、连接状态、孤立 placement 和删除后资源泄漏断言
@@ -155,11 +155,11 @@
 ### Implementation for User Story 4
 
 - [X] T062 [US4] 更新 `internal/api/mcp/network_tools.go`，让节点和网络对象创建工具使用与 HTTP 相同的 application command、placement intent、revision 和 idempotency 语义
-- [ ] T063 [US4] 更新 `internal/api/mcp/topology_placement_tools.go` 与 `specs/001-network-simulator-platform/contracts/mcp-tools.md`，返回权威 assignment 并明确手工移动工具不承担首次放置
-- [ ] T064 [US4] 更新 `internal/app/query/laboratory.go` 与 `internal/app/query/topology_placement.go`，保证 snapshot 在资源创建事件后包含权威 placement 且排序稳定
-- [ ] T065 [US4] 更新 `internal/api/stream/events.go` 与 `web/src/stores/laboratory.ts`，让资源创建/placement 事件按 sequence 幂等收敛且不产生 `(0,0)` 临时事实
-- [ ] T066 [US4] 更新 `internal/store/sqlite/import_repository.go`，导入时原样保留已有 placement，并为缺失 placement 的旧资源采用兼容 fallback 而不重排已定位资源
-- [ ] T067 [US4] 更新 `web/src/features/topology/topologyLayout.ts` 与 `web/src/features/topology/TopologyCanvas.vue`，仅对真正缺失 placement 的旧资源使用稳定 fallback，收到权威位置后局部收敛且不触发全图 relayout
+- [X] T063 [US4] 更新 `internal/api/mcp/topology_placement_tools.go` 与 `specs/001-network-simulator-platform/contracts/mcp-tools.md`，返回权威 assignment 并明确手工移动工具不承担首次放置
+- [X] T064 [US4] 更新 `internal/app/query/laboratory.go` 与 `internal/app/query/topology_placement.go`，保证 snapshot 在资源创建事件后包含权威 placement 且排序稳定
+- [X] T065 [US4] 更新 `internal/api/stream/events.go` 与 `web/src/stores/laboratory.ts`，让资源创建/placement 事件按 sequence 幂等收敛且不产生 `(0,0)` 临时事实
+- [X] T066 [US4] 更新 `internal/store/sqlite/import_repository.go`，导入时原样保留已有 placement，并为缺失 placement 的旧资源采用兼容 fallback 而不重排已定位资源
+- [X] T067 [US4] 更新 `web/src/features/topology/topologyLayout.ts` 与 `web/src/features/topology/TopologyCanvas.vue`，仅对真正缺失 placement 的旧资源使用稳定 fallback，收到权威位置后局部收敛且不触发全图 relayout
 - [ ] T068 [US4] 在 `acceptance/frontend-acceptance.sh` 增加混合资源、控制面并发创建、重启恢复和删除清理场景，并将资源台账限制到专用 acceptance Lab
 - [ ] T069 [US4] 运行 US4 的 MCP/查询/导入/store/并发/recovery/leak 门禁，将结果写入 `specs/010-topology-visual-unification/validation/milestones.md` 并创建“控制面一致与恢复”聚焦 Git 提交
 

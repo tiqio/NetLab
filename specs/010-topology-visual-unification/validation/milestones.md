@@ -3,19 +3,19 @@
 ## M1 — Unified Connection Presentation
 
 ```text
-Commit SHA:
-Focused tests:
-Result:
-Notes:
+Commit SHA: 550cf74
+Focused tests: TopologyCanvas unit/a11y/performance, GlobalCaptureWorkspace, TrafficFilterPanel, desktop mocked Playwright
+Result: PASS
+Notes: Traffic Filter and capture overlays are connection-ID scoped, time bounded, and preserve the underlying connection state. All connection kinds expose consistent inspector/context capabilities and explicit disabled reasons.
 ```
 
 ## M2 — Semantic Markers and Dynamic Legend
 
 ```text
-Commit SHA:
-Focused tests:
-Result:
-Notes:
+Commit SHA: 550cf74
+Focused tests: TopologyConnectionLegend component tests, Vue typecheck, focused ESLint, desktop mocked Playwright in light/dark themes
+Result: PASS
+Notes: State and semantic text is centralized in Chinese terminology. The dynamic legend supports collapse, scroll, keyboard focus, accessible names, and non-destructive connection highlighting.
 ```
 
 ## M3 — Authoritative Collision-Free Placement
@@ -30,10 +30,10 @@ Notes: Nodes and network objects now commit resource, placement, laboratory revi
 ## M4 — Control-Plane Parity and Recovery
 
 ```text
-Commit SHA:
-Focused tests:
-Result:
-Notes:
+Commit SHA: 550cf74
+Focused tests: Go command/query/SQLite/HTTP/MCP/stream packages; 87 focused Vitest tests; Vue typecheck; stable local Playwright visual scenarios
+Result: PARTIAL PASS
+Notes: Import/export preserves placements and deterministically fills only missing legacy coordinates. Atomic create now publishes placement before resource creation so other clients converge without temporary (0,0). MCP conflicts, restart persistence, stale/duplicate placement events, and local fallback stability are covered. Concurrent browser and target-host recovery acceptance remain pending.
 ```
 
 ## Deployment Candidate
