@@ -23,6 +23,34 @@ describe("topology symbols", () => {
     ).toContain(`fill="${fill}"`);
   });
 
+  it.each([
+    "qemu",
+    "docker",
+    "pc",
+    "bridge",
+    "nat_bridge",
+    "switch_l2",
+    "switch_l3",
+  ])("renders %s SVG details dark in the light theme", (kind) => {
+    const svg = decodeSymbol(
+      topologySymbol(kind, { theme: "light", observedState: "stopped" }),
+    );
+    expect(svg).toContain("#0f172a");
+    expect(svg).not.toContain("#ffffff");
+    expect(svg).not.toContain("#f8fafc");
+  });
+
+  it("keeps QEMU SVG details light in the dark theme", () => {
+    expect(
+      decodeSymbol(
+        topologySymbol("qemu", {
+          theme: "dark",
+          observedState: "stopped",
+        }),
+      ),
+    ).toContain("#f8fafc");
+  });
+
   it("uses runtime state, selection, and traffic as the icon outline", () => {
     expect(
       decodeSymbol(

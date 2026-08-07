@@ -80,7 +80,7 @@ const stateOutline = {
     selected: "#0f172a",
     focused: "#a16207",
     traffic: "#c2410c",
-    detail: "#ffffff",
+    detail: "#0f172a",
   },
 } as const;
 
