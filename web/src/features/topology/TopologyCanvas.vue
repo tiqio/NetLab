@@ -36,7 +36,10 @@ import {
   type InteractionAction,
 } from "./topologyInteractionController";
 import { topologySymbol } from "./topologySymbols";
-import { resourceVisualSemantic } from "./topologyVisualSemantics";
+import {
+  resourceVisualSemantic,
+  topologyCategoryIndex,
+} from "./topologyVisualSemantics";
 
 const props = withDefaults(
   defineProps<{
@@ -672,10 +675,22 @@ const option = computed(() => ({
       },
       emphasis: { focus: "adjacency" },
       categories: [
-        { name: "QEMU" },
-        { name: "Docker" },
-        { name: "轻量节点" },
-        { name: "网络对象" },
+        {
+          name: "QEMU",
+          itemStyle: { color: "var(--topology-kind-qemu)" },
+        },
+        {
+          name: "Docker",
+          itemStyle: { color: "var(--topology-kind-docker)" },
+        },
+        {
+          name: "轻量节点",
+          itemStyle: { color: "var(--topology-kind-lightweight)" },
+        },
+        {
+          name: "网络对象",
+          itemStyle: { color: "var(--topology-kind-network)" },
+        },
       ],
       data: [
         ...props.nodes.map((node) => {
@@ -699,7 +714,7 @@ const option = computed(() => ({
             value: node.observed_state,
             x: placements.value[node.id].x,
             y: placements.value[node.id].y,
-            category: node.kind === "qemu" ? 0 : node.kind === "docker" ? 1 : 2,
+            category: topologyCategoryIndex(node.kind),
             symbol: topologySymbol(node.kind),
             symbolSize: selected.value.has(node.id) ? 64 : 56,
             itemStyle: {
@@ -738,7 +753,7 @@ const option = computed(() => ({
             ),
             x: placements.value[item.id].x,
             y: placements.value[item.id].y,
-            category: 3,
+            category: topologyCategoryIndex(item.kind),
             symbol: topologySymbol(item.kind),
             symbolSize: selected.value.has(item.id) ? 62 : 54,
             itemStyle: {

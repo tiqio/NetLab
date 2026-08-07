@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   normalizeTopologyKind,
   resourceVisualSemantic,
+  topologyCategoryIndex,
 } from "./topologyVisualSemantics";
 
 describe("topology visual semantics", () => {
@@ -40,19 +41,30 @@ describe("topology visual semantics", () => {
       borderColor: "var(--topology-selected)",
     });
   });
-  it("uses semantic palette tokens for every runtime state", () => {
+  it("uses device type for fill and runtime state for borders", () => {
     expect(resourceVisualSemantic("qemu", "running").color).toBe(
-      "var(--topology-running)",
+      "var(--topology-kind-qemu)",
     );
-    expect(resourceVisualSemantic("qemu", "failed").color).toBe(
+    expect(resourceVisualSemantic("docker", "running").color).toBe(
+      "var(--topology-kind-docker)",
+    );
+    expect(resourceVisualSemantic("qemu", "failed").borderColor).toBe(
       "var(--topology-failed)",
     );
-    expect(resourceVisualSemantic("qemu", "starting").color).toBe(
+    expect(resourceVisualSemantic("qemu", "starting").borderColor).toBe(
       "var(--topology-transition)",
     );
     expect(
       resourceVisualSemantic("qemu", "stopped", false, true).borderColor,
     ).toBe("var(--topology-traffic)");
+  });
+  it("maps lightweight and infrastructure objects to distinct legend groups", () => {
+    expect(topologyCategoryIndex("qemu")).toBe(0);
+    expect(topologyCategoryIndex("docker")).toBe(1);
+    expect(topologyCategoryIndex("pc")).toBe(2);
+    expect(topologyCategoryIndex("switch_l3")).toBe(2);
+    expect(topologyCategoryIndex("bridge")).toBe(3);
+    expect(topologyCategoryIndex("nat_bridge")).toBe(3);
   });
   it("labels desired and actual state independently", () => {
     expect(

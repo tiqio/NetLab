@@ -2,7 +2,7 @@ import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick, watchEffect } from "vue";
 import { defaultWorkspacePreferences } from "@/composables/useWorkspacePreferences";
-import { nodeFactory } from "@/test/factories";
+import { networkObjectFactory, nodeFactory } from "@/test/factories";
 let captured: unknown;
 vi.mock("@/components/charts/EChart.vue", () => ({
   default: {
@@ -114,7 +114,12 @@ describe("TopologyCanvas", () => {
     });
     const option = captured as {
       legend: Array<Record<string, unknown>>;
-      series: Array<{ categories: Array<{ name: string }> }>;
+      series: Array<{
+        categories: Array<{
+          name: string;
+          itemStyle: { color: string };
+        }>;
+      }>;
     };
     expect(option.legend[0]).toMatchObject({
       left: 12,
@@ -129,6 +134,59 @@ describe("TopologyCanvas", () => {
       "轻量节点",
       "网络对象",
     ]);
+    expect(
+      option.series[0].categories.map((item) => item.itemStyle.color),
+    ).toEqual([
+      "var(--topology-kind-qemu)",
+      "var(--topology-kind-docker)",
+      "var(--topology-kind-lightweight)",
+      "var(--topology-kind-network)",
+    ]);
+  });
+  it("applies legend type colors to graph resources", () => {
+    mount(TopologyCanvas, {
+      props: {
+        nodes: [
+          nodeFactory({ id: "qemu", kind: "qemu" }),
+          nodeFactory({ id: "docker", kind: "docker" }),
+        ],
+        interfaces: [],
+        links: [],
+        networkObjects: [
+          networkObjectFactory({ id: "pc", kind: "pc" }),
+          networkObjectFactory({ id: "nat", kind: "nat_bridge" }),
+        ],
+        preferences: defaultWorkspacePreferences("lab"),
+      },
+    });
+    const option = captured as {
+      series: Array<{
+        data: Array<{
+          id: string;
+          category: number;
+          itemStyle: { color: string };
+        }>;
+      }>;
+    };
+    const resources = new Map(
+      option.series[0].data.map((item) => [item.id, item]),
+    );
+    expect(resources.get("qemu")).toMatchObject({
+      category: 0,
+      itemStyle: { color: "var(--topology-kind-qemu)" },
+    });
+    expect(resources.get("docker")).toMatchObject({
+      category: 1,
+      itemStyle: { color: "var(--topology-kind-docker)" },
+    });
+    expect(resources.get("pc")).toMatchObject({
+      category: 2,
+      itemStyle: { color: "var(--topology-kind-lightweight)" },
+    });
+    expect(resources.get("nat")).toMatchObject({
+      category: 3,
+      itemStyle: { color: "var(--topology-kind-network)" },
+    });
   });
   it("emits context actions for first-class object links", async () => {
     const wrapper = mount(TopologyCanvas, {

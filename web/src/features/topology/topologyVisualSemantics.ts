@@ -33,8 +33,32 @@ const kindLabels: Record<TopologySymbolKind, string> = {
   fallback: "通用网络设备",
 };
 
+const kindColors: Record<TopologySymbolKind, string> = {
+  qemu: "var(--topology-kind-qemu)",
+  docker: "var(--topology-kind-docker)",
+  pc: "var(--topology-kind-lightweight)",
+  switch_l2: "var(--topology-kind-lightweight)",
+  switch_l3: "var(--topology-kind-lightweight)",
+  bridge: "var(--topology-kind-network)",
+  nat_bridge: "var(--topology-kind-network)",
+  fallback: "var(--topology-kind-network)",
+};
+
 export function normalizeTopologyKind(kind: string): TopologySymbolKind {
   return kind in kindLabels ? (kind as TopologySymbolKind) : "fallback";
+}
+
+export function topologyCategoryIndex(kind: string): number {
+  const normalizedKind = normalizeTopologyKind(kind);
+  if (normalizedKind === "qemu") return 0;
+  if (normalizedKind === "docker") return 1;
+  if (
+    normalizedKind === "pc" ||
+    normalizedKind === "switch_l2" ||
+    normalizedKind === "switch_l3"
+  )
+    return 2;
+  return 3;
 }
 
 export function lifecycleSemantic(state: string): VisualSemantic {
@@ -50,7 +74,7 @@ export function resourceVisualSemantic(
 ): VisualSemantic {
   const normalizedKind = normalizeTopologyKind(kind);
   let stateLabel = "已停止或状态未知";
-  let color = "var(--topology-port-muted)";
+  let stateColor = "var(--topology-port-muted)";
   let symbol: VisualSemantic["symbol"] = "roundRect";
   let pattern: VisualSemantic["pattern"] = "solid";
   if (
@@ -59,11 +83,11 @@ export function resourceVisualSemantic(
     observedState === "active"
   ) {
     stateLabel = "运行中";
-    color = "var(--topology-running)";
+    stateColor = "var(--topology-running)";
     symbol = "circle";
   } else if (observedState === "failed") {
     stateLabel = "失败";
-    color = "var(--topology-failed)";
+    stateColor = "var(--topology-failed)";
     symbol = "diamond";
     pattern = "dotted";
   } else if (
@@ -72,7 +96,7 @@ export function resourceVisualSemantic(
     )
   ) {
     stateLabel = "状态转换中";
-    color = "var(--topology-transition)";
+    stateColor = "var(--topology-transition)";
     pattern = "dashed";
   }
   const desiredStateLabel = desiredState
@@ -90,12 +114,12 @@ export function resourceVisualSemantic(
     label: desiredStateLabel
       ? `${kindLabels[normalizedKind]} · 期望 ${desiredStateLabel} · 实际 ${stateLabel}`
       : `${kindLabels[normalizedKind]} · ${stateLabel}`,
-    color,
+    color: kindColors[normalizedKind],
     borderColor: selected
       ? "var(--topology-selected)"
       : traffic
         ? "var(--topology-traffic)"
-        : color,
+        : stateColor,
     symbol,
     pattern,
     selected,

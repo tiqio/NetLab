@@ -24,6 +24,10 @@ describe("semantic theme", () => {
   it("为拓扑和图表提供语义变量", () => {
     for (const token of [
       "--topology-running",
+      "--topology-kind-qemu",
+      "--topology-kind-docker",
+      "--topology-kind-lightweight",
+      "--topology-kind-network",
       "--topology-failed",
       "--topology-transition",
       "--topology-selected",

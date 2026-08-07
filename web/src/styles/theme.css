@@ -35,6 +35,10 @@
   --topology-grid: rgba(148, 163, 184, 0.09);
   --topology-canvas: #08131d;
   --topology-link: #71869a;
+  --topology-kind-qemu: #3b82f6;
+  --topology-kind-docker: #14b8a6;
+  --topology-kind-lightweight: #a78bfa;
+  --topology-kind-network: #f59e0b;
   --topology-active: #2dd4bf;
   --topology-running: #22c55e;
   --topology-failed: #ef4444;
@@ -98,6 +102,10 @@
   --topology-grid: rgba(71, 85, 105, 0.13);
   --topology-canvas: #eef3f7;
   --topology-link: #607487;
+  --topology-kind-qemu: #2563eb;
+  --topology-kind-docker: #0f766e;
+  --topology-kind-lightweight: #7c3aed;
+  --topology-kind-network: #c2410c;
   --topology-active: #0f766e;
   --topology-running: #15803d;
   --topology-failed: #dc2626;
