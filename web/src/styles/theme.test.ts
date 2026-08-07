@@ -49,6 +49,10 @@ describe("semantic theme", () => {
       "--topology-kind-qemu: #8290a3",
       "--background: #efede8",
       "--primary: #806d4f",
+      "--success: #596f5c",
+      "--warning: #785e3f",
+      "--info: #526f80",
+      "--destructive: #974f4e",
       "--topology-kind-qemu: #708096",
       "--radius: 0.6rem",
     ])
