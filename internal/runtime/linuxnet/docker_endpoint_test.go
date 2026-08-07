@@ -76,7 +76,7 @@ func (e *recordingExecutor) Output(ctx context.Context, name string, args ...str
 			e.addressOutputs = e.addressOutputs[1:]
 			return body, nil
 		}
-		return []byte(`[{"addr_info":[{"family":"inet6","scope":"global","tentative":false}]}]`), nil
+		return []byte(`[{"addr_info":[{"family":"inet","scope":"global","dynamic":true},{"family":"inet6","scope":"global","dynamic":true,"tentative":false}]}]`), nil
 	}
 	return nil, e.Run(ctx, name, args...)
 }
@@ -126,7 +126,7 @@ func TestDockerEndpointEnsureAndRollback(t *testing.T) {
 		t.Fatal(err)
 	}
 	joined := strings.Join(executor.commands, "\n")
-	for _, expected := range []string{"link add", "netns 42", "nsenter -t 42 -n", "eth0 up", "address replace 192.0.2.10/24 dev eth0", "address replace 2001:db8::10/64 dev eth0", "accept_ra=2", "/sbin/dhclient -4 -nw", "/sbin/dhclient -6 -nw"} {
+	for _, expected := range []string{"link add", "netns 42", "nsenter -t 42 -n", "eth0 up", "address replace 192.0.2.10/24 dev eth0", "address replace 2001:db8::10/64 dev eth0", "accept_ra=2", "systemd-run", "dhclient -d -v -4", "dhclient -d -v -6", "NETLAB_CONTAINER_PID=42"} {
 		if !strings.Contains(joined, expected) {
 			t.Fatalf("missing %q in %s", expected, joined)
 		}
@@ -138,6 +138,54 @@ func TestDockerEndpointEnsureAndRollback(t *testing.T) {
 	}
 	if !strings.Contains(strings.Join(failing.commands, "\n"), "link delete "+HostInterfaceName("if-1")) {
 		t.Fatal("rollback did not delete host endpoint")
+	}
+}
+
+func TestDockerEndpointDHCPUsesHostClientWithoutContainerMountNamespace(t *testing.T) {
+	node := domain.Node{ID: "node-1", Config: map[string]any{
+		"interfaces":         []map[string]any{{"id": "if-1", "name": "eth0"}},
+		"network_interfaces": []map[string]any{{"name": "eth0", "modes": []any{"dhcpv4"}}},
+	}}
+	executor := &recordingExecutor{}
+	runtime := newTestDockerEndpointRuntime(t, executor, nil)
+	runtime.helperRoot = t.TempDir()
+	runtime.pollInterval = time.Millisecond
+	if err := runtime.Ensure(context.Background(), node, 42); err != nil {
+		t.Fatal(err)
+	}
+	joined := strings.Join(executor.commands, "\n")
+	for _, forbidden := range []string{"-n -m", "/sbin/dhclient", "/sbin/udhcpc"} {
+		if strings.Contains(joined, forbidden) {
+			t.Fatalf("DHCP must not depend on the container mount namespace or image tools (%q):\n%s", forbidden, joined)
+		}
+	}
+	for _, expected := range []string{"nsenter -t 42 -n -- dhclient", "--setenv=NETLAB_OWNERSHIP=node:node-1", "--property=KillMode=control-group"} {
+		if !strings.Contains(joined, expected) {
+			t.Fatalf("missing %q:\n%s", expected, joined)
+		}
+	}
+	script, err := os.ReadFile(runtime.dhclientScriptPath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(script)
+	if strings.Contains(text, ": > /etc/resolv.conf") || !strings.Contains(text, `/proc/${NETLAB_CONTAINER_PID}/root/etc/resolv.conf`) {
+		t.Fatalf("DHCP script must only target the owned container resolver: %s", text)
+	}
+}
+
+func TestDockerEndpointCleanupStopsDHCPHelpersBeforeDeletingLink(t *testing.T) {
+	node := domain.Node{ID: "node-1", Config: map[string]any{
+		"interfaces": []map[string]any{{"id": "if-1", "name": "eth0"}},
+	}}
+	executor := &recordingExecutor{}
+	runtime := newTestDockerEndpointRuntime(t, executor, nil)
+	if err := runtime.Cleanup(context.Background(), node); err != nil {
+		t.Fatal(err)
+	}
+	joined := strings.Join(executor.commands, "\n")
+	if strings.Index(joined, "systemctl show --property=ActiveState") > strings.Index(joined, "link delete ") {
+		t.Fatalf("DHCP helpers must be inspected/stopped before endpoint deletion:\n%s", joined)
 	}
 }
 

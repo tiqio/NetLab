@@ -44,6 +44,8 @@ type DockerEndpointRuntime struct {
 	executor            CommandExecutor
 	ip                  string
 	nsenter             string
+	dhclient            string
+	helperRoot          string
 	routes              managedDockerRouteStore
 	addressReadyTimeout time.Duration
 	pollInterval        time.Duration
@@ -51,7 +53,7 @@ type DockerEndpointRuntime struct {
 
 func NewDockerEndpointRuntime(executor CommandExecutor) (*DockerEndpointRuntime, error) {
 	if executor != nil {
-		return &DockerEndpointRuntime{executor: executor, ip: "ip", nsenter: "nsenter", routes: &procManagedDockerRouteStore{root: "/proc"}, addressReadyTimeout: 5 * time.Second, pollInterval: 50 * time.Millisecond}, nil
+		return &DockerEndpointRuntime{executor: executor, ip: "ip", nsenter: "nsenter", dhclient: "dhclient", helperRoot: "/run/netlab/docker", routes: &procManagedDockerRouteStore{root: "/proc"}, addressReadyTimeout: 5 * time.Second, pollInterval: 50 * time.Millisecond}, nil
 	}
 	ip, err := lookup("ip")
 	if err != nil {
@@ -61,7 +63,11 @@ func NewDockerEndpointRuntime(executor CommandExecutor) (*DockerEndpointRuntime,
 	if err != nil {
 		return nil, err
 	}
-	return &DockerEndpointRuntime{executor: SystemExecutor{}, ip: ip, nsenter: nsenter, routes: &procManagedDockerRouteStore{root: "/proc"}, addressReadyTimeout: 5 * time.Second, pollInterval: 50 * time.Millisecond}, nil
+	dhclient, err := lookup("dhclient")
+	if err != nil {
+		return nil, err
+	}
+	return &DockerEndpointRuntime{executor: SystemExecutor{}, ip: ip, nsenter: nsenter, dhclient: dhclient, helperRoot: "/run/netlab/docker", routes: &procManagedDockerRouteStore{root: "/proc"}, addressReadyTimeout: 30 * time.Second, pollInterval: 250 * time.Millisecond}, nil
 }
 
 func (s *procManagedDockerRouteStore) path(pid int, interfaceName string) (string, error) {
@@ -140,7 +146,7 @@ func (r *DockerEndpointRuntime) Ensure(ctx context.Context, node domain.Node, pi
 			r.rollback(ctx, created)
 			return err
 		}
-		if err := r.configureInterface(ctx, pid, iface.Name, dockerInterfaceConfigs(node)[iface.Name]); err != nil {
+		if err := r.configureInterface(ctx, node.ID, pid, iface.Name, dockerInterfaceConfigs(node)[iface.Name]); err != nil {
 			r.rollback(ctx, created)
 			return err
 		}
@@ -226,7 +232,7 @@ func anyStrings(value any) []string {
 	return result
 }
 
-func (r *DockerEndpointRuntime) configureInterface(ctx context.Context, pid int, interfaceName string, config dockerInterfaceConfig) error {
+func (r *DockerEndpointRuntime) configureInterface(ctx context.Context, ownerID domain.ID, pid int, interfaceName string, config dockerInterfaceConfig) error {
 	hasIPv6 := false
 	for _, address := range config.Addresses {
 		ipAddress, _, err := net.ParseCIDR(address)
@@ -294,14 +300,18 @@ func (r *DockerEndpointRuntime) configureInterface(ctx context.Context, pid int,
 		}
 	}
 	if config.Modes["dhcpv4"] {
-		if err := r.startDHCP(ctx, pid, interfaceName, "4"); err != nil {
+		if err := r.startDHCP(ctx, ownerID, pid, interfaceName, "4"); err != nil {
 			return err
 		}
+	} else if err := r.stopDHCP(ctx, ownerID, interfaceName, "4"); err != nil {
+		return err
 	}
 	if config.Modes["dhcpv6"] {
-		if err := r.startDHCP(ctx, pid, interfaceName, "6"); err != nil {
+		if err := r.startDHCP(ctx, ownerID, pid, interfaceName, "6"); err != nil {
 			return err
 		}
+	} else if err := r.stopDHCP(ctx, ownerID, interfaceName, "6"); err != nil {
+		return err
 	}
 	return nil
 }
@@ -430,19 +440,264 @@ func isMissingManagedRouteError(err error) bool {
 	return strings.Contains(message, "no such process") || strings.Contains(message, "not found")
 }
 
-func (r *DockerEndpointRuntime) startDHCP(ctx context.Context, pid int, interfaceName, family string) error {
-	prefix := "/run/netlab-dhclient" + family + "-" + interfaceName
-	return r.executor.Run(ctx, r.nsenter, "-t", strconv.Itoa(pid), "-n", "-m", "--", "/sbin/dhclient", "-"+family, "-nw", "-pf", prefix+".pid", "-lf", prefix+".leases", interfaceName)
+func (r *DockerEndpointRuntime) startDHCP(ctx context.Context, ownerID domain.ID, pid int, interfaceName, family string) error {
+	if err := r.ensureDHClientScript(); err != nil {
+		return err
+	}
+	unit := dockerDHCPUnit(ownerID, interfaceName, family)
+	active, err := r.dhcpHelperActive(ctx, unit)
+	if err != nil {
+		return fmt.Errorf("inspect Docker DHCPv%s helper for %s: %w", family, interfaceName, err)
+	}
+	if active {
+		body, inspectErr := r.executor.Output(ctx, "systemctl", "show", "--property=ExecStart", "--value", unit)
+		if inspectErr != nil {
+			return fmt.Errorf("inspect Docker DHCPv%s helper process for %s: %w", family, interfaceName, inspectErr)
+		}
+		if !strings.Contains(string(body), "-t "+strconv.Itoa(pid)+" -n") {
+			if err = r.stopLoadedDHCPHelper(ctx, unit); err != nil {
+				return fmt.Errorf("replace stale Docker DHCPv%s helper for %s: %w", family, interfaceName, err)
+			}
+			active = false
+		}
+	}
+	started := false
+	if !active {
+		if err = r.stopLoadedDHCPHelper(ctx, unit); err != nil {
+			return fmt.Errorf("prepare Docker DHCPv%s helper for %s: %w", family, interfaceName, err)
+		}
+		directory := r.dhcpHelperDirectory(ownerID)
+		if err = os.MkdirAll(directory, 0o700); err != nil {
+			return fmt.Errorf("create Docker DHCP helper state: %w", err)
+		}
+		lease := filepath.Join(directory, interfaceName+".v"+family+".leases")
+		pidFile := filepath.Join(directory, interfaceName+".v"+family+".pid")
+		args := []string{
+			"--quiet", "--no-block", "--collect", "--unit=" + unit,
+			"--property=BindsTo=netlab.service", "--property=After=netlab.service",
+			"--property=Restart=on-failure", "--property=RestartSec=2s", "--property=KillMode=control-group",
+			"--setenv=NETLAB_OWNERSHIP=node:" + string(ownerID),
+			"--setenv=NETLAB_CONTAINER_PID=" + strconv.Itoa(pid), "--",
+			r.nsenter, "-t", strconv.Itoa(pid), "-n", "--",
+			r.dhclient, "-d", "-v", "-" + family, "-sf", r.dhclientScriptPath(), "-lf", lease, "-pf", pidFile, interfaceName,
+		}
+		if err = r.executor.Run(ctx, "systemd-run", args...); err != nil {
+			return fmt.Errorf("start Docker DHCPv%s helper for %s: %w", family, interfaceName, err)
+		}
+		started = true
+	}
+	if err = r.waitForDynamicAddress(ctx, pid, interfaceName, family); err != nil {
+		if started {
+			_ = r.executor.Run(context.Background(), "systemctl", "stop", unit)
+		}
+		return err
+	}
+	return nil
 }
 
 func (r *DockerEndpointRuntime) Cleanup(ctx context.Context, node domain.Node) error {
 	for _, iface := range InterfaceDescriptors(node) {
+		for _, family := range []string{"4", "6"} {
+			if err := r.stopDHCP(ctx, node.ID, iface.Name, family); err != nil {
+				return err
+			}
+		}
 		if err := r.executor.Run(ctx, r.ip, "link", "delete", HostInterfaceName(iface.ID)); err != nil && !strings.Contains(err.Error(), "Cannot find device") {
 			return err
 		}
 	}
 	return nil
 }
+
+func (r *DockerEndpointRuntime) stopDHCP(ctx context.Context, ownerID domain.ID, interfaceName, family string) error {
+	unit := dockerDHCPUnit(ownerID, interfaceName, family)
+	active, err := r.dhcpHelperActive(ctx, unit)
+	if err != nil {
+		return err
+	}
+	if active {
+		if err = r.executor.Run(ctx, "systemctl", "stop", unit); err != nil {
+			return fmt.Errorf("stop Docker DHCPv%s helper for %s: %w", family, interfaceName, err)
+		}
+	}
+	directory := r.dhcpHelperDirectory(ownerID)
+	for _, suffix := range []string{".leases", ".pid"} {
+		path := filepath.Join(directory, interfaceName+".v"+family+suffix)
+		if err = os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("clear Docker DHCPv%s helper state for %s: %w", family, interfaceName, err)
+		}
+	}
+	return nil
+}
+
+func (r *DockerEndpointRuntime) dhcpHelperActive(ctx context.Context, unit string) (bool, error) {
+	body, err := r.executor.Output(ctx, "systemctl", "show", "--property=ActiveState", "--value", unit)
+	if err != nil {
+		return false, nil
+	}
+	return strings.TrimSpace(string(body)) == "active", nil
+}
+
+func (r *DockerEndpointRuntime) stopLoadedDHCPHelper(ctx context.Context, unit string) error {
+	body, err := r.executor.Output(ctx, "systemctl", "show", "--property=LoadState", "--value", unit)
+	if err != nil || strings.TrimSpace(string(body)) == "not-found" || strings.TrimSpace(string(body)) == "" {
+		return nil
+	}
+	if err = r.executor.Run(ctx, "systemctl", "stop", unit); err != nil {
+		return err
+	}
+	for attempt := 0; attempt < 20; attempt++ {
+		body, err = r.executor.Output(ctx, "systemctl", "show", "--property=LoadState", "--value", unit)
+		if err != nil || strings.TrimSpace(string(body)) == "not-found" || strings.TrimSpace(string(body)) == "" {
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(50 * time.Millisecond):
+		}
+	}
+	return fmt.Errorf("transient unit %s remained loaded after stop", unit)
+}
+
+func (r *DockerEndpointRuntime) waitForDynamicAddress(ctx context.Context, pid int, interfaceName, family string) error {
+	waitCtx, cancel := context.WithTimeout(ctx, r.addressReadyTimeout)
+	defer cancel()
+	ticker := time.NewTicker(r.pollInterval)
+	defer ticker.Stop()
+	for {
+		body, err := r.executor.Output(waitCtx, r.nsenter, "-t", strconv.Itoa(pid), "-n", r.ip, "-j", "address", "show", "dev", interfaceName)
+		if err == nil && dockerAddressAcquired(body, family) {
+			return nil
+		}
+		select {
+		case <-waitCtx.Done():
+			if errors.Is(waitCtx.Err(), context.DeadlineExceeded) {
+				return fmt.Errorf("Docker DHCPv%s timed out after %s for %s", family, r.addressReadyTimeout, interfaceName)
+			}
+			return fmt.Errorf("Docker DHCPv%s cancelled for %s: %w", family, interfaceName, waitCtx.Err())
+		case <-ticker.C:
+		}
+	}
+}
+
+func dockerAddressAcquired(body []byte, family string) bool {
+	var links []struct {
+		AddressInfo []struct {
+			Family    string `json:"family"`
+			Scope     string `json:"scope"`
+			Tentative bool   `json:"tentative"`
+		} `json:"addr_info"`
+	}
+	if json.Unmarshal(body, &links) != nil {
+		return false
+	}
+	wanted := "inet"
+	if family == "6" {
+		wanted = "inet6"
+	}
+	for _, link := range links {
+		for _, address := range link.AddressInfo {
+			if address.Family == wanted && address.Scope != "link" && !address.Tentative {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func dockerDHCPUnit(ownerID domain.ID, interfaceName, family string) string {
+	return ownership.Name("netlab-docker-dhcp", ownerID, 0) + "-" + strings.ToLower(interfaceName) + "-v" + family + ".service"
+}
+
+func (r *DockerEndpointRuntime) dhcpHelperDirectory(ownerID domain.ID) string {
+	return filepath.Join(r.helperRoot, ownership.Name("node", ownerID, 24))
+}
+
+func (r *DockerEndpointRuntime) dhclientScriptPath() string {
+	return filepath.Join(r.helperRoot, "dhclient-script")
+}
+
+func (r *DockerEndpointRuntime) ensureDHClientScript() error {
+	if err := os.MkdirAll(r.helperRoot, 0o700); err != nil {
+		return fmt.Errorf("create Docker DHCP runtime directory: %w", err)
+	}
+	if err := os.WriteFile(r.dhclientScriptPath(), []byte(dockerDHClientScript), 0o700); err != nil {
+		return fmt.Errorf("write Docker DHCP script: %w", err)
+	}
+	return nil
+}
+
+const dockerDHClientScript = `#!/bin/sh
+set -eu
+
+valid_ip() {
+    case "$1" in
+        ""|*[!0-9A-Fa-f.:/]*) return 1 ;;
+        *) return 0 ;;
+    esac
+}
+
+prefix_from_mask() {
+    old_ifs=$IFS
+    IFS=.
+    set -- $1
+    IFS=$old_ifs
+	[ "$#" -eq 4 ] || return 1
+    prefix=0
+    for octet in "$@"; do
+        case "$octet" in
+            255) bits=8 ;;
+            254) bits=7 ;;
+            252) bits=6 ;;
+            248) bits=5 ;;
+            240) bits=4 ;;
+            224) bits=3 ;;
+            192) bits=2 ;;
+            128) bits=1 ;;
+            0) bits=0 ;;
+            *) return 1 ;;
+        esac
+        prefix=$((prefix + bits))
+    done
+    printf '%s' "$prefix"
+}
+
+write_dns() {
+    case "${NETLAB_CONTAINER_PID:-}" in
+        ""|*[!0-9]*) return 0 ;;
+    esac
+    target="/proc/${NETLAB_CONTAINER_PID}/root/etc/resolv.conf"
+    [ -e "$target" ] || return 0
+    : > "$target"
+    for server in $1; do
+        valid_ip "$server" || continue
+        printf 'nameserver %s\n' "$server" >> "$target"
+    done
+}
+
+case "${reason:-}" in
+    BOUND|RENEW|REBIND|REBOOT)
+        if [ -n "${new_ip_address:-}" ] && [ -n "${new_subnet_mask:-}" ] && valid_ip "$new_ip_address" && valid_ip "$new_subnet_mask"; then
+            prefix=$(prefix_from_mask "$new_subnet_mask")
+            ip -4 address replace "${new_ip_address}/${prefix}" dev "$interface"
+        fi
+        for router in ${new_routers:-}; do
+            valid_ip "$router" || continue
+            ip -4 route replace default via "$router" dev "$interface"
+            break
+        done
+        write_dns "${new_domain_name_servers:-}"
+        ;;
+    BOUND6|RENEW6|REBIND6|REBOOT6)
+        if [ -n "${new_ip6_address:-}" ] && valid_ip "$new_ip6_address"; then
+            ip -6 address replace "${new_ip6_address}/${new_ip6_prefixlen:-128}" dev "$interface"
+        fi
+        write_dns "${new_dhcp6_name_servers:-}"
+        ;;
+esac
+exit 0
+`
 
 func (r *DockerEndpointRuntime) rollback(ctx context.Context, names []string) {
 	for _, name := range names {
