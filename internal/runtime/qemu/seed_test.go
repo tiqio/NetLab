@@ -68,12 +68,16 @@ func TestBuildArgsAttachesSeedISO(t *testing.T) {
 	adapter := &Adapter{Root: t.TempDir()}
 	args, _ := adapter.BuildArgs(domain.Node{ID: "node-a", CPUCount: 1, MemoryMiB: 512, Config: map[string]any{"seed_iso": "/run/netlab/seed.iso"}}, "/var/lib/netlab/base.qcow2")
 	found := false
+	forcedNoCloud := false
 	for _, value := range args {
 		if value == "file=/run/netlab/seed.iso,media=cdrom,readonly=on" {
 			found = true
 		}
+		if value == "type=1,serial=ds=nocloud" {
+			forcedNoCloud = true
+		}
 	}
-	if !found {
+	if !found || !forcedNoCloud {
 		t.Fatalf("seed drive missing: %v", args)
 	}
 }

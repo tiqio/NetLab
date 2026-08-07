@@ -9,7 +9,7 @@ import {
   type NodeInterface,
   type NetworkObject,
 } from "@/api";
-import { Button, FormField, Input, Select, Sheet } from "@/components/ui";
+import { Button, FormField, Input, Select, Sheet, Textarea } from "@/components/ui";
 import LightweightSwitchConfigEditor from "@/features/nodes/LightweightSwitchConfigEditor.vue";
 import { type LightweightSwitchKind } from "@/features/nodes/lightweightSwitchConfig";
 import TopologyResourceCatalog, {
@@ -17,7 +17,7 @@ import TopologyResourceCatalog, {
 } from "./TopologyResourceCatalog.vue";
 import {
   generateInitialPassword,
-  supportsUbuntuPasswordBootstrap,
+  supportsCloudInitBootstrap,
 } from "./cloudInit";
 import {
   buildResourceCreateRequest,
@@ -96,6 +96,7 @@ function removeRoute(id: string) {
 }
 const cloudUsername = ref("ubuntu");
 const cloudPassword = ref("");
+const bootstrapUserData = ref("");
 const busy = ref(false);
 let submitLocked = false;
 const catalogLoading = ref(false);
@@ -141,20 +142,20 @@ const selectedVersion = computed(() =>
 const dockerSelected = computed(
   () => selectedTemplate.value?.runtime_kind === "docker",
 );
-const ubuntuPasswordBootstrap = computed(() =>
-  supportsUbuntuPasswordBootstrap(
+const cloudInitBootstrap = computed(() =>
+  supportsCloudInitBootstrap(
     selectedTemplate.value?.template_key,
     selectedVersion.value?.capabilities,
   ),
 );
 const networkConfigurable = computed(
-  () => dockerSelected.value || ubuntuPasswordBootstrap.value,
+  () => dockerSelected.value || cloudInitBootstrap.value,
 );
 const initialInterfaceName = computed(() => {
   const format = selectedVersion.value?.defaults.interface_name_format;
   return format?.includes("%d") ? format.replace("%d", "0") : "eth0";
 });
-watch(ubuntuPasswordBootstrap, (supported) => {
+watch(cloudInitBootstrap, (supported) => {
   if (supported && !cloudPassword.value)
     cloudPassword.value = generateInitialPassword();
   if (!supported) cloudPassword.value = "";
@@ -179,6 +180,7 @@ const currentDraft = computed<ResourceCreateDraft>(() => ({
   routes: routes.value,
   cloudUsername: cloudUsername.value,
   cloudPassword: cloudPassword.value,
+  bootstrapUserData: bootstrapUserData.value,
   networkObjectConfig: lightweightSwitchConfig.value,
 }));
 const dirty = computed(
@@ -358,6 +360,7 @@ watch(
     ipv6Address.value = draft.ipv6Address;
     cloudUsername.value = draft.cloudUsername;
     cloudPassword.value = draft.cloudPassword;
+    bootstrapUserData.value = draft.bootstrapUserData;
     lightweightSwitchConfig.value = draft.networkObjectConfig;
     routes.value = draft.routes;
     fieldErrors.value = {};
@@ -905,15 +908,15 @@ async function submit() {
           </p>
         </div>
         <div
-          v-if="ubuntuPasswordBootstrap"
+          v-if="cloudInitBootstrap"
           class="grid gap-3 rounded-md border border-border bg-muted/10 p-3"
         >
           <div class="flex items-center justify-between gap-2">
             <div>
-              <p class="text-xs font-medium">Ubuntu 初始登录信息</p>
+              <p class="text-xs font-medium">自动配置与初始登录信息</p>
               <p class="text-[11px] text-muted-foreground">
-                Injected once through the node-scoped cloud-init seed ISO and
-                not saved in browser preferences.
+                创建时生成节点独立的 cloud-init seed ISO。VyOS 使用
+                vyos_config_commands，Ubuntu 与 FancyWAN 使用标准 cloud-config。
               </p>
             </div>
             <Button
@@ -937,6 +940,18 @@ async function submit() {
               v-model="cloudPassword"
               type="text"
               autocomplete="new-password"
+              spellcheck="false"
+            />
+          </FormField>
+          <FormField
+            label="高级 user-data（可选）"
+            hint="留空时根据当前模板和上方网络配置自动生成；填写后将完整覆盖自动生成内容。"
+          >
+            <Textarea
+              v-model="bootstrapUserData"
+              rows="8"
+              class="font-mono text-xs"
+              placeholder="#cloud-config"
               spellcheck="false"
             />
           </FormField>

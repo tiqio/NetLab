@@ -100,6 +100,7 @@ func (a *Adapter) BuildArgs(node domain.Node, imagePath string) ([]string, Launc
 		args = append(args, "-netdev", "tap,id="+netdevID+",ifname="+linuxnet.HostInterfaceName(iface.ID)+",script=no,downscript=no,vnet_hdr=off", "-device", device)
 	}
 	if seedPath, ok := node.Config["seed_iso"].(string); ok && seedPath != "" {
+		args = append(args, "-smbios", "type=1,serial=ds=nocloud")
 		args = append(args, "-drive", "file="+seedPath+",media=cdrom,readonly=on")
 	}
 	manifest.Arguments = args

@@ -71,7 +71,7 @@ func imagePath(node domain.Node, runtimeDirectory string) string {
 
 func bootstrapRequired(node domain.Node) bool {
 	key := stringConfig(node.Config, "template_key")
-	return key == "ubuntu" || key == "vyos" || key == "fancywan"
+	return key == "ubuntu-qemu" || key == "vyos" || key == "fancywan"
 }
 
 func stringConfig(config map[string]any, key string) string {

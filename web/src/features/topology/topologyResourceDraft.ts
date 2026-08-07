@@ -10,8 +10,8 @@ import {
   validateLightweightSwitchConfig,
 } from "@/features/nodes/lightweightSwitchConfig";
 import {
-  buildUbuntuPasswordCloudInit,
-  supportsUbuntuPasswordBootstrap,
+  buildTemplateCloudInit,
+  supportsCloudInitBootstrap,
 } from "./cloudInit";
 import type { PaletteSelection } from "./TopologyResourceCatalog.vue";
 
@@ -47,6 +47,7 @@ export interface ResourceCreateDraft {
   routes: RouteDraft[];
   cloudUsername: string;
   cloudPassword: string;
+  bootstrapUserData: string;
   networkObjectConfig: Record<string, unknown>;
 }
 
@@ -114,7 +115,7 @@ export function createResourceDraft(
   generatePassword: () => string,
   existingNames: readonly string[] = [],
 ): ResourceCreateDraft {
-  const supportsBootstrap = supportsUbuntuPasswordBootstrap(
+  const supportsBootstrap = supportsCloudInitBootstrap(
     selection.template?.template_key,
     selection.version?.capabilities,
   );
@@ -138,8 +139,9 @@ export function createResourceDraft(
     ipv6Mode: "none",
     ipv6Address: "",
     routes: [],
-    cloudUsername: "ubuntu",
+    cloudUsername: selection.template?.template_key === "vyos" ? "vyos" : "ubuntu",
     cloudPassword: supportsBootstrap ? generatePassword() : "",
+    bootstrapUserData: "",
     networkObjectConfig: networkObjectDefaults(selection),
   };
 }
@@ -284,7 +286,7 @@ export function validateResourceDraft(
     if (message) errors[`route.${route.id}`] = message;
   }
   if (
-    supportsUbuntuPasswordBootstrap(
+    supportsCloudInitBootstrap(
       context.template?.template_key,
       context.version?.capabilities,
     )
@@ -293,6 +295,11 @@ export function validateResourceDraft(
       errors.cloudUsername = "请输入最多 32 位的小写 Linux 用户名。";
     if (draft.cloudPassword.length < 12)
       errors.cloudPassword = "初始密码至少需要 12 个字符。";
+    if (
+      context.template?.template_key === "vyos" &&
+      draft.cloudPassword.includes("'")
+    )
+      errors.cloudPassword = "VyOS 初始密码不能包含单引号。";
   }
   return errors;
 }
@@ -317,7 +324,7 @@ export function buildResourceCreateRequest(
 
   const networkConfigurable =
     context.template?.runtime_kind === "docker" ||
-    supportsUbuntuPasswordBootstrap(
+    supportsCloudInitBootstrap(
       context.template?.template_key,
       context.version?.capabilities,
     );
@@ -325,7 +332,7 @@ export function buildResourceCreateRequest(
   const interfaceName = format?.includes("%d")
     ? format.replace("%d", "0")
     : "eth0";
-  const supportsBootstrap = supportsUbuntuPasswordBootstrap(
+  const supportsBootstrap = supportsCloudInitBootstrap(
     context.template?.template_key,
     context.version?.capabilities,
   );
@@ -369,10 +376,18 @@ export function buildResourceCreateRequest(
         : undefined,
       bootstrap: supportsBootstrap
         ? {
-            user_data: buildUbuntuPasswordCloudInit(
-              draft.cloudUsername,
-              draft.cloudPassword,
-            ),
+            user_data:
+              draft.bootstrapUserData.trim() ||
+              buildTemplateCloudInit({
+                templateKey: context.template?.template_key || "",
+                hostname: draft.name.trim(),
+                username: draft.cloudUsername,
+                password: draft.cloudPassword,
+                interfaceName,
+                ipv4Mode: draft.ipv4Mode,
+                ipv4Address: draft.ipv4Address.trim(),
+                routes: draft.routes,
+              }),
           }
         : undefined,
     },
