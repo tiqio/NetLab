@@ -31,6 +31,8 @@ const props = defineProps<{
   modelValue: boolean;
   laboratoryId: string;
   selection?: PaletteSelection;
+  nodeNames?: string[];
+  networkObjectNames?: string[];
 }>();
 const emit = defineEmits<{
   "update:modelValue": [boolean];
@@ -108,6 +110,11 @@ const open = computed({
   get: () => props.modelValue,
   set: (value) => emit("update:modelValue", value),
 });
+const existingNames = computed(() =>
+  props.selection?.networkObjectKind
+    ? props.networkObjectNames || []
+    : props.nodeNames || [],
+);
 const selectedTemplate = computed(() =>
   templates.value.find((item) => item.id === templateId.value),
 );
@@ -254,6 +261,7 @@ async function validate() {
       version: selectedVersion.value,
       image: selectedImage.value,
     },
+    existingNames.value,
   );
   if (Object.keys(fieldErrors.value).length) await focusFirstError();
   return Object.keys(fieldErrors.value).length === 0;
@@ -317,7 +325,11 @@ watch(
       initialSignature.value = "";
       return;
     }
-    const draft = createResourceDraft(selection, generateInitialPassword);
+    const draft = createResourceDraft(
+      selection,
+      generateInitialPassword,
+      existingNames.value,
+    );
     name.value = draft.name;
     templateId.value = draft.templateId;
     versionId.value = draft.templateVersionId;

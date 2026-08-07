@@ -1876,6 +1876,10 @@ onBeforeUnmount(() => {
       :model-value="createOpen"
       :laboratory-id="store.active.laboratory.id"
       :selection="paletteSelection"
+      :node-names="store.active.nodes.map((node) => node.name)"
+      :network-object-names="
+        store.active.network_objects.map((item) => item.name)
+      "
       @update:model-value="setCreateOpen"
       @selection-changed="paletteSelection = $event"
       @created="created"

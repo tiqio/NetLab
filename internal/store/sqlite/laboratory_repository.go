@@ -190,6 +190,21 @@ func (r *TopologyRepository) DeleteArtifacts(ctx context.Context, ids []domain.I
 
 func (r *TopologyRepository) CreateNode(ctx context.Context, node domain.Node, interfaces []domain.Interface) error {
 	return r.database.Write(ctx, func(tx *sql.Tx) error {
+		var duplicateCount int
+		if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM nodes WHERE laboratory_id=? AND name=?`, node.LaboratoryID, node.Name).Scan(&duplicateCount); err != nil {
+			return err
+		}
+		if duplicateCount > 0 {
+			return domain.Problem{
+				Code:         "node_name_conflict",
+				Message:      "当前实验室内已存在同名节点，请更换名称。",
+				ResourceType: "laboratory",
+				ResourceID:   node.LaboratoryID,
+				Details: map[string]any{
+					"fields": map[string]string{"name": "当前实验室内已存在同名节点，请更换名称。"},
+				},
+			}
+		}
 		config, _ := json.Marshal(node.Config)
 		_, err := tx.ExecContext(ctx, `INSERT INTO nodes(id,laboratory_id,name,kind,template_version_id,revision,desired_state,observed_state,cpu_count,cpu_quota_micros,memory_mib,storage_gib,interface_limit,process_limit,config_json,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, node.ID, node.LaboratoryID, node.Name, node.Kind, nullable(string(node.TemplateVersionID)), node.Revision, node.DesiredState, node.ObservedState, node.CPUCount, node.CPUQuotaMicros, node.MemoryMiB, node.StorageGiB, node.InterfaceLimit, node.ProcessLimit, config, node.CreatedAt.Format(time.RFC3339Nano), node.UpdatedAt.Format(time.RFC3339Nano))
 		if err != nil {

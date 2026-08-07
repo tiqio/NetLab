@@ -3,10 +3,11 @@ package sqlite
 import (
 	"context"
 	"errors"
-	"github.com/netlab/netlab/internal/app/command"
-	"github.com/netlab/netlab/internal/domain"
 	"testing"
 	"time"
+
+	"github.com/netlab/netlab/internal/app/command"
+	"github.com/netlab/netlab/internal/domain"
 )
 
 func TestLaboratorySnapshotAndRevision(t *testing.T) {
@@ -32,6 +33,36 @@ func TestLaboratorySnapshotAndRevision(t *testing.T) {
 	}
 	if _, err = labs.Update(ctx, lab.ID, 99, "bad", "", domain.RecoveryAutoRestore); err == nil {
 		t.Fatal("expected conflict")
+	}
+}
+
+func TestCreateNodeReturnsStructuredNameConflict(t *testing.T) {
+	ctx := context.Background()
+	database, err := Open(ctx, "file:node-name-conflict?mode=memory&cache=shared")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer database.Close()
+	repository := NewTopologyRepository(database)
+	laboratory, err := command.NewLaboratoryService(repository).Create(ctx, "names", "", domain.RecoveryAutoRestore)
+	if err != nil {
+		t.Fatal(err)
+	}
+	nodes := command.NewNodeService(repository)
+	if _, _, err = nodes.Create(ctx, laboratory.ID, "Ubuntu", "pc", 1); err != nil {
+		t.Fatal(err)
+	}
+	_, _, err = nodes.Create(ctx, laboratory.ID, "Ubuntu", "pc", 1)
+	var problem domain.Problem
+	if !errors.As(err, &problem) {
+		t.Fatalf("expected structured problem, got %v", err)
+	}
+	if problem.Code != "node_name_conflict" {
+		t.Fatalf("expected node_name_conflict, got %+v", problem)
+	}
+	fields, ok := problem.Details["fields"].(map[string]string)
+	if !ok || fields["name"] == "" {
+		t.Fatalf("expected name field guidance, got %+v", problem.Details)
 	}
 }
 

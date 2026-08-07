@@ -304,7 +304,7 @@ func problemHTTPStatus(problem domain.Problem) int {
 		return http.StatusPreconditionRequired
 	case "not_found":
 		return http.StatusNotFound
-	case "idempotency_conflict", "invalid_node_transition", "capability_unsupported", "port_in_use":
+	case "idempotency_conflict", "invalid_node_transition", "capability_unsupported", "port_in_use", "node_name_conflict":
 		return http.StatusConflict
 	case "invalid_topology", "invalid_port_name":
 		return http.StatusUnprocessableEntity

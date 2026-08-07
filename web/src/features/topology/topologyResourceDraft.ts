@@ -65,6 +65,21 @@ export type ResourceCreateRequest =
       };
     };
 
+export function nextAvailableResourceName(
+  requestedName: string,
+  existingNames: readonly string[],
+): string {
+  const baseName = requestedName.trim() || "节点";
+  const used = new Set(existingNames.map((name) => name.trim().toLowerCase()));
+  if (!used.has(baseName.toLowerCase())) return baseName;
+  for (let sequence = 2; sequence < 10000; sequence += 1) {
+    const suffix = ` ${sequence}`;
+    const candidate = `${baseName.slice(0, 120 - suffix.length).trimEnd()}${suffix}`;
+    if (!used.has(candidate.toLowerCase())) return candidate;
+  }
+  return `${baseName.slice(0, 110).trimEnd()} ${Date.now()}`;
+}
+
 function networkObjectDefaults(
   selection: PaletteSelection,
 ): Record<string, unknown> {
@@ -97,6 +112,7 @@ function networkObjectDefaults(
 export function createResourceDraft(
   selection: PaletteSelection,
   generatePassword: () => string,
+  existingNames: readonly string[] = [],
 ): ResourceCreateDraft {
   const supportsBootstrap = supportsUbuntuPasswordBootstrap(
     selection.template?.template_key,
@@ -105,7 +121,7 @@ export function createResourceDraft(
   const defaults = selection.version?.defaults;
   const runtimeOptions = selection.version?.runtime_options || {};
   return {
-    name: selection.name,
+    name: nextAvailableResourceName(selection.name, existingNames),
     templateId: selection.template?.id || "",
     templateVersionId: selection.version?.id || "",
     imageVersionId: selection.version?.image_version_id || "",
@@ -168,11 +184,19 @@ export function validateResourceDraft(
   selection: PaletteSelection,
   draft: ResourceCreateDraft,
   context: DraftCatalogContext,
+  existingNames: readonly string[] = [],
 ) {
   const errors: Record<string, string> = {};
   const name = draft.name.trim();
   if (!name) errors.name = "请输入资源名称。";
   else if (name.length > 120) errors.name = "资源名称不能超过 120 个字符。";
+  else if (
+    existingNames.some(
+      (existingName) =>
+        existingName.trim().toLowerCase() === name.toLowerCase(),
+    )
+  )
+    errors.name = "当前实验室内已存在同名资源，请更换名称。";
 
   if (selection.networkObjectKind) {
     if (

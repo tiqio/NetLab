@@ -64,6 +64,29 @@ function qemuCatalog(id = "ubuntu-qemu") {
 }
 
 describe("CreateTopologyResourceDrawer", () => {
+  it("suggests the next available name for repeated template additions", async () => {
+    const { template, version } = qemuCatalog();
+    const wrapper = mount(CreateTopologyResourceDrawer, {
+      attachTo: document.body,
+      props: {
+        modelValue: true,
+        laboratoryId: "lab-1",
+        nodeNames: ["Ubuntu", "Ubuntu 2"],
+        selection: {
+          kind: "qemu",
+          name: "Ubuntu",
+          template,
+          version,
+        },
+      },
+    });
+    await flushPromises();
+    expect(
+      document.body.querySelector('[data-testid="create-resource-name"]'),
+    ).toHaveProperty("value", "Ubuntu 3");
+    wrapper.unmount();
+  });
+
   it("starts with the shared catalog and emits the selected resource", async () => {
     const wrapper = mount(CreateTopologyResourceDrawer, {
       attachTo: document.body,

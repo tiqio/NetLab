@@ -5,6 +5,7 @@ import {
   buildResourceCreateRequest,
   createResourceDraft,
   draftSignature,
+  nextAvailableResourceName,
   validateResourceDraft,
 } from "./topologyResourceDraft";
 
@@ -61,6 +62,20 @@ const qemuSelection: PaletteSelection = {
 };
 
 describe("topology resource draft", () => {
+  it("generates a readable unique default name", () => {
+    expect(nextAvailableResourceName("Ubuntu", [])).toBe("Ubuntu");
+    expect(nextAvailableResourceName("Ubuntu", ["Ubuntu"])).toBe("Ubuntu 2");
+    expect(nextAvailableResourceName("Ubuntu", ["ubuntu", "Ubuntu 2"])).toBe(
+      "Ubuntu 3",
+    );
+    expect(
+      createResourceDraft(qemuSelection, () => "Secret-123456", [
+        "Ubuntu",
+        "Ubuntu 2",
+      ]).name,
+    ).toBe("Ubuntu 3");
+  });
+
   it("initializes node defaults and produces a stable normalized signature", () => {
     const draft = createResourceDraft(qemuSelection, () => "Secret-123456");
     expect(draft).toMatchObject({
@@ -186,5 +201,17 @@ describe("topology resource draft", () => {
       });
       expect(result.request.bootstrap?.user_data).toContain("Secret-123456");
     }
+  });
+
+  it("rejects a manually entered duplicate resource name", () => {
+    const draft = createResourceDraft(qemuSelection, () => "Secret-123456");
+    expect(
+      validateResourceDraft(
+        qemuSelection,
+        draft,
+        { template, version, image },
+        ["ubuntu"],
+      ),
+    ).toMatchObject({ name: "当前实验室内已存在同名资源，请更换名称。" });
   });
 });
