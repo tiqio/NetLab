@@ -1,7 +1,7 @@
 import { flushPromises, mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 import { api, type NetworkObject, type Node } from "@/api";
-import { nodeFactory } from "@/test/factories";
+import { interfaceFactory, nodeFactory, taskFactory } from "@/test/factories";
 import TopologyInspector from "./TopologyInspector.vue";
 import LightweightSwitchConfigEditor from "@/features/nodes/LightweightSwitchConfigEditor.vue";
 import LightweightPCConfigurationPanel from "@/features/nodes/LightweightPCConfigurationPanel.vue";
@@ -18,6 +18,94 @@ const natObject: NetworkObject = {
 };
 
 describe("TopologyInspector", () => {
+  it("offers unified capture, filter, and durable deletion for an attachment", async () => {
+    const deleteConnection = vi
+      .spyOn(api, "deleteTopologyConnection")
+      .mockResolvedValue({
+        connection: {
+          id: "attachment-1",
+          laboratory_id: "lab-1",
+          source: {
+            kind: "node_interface",
+            laboratory_id: "lab-1",
+            resource_id: "node-a",
+            port_id: "if-a",
+          },
+          target: {
+            kind: "network_object_port",
+            laboratory_id: "lab-1",
+            resource_id: "switch-a",
+            port_name: "eth0",
+          },
+          backing_kind: "network_attachment",
+          backing_id: "attachment-1",
+          revision: 1,
+          desired_state: "disconnected",
+          observed_state: "disconnecting",
+          capabilities: ["delete", "capture", "wireshark", "traffic_filter"],
+        },
+        task: taskFactory({
+          id: "delete-attachment-task",
+          kind: "network_attachment.delete",
+          resource_type: "network_attachment",
+          resource_id: "attachment-1",
+          state: "queued",
+          progress_current: 0,
+          progress_total: 2,
+        }),
+        laboratory_revision: 2,
+      });
+    const wrapper = mount(TopologyInspector, {
+      props: {
+        laboratoryId: "lab-1",
+        interfaces: [
+          interfaceFactory({
+            id: "if-a",
+            node_id: "node-a",
+            slot: 0,
+            name: "eth0",
+          }),
+        ],
+        nodes: [nodeFactory({ id: "node-a", name: "Node A" })],
+        networkObjects: [
+          {
+            id: "switch-a",
+            laboratory_id: "lab-1",
+            name: "Switch A",
+            kind: "switch_l2",
+            revision: 1,
+            desired_state: "active",
+            observed_state: "active",
+            config: {},
+          },
+        ],
+        attachment: {
+          id: "attachment-1",
+          network_object_id: "switch-a",
+          interface_id: "if-a",
+          port_name: "eth0",
+          observed_state: "connected",
+        },
+      },
+    });
+    const buttons = wrapper.findAll("button");
+    await buttons
+      .find((button) => button.text().includes("抓包"))!
+      .trigger("click");
+    await buttons
+      .find((button) => button.text().includes("流量过滤"))!
+      .trigger("click");
+    await buttons
+      .find((button) => button.text().includes("实时删除附件"))!
+      .trigger("click");
+    await flushPromises();
+    expect(wrapper.emitted("captureConnection")).toHaveLength(1);
+    expect(wrapper.emitted("filterConnection")).toHaveLength(1);
+    expect(deleteConnection).toHaveBeenCalledWith("attachment-1", 1);
+    expect(wrapper.emitted("clear")).toHaveLength(1);
+    expect(wrapper.emitted("changed")).toHaveLength(1);
+  });
+
   it("keeps the empty Inspector focused on selection guidance", () => {
     const wrapper = mount(TopologyInspector, {
       props: { laboratoryId: "lab-1", interfaces: [] },
@@ -138,6 +226,9 @@ describe("TopologyInspector", () => {
     expect(wrapper.text()).toContain("4 / 256");
     expect(wrapper.text()).toContain("实时流");
     expect(wrapper.text()).toContain("保留的抓包文件");
+    expect(wrapper.text()).toContain("抓包");
+    expect(wrapper.text()).toContain("流量过滤");
+    expect(wrapper.text()).toContain("实时删除链路");
   });
 
   it("summarizes Docker route readiness and recovery guidance", () => {
@@ -423,6 +514,9 @@ describe("TopologyInspector", () => {
 
     expect(wrapper.text()).toContain("BusyBox1:eth0");
     expect(wrapper.text()).toContain("BusyBox2:eth1");
+    expect(wrapper.text()).toContain("抓包");
+    expect(wrapper.text()).toContain("流量过滤");
+    expect(wrapper.text()).toContain("实时断开链路");
     expect(wrapper.text()).not.toContain("if-a");
     expect(wrapper.text()).not.toContain("if-b");
   });

@@ -1,6 +1,7 @@
 import { mount } from "@vue/test-utils";
 import { describe, expect, it } from "vitest";
 import type { Node, NodeInterface } from "@/api";
+import { networkObjectFactory } from "@/test/factories";
 import GlobalCaptureWorkspace from "./GlobalCaptureWorkspace.vue";
 
 const nodes = [
@@ -38,6 +39,71 @@ function mountWorkspace(requestInterfaceId = "if-1") {
 }
 
 describe("GlobalCaptureWorkspace", () => {
+  it("opens regular and network-object links as first-class capture sources", async () => {
+    const wrapper = mount(GlobalCaptureWorkspace, {
+      props: {
+        laboratoryId: "lab-1",
+        nodes,
+        interfaces,
+        links: [
+          {
+            id: "link-1",
+            laboratory_id: "lab-1",
+            endpoint_a_id: "if-1",
+            endpoint_b_id: "if-3",
+            revision: 1,
+            desired_state: "connected",
+            observed_state: "connected",
+          },
+        ],
+        networkObjects: [
+          networkObjectFactory({ id: "switch-a", name: "Switch A" }),
+          networkObjectFactory({ id: "switch-b", name: "Switch B" }),
+        ],
+        networkObjectLinks: [
+          {
+            id: "object-link-1",
+            laboratory_id: "lab-1",
+            object_a_id: "switch-a",
+            port_a_name: "eth0",
+            object_b_id: "switch-b",
+            port_b_name: "eth1",
+            revision: 1,
+            desired_state: "connected",
+            observed_state: "connected",
+          },
+        ],
+      },
+      global: {
+        stubs: {
+          CapturePanel: {
+            name: "CapturePanel",
+            props: ["interfaceId", "linkId", "objectLinkId", "sourceLabel"],
+            template:
+              '<div data-testid="capture-panel">{{ sourceLabel }} / {{ linkId || objectLinkId }}</div>',
+          },
+        },
+      },
+    });
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("链路 1"))!
+      .trigger("click");
+    expect(wrapper.get('[data-testid="capture-panel"]').text()).toContain(
+      "link-1",
+    );
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("网络对象链路"))!
+      .trigger("click");
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("Switch A"))!
+      .trigger("click");
+    expect(wrapper.findAll('[data-testid="capture-panel"]')).toHaveLength(2);
+    expect(wrapper.text()).toContain("object-link-1");
+  });
+
   it("groups capture sources by node and interface", () => {
     const wrapper = mountWorkspace();
     expect(wrapper.text()).toContain("Ubuntu");

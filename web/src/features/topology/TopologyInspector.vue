@@ -72,6 +72,7 @@ const attachInterface = ref("");
 const attachPortName = ref("");
 const attachPVID = ref(1);
 const attachTagged = ref("");
+const attachmentStatus = ref("");
 const objectLinkPeerId = ref("");
 const objectLinkLocalPort = ref("");
 const objectLinkPeerPort = ref("");
@@ -387,6 +388,20 @@ async function createObjectLink() {
     error.value = value instanceof Error ? value.message : String(value);
   }
 }
+async function deleteAttachment() {
+  if (!props.attachment) return;
+  error.value = "";
+  try {
+    attachmentStatus.value = "正在提交附件删除任务…";
+    const envelope = await api.deleteTopologyConnection(props.attachment.id, 1);
+    attachmentStatus.value = `附件删除任务已提交 · ${envelope.task.id}`;
+    emit("clear");
+    emit("changed");
+  } catch (value) {
+    attachmentStatus.value = "";
+    error.value = value instanceof Error ? value.message : String(value);
+  }
+}
 async function deleteObjectLink() {
   if (!props.networkObjectLink) return;
   error.value = "";
@@ -698,6 +713,17 @@ async function deleteObjectLink() {
           >
             此附件链路通过节点宿主接口监听。打开底部“抓包”或“流量过滤”，即可监控节点与轻量网络对象之间的流量。
           </p>
+          <p v-if="attachmentStatus" class="mt-3 text-xs text-muted-foreground">
+            {{ attachmentStatus }}
+          </p>
+          <Button
+            class="mt-3"
+            variant="destructive"
+            size="sm"
+            @click="deleteAttachment"
+          >
+            <Trash2 :size="14" /> 实时删除附件
+          </Button>
         </section>
       </template>
       <template v-else-if="networkObject">

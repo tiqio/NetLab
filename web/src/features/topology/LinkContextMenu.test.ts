@@ -53,4 +53,18 @@ describe("LinkContextMenu", () => {
     expect(deleteButton!.text()).toContain("正在删除");
     expect(deleteButton!.find("svg").classes()).toContain("shrink-0");
   });
+
+  it("allows a network attachment to use the unified delete action", async () => {
+    const wrapper = mount(LinkContextMenu, {
+      props: { kind: "network_attachment" },
+    });
+    await wrapper.get("button").trigger("click");
+    const deleteButton = wrapper
+      .get('[aria-label="链路操作"]')
+      .findAll("button")
+      .find((button) => button.text().includes("解除附件"));
+    expect(deleteButton?.attributes("disabled")).toBeUndefined();
+    await deleteButton!.trigger("click");
+    expect(wrapper.emitted("delete")).toHaveLength(1);
+  });
 });

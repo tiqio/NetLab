@@ -1,52 +1,65 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
-import { laboratoryFactory } from "@/test/factories";
+import {
+  interfaceFactory,
+  laboratoryFactory,
+  linkFactory,
+  nodeFactory,
+  snapshotFactory,
+  taskFactory,
+} from "@/test/factories";
 import { useLaboratoryStore } from "./laboratory";
 
 function activeSnapshot() {
-  return {
+  return snapshotFactory({
     laboratory: laboratoryFactory({ id: "lab", revision: 3 }),
     nodes: [
-      {
+      nodeFactory({
         id: "node-a",
         laboratory_id: "lab",
         name: "A",
         kind: "docker",
-        revision: 1,
         desired_state: "running",
         observed_state: "running",
-      },
-      {
+      }),
+      nodeFactory({
         id: "node-b",
         laboratory_id: "lab",
         name: "B",
         kind: "docker",
-        revision: 1,
         desired_state: "running",
         observed_state: "running",
-      },
+      }),
     ],
     interfaces: [
-      { id: "if-a", node_id: "node-a", name: "eth0", slot: 0, revision: 1 },
-      { id: "if-b", node_id: "node-b", name: "eth0", slot: 0, revision: 1 },
+      interfaceFactory({
+        id: "if-a",
+        node_id: "node-a",
+        name: "eth0",
+        slot: 0,
+      }),
+      interfaceFactory({
+        id: "if-b",
+        node_id: "node-b",
+        name: "eth0",
+        slot: 0,
+      }),
     ],
     links: [
-      {
+      linkFactory({
         id: "link-1",
         laboratory_id: "lab",
         endpoint_a_id: "if-a",
         endpoint_b_id: "if-b",
-        revision: 1,
-        desired_state: "connected",
         observed_state: "pending",
-      },
+      }),
     ],
     network_objects: [],
     network_attachments: [],
     network_object_links: [],
     placements: [],
     event_sequence: 10,
-  } as ReturnType<typeof useLaboratoryStore>["active"];
+  });
 }
 
 describe("unified connection event convergence", () => {
@@ -83,7 +96,7 @@ describe("unified connection event convergence", () => {
     store.active = activeSnapshot();
     store.sequence = 10;
     store.tasks = [
-      {
+      taskFactory({
         id: "task-1",
         kind: "link.connect",
         resource_type: "link",
@@ -91,7 +104,7 @@ describe("unified connection event convergence", () => {
         state: "running",
         progress_current: 1,
         progress_total: 2,
-      },
+      }),
     ];
     store.applyEvent({
       sequence: 11,

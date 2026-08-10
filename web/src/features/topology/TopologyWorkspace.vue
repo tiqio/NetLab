@@ -90,6 +90,7 @@ const resourceContext = ref<{
 const contextDeleteNode = ref<Node>();
 const contextDeleteObject = ref<NetworkObject>();
 const deletingObjectLinkIds = ref<string[]>([]);
+const deletingAttachmentIds = ref<string[]>([]);
 const failedObjectLinkDelete = ref<NetworkObjectLink>();
 const trafficObservations = ref<TrafficObservation[]>([]);
 const trafficOverlayActive = ref(false);
@@ -296,6 +297,25 @@ async function deleteObjectLink(link: NetworkObjectLink) {
 async function retryObjectLinkDelete() {
   const link = failedObjectLinkDelete.value;
   if (link) await deleteObjectLink(link);
+}
+async function deleteAttachment(attachment: NetworkAttachment) {
+  if (deletingAttachmentIds.value.includes(attachment.id)) return;
+  deletingAttachmentIds.value.push(attachment.id);
+  closeResourceContext();
+  canvasStatus.value = `正在解除网络附件 ${attachment.id}…`;
+  try {
+    const envelope = await api.deleteTopologyConnection(attachment.id, 1);
+    store.recordTopologyConnectionTask(envelope);
+    if (selectedIds.value.includes(attachment.id)) clearSelection();
+    canvasStatus.value = `网络附件删除任务 ${envelope.task.id} 已提交。`;
+    await refreshActive();
+  } catch (value) {
+    canvasStatus.value = `网络附件删除失败：${value instanceof Error ? value.message : String(value)}`;
+  } finally {
+    deletingAttachmentIds.value = deletingAttachmentIds.value.filter(
+      (id) => id !== attachment.id,
+    );
+  }
 }
 function closeResourceContext() {
   resourceContext.value = undefined;
@@ -1720,8 +1740,9 @@ onBeforeUnmount(() => {
           <LinkContextMenu
             v-else-if="selectedAttachment"
             kind="network_attachment"
-            delete-disabled-reason="网络附件当前需从所连接网络对象的设置中解除。"
+            :pending="deletingAttachmentIds.includes(selectedAttachment.id)"
             @inspect="shell?.openInspector()"
+            @delete="deleteAttachment(selectedAttachment)"
             @capture="openSelectedConnectionCapture"
             @traffic-filter="openSelectedConnectionTrafficFilter"
           />

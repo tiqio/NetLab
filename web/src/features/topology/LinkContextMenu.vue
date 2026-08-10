@@ -97,12 +97,12 @@ const emit = defineEmits<{
         v-else
         variant="destructive"
         class="w-full justify-start"
-        disabled
-        :title="
-          deleteDisabledReason || '网络附件当前需从所连接对象的设置中解除。'
-        "
+        :disabled="pending"
+        :title="deleteDisabledReason"
+        @click="emit('delete')"
       >
-        <Unplug :size="13" class="shrink-0" /> <span>解除附件</span>
+        <Unplug :size="13" class="shrink-0" />
+        <span>{{ pending ? "正在解除…" : "解除附件" }}</span>
       </Button>
     </div>
   </DropdownMenu>
