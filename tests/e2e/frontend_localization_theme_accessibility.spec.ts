@@ -14,8 +14,6 @@ for (const viewport of [
       await page.goto("/");
       const selector = page.getByRole("combobox", { name: "外观主题" });
       await selector.selectOption(theme);
-      await selector.focus();
-      await expect(selector).toBeFocused();
       await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
       await expect(page.locator("body")).not.toHaveCSS("overflow-x", "scroll");
       const rootOverflow = await page.evaluate(

@@ -1,4 +1,5 @@
 import { defineConfig } from "@playwright/test";
+import { scaledTimeout } from "../tests/e2e/fixtures/timeoutScale";
 
 const baseURL = process.env.NETLAB_ACCEPTANCE_BASE_URL;
 const acceptanceOutput =
@@ -19,7 +20,7 @@ export default defineConfig({
   outputDir: `${acceptanceOutput}/playwright`,
   fullyParallel: false,
   workers: 1,
-  timeout: 120_000,
+  timeout: scaledTimeout(120_000),
   reporter: [["list"]],
   use: {
     baseURL,

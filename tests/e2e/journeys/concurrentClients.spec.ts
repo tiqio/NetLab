@@ -100,6 +100,10 @@ test("two browsers and automation converge with revision protection", async ({
   });
   expect([409, 412]).toContain(conflict.status());
   await Promise.all([page.reload(), secondPage.reload()]);
+  await Promise.all([
+    selectLaboratoryByName(page, renamed),
+    selectLaboratoryByName(secondPage, renamed),
+  ]);
   await expect(page.getByTestId("laboratory-switcher")).toContainText(renamed);
   await expect(secondPage.getByTestId("laboratory-switcher")).toContainText(
     renamed,

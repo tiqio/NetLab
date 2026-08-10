@@ -79,7 +79,7 @@ export class TopologyPage extends BasePage {
       );
     }
     await expect(canvas.getByRole("status")).toContainText(
-      /(?:node|link|network_object) /,
+      /(?:node|link|network_object|节点|链路|网络对象) /,
     );
   }
 

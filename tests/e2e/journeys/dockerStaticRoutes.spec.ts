@@ -43,9 +43,15 @@ test("Docker routes are created, edited, and read back through the frontend", as
   );
   const nodeName = `routes-${runId.slice(0, 6)}`;
   await dialog.getByLabel("名称", { exact: true }).fill(nodeName);
-  await dialog.getByLabel("设备模板").selectOption(selection.templateId);
-  await dialog.getByLabel("模板版本").selectOption(selection.versionId);
-  await dialog.getByLabel("镜像版本").selectOption(selection.imageId);
+  await dialog
+    .locator('[data-field="template"] select')
+    .selectOption(selection.templateId);
+  await dialog
+    .locator('[data-field="version"] select')
+    .selectOption(selection.versionId);
+  await dialog
+    .locator('[data-field="image"] select')
+    .selectOption(selection.imageId);
   await dialog.getByTestId("docker-ipv4-mode").selectOption("static");
   await dialog.getByTestId("docker-ipv4-address").fill("192.0.2.10/24");
   await dialog.getByRole("button", { name: "添加 IPv4 路由" }).click();
