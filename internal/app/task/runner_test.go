@@ -124,3 +124,41 @@ func TestRunnerCancellationPersistsCancellingState(t *testing.T) {
 		t.Fatal("handler was not cancelled")
 	}
 }
+
+func TestRunnerCloseCancelsActiveHandlers(t *testing.T) {
+	store := newMemoryStore()
+	runner := NewRunner(store, 1, 4)
+	started := make(chan struct{})
+	finished := make(chan struct{})
+	runner.Register("close-blocking", func(ctx context.Context, _ *domain.OperationTask) (map[string]any, error) {
+		close(started)
+		<-ctx.Done()
+		close(finished)
+		return nil, ctx.Err()
+	})
+	id := domain.NewID()
+	if err := runner.Enqueue(context.Background(), domain.OperationTask{ID: id, Kind: "close-blocking"}); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-started:
+	case <-time.After(time.Second):
+		t.Fatal("task did not start")
+	}
+	closed := make(chan struct{})
+	go func() {
+		runner.Close()
+		close(closed)
+	}()
+	select {
+	case <-finished:
+	case <-time.After(time.Second):
+		t.Fatal("close did not cancel active handler")
+	}
+	select {
+	case <-closed:
+	case <-time.After(time.Second):
+		t.Fatal("close did not wait for worker shutdown")
+	}
+	runner.Close()
+}

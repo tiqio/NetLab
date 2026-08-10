@@ -330,6 +330,78 @@ func releaseTopologyConnectionReservationsTx(ctx context.Context, tx *sql.Tx, re
 	return err
 }
 
+func (r *Repositories) RecoverTopologyConnectionReservations(ctx context.Context) ([]domain.TopologyConnectionRecoveryOutcome, error) {
+	outcomes := []domain.TopologyConnectionRecoveryOutcome{}
+	err := r.database.Write(ctx, func(tx *sql.Tx) error {
+		rows, err := tx.QueryContext(ctx, `SELECT DISTINCT resource_type,resource_id FROM topology_endpoint_reservations WHERE
+			(resource_type='link' AND NOT EXISTS (SELECT 1 FROM links WHERE id=resource_id)) OR
+			(resource_type='network_attachment' AND NOT EXISTS (SELECT 1 FROM network_attachments WHERE id=resource_id)) OR
+			(resource_type='network_object_link' AND NOT EXISTS (SELECT 1 FROM network_object_links WHERE id=resource_id))`)
+		if err != nil {
+			return err
+		}
+		for rows.Next() {
+			var resourceType string
+			var resourceID domain.ID
+			if err = rows.Scan(&resourceType, &resourceID); err != nil {
+				rows.Close()
+				return err
+			}
+			outcomes = append(outcomes, domain.TopologyConnectionRecoveryOutcome{ResourceType: resourceType, ResourceID: resourceID, Action: "orphan_reservation_removed"})
+		}
+		if err = rows.Close(); err != nil {
+			return err
+		}
+		if _, err = tx.ExecContext(ctx, `DELETE FROM topology_endpoint_reservations WHERE
+			(resource_type='link' AND NOT EXISTS (SELECT 1 FROM links WHERE id=resource_id)) OR
+			(resource_type='network_attachment' AND NOT EXISTS (SELECT 1 FROM network_attachments WHERE id=resource_id)) OR
+			(resource_type='network_object_link' AND NOT EXISTS (SELECT 1 FROM network_object_links WHERE id=resource_id))`); err != nil {
+			return err
+		}
+
+		missing, err := tx.QueryContext(ctx, `
+			SELECT 'link',l.id FROM links l JOIN interfaces a ON a.id=l.endpoint_a_id JOIN interfaces b ON b.id=l.endpoint_b_id
+			WHERE NOT EXISTS (SELECT 1 FROM topology_endpoint_reservations r WHERE r.resource_type='link' AND r.resource_id=l.id)
+			UNION ALL
+			SELECT 'network_attachment',a.id FROM network_attachments a JOIN network_objects o ON o.id=a.network_object_id JOIN interfaces i ON i.id=a.interface_id
+			WHERE NOT EXISTS (SELECT 1 FROM topology_endpoint_reservations r WHERE r.resource_type='network_attachment' AND r.resource_id=a.id)
+			UNION ALL
+			SELECT 'network_object_link',l.id FROM network_object_links l
+			WHERE NOT EXISTS (SELECT 1 FROM topology_endpoint_reservations r WHERE r.resource_type='network_object_link' AND r.resource_id=l.id)`)
+		if err != nil {
+			return err
+		}
+		for missing.Next() {
+			var resourceType string
+			var resourceID domain.ID
+			if err = missing.Scan(&resourceType, &resourceID); err != nil {
+				missing.Close()
+				return err
+			}
+			outcomes = append(outcomes, domain.TopologyConnectionRecoveryOutcome{ResourceType: resourceType, ResourceID: resourceID, Action: "reservation_rebuilt"})
+		}
+		if err = missing.Close(); err != nil {
+			return err
+		}
+
+		statements := []string{
+			`INSERT OR IGNORE INTO topology_endpoint_reservations(laboratory_id,owner_type,owner_id,port_name,resource_type,resource_id,operation_id,state,created_at) SELECT l.laboratory_id,'node_interface',i.id,i.name,'link',l.id,'','occupied',? FROM links l JOIN interfaces i ON i.id=l.endpoint_a_id OR i.id=l.endpoint_b_id`,
+			`INSERT OR IGNORE INTO topology_endpoint_reservations(laboratory_id,owner_type,owner_id,port_name,resource_type,resource_id,operation_id,state,created_at) SELECT o.laboratory_id,'node_interface',i.id,i.name,'network_attachment',a.id,'','occupied',? FROM network_attachments a JOIN interfaces i ON i.id=a.interface_id JOIN network_objects o ON o.id=a.network_object_id WHERE a.interface_id IS NOT NULL AND a.interface_id<>''`,
+			`INSERT OR IGNORE INTO topology_endpoint_reservations(laboratory_id,owner_type,owner_id,port_name,resource_type,resource_id,operation_id,state,created_at) SELECT o.laboratory_id,'network_object',a.network_object_id,a.port_name,'network_attachment',a.id,'','occupied',? FROM network_attachments a JOIN network_objects o ON o.id=a.network_object_id WHERE a.port_name<>''`,
+			`INSERT OR IGNORE INTO topology_endpoint_reservations(laboratory_id,owner_type,owner_id,port_name,resource_type,resource_id,operation_id,state,created_at) SELECT laboratory_id,'network_object',object_a_id,port_a_name,'network_object_link',id,'','occupied',? FROM network_object_links`,
+			`INSERT OR IGNORE INTO topology_endpoint_reservations(laboratory_id,owner_type,owner_id,port_name,resource_type,resource_id,operation_id,state,created_at) SELECT laboratory_id,'network_object',object_b_id,port_b_name,'network_object_link',id,'','occupied',? FROM network_object_links`,
+		}
+		now := time.Now().UTC().Format(time.RFC3339Nano)
+		for _, statement := range statements {
+			if _, err = tx.ExecContext(ctx, statement, now); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	return outcomes, err
+}
+
 func (r *Repositories) CreateTopologyNetworkAttachment(ctx context.Context, objectID, interfaceID domain.ID, portName string, config map[string]any, operationID domain.ID) (domain.NetworkAttachment, error) {
 	return r.CreateTopologyNetworkAttachmentAs(ctx, domain.NewID(), objectID, interfaceID, portName, config, operationID)
 }

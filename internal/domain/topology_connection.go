@@ -62,6 +62,12 @@ type TopologyConnection struct {
 	LastError     *Problem                 `json:"last_error,omitempty"`
 }
 
+type TopologyConnectionRecoveryOutcome struct {
+	ResourceType string `json:"resource_type"`
+	ResourceID   ID     `json:"resource_id"`
+	Action       string `json:"action"`
+}
+
 func (e ConnectionEndpoint) Key() string {
 	switch e.Kind {
 	case ConnectionEndpointNodeInterface:

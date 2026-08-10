@@ -321,7 +321,7 @@ func main() {
 		} else {
 			logger.Warn("data-plane reconciler unavailable", "error", dataPlaneErr)
 		}
-		recoveryParticipants := []reconcile.Reconciler{nodeReconciler, reconcile.NewDurableTaskRecoveryReconciler(taskRunner), networkRecovery, portMappingRecovery, reconcile.NewCaptureRecoveryReconciler(captureManager)}
+		recoveryParticipants := []reconcile.Reconciler{nodeReconciler, reconcile.NewDurableTaskRecoveryReconciler(taskRunner), reconcile.NewTopologyConnectionRecoveryReconciler(repositories), networkRecovery, portMappingRecovery, reconcile.NewCaptureRecoveryReconciler(captureManager)}
 		if dataPlaneReconciler != nil {
 			recoveryParticipants = append(recoveryParticipants, dataPlaneReconciler)
 		}

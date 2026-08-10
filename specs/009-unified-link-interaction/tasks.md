@@ -157,7 +157,7 @@
 ### Tests for User Story 4
 
 - [X] T062 [P] [US4] 为统一 create/delete task 的 queued/running/succeeded/failed/cancelling/cancelled、进度、最终查询和幂等结果编写失败测试到 `internal/app/command/topology_connection_tasks_test.go`
-- [ ] T063 [P] [US4] 为事务中 task、backing record、预留、audit/outbox、revision 各故障点的全量回滚和 operation-owned cleanup 编写失败测试到 `internal/store/sqlite/topology_connection_repository_test.go`
+- [X] T063 [P] [US4] 为事务中 task、backing record、预留、audit/outbox、revision 各故障点的全量回滚和 operation-owned cleanup 编写失败测试到 `internal/store/sqlite/topology_connection_repository_test.go`
 - [X] T064 [P] [US4] 为运行中节点链路、附件和对象链路适配、部分 runtime 失败与补偿编写失败测试到 `internal/app/reconcile/topology_connections_test.go`
 - [X] T065 [P] [US4] 为两个 HTTP 客户端与 MCP 同端口争用、兼容路由对称、冲突刷新和不同 key 重试编写失败测试到 `internal/api/http/topology_connection_concurrency_test.go` 与 `internal/api/mcp/topology_connection_tools_test.go`
 - [X] T066 [P] [US4] 为事件顺序、多客户端 store 收敛、提交后删除源/目标和最终 task 状态编写失败前端测试到 `web/src/stores/laboratory.connectionEvents.test.ts` 与 `web/src/features/topology/TopologyWorkspace.test.ts`
@@ -168,13 +168,13 @@
 
 ### Implementation for User Story 4
 
-- [ ] T071 [US4] 在 `internal/app/command/topology_connection_tasks.go` 实现 create/delete/cancel task runner、进度、最终状态检查和 operation-owned 补偿清理
-- [ ] T072 [US4] 在 `internal/app/reconcile/topology_connections.go` 与 `internal/app/reconcile/recovery_coordinator.go` 实现服务重启采用、缺失/孤立预留修复、部分资源清理和结构化恢复问题
+- [X] T071 [US4] 在 `internal/app/command/topology_connection_tasks.go` 实现 create/delete/cancel task runner、进度、最终状态检查和 operation-owned 补偿清理
+- [X] T072 [US4] 在 `internal/app/reconcile/topology_connections.go` 与 `internal/app/reconcile/recovery_coordinator.go` 实现服务重启采用、缺失/孤立预留修复、部分资源清理和结构化恢复问题
 - [ ] T073 [US4] 在 `internal/api/http/topology_handlers.go`、`internal/api/http/network_handlers.go`、`internal/api/mcp/tools.go` 与 `internal/api/mcp/network_tools.go` 将旧专用 mutation 适配到统一应用命令和 durable task 语义
 - [ ] T074 [US4] 在 `internal/app/audit/service.go` 与 `internal/domain/topology_connection.go` 记录 entry point、端点/配置摘要、task、冲突和 cleanup，排除终端内容、包载荷和秘密
 - [ ] T075 [US4] 在 `web/src/stores/laboratory.ts` 与 `web/src/features/topology/TopologyWorkspace.vue` 实现 ordered event 收敛、revision 冲突刷新、新 key 重试和已提交任务取消/最终查询
 - [X] T076 [US4] 在 `web/src/features/topology/TopologyInspector.vue`、`web/src/features/topology/LinkContextMenu.vue` 与 `web/src/features/diagnostics/GlobalCaptureWorkspace.vue` 统一三类连接的删除、抓包、Wireshark 和 Traffic Filter 能力入口
-- [ ] T077 [US4] 在 `internal/app/reconcile/laboratory_deletion.go` 与 `internal/store/sqlite/topology_connection_repository.go` 清理实验室拥有的 backing records、预留、失败 operation 和运行时资源
+- [X] T077 [US4] 在 `internal/app/reconcile/laboratory_deletion.go` 与 `internal/store/sqlite/topology_connection_repository.go` 清理实验室拥有的 backing records、预留、失败 operation 和运行时资源
 - [ ] T078 [US4] 运行 T062–T070、20 次连接循环、恢复、抓包/Traffic Filter 和资源泄漏聚焦门禁，并记录结果到 `specs/009-unified-link-interaction/validation/milestones.md`
 - [ ] T079 [US4] 将实时连接、并发、恢复和清理作为聚焦 Git 提交，并把 commit SHA 写入 `specs/009-unified-link-interaction/validation/milestones.md`
 

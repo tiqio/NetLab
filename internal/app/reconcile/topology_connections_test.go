@@ -12,6 +12,15 @@ type unifiedConnectionRepositoryFake struct {
 	endpoints map[string]domain.ConnectionEndpoint
 }
 
+type topologyConnectionRecoveryStoreFake struct {
+	outcomes []domain.TopologyConnectionRecoveryOutcome
+	err      error
+}
+
+func (f topologyConnectionRecoveryStoreFake) RecoverTopologyConnectionReservations(context.Context) ([]domain.TopologyConnectionRecoveryOutcome, error) {
+	return f.outcomes, f.err
+}
+
 func (f unifiedConnectionRepositoryFake) ResolveConnectionEndpoint(_ context.Context, endpoint domain.ConnectionEndpoint) (domain.ConnectionEndpoint, error) {
 	value, ok := f.endpoints[endpoint.Key()]
 	if !ok {
@@ -79,5 +88,22 @@ func TestUnifiedTopologyConnectionServicePreservesRuntimeFailure(t *testing.T) {
 	_, _, err := service.Create(context.Background(), lab, node, object, domain.TopologyConnectionConfig{}, "failure")
 	if !errors.Is(err, runtimeErr) {
 		t.Fatalf("runtime failure was not preserved: %v", err)
+	}
+}
+
+func TestTopologyConnectionRecoveryReconcilerPublishesStructuredCheckpoints(t *testing.T) {
+	reconciler := NewTopologyConnectionRecoveryReconciler(topologyConnectionRecoveryStoreFake{outcomes: []domain.TopologyConnectionRecoveryOutcome{
+		{ResourceType: "link", ResourceID: "link-1", Action: "reservation_rebuilt"},
+		{ResourceType: "network_attachment", ResourceID: "attachment-1", Action: "orphan_reservation_removed"},
+	}})
+	var checkpoints []RecoveryResourceOutcome
+	if err := reconciler.ReconcileWithCheckpoints(context.Background(), func(outcome RecoveryResourceOutcome) error {
+		checkpoints = append(checkpoints, outcome)
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if len(checkpoints) != 2 || checkpoints[0].State != "recovered" || checkpoints[0].Details["action"] != "reservation_rebuilt" || checkpoints[1].ResourceID != "attachment-1" {
+		t.Fatalf("checkpoints=%+v", checkpoints)
 	}
 }

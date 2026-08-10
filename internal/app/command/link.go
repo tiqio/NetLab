@@ -3,6 +3,7 @@ package command
 import (
 	"context"
 	"fmt"
+
 	"github.com/netlab/netlab/internal/domain"
 )
 
@@ -23,10 +24,5 @@ func (s *LinkService) Connect(ctx context.Context, labID, a, b domain.ID) (domai
 	return link, s.repository.CreateLink(ctx, link)
 }
 func (s *LinkService) Disconnect(ctx context.Context, id domain.ID) error {
-	if repository, ok := s.repository.(interface {
-		MarkLinkDisconnected(context.Context, domain.ID) error
-	}); ok {
-		return repository.MarkLinkDisconnected(ctx, id)
-	}
 	return s.repository.DeleteLink(ctx, id)
 }

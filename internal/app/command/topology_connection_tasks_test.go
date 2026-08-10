@@ -16,6 +16,37 @@ type topologyConnectionTaskStore struct {
 	tasks map[domain.ID]domain.OperationTask
 }
 
+type topologyConnectionTaskExecutorFake struct {
+	started chan struct{}
+	release chan struct{}
+	cleaned chan domain.ID
+}
+
+func (f *topologyConnectionTaskExecutorFake) CreateTopologyConnection(ctx context.Context, value *domain.OperationTask) (map[string]any, error) {
+	if f.started != nil {
+		close(f.started)
+	}
+	if f.release != nil {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-f.release:
+		}
+	}
+	return map[string]any{"connection_id": value.ResourceID}, nil
+}
+
+func (*topologyConnectionTaskExecutorFake) DeleteTopologyConnection(_ context.Context, value *domain.OperationTask) (map[string]any, error) {
+	return map[string]any{"connection_id": value.ResourceID}, nil
+}
+
+func (f *topologyConnectionTaskExecutorFake) CleanupTopologyConnectionOperation(_ context.Context, value domain.OperationTask) error {
+	if f.cleaned != nil {
+		f.cleaned <- value.ID
+	}
+	return nil
+}
+
 func newTopologyConnectionTaskStore() *topologyConnectionTaskStore {
 	return &topologyConnectionTaskStore{tasks: map[domain.ID]domain.OperationTask{}}
 }
@@ -156,5 +187,37 @@ func TestTopologyConnectionTaskFailureAndCancellation(t *testing.T) {
 	cancelled := waitForTopologyConnectionTask(t, store, cancelOperation.ID, domain.TaskCancelled)
 	if cancelled.FinishedAt == nil {
 		t.Fatalf("cancelled task missing final timestamp: %+v", cancelled)
+	}
+}
+
+func TestTopologyConnectionTaskRunnerCheckpointsAndCompensatesCancellation(t *testing.T) {
+	store := newTopologyConnectionTaskStore()
+	runner := apptask.NewRunner(store, 1, 8)
+	defer runner.Close()
+	executor := &topologyConnectionTaskExecutorFake{started: make(chan struct{}), release: make(chan struct{}), cleaned: make(chan domain.ID, 1)}
+	service := NewTopologyConnectionTaskRunner(runner, executor)
+	operation := NewTopologyConnectionOperation(TopologyConnectionCreateTaskKind, "connection", "runner-key", "runner-fingerprint", map[string]any{"cancellation_mode": "operation_owned_cleanup"})
+	if _, err := runner.EnqueueOrGet(context.Background(), operation); err != nil {
+		t.Fatal(err)
+	}
+	<-executor.started
+	running := waitForTopologyConnectionTask(t, store, operation.ID, domain.TaskRunning)
+	if running.ProgressCurrent != 1 {
+		t.Fatalf("missing committed checkpoint: %+v", running)
+	}
+	if err := service.Cancel(context.Background(), operation.ID); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case cleanedTaskID := <-executor.cleaned:
+		if cleanedTaskID != operation.ID {
+			t.Fatalf("cleaned task=%s want=%s", cleanedTaskID, operation.ID)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("operation-owned cleanup was not called")
+	}
+	cancelled := waitForTopologyConnectionTask(t, store, operation.ID, domain.TaskCancelled)
+	if cancelled.FinishedAt == nil || cancelled.ProgressCurrent != 1 {
+		t.Fatalf("unexpected cancelled task: %+v", cancelled)
 	}
 }

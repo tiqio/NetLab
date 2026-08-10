@@ -32,6 +32,7 @@ type Runner struct {
 	cancel    map[domain.ID]context.CancelFunc
 	mu        sync.Mutex
 	enqueueMu sync.Mutex
+	closeOnce sync.Once
 	wg        sync.WaitGroup
 }
 
@@ -187,7 +188,21 @@ func (r *Runner) Recover(ctx context.Context) error {
 	return nil
 }
 
-func (r *Runner) Close() { close(r.queue); r.wg.Wait() }
+func (r *Runner) Close() {
+	r.closeOnce.Do(func() {
+		r.mu.Lock()
+		cancels := make([]context.CancelFunc, 0, len(r.cancel))
+		for _, cancel := range r.cancel {
+			cancels = append(cancels, cancel)
+		}
+		r.mu.Unlock()
+		for _, cancel := range cancels {
+			cancel()
+		}
+		close(r.queue)
+		r.wg.Wait()
+	})
+}
 
 func (r *Runner) worker() {
 	defer r.wg.Done()

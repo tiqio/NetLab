@@ -124,6 +124,24 @@ func TestFinalizeLaboratoryDeletionRemovesDeleteFailedRetry(t *testing.T) {
 	if _, err = database.DB.ExecContext(ctx, `INSERT INTO runtime_ownership(resource_type,resource_id,object_kind,object_name,metadata_json,cleanup_state) VALUES('unknown',?,'test_object','owned-object','{}','missing_validation_required')`, node.ID); err != nil {
 		t.Fatal(err)
 	}
+	repositories := NewRepositories(database)
+	now := time.Now().UTC()
+	objectA := domain.NetworkObject{ID: domain.NewID(), LaboratoryID: laboratory.ID, Name: "switch-a", Kind: domain.NetworkSwitchL2, Revision: 1, DesiredState: "active", ObservedState: "active", Config: map[string]any{"ports": []any{map[string]any{"name": "eth0"}}}, CreatedAt: now, UpdatedAt: now}
+	objectB := domain.NetworkObject{ID: domain.NewID(), LaboratoryID: laboratory.ID, Name: "switch-b", Kind: domain.NetworkSwitchL2, Revision: 1, DesiredState: "active", ObservedState: "active", Config: map[string]any{"ports": []any{map[string]any{"name": "eth0"}}}, CreatedAt: now, UpdatedAt: now}
+	if err = repositories.CreateNetworkObject(ctx, objectA); err != nil {
+		t.Fatal(err)
+	}
+	if err = repositories.CreateNetworkObject(ctx, objectB); err != nil {
+		t.Fatal(err)
+	}
+	objectLink := domain.NetworkObjectLink{ID: domain.NewID(), LaboratoryID: laboratory.ID, ObjectAID: objectA.ID, PortAName: "eth0", ObjectBID: objectB.ID, PortBName: "eth0", Revision: 1, DesiredState: "connected", ObservedState: "connected"}
+	if err = repositories.CreateNetworkObjectLink(ctx, objectLink); err != nil {
+		t.Fatal(err)
+	}
+	objectLinkTaskID := domain.NewID()
+	if _, err = database.DB.ExecContext(ctx, `INSERT INTO operation_tasks(id,kind,resource_type,resource_id,state,progress_current,progress_total,input_json,created_at) VALUES(?,'network_object_link.create','network_object_link',?,'failed',1,2,'{}',?)`, objectLinkTaskID, objectLink.ID, now.Format(time.RFC3339Nano)); err != nil {
+		t.Fatal(err)
+	}
 	captureID := domain.NewID()
 	if _, err = database.DB.ExecContext(ctx, `INSERT INTO operation_tasks(id,kind,resource_type,resource_id,requested_revision,state,progress_current,progress_total,input_json,created_at) VALUES(?,?,?,?,0,'succeeded',2,2,?,?)`, domain.NewID(), "capture.start", "capture", captureID, `{"request":{"laboratory_id":"`+string(laboratory.ID)+`"}}`, time.Now().UTC().Format(time.RFC3339Nano)); err != nil {
 		t.Fatal(err)
@@ -152,5 +170,15 @@ func TestFinalizeLaboratoryDeletionRemovesDeleteFailedRetry(t *testing.T) {
 	}
 	if ownershipCount != 0 {
 		t.Fatalf("expected purged capture ownership to be deleted, got %d", ownershipCount)
+	}
+	for table, target := range map[string][2]string{
+		"network_object_links":           {"id", string(objectLink.ID)},
+		"topology_endpoint_reservations": {"resource_id", string(objectLink.ID)},
+		"operation_tasks":                {"id", string(objectLinkTaskID)},
+	} {
+		var count int
+		if err = database.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM `+table+` WHERE `+target[0]+`=?`, target[1]).Scan(&count); err != nil || count != 0 {
+			t.Fatalf("table=%s count=%d err=%v", table, count, err)
+		}
 	}
 }
