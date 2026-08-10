@@ -57,6 +57,7 @@ import { TopologyKeyboardController } from "./topologyKeyboardController";
 import { resolvePlacements } from "./topologyLayout";
 import { buildPlacementBatch } from "./topologyPlacementBatch";
 import { runObjectLinkDeletion } from "./objectLinkDeletion";
+import { waitForTopologyTaskFinal } from "./topologyTaskFinalization";
 import {
   applyAuthoritativeCreation,
   type AuthoritativeCreation,
@@ -1251,11 +1252,13 @@ async function submitReconnect(
 async function cancelReconnect() {
   if (!activeReconnectTaskId.value) return;
   try {
-    const task = await api.cancelTask(activeReconnectTaskId.value);
+    const requested = await api.cancelTask(activeReconnectTaskId.value);
+    const task = await waitForTopologyTaskFinal(api.getTask, requested.id);
     const index = store.tasks.findIndex((item) => item.id === task.id);
     if (index >= 0) store.tasks[index] = task;
-    canvasStatus.value =
-      "Reconnect cancellation requested; original endpoints remain authoritative.";
+    else store.tasks.unshift(task);
+    await refreshActive();
+    canvasStatus.value = `Reconnect cancellation resolved as ${task.state}; refreshed authoritative endpoints.`;
   } catch (error) {
     canvasStatus.value = error instanceof Error ? error.message : String(error);
   }
