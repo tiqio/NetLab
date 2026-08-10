@@ -2,6 +2,8 @@ package sqlite
 
 import (
 	"context"
+	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -56,6 +58,80 @@ func TestTopologyEndpointReservationsSerializeLinksAndAttachments(t *testing.T) 
 	}
 	if err = topology.CreateLink(ctx, link); err != nil {
 		t.Fatalf("create link after release: %v", err)
+	}
+}
+
+func TestTopologyEndpointReservationsAllowSingleConcurrentWinnerAndReleaseOnDelete(t *testing.T) {
+	ctx := context.Background()
+	database, err := Open(ctx, "file:topology-connection-concurrency?mode=memory&cache=shared")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer database.Close()
+	topology := NewTopologyRepository(database)
+	lab, err := command.NewLaboratoryService(topology).Create(ctx, "concurrency", "", domain.RecoveryAutoRestore)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, interfacesA, err := command.NewNodeService(topology).CreateConfigured(ctx, lab.ID, command.CreateNodeRequest{Name: "node-a", Kind: "docker", InterfaceCount: 1, InterfaceLimit: 4})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, interfacesB, err := command.NewNodeService(topology).CreateConfigured(ctx, lab.ID, command.CreateNodeRequest{Name: "node-b", Kind: "docker", InterfaceCount: 1, InterfaceLimit: 4})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	type result struct {
+		id  domain.ID
+		err error
+	}
+	results := make(chan result, 10)
+	var waitGroup sync.WaitGroup
+	for index := range 10 {
+		waitGroup.Add(1)
+		go func(index int) {
+			defer waitGroup.Done()
+			id := domain.ID(fmt.Sprintf("contended-link-%d", index))
+			err := topology.CreateLink(ctx, domain.Link{ID: id, LaboratoryID: lab.ID, EndpointAID: interfacesA[0].ID, EndpointBID: interfacesB[0].ID, Revision: 1, DesiredState: "connected", ObservedState: "pending"})
+			results <- result{id: id, err: err}
+		}(index)
+	}
+	waitGroup.Wait()
+	close(results)
+
+	var winner domain.ID
+	for value := range results {
+		if value.err == nil {
+			if winner != "" {
+				t.Fatalf("multiple winners: %s and %s", winner, value.id)
+			}
+			winner = value.id
+			continue
+		}
+		problem, ok := domain.ProblemFromError(value.err)
+		if !ok || problem.Code != "port_in_use" {
+			t.Fatalf("loser %s returned %v", value.id, value.err)
+		}
+	}
+	if winner == "" {
+		t.Fatal("expected one successful connection")
+	}
+	var reservations int
+	if err = database.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM topology_endpoint_reservations WHERE resource_type='link' AND resource_id=?`, winner).Scan(&reservations); err != nil {
+		t.Fatal(err)
+	}
+	if reservations != 2 {
+		t.Fatalf("winner reservations=%d want 2", reservations)
+	}
+	if err = topology.DeleteLink(ctx, winner); err != nil {
+		t.Fatal(err)
+	}
+	if err = database.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM topology_endpoint_reservations WHERE resource_type='link' AND resource_id=?`, winner).Scan(&reservations); err != nil {
+		t.Fatal(err)
+	}
+	if reservations != 0 {
+		t.Fatalf("deleted connection leaked %d reservations", reservations)
 	}
 }
 
