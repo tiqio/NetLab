@@ -303,4 +303,4 @@ Foundational
 - [ ] T091 使用真实 SQLite repository、task runner、HTTP router 与 MCP tools 增加共享端口并发集成测试，验证单赢家、结构化冲突、幂等重放和权威刷新 per FR-019, FR-024, US4/AC2 (partial)
 - [ ] T092 扩展统一连接恢复 Playwright 旅程，覆盖 Link、Network Attachment、Network Object Link 的已建立身份与状态恢复，并严格断言预留、运行时 ownership、backing records 和实验室删除后零泄漏 per FR-022, SC-010 (partial)
 - [ ] T093 将 `entry_point` 从 SPA 手势、HTTP 请求、MCP 参数和兼容 mutation 贯通到统一命令、task input、审计事件及合同测试 per FR-027, plan: audit decision (missing)
-- [ ] T094 为十轮双浏览器、HTTP、MCP 争用旅程记录每个客户端的权威状态收敛耗时，并断言正常目标机负载下不超过 2 秒 per SC-006 (partial)
+- [X] T094 为十轮双浏览器、HTTP、MCP 争用旅程记录每个客户端的权威状态收敛耗时，并断言正常目标机负载下不超过 2 秒 per SC-006 (partial)

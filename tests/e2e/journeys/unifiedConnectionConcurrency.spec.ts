@@ -31,6 +31,7 @@ test("two browsers HTTP and MCP serialize ten endpoint contention rounds", async
   );
   const peer = await page.context().newPage();
   await peer.goto(`/laboratories/${laboratory.id}`);
+  const convergenceSamples: Array<Record<string, number>> = [];
   for (let round = 0; round < 10; round += 1) {
     const snapshot = await (
       await automation.get(`/api/v1/labs/${laboratory.id}/connections`)
@@ -90,6 +91,7 @@ test("two browsers HTTP and MCP serialize ten endpoint contention rounds", async
           idempotencyKey: `${runId}-browser-${round}-${key}`,
         },
       );
+    const contentionStartedAt = Date.now();
     const [browserA, browserB, http, mcp] = await Promise.all([
       browserCreate(page, "a"),
       browserCreate(peer, "b"),
@@ -130,15 +132,67 @@ test("two browsers HTTP and MCP serialize ten endpoint contention rounds", async
         })),
     ]);
     const outcomes = [browserA, browserB, http, mcp];
-    const authoritative = await waitForCondition(
-      async () =>
-        (
-          await automation.get(`/api/v1/labs/${laboratory.id}/connections`)
-        ).json(),
-      (value: { connections?: unknown[] }) =>
-        (value.connections || []).length === 1,
-      `contention round ${round}`,
-    );
+    const observeBrowser = async (browserPage: typeof page) =>
+      browserPage.evaluate(async (laboratoryId) => {
+        const response = await fetch(
+          `/api/v1/labs/${laboratoryId}/connections`,
+        );
+        return response.json();
+      }, laboratory.id);
+    const observeMCP = async () => {
+      const response = await automation.post("/mcp", {
+        headers: { Accept: "application/json" },
+        data: {
+          jsonrpc: "2.0",
+          id: `observe-${round}`,
+          method: "tools/call",
+          params: {
+            name: "netlab.topology_connections.list",
+            arguments: { laboratory_id: laboratory.id },
+          },
+        },
+      });
+      return response.json();
+    };
+    const convergence = async (
+      name: string,
+      observe: () => Promise<unknown>,
+    ) => {
+      const value = await waitForCondition(
+        observe,
+        (current: unknown) =>
+          JSON.stringify(current).match(/\"backing_kind\"/g)?.length === 1,
+        `${name} contention round ${round}`,
+      );
+      return { value, elapsed: Date.now() - contentionStartedAt };
+    };
+    const [browserAState, browserBState, httpState, mcpState] =
+      await Promise.all([
+        convergence("browser A", () => observeBrowser(page)),
+        convergence("browser B", () => observeBrowser(peer)),
+        convergence("HTTP", async () =>
+          (
+            await automation.get(`/api/v1/labs/${laboratory.id}/connections`)
+          ).json(),
+        ),
+        convergence("MCP", observeMCP),
+      ]);
+    const roundConvergence = {
+      browser_a: browserAState.elapsed,
+      browser_b: browserBState.elapsed,
+      http: httpState.elapsed,
+      mcp: mcpState.elapsed,
+    };
+    convergenceSamples.push(roundConvergence);
+    for (const [client, elapsed] of Object.entries(roundConvergence)) {
+      expect(
+        elapsed,
+        `${client} convergence round ${round}`,
+      ).toBeLessThanOrEqual(2_000);
+    }
+    const authoritative = httpState.value as {
+      connections: Array<{ id: string; revision: number }>;
+    };
     expect(
       outcomes.filter(
         (item) =>
@@ -173,7 +227,7 @@ test("two browsers HTTP and MCP serialize ten endpoint contention rounds", async
     result(
       "topology.connection.concurrent-control-planes",
       testInfo.project.use.viewport!,
-      "ten rounds converged to one winner and released both endpoint reservations",
+      `ten rounds converged to one winner within 2s per client and released both endpoint reservations; samples=${JSON.stringify(convergenceSamples)}`,
       [laboratory.id],
     ),
   );
