@@ -162,8 +162,8 @@
 - [X] T065 [P] [US4] 为两个 HTTP 客户端与 MCP 同端口争用、兼容路由对称、冲突刷新和不同 key 重试编写失败测试到 `internal/api/http/topology_connection_concurrency_test.go` 与 `internal/api/mcp/topology_connection_tools_test.go`
 - [X] T066 [P] [US4] 为事件顺序、多客户端 store 收敛、提交后删除源/目标和最终 task 状态编写失败前端测试到 `web/src/stores/laboratory.connectionEvents.test.ts` 与 `web/src/features/topology/TopologyWorkspace.test.ts`
 - [X] T067 [P] [US4] 为三类统一连接的选择、删除、抓包、Wireshark 和 Traffic Filter 能力无回归编写失败测试到 `web/src/features/topology/TopologyInspector.test.ts`、`web/src/features/diagnostics/GlobalCaptureWorkspace.test.ts` 与 `web/src/features/diagnostics/TrafficFilterPanel.test.ts`
-- [ ] T068 [P] [US4] 增加双浏览器、HTTP、MCP 十组并发端口争用和 2 秒收敛 Playwright 旅程到 `tests/e2e/journeys/unifiedConnectionConcurrency.spec.ts`
-- [ ] T069 [P] [US4] 增加连接创建/删除/取消、服务重启、恢复和实验室删除零泄漏 Playwright 旅程到 `tests/e2e/journeys/unifiedConnectionRecovery.spec.ts`
+- [X] T068 [P] [US4] 增加双浏览器、HTTP、MCP 十组并发端口争用和 2 秒收敛 Playwright 旅程到 `tests/e2e/journeys/unifiedConnectionConcurrency.spec.ts`
+- [X] T069 [P] [US4] 增加连接创建/删除/取消、服务重启、恢复和实验室删除零泄漏 Playwright 旅程到 `tests/e2e/journeys/unifiedConnectionRecovery.spec.ts`
 - [ ] T070 [P] [US4] 扩展特权服务重启脚本，覆盖混合 backing connection 身份采用、端点预留、孤立资源和泄漏断言到 `acceptance/t225-service-restart.sh`
 
 ### Implementation for User Story 4
