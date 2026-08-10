@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/netlab/netlab/internal/app/command"
 	"github.com/netlab/netlab/internal/domain"
 )
 
@@ -78,12 +79,20 @@ func (h *TopologyConnectionHandlers) create(c *gin.Context) {
 		Source domain.ConnectionEndpoint       `json:"source"`
 		Target domain.ConnectionEndpoint       `json:"target"`
 		Config domain.TopologyConnectionConfig `json:"config"`
+		Entry  string                          `json:"entry_point"`
 	}
 	if err = c.ShouldBindJSON(&body); err != nil {
 		handleError(c, err)
 		return
 	}
-	connection, taskValue, err := h.commands.Create(c, laboratoryID, body.Source, body.Target, body.Config, c.GetHeader("Idempotency-Key"))
+	entryPoint := body.Entry
+	if entryPoint == "" {
+		entryPoint = "http"
+	}
+	entryContext := command.WithTopologyConnectionEntryPoint(c, entryPoint)
+	entryPoint = command.TopologyConnectionEntryPoint(entryContext, "http")
+	c.Set("topology_entry_point", entryPoint)
+	connection, taskValue, err := h.commands.Create(entryContext, laboratoryID, body.Source, body.Target, body.Config, c.GetHeader("Idempotency-Key"))
 	if err != nil {
 		handleError(c, err)
 		return
@@ -107,7 +116,14 @@ func (h *TopologyConnectionHandlers) delete(c *gin.Context) {
 		writeProblem(c, http.StatusPreconditionRequired, domain.Problem{Code: "precondition_required", Message: "valid If-Match connection revision required"})
 		return
 	}
-	connection, taskValue, err := h.commands.Delete(c, domain.ID(c.Param("connectionId")), revision, c.GetHeader("Idempotency-Key"))
+	entryPoint := c.Query("entry_point")
+	if entryPoint == "" {
+		entryPoint = "http"
+	}
+	entryContext := command.WithTopologyConnectionEntryPoint(c, entryPoint)
+	entryPoint = command.TopologyConnectionEntryPoint(entryContext, "http")
+	c.Set("topology_entry_point", entryPoint)
+	connection, taskValue, err := h.commands.Delete(entryContext, domain.ID(c.Param("connectionId")), revision, c.GetHeader("Idempotency-Key"))
 	if err != nil {
 		handleError(c, err)
 		return

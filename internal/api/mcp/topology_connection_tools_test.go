@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/netlab/netlab/internal/app/command"
 	"github.com/netlab/netlab/internal/domain"
 )
 
@@ -67,6 +68,33 @@ func (topologyConnectionToolCommandsStub) Get(context.Context, domain.ID) (domai
 }
 func (topologyConnectionToolCommandsStub) Delete(context.Context, domain.ID, domain.Revision, string) (domain.TopologyConnection, domain.OperationTask, error) {
 	return domain.TopologyConnection{ID: "connection", Revision: 1, DesiredState: "disconnected", ObservedState: "disconnecting"}, domain.OperationTask{ID: "delete-task", State: domain.TaskQueued}, nil
+}
+
+type topologyConnectionEntryPointCommandsStub struct {
+	topologyConnectionToolCommandsStub
+	entryPoint string
+}
+
+func (s *topologyConnectionEntryPointCommandsStub) Create(ctx context.Context, laboratoryID domain.ID, source, target domain.ConnectionEndpoint, config domain.TopologyConnectionConfig, key string) (domain.TopologyConnection, domain.OperationTask, error) {
+	s.entryPoint = command.TopologyConnectionEntryPoint(ctx, "")
+	return s.topologyConnectionToolCommandsStub.Create(ctx, laboratoryID, source, target, config, key)
+}
+
+func TestTopologyConnectionMCPPropagatesEntryPoint(t *testing.T) {
+	commands := &topologyConnectionEntryPointCommandsStub{}
+	tools := TopologyConnectionTools(commands, topologyConnectionToolReadStub{})
+	contextValue, _ := gin.CreateTestContext(nil)
+	_, err := tools[0].Handler(contextValue, map[string]any{
+		"laboratory_id": "lab", "expected_revision": float64(4), "idempotency_key": "entry-key", "entry_point": "compatibility_mcp",
+		"source": map[string]any{"kind": "node_interface", "resource_id": "node-a", "port_id": "if-a"},
+		"target": map[string]any{"kind": "node_interface", "resource_id": "node-b", "port_id": "if-b"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if commands.entryPoint != "compatibility_mcp" {
+		t.Fatalf("entry_point=%q", commands.entryPoint)
+	}
 }
 
 type topologyConnectionToolReadStub struct{}

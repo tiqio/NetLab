@@ -37,6 +37,8 @@ func MutationAutomation(idempotency *command.IdempotencyService, _ MutationTaskS
 			c.Next()
 			return
 		}
+		c.Request = c.Request.WithContext(command.WithTopologyConnectionEntryPoint(c.Request.Context(), "compatibility_http"))
+		c.Set(command.TopologyConnectionEntryPointContextKey, "compatibility_http")
 		if durableTaskMutation(c.Request.Method, c.Request.URL.Path) {
 			writer := &captureWriter{ResponseWriter: c.Writer}
 			c.Writer = writer
@@ -56,7 +58,11 @@ func MutationAutomation(idempotency *command.IdempotencyService, _ MutationTaskS
 				if c.Writer.Status() >= 400 {
 					outcome = "failed"
 				}
-				_, _ = audits.Record(context.Background(), "api", c.Request.Method+":"+c.FullPath(), resourceType, resourceID, taskID, outcome, string(taskID), map[string]any{"status": c.Writer.Status()})
+				entryPoint := c.GetString("topology_entry_point")
+				if entryPoint == "" {
+					entryPoint = command.TopologyConnectionEntryPoint(c.Request.Context(), "compatibility_http")
+				}
+				_, _ = audits.Record(context.Background(), "api", c.Request.Method+":"+c.FullPath(), resourceType, resourceID, taskID, outcome, string(taskID), map[string]any{"status": c.Writer.Status(), "entry_point": entryPoint})
 			}
 			return
 		}
@@ -79,7 +85,7 @@ func MutationAutomation(idempotency *command.IdempotencyService, _ MutationTaskS
 				outcome = "failed"
 			}
 			if audits != nil {
-				_, _ = audits.Record(context.Background(), "api", c.Request.Method+":"+c.FullPath(), resourceType, resourceID, "", outcome, "", map[string]any{"status": status})
+				_, _ = audits.Record(context.Background(), "api", c.Request.Method+":"+c.FullPath(), resourceType, resourceID, "", outcome, "", map[string]any{"status": status, "entry_point": command.TopologyConnectionEntryPoint(c.Request.Context(), "compatibility_http")})
 			}
 			return status, writer.body.Bytes(), nil
 		}
@@ -129,6 +135,12 @@ func durableTaskMutation(method, path string) bool {
 	if method == http.MethodPost && len(parts) == 5 && parts[2] == "labs" && parts[4] == "links" {
 		return true
 	}
+	if method == http.MethodPost && len(parts) == 5 && parts[2] == "labs" && parts[4] == "connections" {
+		return true
+	}
+	if method == http.MethodDelete && len(parts) == 4 && parts[2] == "connections" {
+		return true
+	}
 	if method == http.MethodPost && len(parts) == 5 && parts[2] == "labs" && (parts[4] == "exports" || parts[4] == "duplicate") {
 		return true
 	}
@@ -156,7 +168,7 @@ func isMutation(method string) bool {
 
 func mutationResource(path string) (string, domain.ID) {
 	parts := strings.Split(strings.Trim(path, "/"), "/")
-	collections := map[string]string{"labs": "laboratory", "nodes": "node", "links": "link", "interfaces": "interface", "network-objects": "network_object", "port-mappings": "port_mapping", "captures": "capture", "traffic-filters": "traffic_filter", "tasks": "operation_task"}
+	collections := map[string]string{"labs": "laboratory", "nodes": "node", "links": "link", "connections": "topology_connection", "interfaces": "interface", "network-objects": "network_object", "port-mappings": "port_mapping", "captures": "capture", "traffic-filters": "traffic_filter", "tasks": "operation_task"}
 	for index := len(parts) - 2; index >= 0; index-- {
 		if resourceType := collections[parts[index]]; resourceType != "" && index+1 < len(parts) {
 			return resourceType, domain.ID(parts[index+1])

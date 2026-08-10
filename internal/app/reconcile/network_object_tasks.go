@@ -32,7 +32,7 @@ func NewNetworkObjectTaskService(service *NetworkObjectService, runner *task.Run
 }
 
 func (s *NetworkObjectTaskService) CreateAttachment(ctx context.Context, laboratoryID, objectID, interfaceID domain.ID, portName string, config map[string]any, idempotencyKey string) (domain.NetworkAttachment, domain.OperationTask, error) {
-	input := map[string]any{"laboratory_id": laboratoryID, "network_object_id": objectID, "interface_id": interfaceID, "port_name": strings.TrimSpace(portName), "config": config}
+	input := map[string]any{"laboratory_id": laboratoryID, "network_object_id": objectID, "interface_id": interfaceID, "port_name": strings.TrimSpace(portName), "config": config, "entry_point": command.TopologyConnectionEntryPoint(ctx, "compatibility_http")}
 	attachment := domain.NetworkAttachment{ID: domain.NewID(), NetworkObjectID: objectID, InterfaceID: interfaceID, PortName: strings.TrimSpace(portName), Config: config, Revision: 1, ObservedState: "pending"}
 	operation := networkObjectOperation("network_attachment.create", attachment.ID, idempotencyKey, input)
 	operation.ResourceType = "network_attachment"
@@ -66,7 +66,7 @@ func (s *NetworkObjectTaskService) DeleteAttachment(ctx context.Context, id doma
 	if attachment.Revision != revision {
 		return domain.NetworkAttachment{}, domain.OperationTask{}, domain.Problem{Code: "revision_conflict", Message: fmt.Sprintf("expected revision %d, current revision is %d", revision, attachment.Revision), ResourceType: "network_attachment", ResourceID: id, Phase: "delete_admission"}
 	}
-	input := map[string]any{"revision": int64(revision), "network_object_id": attachment.NetworkObjectID, "interface_id": attachment.InterfaceID, "port_name": attachment.PortName, "config": attachment.Config}
+	input := map[string]any{"revision": int64(revision), "network_object_id": attachment.NetworkObjectID, "interface_id": attachment.InterfaceID, "port_name": attachment.PortName, "config": attachment.Config, "entry_point": command.TopologyConnectionEntryPoint(ctx, "compatibility_http")}
 	operation := networkObjectOperation("network_attachment.delete", id, idempotencyKey, input)
 	operation.ResourceType = "network_attachment"
 	queued, err := s.runner.EnqueueOrGet(ctx, operation)
@@ -93,7 +93,7 @@ func (s *NetworkObjectTaskService) DeleteObjectLink(ctx context.Context, id doma
 	if link.Revision != revision {
 		return domain.NetworkObjectLink{}, domain.OperationTask{}, domain.Problem{Code: "revision_conflict", Message: fmt.Sprintf("expected revision %d, current revision is %d", revision, link.Revision), ResourceType: "network_object_link", ResourceID: id, Phase: "delete_admission"}
 	}
-	input := map[string]any{"revision": int64(revision), "laboratory_id": link.LaboratoryID, "object_a_id": link.ObjectAID, "port_a_name": link.PortAName, "object_b_id": link.ObjectBID, "port_b_name": link.PortBName}
+	input := map[string]any{"revision": int64(revision), "laboratory_id": link.LaboratoryID, "object_a_id": link.ObjectAID, "port_a_name": link.PortAName, "object_b_id": link.ObjectBID, "port_b_name": link.PortBName, "entry_point": command.TopologyConnectionEntryPoint(ctx, "compatibility_http")}
 	operation := networkObjectLinkOperation("network_object_link.delete", id, idempotencyKey, input)
 	queued, err := s.runner.EnqueueOrGet(ctx, operation)
 	if err != nil {
@@ -120,7 +120,7 @@ func (s *NetworkObjectTaskService) CreateObjectLink(ctx context.Context, laborat
 		return domain.NetworkObjectLink{}, domain.OperationTask{}, err
 	}
 	link := domain.NetworkObjectLink{ID: domain.NewID(), LaboratoryID: laboratoryID, ObjectAID: objectAID, PortAName: portAName, ObjectBID: objectBID, PortBName: portBName, Revision: 1, DesiredState: "connected", ObservedState: "pending"}
-	input := map[string]any{"laboratory_id": laboratoryID, "object_a_id": objectAID, "port_a_name": portAName, "object_b_id": objectBID, "port_b_name": portBName}
+	input := map[string]any{"laboratory_id": laboratoryID, "object_a_id": objectAID, "port_a_name": portAName, "object_b_id": objectBID, "port_b_name": portBName, "entry_point": command.TopologyConnectionEntryPoint(ctx, "compatibility_http")}
 	operation := networkObjectLinkOperation("network_object_link.create", link.ID, idempotencyKey, input)
 	if idempotencyKey != "" {
 		if existing, lookupErr := s.runner.GetByIdempotency(ctx, operation.Kind, idempotencyKey); lookupErr == nil {

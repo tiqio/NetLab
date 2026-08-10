@@ -75,7 +75,7 @@
           "idempotency_key": { "type": "string", "minLength": 1, "maxLength": 128 },
           "entry_point": {
             "type": "string",
-            "enum": ["mcp", "compatibility"],
+            "enum": ["mcp", "compatibility_mcp"],
             "default": "mcp"
           },
           "source": { "$ref": "#/definitions/endpointRef" },
@@ -143,7 +143,7 @@
           "idempotency_key": { "type": "string", "minLength": 1, "maxLength": 128 },
           "entry_point": {
             "type": "string",
-            "enum": ["mcp", "compatibility"],
+            "enum": ["mcp", "compatibility_mcp"],
             "default": "mcp"
           }
         },

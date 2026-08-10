@@ -227,6 +227,10 @@ components:
           $ref: '#/components/schemas/ConnectionEndpointRef'
         config:
           $ref: '#/components/schemas/ConnectionConfig'
+        entry_point:
+          type: string
+          enum: [port_click, port_drag, resource_plus, keyboard, http]
+          default: http
       additionalProperties: false
     TopologyConnection:
       type: object

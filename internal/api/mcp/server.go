@@ -125,7 +125,17 @@ func (s *Server) callTool(c *gin.Context, request request) {
 		Value   any             `json:"value,omitempty"`
 		Problem *domain.Problem `json:"problem,omitempty"`
 	}
+	entryPoint := optionalString(params.Arguments, "entry_point")
+	if entryPoint == "" {
+		if strings.HasPrefix(params.Name, "netlab.topology_connections.") {
+			entryPoint = "mcp"
+		} else {
+			entryPoint = "compatibility_mcp"
+		}
+	}
 	invoke := func(ctx context.Context) (int, []byte, error) {
+		c.Request = c.Request.WithContext(command.WithTopologyConnectionEntryPoint(c.Request.Context(), entryPoint))
+		c.Set(command.TopologyConnectionEntryPointContextKey, entryPoint)
 		value, err := tool.Handler(c, params.Arguments)
 		if err != nil {
 			problem := problemFromError(err)
@@ -161,7 +171,7 @@ func (s *Server) callTool(c *gin.Context, request request) {
 			outcome = "failed"
 		}
 		resourceType, resourceID := mcpResource(params.Arguments)
-		_, _ = s.audit.Record(context.Background(), "mcp", params.Name, resourceType, resourceID, "", outcome, string(domain.NewID()), map[string]any{"idempotency": key != ""})
+		_, _ = s.audit.Record(context.Background(), "mcp", params.Name, resourceType, resourceID, "", outcome, string(domain.NewID()), map[string]any{"idempotency": key != "", "entry_point": entryPoint, "source": params.Arguments["source"], "target": params.Arguments["target"], "config": params.Arguments["config"]})
 	}
 	if err != nil {
 		problem := problemFromError(err)

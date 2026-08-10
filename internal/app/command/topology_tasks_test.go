@@ -417,9 +417,12 @@ func TestTopologyTaskLinkConnectAndCancellationCompensation(t *testing.T) {
 	service := NewTopologyTaskService(repository, runner)
 	service.poll = 5 * time.Millisecond
 	service.timeout = time.Second
-	link, value, err := service.ConnectLink(context.Background(), "lab", "a", "b", "link-key")
+	link, value, err := service.ConnectLink(WithTopologyConnectionEntryPoint(context.Background(), "port_drag"), "lab", "a", "b", "link-key")
 	if err != nil {
 		t.Fatal(err)
+	}
+	if value.Input["entry_point"] != "port_drag" {
+		t.Fatalf("task input=%+v", value.Input)
 	}
 	waitForTopologyTask(t, store, value.ID, func(current domain.OperationTask) bool {
 		return current.State == domain.TaskRunning && current.ProgressCurrent >= 1

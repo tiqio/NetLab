@@ -242,11 +242,15 @@ func TestNetworkObjectLinkCreateIsDurableIdempotentAndObservable(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	predicted, queued, err := operations.CreateObjectLink(ctx, lab.ID, "switch-a", "swp1", "switch-b", "swp1", "link-create-key")
+	entryContext := command.WithTopologyConnectionEntryPoint(ctx, "mcp")
+	predicted, queued, err := operations.CreateObjectLink(entryContext, lab.ID, "switch-a", "swp1", "switch-b", "swp1", "link-create-key")
 	if err != nil {
 		t.Fatal(err)
 	}
-	replayed, replayedTask, err := operations.CreateObjectLink(ctx, lab.ID, "switch-a", "swp1", "switch-b", "swp1", "link-create-key")
+	if queued.Input["entry_point"] != "mcp" {
+		t.Fatalf("task input=%+v", queued.Input)
+	}
+	replayed, replayedTask, err := operations.CreateObjectLink(entryContext, lab.ID, "switch-a", "swp1", "switch-b", "swp1", "link-create-key")
 	if err != nil {
 		t.Fatal(err)
 	}

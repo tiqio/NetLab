@@ -67,6 +67,12 @@
 - 未提交取消不得调用 API，也不得写入 Pinia 共享 topology。
 - 已提交任务的取消使用正式 task cancel；UI 随后查询最终连接状态，不假定回滚成功。
 
+## 9.1 Entry Point Audit
+
+- SPA 创建请求必须按实际手势发送 `port_click`、`port_drag`、`resource_plus` 或 `keyboard`。
+- 直接 HTTP 调用缺省记录为 `http`，MCP 调用缺省记录为 `mcp`；旧专用 mutation 分别记录为 `compatibility_http` 或 `compatibility_mcp`。
+- `entry_point` 必须进入 durable task input 和 mutation audit details，但不得包含终端内容、包载荷或凭据。
+
 ## 10. Existing Connection Operations
 
 - 三类连接继续使用 010 的 `ConnectionPresentation`、状态优先级、平行线路和动态语义图例。

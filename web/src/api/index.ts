@@ -428,6 +428,8 @@ export const generatedApi = {
         "kind" | "resource_id" | "port_id" | "port_name"
       >;
       config?: TopologyConnectionConfig;
+      entry_point?:
+        "port_click" | "port_drag" | "resource_plus" | "keyboard" | "http";
     },
     idempotencyKey?: string,
   ) =>

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gin-gonic/gin"
+	"github.com/netlab/netlab/internal/app/command"
 	"github.com/netlab/netlab/internal/domain"
 )
 
@@ -31,7 +32,7 @@ func TopologyConnectionTools(commands TopologyConnectionCommands, read TopologyC
 		"required": []string{"kind", "resource_id"},
 	}
 	return []Tool{
-		{Name: "netlab.topology_connections.create", Description: "Create a topology connection from two normalized endpoints without selecting the backing model.", InputSchema: mutationSchema(map[string]any{"laboratory_id": stringProperty("Laboratory ID"), "source": endpointSchema, "target": endpointSchema, "config": map[string]any{"type": "object"}}, "laboratory_id", "expected_revision", "idempotency_key", "source", "target"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
+		{Name: "netlab.topology_connections.create", Description: "Create a topology connection from two normalized endpoints without selecting the backing model.", InputSchema: mutationSchema(map[string]any{"laboratory_id": stringProperty("Laboratory ID"), "source": endpointSchema, "target": endpointSchema, "config": map[string]any{"type": "object"}, "entry_point": enumProperty("mcp", "compatibility_mcp")}, "laboratory_id", "expected_revision", "idempotency_key", "source", "target"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
 			laboratoryText, err := argumentString(args, "laboratory_id")
 			if err != nil {
 				return nil, err
@@ -57,7 +58,11 @@ func TopologyConnectionTools(commands TopologyConnectionCommands, read TopologyC
 					return nil, err
 				}
 			}
-			connection, taskValue, err := commands.Create(c, laboratoryID, source, target, config, optionalString(args, "idempotency_key"))
+			entryPoint := optionalString(args, "entry_point")
+			if entryPoint == "" {
+				entryPoint = "mcp"
+			}
+			connection, taskValue, err := commands.Create(command.WithTopologyConnectionEntryPoint(c, entryPoint), laboratoryID, source, target, config, optionalString(args, "idempotency_key"))
 			if err != nil {
 				return nil, err
 			}
@@ -90,12 +95,16 @@ func TopologyConnectionTools(commands TopologyConnectionCommands, read TopologyC
 			}
 			return commands.Get(c, domain.ID(id))
 		}},
-		{Name: "netlab.topology_connections.delete", Description: "Delete a unified topology connection through a durable task.", InputSchema: mutationSchema(map[string]any{"connection_id": stringProperty("Connection ID")}, "connection_id", "expected_revision", "idempotency_key"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
+		{Name: "netlab.topology_connections.delete", Description: "Delete a unified topology connection through a durable task.", InputSchema: mutationSchema(map[string]any{"connection_id": stringProperty("Connection ID"), "entry_point": enumProperty("mcp", "compatibility_mcp")}, "connection_id", "expected_revision", "idempotency_key"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
 			id, err := argumentString(args, "connection_id")
 			if err != nil {
 				return nil, err
 			}
-			connection, taskValue, err := commands.Delete(c, domain.ID(id), revisionArgument(args), optionalString(args, "idempotency_key"))
+			entryPoint := optionalString(args, "entry_point")
+			if entryPoint == "" {
+				entryPoint = "mcp"
+			}
+			connection, taskValue, err := commands.Delete(command.WithTopologyConnectionEntryPoint(c, entryPoint), domain.ID(id), revisionArgument(args), optionalString(args, "idempotency_key"))
 			if err != nil {
 				return nil, err
 			}

@@ -144,9 +144,13 @@ const createDrawer = ref<{
   requestExternalDiscard: (action: () => void) => void;
 }>();
 const commandOpen = ref(false);
+type TopologyConnectionEntryPoint =
+  "port_click" | "port_drag" | "resource_plus" | "keyboard";
+const connectionEntryPoint = ref<TopologyConnectionEntryPoint>("port_click");
 const connectionDraft = ref<{
   source: UnifiedConnectionEndpoint;
   target?: UnifiedConnectionEndpoint;
+  entryPoint: TopologyConnectionEntryPoint;
 }>();
 const connectionSelectionSnapshot = ref<{
   selectedIds: string[];
@@ -898,7 +902,10 @@ function endpointForObjectPort(
   };
 }
 
-function setConnectionSource(source: UnifiedConnectionEndpoint) {
+function setConnectionSource(
+  source: UnifiedConnectionEndpoint,
+  entryPoint: TopologyConnectionEntryPoint = connectionEntryPoint.value,
+) {
   if (!connectionDraft.value)
     connectionSelectionSnapshot.value = {
       ...(() => {
@@ -915,7 +922,8 @@ function setConnectionSource(source: UnifiedConnectionEndpoint) {
       })(),
       activeElement: document.activeElement as HTMLElement | null,
     };
-  connectionDraft.value = { source };
+  connectionEntryPoint.value = entryPoint;
+  connectionDraft.value = { source, entryPoint };
   canvasStatus.value = `已选择 ${source.displayName}；请拖到或选择兼容目标。`;
 }
 
@@ -948,6 +956,8 @@ async function submitUnifiedConnection(
           port_name: target.portName,
         },
         config,
+        entry_point:
+          connectionDraft.value?.entryPoint || connectionEntryPoint.value,
       },
       crypto.randomUUID(),
     );
@@ -979,7 +989,7 @@ async function handleUnifiedConnectionDrop(
   targetResourceId: string,
   candidates: UnifiedConnectionEndpoint[],
 ) {
-  setConnectionSource(source);
+  setConnectionSource(source, "port_drag");
   if (target) {
     await submitUnifiedConnection(source, target);
     return;
@@ -1002,7 +1012,11 @@ async function handleUnifiedConnectionDrop(
   canvasStatus.value = `请选择 ${targetResourceId} 上的目标端点。`;
 }
 
-async function objectPortClicked(objectId: string, portName: string) {
+async function objectPortClicked(
+  objectId: string,
+  portName: string,
+  entryPoint: TopologyConnectionEntryPoint = "port_click",
+) {
   if (!store.active) return;
   const endpoint = endpointForObjectPort(objectId, portName);
   if (!endpoint || endpoint.availability !== "free") {
@@ -1011,7 +1025,7 @@ async function objectPortClicked(objectId: string, portName: string) {
   }
   const source = connectionDraft.value?.source;
   if (!source) {
-    setConnectionSource(endpoint);
+    setConnectionSource(endpoint, entryPoint);
     return;
   }
   if (endpointKey(source) === endpointKey(endpoint)) {
@@ -1044,7 +1058,10 @@ function selectBox(
   keyboardAnnouncement.value = `Selected ${selectedIds.value.length} resources.`;
 }
 
-async function interfaceClicked(interfaceId: string) {
+async function interfaceClicked(
+  interfaceId: string,
+  entryPoint: TopologyConnectionEntryPoint = "port_click",
+) {
   if (!store.active) return;
   const target = store.active.interfaces.find(
     (item) => item.id === interfaceId,
@@ -1062,7 +1079,7 @@ async function interfaceClicked(interfaceId: string) {
   const endpoint = endpointForInterface(target);
   const source = connectionDraft.value?.source;
   if (!source) {
-    setConnectionSource(endpoint);
+    setConnectionSource(endpoint, entryPoint);
     return;
   }
   if (endpointKey(source) === endpointKey(endpoint)) {
@@ -1102,14 +1119,18 @@ function connectionSourceCandidates(resourceId: string) {
   });
 }
 
-function startConnection(resourceId: string) {
+function startConnection(
+  resourceId: string,
+  entryPoint: TopologyConnectionEntryPoint = "resource_plus",
+) {
+  connectionEntryPoint.value = entryPoint;
   const candidates = connectionSourceCandidates(resourceId);
   if (!candidates.length) {
     canvasStatus.value = "所选资源没有可用连接端点。";
     return;
   }
   if (candidates.length === 1) {
-    setConnectionSource(candidates[0]);
+    setConnectionSource(candidates[0], entryPoint);
     return;
   }
   portChooserMode.value = "source";
@@ -1259,6 +1280,7 @@ async function retryReconnect() {
 function cancelConnection() {
   const captureSelection = portChooserMode.value === "capture";
   connectionDraft.value = undefined;
+  connectionEntryPoint.value = "port_click";
   portChooserOpen.value = false;
   portChooserEndpoints.value = [];
   portChooserMode.value = "source";
@@ -1489,7 +1511,7 @@ async function topologyKeyboard(event: KeyboardEvent) {
     const nodeInterface = store.active?.interfaces.find(
       (item) => item.id === action.interfaceId,
     );
-    if (nodeInterface) await interfaceClicked(nodeInterface.id);
+    if (nodeInterface) await interfaceClicked(nodeInterface.id, "keyboard");
     else {
       const object = store.active?.network_objects.find((item) =>
         action.interfaceId.startsWith(`${item.id}:`),
@@ -1498,10 +1520,12 @@ async function topologyKeyboard(event: KeyboardEvent) {
         await objectPortClicked(
           object.id,
           action.interfaceId.slice(object.id.length + 1),
+          "keyboard",
         );
     }
   }
-  if (action.type === "begin_connection") startConnection(action.resourceId);
+  if (action.type === "begin_connection")
+    startConnection(action.resourceId, "keyboard");
   if (action.type === "choose_connection_target") {
     const target = keyboardResources.value.find(
       (item) => item.id === action.resourceId,
@@ -1656,7 +1680,9 @@ onBeforeUnmount(() => {
           @viewport="setViewport"
           @interface="interfaceClicked"
           @object-port="objectPortClicked"
-          @connection-start="setConnectionSource"
+          @connection-start="
+            (source) => setConnectionSource(source, 'port_drag')
+          "
           @connection-drop="handleUnifiedConnectionDrop"
           @connection-cancel="cancelConnection"
           @keyboard="topologyKeyboard"

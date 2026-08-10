@@ -92,7 +92,7 @@ func (s *TopologyTaskService) ConnectLink(ctx context.Context, labID, endpointAI
 		return domain.Link{}, domain.OperationTask{}, fmt.Errorf("link endpoints must differ")
 	}
 	link := domain.Link{ID: domain.NewID(), LaboratoryID: labID, EndpointAID: endpointAID, EndpointBID: endpointBID, Revision: 1, DesiredState: "connected", ObservedState: "pending"}
-	value := s.operation("link.connect", "link", link.ID, idempotencyKey, 2, map[string]any{"laboratory_id": string(labID), "endpoint_a_id": string(endpointAID), "endpoint_b_id": string(endpointBID)}, map[string]any{"laboratory_id": labID, "endpoint_a_id": endpointAID, "endpoint_b_id": endpointBID})
+	value := s.operation("link.connect", "link", link.ID, idempotencyKey, 2, map[string]any{"laboratory_id": string(labID), "endpoint_a_id": string(endpointAID), "endpoint_b_id": string(endpointBID), "entry_point": TopologyConnectionEntryPoint(ctx, "compatibility_http")}, map[string]any{"laboratory_id": labID, "endpoint_a_id": endpointAID, "endpoint_b_id": endpointBID})
 	queued, err := s.runner.EnqueueOrGet(ctx, value)
 	if err != nil {
 		return domain.Link{}, domain.OperationTask{}, err
@@ -104,7 +104,7 @@ func (s *TopologyTaskService) ConnectLink(ctx context.Context, labID, endpointAI
 }
 
 func (s *TopologyTaskService) DisconnectLink(ctx context.Context, id domain.ID, idempotencyKey string) (domain.OperationTask, error) {
-	value := s.operation("link.disconnect", "link", id, idempotencyKey, 2, nil, map[string]any{"link_id": id})
+	value := s.operation("link.disconnect", "link", id, idempotencyKey, 2, map[string]any{"entry_point": TopologyConnectionEntryPoint(ctx, "compatibility_http")}, map[string]any{"link_id": id})
 	return s.runner.EnqueueOrGet(ctx, value)
 }
 

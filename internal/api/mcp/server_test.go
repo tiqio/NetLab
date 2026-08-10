@@ -29,8 +29,10 @@ func TestMutatingToolReplaysSuccessFailureAndAudits(t *testing.T) {
 	defer database.Close()
 	repositories := storesqlite.NewRepositories(database)
 	calls := 0
-	tool := Tool{Name: "netlab.node.start", Handler: func(_ *gin.Context, arguments map[string]any) (any, error) {
+	entryPoints := []string{}
+	tool := Tool{Name: "netlab.node.start", Handler: func(c *gin.Context, arguments map[string]any) (any, error) {
 		calls++
+		entryPoints = append(entryPoints, command.TopologyConnectionEntryPoint(c, ""))
 		if arguments["fail"] == true {
 			return nil, domain.Problem{Code: "node_failed", Message: "start failed", Retryable: true}
 		}
@@ -40,8 +42,8 @@ func TestMutatingToolReplaysSuccessFailureAndAudits(t *testing.T) {
 	engine := gin.New()
 	server.Register(engine)
 
-	first := callTool(t, engine, map[string]any{"node_id": "node-1", "idempotency_key": "success-key"})
-	second := callTool(t, engine, map[string]any{"node_id": "node-1", "idempotency_key": "success-key"})
+	first := callTool(t, engine, map[string]any{"node_id": "node-1", "idempotency_key": "success-key", "entry_point": "compatibility_mcp"})
+	second := callTool(t, engine, map[string]any{"node_id": "node-1", "idempotency_key": "success-key", "entry_point": "compatibility_mcp"})
 	if string(first) != string(second) || calls != 1 {
 		t.Fatalf("success replay mismatch calls=%d\n%s\n%s", calls, first, second)
 	}
@@ -57,6 +59,14 @@ func TestMutatingToolReplaysSuccessFailureAndAudits(t *testing.T) {
 	audits, err := repositories.ListAuditEvents(ctx, 10)
 	if err != nil || len(audits) != 5 {
 		t.Fatalf("audits=%d err=%v", len(audits), err)
+	}
+	for _, entryPoint := range entryPoints {
+		if entryPoint != "compatibility_mcp" {
+			t.Fatalf("entry points=%v", entryPoints)
+		}
+	}
+	if audits[0].Details["entry_point"] != "mcp" && audits[0].Details["entry_point"] != "compatibility_mcp" {
+		t.Fatalf("audit details=%+v", audits[0].Details)
 	}
 }
 

@@ -51,7 +51,7 @@ func TestMutationAutomationReplaysAndRejectsFingerprintConflicts(t *testing.T) {
 		t.Fatalf("tasks=%d err=%v", len(tasks), err)
 	}
 	events, err := repositories.ListAuditEvents(ctx, 10)
-	if err != nil || len(events) != 1 || events[0].Outcome != "succeeded" {
+	if err != nil || len(events) != 1 || events[0].Outcome != "succeeded" || events[0].Details["entry_point"] != "compatibility_http" {
 		t.Fatalf("audits=%+v err=%v", events, err)
 	}
 }
@@ -88,6 +88,40 @@ func TestMutationAutomationSkipsDurableTaskEndpoints(t *testing.T) {
 	}
 }
 
+func TestUnifiedConnectionAuditRecordsGestureEntryPoint(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	ctx := context.Background()
+	database, err := storesqlite.Open(ctx, "file:connection-entry-audit?mode=memory&cache=shared")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer database.Close()
+	repositories := storesqlite.NewRepositories(database)
+	engine := gin.New()
+	engine.Use(MutationAutomation(command.NewIdempotencyService(repositories, time.Hour), repositories, audit.NewService(repositories)))
+	compatibilityEntryPoint := ""
+	engine.POST("/api/v1/labs/:labId/connections", func(c *gin.Context) {
+		compatibilityEntryPoint = command.TopologyConnectionEntryPoint(c, "")
+		c.Set("topology_entry_point", "port_drag")
+		c.JSON(http.StatusAccepted, gin.H{"task": map[string]any{"id": "connection-task", "resource_type": "link", "resource_id": "link-1"}})
+	})
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/labs/lab-1/connections", bytes.NewBufferString(`{"entry_point":"port_drag"}`))
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Idempotency-Key", "connection-entry")
+	response := httptest.NewRecorder()
+	engine.ServeHTTP(response, request)
+	if response.Code != http.StatusAccepted {
+		t.Fatalf("status=%d body=%s", response.Code, response.Body.String())
+	}
+	if compatibilityEntryPoint != "compatibility_http" {
+		t.Fatalf("compatibility entry point=%q", compatibilityEntryPoint)
+	}
+	events, err := repositories.ListAuditEvents(ctx, 10)
+	if err != nil || len(events) != 1 || events[0].TaskID != "connection-task" || events[0].Details["entry_point"] != "port_drag" {
+		t.Fatalf("events=%+v err=%v", events, err)
+	}
+}
+
 func TestDurableTaskMutationIncludesLaboratoryAutomation(t *testing.T) {
 	tests := []struct {
 		method string
@@ -97,6 +131,8 @@ func TestDurableTaskMutationIncludesLaboratoryAutomation(t *testing.T) {
 		{http.MethodPost, "/api/v1/labs/lab-1/duplicate"},
 		{http.MethodPost, "/api/v1/lab-imports"},
 		{http.MethodPost, "/api/v1/labs/lab-1/network-objects"},
+		{http.MethodPost, "/api/v1/labs/lab-1/connections"},
+		{http.MethodDelete, "/api/v1/connections/connection-1"},
 		{http.MethodDelete, "/api/v1/network-objects/object-1"},
 		{http.MethodDelete, "/api/v1/labs/lab-1"},
 		{http.MethodPost, "/api/v1/captures"},
