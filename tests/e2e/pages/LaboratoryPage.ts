@@ -91,20 +91,22 @@ export class LaboratoryPage extends BasePage {
   async openCreateDialog() {
     const switcher = this.page.getByTestId("laboratory-switcher");
     const createButton = this.page.getByTestId("new-laboratory");
+    const dialog = this.page.getByRole("dialog", {
+      name: /^(Create laboratory|创建实验室)$/,
+    });
     for (let attempt = 0; attempt < 5; attempt += 1) {
-      if (await createButton.isVisible().catch(() => false)) {
-        await this.activate(createButton);
-        return;
-      }
-      await switcher.click();
       try {
+        if (!(await createButton.isVisible().catch(() => false)))
+          await switcher.click({ timeout: 5_000 });
         await expect(createButton).toBeVisible({ timeout: 5_000 });
+        await createButton.click({ timeout: 5_000 });
+        await expect(dialog).toBeVisible({ timeout: 5_000 });
+        return;
       } catch {
         await this.page.waitForTimeout(250);
       }
     }
-    await expect(createButton).toBeVisible({ timeout: 5_000 });
-    await this.activate(createButton);
+    throw new Error("Unable to open create laboratory dialog");
   }
 
   async openActiveActions() {
