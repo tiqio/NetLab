@@ -64,11 +64,11 @@ async function activateLaboratoryOption(
 
 async function closeDialog(page: Page) {
   const dialog = page.locator('[role="dialog"]:visible');
-  const close = dialog.getByRole("button", { name: "关闭对话框" });
+  const close = dialog.getByRole("button", { name: /关闭(?:对话框|抽屉)/ });
   await expect(close).toBeVisible();
   await close.click();
   const discard = page.getByRole("alertdialog", {
-    name: "Discard unsaved changes",
+    name: /放弃未保存的更改/,
   });
   if (await discard.isVisible().catch(() => false)) {
     await discard.getByRole("button", { name: "放弃" }).click();
@@ -121,7 +121,7 @@ test("laboratory navigation and shell controls support pointer and keyboard", as
     const newButton = page.getByTestId("new-laboratory");
     duration = await activate(page, newButton, activation);
     const createDialog = page.getByRole("dialog", {
-      name: "Create laboratory",
+      name: "创建实验室",
     });
     await expect(createDialog).toBeVisible();
     record(
@@ -160,7 +160,7 @@ test("laboratory navigation and shell controls support pointer and keyboard", as
     );
 
     const paletteToggle = page.getByRole("button", {
-      name: "Toggle device palette",
+      name: "切换设备面板",
     });
     duration = await activate(page, paletteToggle, activation);
     record(
@@ -173,8 +173,8 @@ test("laboratory navigation and shell controls support pointer and keyboard", as
     await activate(page, paletteToggle, activation);
 
     for (const [id, label] of [
-      ["workspace.inspector.toggle", "Toggle inspector"],
-      ["workspace.operations.toggle", "Toggle operations drawer"],
+      ["workspace.inspector.toggle", "展开或收起检查器"],
+      ["workspace.operations.toggle", "展开或收起操作区"],
     ] as const) {
       const control = page.getByRole("button", { name: label });
       duration = await activate(page, control, activation);
@@ -194,11 +194,9 @@ test("laboratory navigation and shell controls support pointer and keyboard", as
         await activate(page, switcher, activation);
       }
       await expect(row).toBeVisible();
-      const actions = row.getByRole("button", { name: /^Actions for / });
+      const actions = row.getByRole("button", { name: / 的操作$/ });
       const elapsed = await activate(page, actions, activation);
-      await expect(
-        page.getByRole("menu", { name: /^Actions for / }),
-      ).toBeVisible();
+      await expect(page.getByRole("menu", { name: / 的操作$/ })).toBeVisible();
       return elapsed;
     };
 
@@ -219,7 +217,7 @@ test("laboratory navigation and shell controls support pointer and keyboard", as
       activation,
     );
     const renameDialog = page.getByRole("dialog", {
-      name: "Rename laboratory",
+      name: "重命名实验室",
     });
     const renamed = `${name}-renamed`;
     await renameDialog.getByLabel("名称").fill(renamed);
@@ -242,8 +240,8 @@ test("laboratory navigation and shell controls support pointer and keyboard", as
     );
 
     for (const [id, label] of [
-      ["laboratory.export", "Export"],
-      ["laboratory.import", "Import"],
+      ["laboratory.export", "导出"],
+      ["laboratory.import", "导入"],
     ] as const) {
       duration = await openActions();
       duration += await activate(
@@ -253,7 +251,7 @@ test("laboratory navigation and shell controls support pointer and keyboard", as
       );
       await expect(
         page.getByRole("dialog", {
-          name: new RegExp(`${label} laboratory`, "i"),
+          name: `${label}实验室`,
         }),
       ).toBeVisible();
       record(
@@ -320,7 +318,7 @@ test("laboratory navigation and shell controls support pointer and keyboard", as
     await activate(page, switcher, activation);
     await activate(
       page,
-      duplicateRow.getByRole("button", { name: /^Actions for / }),
+      duplicateRow.getByRole("button", { name: / 的操作$/ }),
       activation,
     );
     duration = await activate(
@@ -329,7 +327,7 @@ test("laboratory navigation and shell controls support pointer and keyboard", as
       activation,
     );
     const deleteDialog = page.getByRole("dialog", {
-      name: "Delete laboratory",
+      name: "删除实验室",
     });
     duration += await activate(
       page,
@@ -351,6 +349,7 @@ test("laboratory navigation and shell controls support pointer and keyboard", as
       duration,
     );
 
+    await activateLaboratoryOption(page, laboratory.id, renamed, activation);
     await expect(switcher).toContainText(renamed);
   }
 });
@@ -393,8 +392,8 @@ test("navigation templates and task center support pointer and keyboard", async 
     }
 
     for (const [id, label, path] of [
-      ["navigation.templates", "Templates", "/templates"],
-      ["navigation.automation", "Automation", "/automation"],
+      ["navigation.templates", "模板", "/templates"],
+      ["navigation.automation", "自动化", "/automation"],
     ] as const) {
       const duration = await activate(
         page,
@@ -422,10 +421,10 @@ test("navigation templates and task center support pointer and keyboard", async 
     }
 
     const paletteToggle = page.getByRole("button", {
-      name: "Toggle device palette",
+      name: "切换设备面板",
     });
     const search = page.getByRole("textbox", {
-      name: "Search device templates",
+      name: "搜索设备模板",
     });
     if (!(await search.isVisible().catch(() => false))) {
       await activate(page, paletteToggle, activation);
@@ -477,7 +476,7 @@ test("navigation templates and task center support pointer and keyboard", async 
     await closeDialog(page);
 
     const operationsToggle = page.getByRole("button", {
-      name: "Toggle operations drawer",
+      name: "展开或收起操作区",
     });
     if ((await operationsToggle.getAttribute("aria-expanded")) !== "true") {
       await activate(page, operationsToggle, activation);

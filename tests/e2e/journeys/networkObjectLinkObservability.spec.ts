@@ -198,9 +198,16 @@ async function createL2Object(
   name: string,
   ports: string[],
 ) {
+  const laboratory = await (
+    await request.get(`/api/v1/labs/${laboratoryId}`)
+  ).json();
   const response = await request.post(
     `/api/v1/labs/${laboratoryId}/network-objects`,
     {
+      headers: {
+        "If-Match": String(laboratory.laboratory.revision),
+        "Idempotency-Key": crypto.randomUUID(),
+      },
       data: {
         name,
         kind: "switch_l2",

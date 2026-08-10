@@ -59,16 +59,16 @@ test("pointer box selection and keyboard traversal remain equivalent", async ({
   await canvas.press("ArrowRight");
   await canvas.press("Shift+ArrowRight");
   await expect(page.getByTestId("topology-a11y-summary")).toContainText(
-    "selected",
+    "已选择",
   );
   await canvas.press("Control+a");
   await expect(canvas.getByRole("status")).toContainText(
-    "Selected all 3 topology resources",
+    "已选择全部 3 个拓扑资源",
   );
   const group = page.getByRole("button", { name: "将选中项分组" });
   await group.click();
   await expect(
-    page.getByRole("status").filter({ hasText: /visual group/ }),
+    page.getByRole("status").filter({ hasText: /视觉分组/ }),
   ).toBeVisible();
   interactionResults.push(
     result(
@@ -82,7 +82,7 @@ test("pointer box selection and keyboard traversal remain equivalent", async ({
   await group.focus();
   await group.press("Enter");
   await expect(
-    page.getByRole("status").filter({ hasText: /visual group/ }),
+    page.getByRole("status").filter({ hasText: /视觉分组/ }),
   ).toBeVisible();
   interactionResults.push(
     result(

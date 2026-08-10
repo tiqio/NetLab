@@ -385,12 +385,12 @@ function openDelete() {
       <ThemeSwitcher />
       <RouterLink
         to="/templates"
-        class="hidden text-xs text-muted-foreground hover:text-foreground md:inline"
+        class="relative z-10 hidden text-xs text-muted-foreground hover:text-foreground md:inline"
       >
         模板 </RouterLink
       ><RouterLink
         to="/automation"
-        class="hidden text-xs text-muted-foreground hover:text-foreground md:inline"
+        class="relative z-10 hidden text-xs text-muted-foreground hover:text-foreground md:inline"
       >
         自动化 </RouterLink
       ><span

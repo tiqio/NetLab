@@ -214,6 +214,18 @@ test("topology navigation persists shared coordinates across browser contexts", 
     box.y + box.height / 2 + 20,
   );
   await page.mouse.up();
+  const persistedPlacement = await waitForCondition(
+    async () => {
+      const response = await automation.get(`/api/v1/labs/${laboratory.id}`);
+      const snapshot = await response.json();
+      return snapshot.placements?.find(
+        (item: { resource_id: string }) => item.resource_id === selectedId,
+      );
+    },
+    (value): value is { x: number; y: number; revision: number } =>
+      Boolean(value && value.revision > placement.revision),
+    "pointer placement",
+  );
   const fitAll = page.getByTestId("fit-all");
   const fitSelection = page.getByTestId("fit-selection");
   const reset = page.getByTestId("reset-view");
@@ -257,7 +269,7 @@ test("topology navigation persists shared coordinates across browser contexts", 
     snapshot.placements.find(
       (item: { resource_id: string }) => item.resource_id === selectedId,
     ),
-  ).toMatchObject({ x: placement.x, y: placement.y });
+  ).toMatchObject({ x: persistedPlacement.x, y: persistedPlacement.y });
   await secondPage.close();
 
   for (const interactionId of [

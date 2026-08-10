@@ -1,10 +1,14 @@
 import { test, expect } from "../fixtures/acceptanceFixture";
 import { activateByKeyboard } from "../fixtures/inputAccessibility";
+import { createOwnedLaboratory } from "../journeys/completeRealJourney";
 
 test("primary shell controls are keyboard reachable at the configured viewport", async ({
   page,
+  automation,
+  ledger,
+  runId,
 }) => {
-  await page.goto("/");
+  await createOwnedLaboratory(page, automation, ledger, runId);
   await page.evaluate(() => {
     document.documentElement.style.zoom = "1.25";
   });

@@ -181,10 +181,16 @@ async function createObject(
   laboratoryId: string,
   name: string,
 ) {
+  const laboratory = await (
+    await request.get(`/api/v1/labs/${laboratoryId}`)
+  ).json();
   const response = await request.post(
     `/api/v1/labs/${laboratoryId}/network-objects`,
     {
-      headers: { "Idempotency-Key": crypto.randomUUID() },
+      headers: {
+        "If-Match": String(laboratory.laboratory.revision),
+        "Idempotency-Key": crypto.randomUUID(),
+      },
       data: {
         name,
         kind: "switch_l2",

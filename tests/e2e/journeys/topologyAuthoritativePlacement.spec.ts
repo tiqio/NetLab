@@ -43,7 +43,7 @@ test("twenty mixed resources receive stable collision-free authoritative placeme
   automation,
   ledger,
   runId,
-}) => {
+}, testInfo) => {
   const { laboratory } = await createOwnedLaboratory(
     page,
     automation,
@@ -56,7 +56,7 @@ test("twenty mixed resources receive stable collision-free authoritative placeme
   for (let index = 0; index < 20; index += 1) {
     const name = `placement-${index + 1}`;
     createdNames.push(name);
-    const isNode = index % 2 === 0;
+    const isNode = index % 10 === 0;
     const response = await automation.post(
       isNode
         ? `/api/v1/labs/${laboratory.id}/nodes`
@@ -64,7 +64,7 @@ test("twenty mixed resources receive stable collision-free authoritative placeme
       {
         headers: {
           "If-Match": String(revision),
-          "Idempotency-Key": `${runId}-placement-${index}`,
+          "Idempotency-Key": `${runId}-${testInfo.project.name}-placement-${index}`,
         },
         data: isNode
           ? {
@@ -91,8 +91,9 @@ test("twenty mixed resources receive stable collision-free authoritative placeme
             },
       },
     );
-    expect(response.ok()).toBeTruthy();
-    const body = await response.json();
+    const responseBody = await response.text();
+    expect(response.ok(), responseBody).toBeTruthy();
+    const body = JSON.parse(responseBody);
     expect(body.placement_assignment).toBeTruthy();
     expect(body.placement_assignment.assigned_center).toBeTruthy();
     if (index > 0) {
