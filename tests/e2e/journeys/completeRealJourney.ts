@@ -62,10 +62,11 @@ export async function createOwnedLightweightPair(
   request: APIRequestContext,
   ledger: ResourceLedger,
   laboratoryId: string,
+  kind: "PC" | "Layer-2 switch" = "PC",
 ) {
   const templates = new TemplatePage(page, request);
-  const first = await templates.createLightweight(laboratoryId, "PC", "pc-a");
-  const second = await templates.createLightweight(laboratoryId, "PC", "pc-b");
+  const first = await templates.createLightweight(laboratoryId, kind, "pc-a");
+  const second = await templates.createLightweight(laboratoryId, kind, "pc-b");
   for (const resource of [first, second]) {
     await ledger.add({
       resource_type: "network_object",

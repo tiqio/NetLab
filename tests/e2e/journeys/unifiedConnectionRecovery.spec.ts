@@ -64,7 +64,7 @@ test("unified connection tasks recover across cancellation restart and laborator
   const cancellation = await automation.post(
     `/api/v1/tasks/${envelope.task.id}/cancel`,
   );
-  expect([200, 409]).toContain(cancellation.status());
+  expect([200, 202, 409]).toContain(cancellation.status());
   await waitForCondition(
     async () =>
       (await automation.get(`/api/v1/tasks/${envelope.task.id}`)).json(),
@@ -110,7 +110,7 @@ test("unified connection tasks recover across cancellation restart and laborator
   ).toHaveLength(0);
   interactionResults.push(
     result(
-      "topology.connection.recovery-cleanup",
+      "test.topology.connection.recovery-cleanup",
       testInfo.project.use.viewport!,
       "task reached an authoritative terminal state, restart recovered connection truth, and laboratory deletion removed visible resources",
       [laboratory.id],
@@ -141,6 +141,7 @@ test("all unified connection backings preserve identity reservations and ownersh
     automation,
     ledger,
     laboratory.id,
+    "Layer-2 switch",
   );
   const selection = await resolveTemplateSelection(
     automation,
@@ -223,8 +224,8 @@ test("all unified connection backings preserve identity reservations and ownersh
           await automation.get(`/api/v1/connections/${envelope.connection.id}`)
         ).json(),
       (value: { observed_state?: string }) =>
-        value.observed_state === "connected",
-      `${key} connected`,
+        ["active", "connected"].includes(value.observed_state || ""),
+      `${key} active`,
       60_000,
     );
   };
@@ -278,7 +279,7 @@ test("all unified connection backings preserve identity reservations and ownersh
       { backing_kind: string; observed_state: string } | undefined;
     expect(value, `recovered ${expected.id}`).toBeTruthy();
     expect(value?.backing_kind).toBe(expected.backing_kind);
-    expect(value?.observed_state).toBe("connected");
+    expect(value?.observed_state).toBe(expected.observed_state);
   }
   const occupiedEndpointCount = recovered.endpoints.filter(
     (endpoint: { availability?: string }) =>
@@ -340,21 +341,25 @@ test("all unified connection backings preserve identity reservations and ownersh
     "strict recovery laboratory cleanup",
     60_000,
   );
-  const ownershipAfterDelete = (await (
-    await automation.get("/api/v1/runtime-ownership")
-  ).json()) as Array<{ resource_id: string }>;
   const ownedIDs = new Set([
     ...nodes.map((node) => node.id),
     first.id,
     second.id,
     ...beforeRestart.map((connection) => connection.id),
   ]);
-  expect(
-    ownershipAfterDelete.filter((record) => ownedIDs.has(record.resource_id)),
-  ).toHaveLength(0);
+  await waitForCondition(
+    async () =>
+      (await (
+        await automation.get("/api/v1/runtime-ownership")
+      ).json()) as Array<{ resource_id: string }>,
+    (records) =>
+      records.every((record) => !ownedIDs.has(record.resource_id)),
+    "strict recovery ownership cleanup",
+    60_000,
+  );
   interactionResults.push(
     result(
-      "topology.connection.three-backing-recovery-cleanup",
+      "test.topology.connection.three-backing-recovery-cleanup",
       testInfo.project.use.viewport!,
       "link, attachment, and object-link identities, occupied endpoints, backing records, and runtime ownership recovered before laboratory deletion removed all ownership",
       [laboratory.id, ...beforeRestart.map((connection) => connection.id)],

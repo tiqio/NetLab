@@ -17,7 +17,7 @@ async function deleteOwnedResource(
 ): Promise<"deleted" | "cascade"> {
   if (resource.resource_type === "laboratory") {
     const current = await request.get(`/api/v1/labs/${resource.resource_id}`);
-    if (current.status() === 404) return;
+    if (current.status() === 404) return "deleted";
     let revision = resource.revision || 1;
     if (current.ok()) {
       const snapshot = (await current.json()) as {
@@ -119,9 +119,13 @@ function ownershipKey(record: RuntimeOwnershipObservation) {
     record.resource_type,
     record.resource_id,
     record.object_kind,
-    record.object_name,
     record.cleanup_state,
+    record.ownership_class,
   ].join(":");
+}
+
+function ownershipKeys(records: RuntimeOwnershipObservation[]) {
+  return [...new Set(enforcedOwnership(records).map(ownershipKey))].sort();
 }
 
 function enforcedOwnership(records: RuntimeOwnershipObservation[]) {
@@ -182,9 +186,7 @@ export async function cleanupOwnedResources(
 
   let baselineRestored = false;
   let ownershipRestored = false;
-  const baselineOwnership = enforcedOwnership(baselineRuntimeOwnership)
-    .map(ownershipKey)
-    .sort();
+  const baselineOwnership = ownershipKeys(baselineRuntimeOwnership);
   try {
     while (Date.now() <= deadline) {
       const [labsResponse, ownershipResponse] = await Promise.all([
@@ -206,7 +208,7 @@ export async function cleanupOwnedResources(
           : []) as RuntimeOwnershipObservation[];
         ownershipRestored =
           JSON.stringify(
-            enforcedOwnership(currentOwnership).map(ownershipKey).sort(),
+            ownershipKeys(currentOwnership),
           ) ===
           JSON.stringify(baselineOwnership);
         if (baselineRestored && ownershipRestored) break;

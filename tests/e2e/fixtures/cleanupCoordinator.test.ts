@@ -83,6 +83,100 @@ describe("cleanup coordinator", () => {
     );
   });
 
+  it("marks an already missing laboratory as deleted", async () => {
+    const ledger = new ResourceLedger("run-missing-laboratory");
+    await ledger.add({
+      resource_type: "laboratory",
+      resource_id: "lab-missing",
+      revision: 1,
+      cleanup_method: "frontend-delete-with-api-fallback",
+    });
+    const request = {
+      get: vi.fn(async (path: string) =>
+        path === "/api/v1/labs/lab-missing"
+          ? response({}, 404)
+          : response([]),
+      ),
+    } as unknown as APIRequestContext;
+
+    const cleanup = await cleanupOwnedResources(
+      request,
+      ledger,
+      [],
+      "failure",
+      { timeoutMs: 1_000 },
+    );
+
+    expect(cleanup.baseline_restored).toBe(true);
+    expect(cleanup.remaining_count).toBe(0);
+    expect(cleanup.resources[0]?.cleanup_state).toBe("deleted");
+  });
+
+  it("ignores volatile runtime object identities after restart", async () => {
+    const ledger = new ResourceLedger("run-restart");
+    const request = {
+      get: vi.fn(async (path: string) =>
+        path === "/api/v1/labs"
+          ? response([{"id": "baseline-lab"}])
+          : response([
+              {
+                resource_type: "node",
+                resource_id: "baseline-node",
+                object_kind: "helper_process",
+                object_name: "new-pid",
+                cleanup_state: "active",
+                ownership_class: "managed",
+              },
+              {
+                resource_type: "node",
+                resource_id: "baseline-node",
+                object_kind: "helper_process",
+                object_name: "old-pid",
+                cleanup_state: "missing_validation_required",
+                ownership_class: "managed",
+              },
+              {
+                resource_type: "node",
+                resource_id: "baseline-node",
+                object_kind: "helper_process",
+                object_name: "older-pid",
+                cleanup_state: "missing_validation_required",
+                ownership_class: "managed",
+              },
+            ]),
+      ),
+    } as unknown as APIRequestContext;
+
+    const cleanup = await cleanupOwnedResources(
+      request,
+      ledger,
+      ["baseline-lab"],
+      "success",
+      { timeoutMs: 1_000 },
+      [
+        {
+          resource_type: "node",
+          resource_id: "baseline-node",
+          object_kind: "helper_process",
+          object_name: "old-pid",
+          cleanup_state: "active",
+          ownership_class: "managed",
+        },
+        {
+          resource_type: "node",
+          resource_id: "baseline-node",
+          object_kind: "helper_process",
+          object_name: "older-pid",
+          cleanup_state: "missing_validation_required",
+          ownership_class: "managed",
+        },
+      ],
+    );
+
+    expect(cleanup.baseline_restored).toBe(true);
+    expect(cleanup.remaining_count).toBe(0);
+  });
+
   it("keeps cascade resources active while runtime ownership remains", async () => {
     const ledger = new ResourceLedger("run-owned");
     await ledger.add({
