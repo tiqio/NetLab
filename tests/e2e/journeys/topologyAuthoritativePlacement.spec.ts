@@ -1,6 +1,5 @@
 import { expect, test } from "../fixtures/acceptanceFixture";
 import { createOwnedLaboratory } from "./completeRealJourney";
-import { LaboratoryPage } from "../pages/LaboratoryPage";
 
 type Placement = {
   resource_id: string;
@@ -117,7 +116,13 @@ test("twenty mixed resources receive stable collision-free authoritative placeme
   );
 
   await page.goto("/");
-  await new LaboratoryPage(page, automation).select(laboratory.id);
+  await page.evaluate((laboratoryId) => {
+    localStorage.setItem("netlab.active-laboratory.v1", laboratoryId);
+  }, laboratory.id);
+  await page.reload();
+  await expect(page.getByTestId("laboratory-switcher")).toContainText(
+    laboratory.name,
+  );
   const canvas = page.getByLabel(/拓扑画布键盘操作区/);
   await expect(canvas).toBeVisible();
   const summary = page.getByTestId("topology-a11y-summary");

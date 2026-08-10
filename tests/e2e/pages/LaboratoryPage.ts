@@ -78,7 +78,7 @@ export class LaboratoryPage extends BasePage {
       if (!(await row.isVisible().catch(() => false))) await switcher.click();
       try {
         await expect(row).toBeVisible({ timeout: 5_000 });
-        await row.getByRole("option").click();
+        await row.getByRole("option").click({ timeout: 5_000 });
         await expect(switcher).toContainText(laboratory.name);
         return;
       } catch {
