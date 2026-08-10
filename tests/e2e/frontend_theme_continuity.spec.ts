@@ -61,12 +61,12 @@ test("主题切换即时生效并在刷新与路由切换后保持", async ({
     );
   }
 
-  await themeSelector.focus();
   for (const [key, theme, interactionId] of [
     ["Home", "system", "appearance.theme.system"],
     ["ArrowDown", "light", "appearance.theme.light"],
     ["ArrowDown", "dark", "appearance.theme.dark"],
   ] as const) {
+    await themeSelector.focus();
     await page.keyboard.press(key);
     await expect(themeSelector).toHaveValue(theme);
     interactionResults.push(
