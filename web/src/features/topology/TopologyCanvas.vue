@@ -1944,8 +1944,12 @@ defineExpose({
         :aria-label="`开始连接 ${connectorOverlay.ownerName}`"
         tabindex="0"
         @click.stop="$emit('connector', connectorOverlay.ownerId)"
-        @keydown.enter.prevent="$emit('connector', connectorOverlay.ownerId)"
-        @keydown.space.prevent="$emit('connector', connectorOverlay.ownerId)"
+        @keydown.enter.stop.prevent="
+          $emit('connector', connectorOverlay.ownerId)
+        "
+        @keydown.space.stop.prevent="
+          $emit('connector', connectorOverlay.ownerId)
+        "
       >
         <circle
           :cx="connectorOverlay.x"

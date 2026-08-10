@@ -234,6 +234,10 @@ describe("TopologyCanvas", () => {
     expect(wrapper.find("[data-topology-connector]").exists()).toBe(true);
     await wrapper.get("[data-topology-connector]").trigger("click");
     expect(wrapper.emitted("connector")?.[0]).toEqual(["node-1"]);
+    await wrapper.get("[data-topology-connector]").trigger("keydown", {
+      key: "Enter",
+    });
+    expect(wrapper.emitted("connector")?.[1]).toEqual(["node-1"]);
   });
 
   it.each([

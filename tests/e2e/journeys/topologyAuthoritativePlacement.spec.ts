@@ -1,6 +1,6 @@
 import { expect, test } from "../fixtures/acceptanceFixture";
 import { createOwnedLaboratory } from "./completeRealJourney";
-import { selectLaboratoryByName } from "../pages/LaboratoryPage";
+import { LaboratoryPage } from "../pages/LaboratoryPage";
 
 type Placement = {
   resource_id: string;
@@ -117,7 +117,7 @@ test("twenty mixed resources receive stable collision-free authoritative placeme
   );
 
   await page.goto("/");
-  await selectLaboratoryByName(page, laboratory.name);
+  await new LaboratoryPage(page, automation).select(laboratory.id);
   const canvas = page.getByLabel(/拓扑画布键盘操作区/);
   await expect(canvas).toBeVisible();
   const summary = page.getByTestId("topology-a11y-summary");

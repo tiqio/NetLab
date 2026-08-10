@@ -33,11 +33,17 @@ test("Ubuntu QEMU receives cloud-init credentials and stable interface overlays"
   const initialPassword = dialog.getByLabel("初始密码");
   await expect(initialPassword).toHaveValue(/.{12,}/);
   const nodeName = `ubuntu-bootstrap-${crypto.randomUUID().slice(0, 6)}`;
-  await dialog.getByLabel("名称", { exact: true }).fill(nodeName);
-  await dialog.getByLabel("设备模板").selectOption(selection.templateId);
-  await dialog.getByLabel("模板版本").selectOption(selection.versionId);
+  await dialog.locator('[data-field="name"] input').fill(nodeName);
+  await dialog
+    .locator('[data-field="template"] select')
+    .selectOption(selection.templateId);
+  await dialog
+    .locator('[data-field="version"] select')
+    .selectOption(selection.versionId);
   if (selection.imageId) {
-    await dialog.getByLabel("镜像版本").selectOption(selection.imageId);
+    await dialog
+      .locator('[data-field="image"] select')
+      .selectOption(selection.imageId);
   }
   await dialog.getByRole("button", { name: "添加到拓扑" }).click();
   await expect(dialog).toBeHidden();

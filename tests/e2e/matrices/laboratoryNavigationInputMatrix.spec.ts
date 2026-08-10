@@ -119,6 +119,10 @@ test("laboratory navigation and shell controls support pointer and keyboard", as
     );
 
     const newButton = page.getByTestId("new-laboratory");
+    if (!(await newButton.isVisible().catch(() => false))) {
+      await activate(page, switcher, activation);
+      await expect(newButton).toBeVisible();
+    }
     duration = await activate(page, newButton, activation);
     const createDialog = page.getByRole("dialog", {
       name: "创建实验室",

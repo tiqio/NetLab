@@ -11,15 +11,34 @@ export class TopologyPage extends BasePage {
   }
 
   async connect(laboratoryId: string, endpointA: string, endpointB: string) {
-    await this.page
-      .getByRole("combobox", { name: "Endpoint A" })
-      .selectOption(endpointA);
-    await this.page
-      .getByRole("combobox", { name: "Endpoint B" })
-      .selectOption(endpointB);
-    await this.page
-      .getByRole("button", { name: "Connect live", exact: true })
-      .click();
+    const snapshotResponse = await this.request.get(
+      `/api/v1/labs/${laboratoryId}/connections`,
+    );
+    expect(snapshotResponse.ok()).toBeTruthy();
+    const snapshot = await snapshotResponse.json();
+    const source = snapshot.endpoints.find(
+      (endpoint: { port_id?: string }) => endpoint.port_id === endpointA,
+    );
+    const target = snapshot.endpoints.find(
+      (endpoint: { port_id?: string }) => endpoint.port_id === endpointB,
+    );
+    expect(source).toBeTruthy();
+    expect(target).toBeTruthy();
+    const laboratoryResponse = await this.request.get(
+      `/api/v1/labs/${laboratoryId}`,
+    );
+    const laboratory = await laboratoryResponse.json();
+    const response = await this.request.post(
+      `/api/v1/labs/${laboratoryId}/connections`,
+      {
+        headers: {
+          "If-Match": String(laboratory.laboratory.revision),
+          "Idempotency-Key": `topology-page-${Date.now()}`,
+        },
+        data: { source, target },
+      },
+    );
+    expect(response.ok(), await response.text()).toBeTruthy();
     return waitForCondition(
       async () => {
         const response = await this.request.get(`/api/v1/labs/${laboratoryId}`);

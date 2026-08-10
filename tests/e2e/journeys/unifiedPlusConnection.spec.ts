@@ -23,16 +23,29 @@ test("unified plus and keyboard connection match direct drag results", async ({
     ledger,
     runId,
   );
-  await createOwnedLightweightPair(page, automation, ledger, laboratory.id);
+  const { first, second } = await createOwnedLightweightPair(
+    page,
+    automation,
+    ledger,
+    laboratory.id,
+  );
   const canvas = page.getByLabel(/拓扑画布键盘操作区/);
   await canvas.focus();
   await canvas.press("ArrowRight");
   const connector = page.locator("[data-topology-connector]");
   await expect(connector).toBeVisible();
+  const sourceId = await connector.getAttribute("data-connector-resource-id");
   await connector.press("Enter");
-  await expect(page.getByRole("status")).toContainText("请选择");
+  const canvasStatus = page.locator('p[role="status"].absolute');
+  await expect(canvasStatus).toContainText("请选择兼容目标");
+  const targetId = sourceId === first.id ? second.id : first.id;
   await canvas.focus();
-  await canvas.press("ArrowRight");
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    await canvas.press("ArrowRight");
+    if ((await canvas.getByRole("status").textContent())?.includes(targetId))
+      break;
+  }
+  await expect(canvas.getByRole("status")).toContainText(targetId);
   await canvas.press("Enter");
   const chooser = page.getByRole("dialog", { name: /选择目标端点/ });
   if (await chooser.isVisible())

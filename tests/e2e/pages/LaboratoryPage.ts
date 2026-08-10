@@ -72,13 +72,20 @@ export class LaboratoryPage extends BasePage {
   async select(id: string) {
     const laboratory = (await this.list()).find((item) => item.id === id);
     if (!laboratory) throw new Error(`Unknown laboratory ${id}`);
-    await this.page.getByTestId("laboratory-switcher").click();
+    const switcher = this.page.getByTestId("laboratory-switcher");
     const row = this.page.locator(`[data-laboratory-id="${id}"]`);
-    await expect(row).toBeVisible({ timeout: 15_000 });
-    await row.getByRole("option").click();
-    await expect(this.page.getByTestId("laboratory-switcher")).toContainText(
-      laboratory.name,
-    );
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      if (!(await row.isVisible().catch(() => false))) await switcher.click();
+      try {
+        await expect(row).toBeVisible({ timeout: 5_000 });
+        await row.getByRole("option").click();
+        await expect(switcher).toContainText(laboratory.name);
+        return;
+      } catch {
+        await this.page.waitForTimeout(250);
+      }
+    }
+    throw new Error(`Unable to select laboratory ${id}`);
   }
 
   async openCreateDialog() {
