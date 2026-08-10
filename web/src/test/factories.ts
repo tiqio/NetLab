@@ -78,6 +78,7 @@ export const networkAttachmentFactory = (
   network_object_id: "network-1",
   interface_id: "interface-1",
   port_name: "eth0",
+  revision: 1,
   observed_state: "active",
   ...value,
 });

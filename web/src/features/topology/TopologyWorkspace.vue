@@ -304,7 +304,10 @@ async function deleteAttachment(attachment: NetworkAttachment) {
   closeResourceContext();
   canvasStatus.value = `正在解除网络附件 ${attachment.id}…`;
   try {
-    const envelope = await api.deleteTopologyConnection(attachment.id, 1);
+    const envelope = await api.deleteTopologyConnection(
+      attachment.id,
+      attachment.revision,
+    );
     store.recordTopologyConnectionTask(envelope);
     if (selectedIds.value.includes(attachment.id)) clearSelection();
     canvasStatus.value = `网络附件删除任务 ${envelope.task.id} 已提交。`;

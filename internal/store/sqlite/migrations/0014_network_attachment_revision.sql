@@ -1,0 +1,1 @@
+ALTER TABLE network_attachments ADD COLUMN revision INTEGER NOT NULL DEFAULT 1;

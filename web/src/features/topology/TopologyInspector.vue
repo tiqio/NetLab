@@ -393,7 +393,10 @@ async function deleteAttachment() {
   error.value = "";
   try {
     attachmentStatus.value = "正在提交附件删除任务…";
-    const envelope = await api.deleteTopologyConnection(props.attachment.id, 1);
+    const envelope = await api.deleteTopologyConnection(
+      props.attachment.id,
+      props.attachment.revision,
+    );
     attachmentStatus.value = `附件删除任务已提交 · ${envelope.task.id}`;
     emit("clear");
     emit("changed");

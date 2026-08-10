@@ -184,7 +184,7 @@ func (r *Repositories) CreateNetworkAttachment(ctx context.Context, objectID, in
 }
 
 func (r *Repositories) ListNetworkAttachments(ctx context.Context, laboratoryID domain.ID) ([]domain.NetworkAttachment, error) {
-	rows, err := r.database.DB.QueryContext(ctx, `SELECT a.id,a.network_object_id,COALESCE(a.interface_id,''),a.port_name,a.config_json,a.observed_state,COALESCE(a.last_error_json,'') FROM network_attachments a JOIN network_objects o ON o.id=a.network_object_id WHERE o.laboratory_id=? ORDER BY a.id`, laboratoryID)
+	rows, err := r.database.DB.QueryContext(ctx, `SELECT a.id,a.network_object_id,COALESCE(a.interface_id,''),a.port_name,a.config_json,a.revision,a.observed_state,COALESCE(a.last_error_json,'') FROM network_attachments a JOIN network_objects o ON o.id=a.network_object_id WHERE o.laboratory_id=? ORDER BY a.id`, laboratoryID)
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +194,7 @@ func (r *Repositories) ListNetworkAttachments(ctx context.Context, laboratoryID 
 	for rows.Next() {
 		var value domain.NetworkAttachment
 		var config, problem []byte
-		if err = rows.Scan(&value.ID, &value.NetworkObjectID, &value.InterfaceID, &value.PortName, &config, &value.ObservedState, &problem); err != nil {
+		if err = rows.Scan(&value.ID, &value.NetworkObjectID, &value.InterfaceID, &value.PortName, &config, &value.Revision, &value.ObservedState, &problem); err != nil {
 			return nil, err
 		}
 		_ = json.Unmarshal(config, &value.Config)

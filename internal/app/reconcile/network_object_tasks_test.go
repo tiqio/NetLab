@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/netlab/netlab/internal/app/command"
 	"github.com/netlab/netlab/internal/app/task"
 	"github.com/netlab/netlab/internal/domain"
 	storesqlite "github.com/netlab/netlab/internal/store/sqlite"
@@ -177,6 +178,37 @@ func TestNetworkObjectTaskIdempotencyAndRecovery(t *testing.T) {
 	}
 	waitForNetworkTask(t, repositories, firstTask.ID, func(value domain.OperationTask) bool { return value.State == domain.TaskSucceeded })
 	database.Close()
+}
+
+func TestNetworkAttachmentDeleteIdempotencyIncludesRevision(t *testing.T) {
+	runtime := &networkTaskRuntimeFake{configured: map[domain.ID]bool{}}
+	ctx, database, repositories, service, runner, lab := newNetworkTaskFixture(t, runtime)
+	defer database.Close()
+	defer runner.Close()
+	topology := storesqlite.NewTopologyRepository(database)
+	_, interfaces, err := command.NewNodeService(topology).CreateConfigured(ctx, lab.ID, command.CreateNodeRequest{Name: "node", Kind: "docker", InterfaceCount: 1, InterfaceLimit: 4})
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC()
+	object := domain.NetworkObject{ID: domain.NewID(), LaboratoryID: lab.ID, Name: "bridge", Kind: domain.NetworkBridge, Revision: 1, DesiredState: "active", ObservedState: "active", Config: map[string]any{}, CreatedAt: now, UpdatedAt: now}
+	if err = repositories.CreateNetworkObject(ctx, object); err != nil {
+		t.Fatal(err)
+	}
+	attachment, err := repositories.CreateTopologyNetworkAttachment(ctx, object.ID, interfaces[0].ID, "eth0", nil, "create-attachment")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, deleteTask, err := service.DeleteAttachment(ctx, attachment.ID, attachment.Revision, "delete-attachment")
+	if err != nil {
+		t.Fatal(err)
+	}
+	waitForNetworkTask(t, repositories, deleteTask.ID, func(value domain.OperationTask) bool { return value.State == domain.TaskSucceeded })
+	if _, _, err = service.DeleteAttachment(ctx, attachment.ID, attachment.Revision+1, "delete-attachment"); err == nil {
+		t.Fatal("expected idempotency conflict for different attachment revision")
+	} else if problem, ok := domain.ProblemFromError(err); !ok || problem.Code != "idempotency_conflict" {
+		t.Fatalf("err=%v", err)
+	}
 }
 
 func TestNetworkObjectCreateCancellationCompensatesOwnedObject(t *testing.T) {

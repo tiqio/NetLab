@@ -196,6 +196,7 @@ export interface NetworkAttachment {
   interface_id: string;
   port_name: string;
   config?: Record<string, unknown>;
+  revision: number;
   observed_state: string;
   last_error?: Problem;
 }

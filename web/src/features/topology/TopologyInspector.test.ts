@@ -84,6 +84,7 @@ describe("TopologyInspector", () => {
           network_object_id: "switch-a",
           interface_id: "if-a",
           port_name: "eth0",
+          revision: 5,
           observed_state: "connected",
         },
       },
@@ -101,7 +102,7 @@ describe("TopologyInspector", () => {
     await flushPromises();
     expect(wrapper.emitted("captureConnection")).toHaveLength(1);
     expect(wrapper.emitted("filterConnection")).toHaveLength(1);
-    expect(deleteConnection).toHaveBeenCalledWith("attachment-1", 1);
+    expect(deleteConnection).toHaveBeenCalledWith("attachment-1", 5);
     expect(wrapper.emitted("clear")).toHaveLength(1);
     expect(wrapper.emitted("changed")).toHaveLength(1);
   });
@@ -574,6 +575,7 @@ describe("TopologyInspector", () => {
             network_object_id: "nat-1",
             interface_id: "if-1",
             port_name: "lan0",
+            revision: 1,
             observed_state: "active",
           },
         ],

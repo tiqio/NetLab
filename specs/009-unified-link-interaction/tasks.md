@@ -298,7 +298,7 @@ Foundational
 
 ## Phase 8: Convergence
 
-- [ ] T089 为 Network Attachment 增加权威 revision，贯通 SQLite schema/repository、统一连接投影、HTTP/MCP 合同与 SPA 删除路径，移除固定 revision `1` per FR-011, FR-024 (partial)
+- [X] T089 为 Network Attachment 增加权威 revision，贯通 SQLite schema/repository、统一连接投影、HTTP/MCP 合同与 SPA 删除路径，移除固定 revision `1` per FR-011, FR-024 (partial)
 - [ ] T090 增加 Link、Network Attachment、Network Object Link 部分运行时创建失败的补偿测试，断言 operation-owned 资源、端点预留和 backing record 被清理且端口可重试 per FR-022, US4/AC3, Constitution V–VI (partial)
 - [ ] T091 使用真实 SQLite repository、task runner、HTTP router 与 MCP tools 增加共享端口并发集成测试，验证单赢家、结构化冲突、幂等重放和权威刷新 per FR-019, FR-024, US4/AC2 (partial)
 - [ ] T092 扩展统一连接恢复 Playwright 旅程，覆盖 Link、Network Attachment、Network Object Link 的已建立身份与状态恢复，并严格断言预留、运行时 ownership、backing records 和实验室删除后零泄漏 per FR-022, SC-010 (partial)

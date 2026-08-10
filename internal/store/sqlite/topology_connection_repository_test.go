@@ -41,6 +41,23 @@ func TestTopologyEndpointReservationsSerializeLinksAndAttachments(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
+	if attachment.Revision != 1 {
+		t.Fatalf("attachment revision=%d want 1", attachment.Revision)
+	}
+	storedAttachment, err := repositories.GetNetworkAttachment(ctx, attachment.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if storedAttachment.Revision != attachment.Revision {
+		t.Fatalf("stored attachment revision=%d want %d", storedAttachment.Revision, attachment.Revision)
+	}
+	listedAttachments, err := repositories.ListNetworkObjectAttachments(ctx, object.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listedAttachments) != 1 || listedAttachments[0].Revision != attachment.Revision {
+		t.Fatalf("listed attachments=%+v", listedAttachments)
+	}
 	link := domain.Link{ID: "blocked-link", LaboratoryID: lab.ID, EndpointAID: interfacesA[0].ID, EndpointBID: interfacesB[0].ID, Revision: 1, DesiredState: "connected", ObservedState: "pending"}
 	err = topology.CreateLink(ctx, link)
 	if problem, ok := domain.ProblemFromError(err); !ok || problem.Code != "port_in_use" {
@@ -53,7 +70,21 @@ func TestTopologyEndpointReservationsSerializeLinksAndAttachments(t *testing.T) 
 	if reservationCount != 2 {
 		t.Fatalf("reservations=%d want 2", reservationCount)
 	}
-	if err = repositories.DeleteTopologyNetworkAttachment(ctx, attachment.ID, "operation-delete"); err != nil {
+	if err = repositories.DeleteTopologyNetworkAttachment(ctx, attachment.ID, attachment.Revision+1, "operation-stale-delete"); err == nil {
+		t.Fatal("expected stale attachment revision conflict")
+	} else if problem, ok := domain.ProblemFromError(err); !ok || problem.Code != "revision_conflict" {
+		t.Fatalf("stale delete err=%v", err)
+	}
+	if _, err = repositories.GetNetworkAttachment(ctx, attachment.ID); err != nil {
+		t.Fatalf("stale delete removed attachment: %v", err)
+	}
+	if err = database.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM topology_endpoint_reservations WHERE resource_id=?`, attachment.ID).Scan(&reservationCount); err != nil {
+		t.Fatal(err)
+	}
+	if reservationCount != 2 {
+		t.Fatalf("stale delete reservations=%d want 2", reservationCount)
+	}
+	if err = repositories.DeleteTopologyNetworkAttachment(ctx, attachment.ID, attachment.Revision, "operation-delete"); err != nil {
 		t.Fatal(err)
 	}
 	if err = topology.CreateLink(ctx, link); err != nil {

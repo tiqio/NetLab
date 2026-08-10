@@ -93,6 +93,7 @@ export function topologyAttachment(
     network_object_id: networkObjectId,
     interface_id: interfaceId,
     port_name: portName,
+    revision: 1,
     observed_state: observedState,
   };
 }

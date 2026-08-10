@@ -19,7 +19,7 @@ type TopologyConnectionLinkOperations interface {
 
 type TopologyConnectionNetworkOperations interface {
 	CreateAttachment(context.Context, domain.ID, domain.ID, domain.ID, string, map[string]any, string) (domain.NetworkAttachment, domain.OperationTask, error)
-	DeleteAttachment(context.Context, domain.ID, string) (domain.NetworkAttachment, domain.OperationTask, error)
+	DeleteAttachment(context.Context, domain.ID, domain.Revision, string) (domain.NetworkAttachment, domain.OperationTask, error)
 	CreateObjectLink(context.Context, domain.ID, domain.ID, string, domain.ID, string, string) (domain.NetworkObjectLink, domain.OperationTask, error)
 	DeleteObjectLink(context.Context, domain.ID, domain.Revision, string) (domain.NetworkObjectLink, domain.OperationTask, error)
 }
@@ -113,7 +113,7 @@ func (s *TopologyConnectionService) Delete(ctx context.Context, id domain.ID, re
 		connection.ObservedState = "disconnecting"
 		return connection, taskValue, deleteErr
 	case domain.ConnectionBackingAttachment:
-		_, taskValue, deleteErr := s.networks.DeleteAttachment(ctx, id, idempotencyKey)
+		_, taskValue, deleteErr := s.networks.DeleteAttachment(ctx, id, connection.Revision, idempotencyKey)
 		connection.DesiredState = "disconnected"
 		connection.ObservedState = "disconnecting"
 		return connection, taskValue, deleteErr
@@ -144,7 +144,7 @@ func connectionFromLink(value domain.Link, source, target domain.ConnectionEndpo
 }
 
 func connectionFromAttachment(laboratoryID domain.ID, value domain.NetworkAttachment, source, target domain.ConnectionEndpoint, config domain.TopologyConnectionConfig) domain.TopologyConnection {
-	return domain.TopologyConnection{ID: value.ID, LaboratoryID: laboratoryID, Source: source, Target: target, BackingKind: domain.ConnectionBackingAttachment, BackingID: value.ID, Config: config, Revision: 1, DesiredState: "connected", ObservedState: value.ObservedState, Capabilities: connectionCapabilities()}
+	return domain.TopologyConnection{ID: value.ID, LaboratoryID: laboratoryID, Source: source, Target: target, BackingKind: domain.ConnectionBackingAttachment, BackingID: value.ID, Config: config, Revision: value.Revision, DesiredState: "connected", ObservedState: value.ObservedState, Capabilities: connectionCapabilities()}
 }
 
 func connectionFromObjectLink(value domain.NetworkObjectLink, source, target domain.ConnectionEndpoint) domain.TopologyConnection {

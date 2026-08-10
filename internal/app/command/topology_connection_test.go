@@ -8,7 +8,8 @@ import (
 )
 
 type topologyConnectionRepositoryStub struct {
-	endpoints map[string]domain.ConnectionEndpoint
+	endpoints  map[string]domain.ConnectionEndpoint
+	connection domain.TopologyConnection
 }
 
 func (s topologyConnectionRepositoryStub) ResolveConnectionEndpoint(_ context.Context, endpoint domain.ConnectionEndpoint) (domain.ConnectionEndpoint, error) {
@@ -21,8 +22,11 @@ func (s topologyConnectionRepositoryStub) ResolveConnectionEndpoint(_ context.Co
 func (topologyConnectionRepositoryStub) ListTopologyConnections(context.Context, domain.ID) ([]domain.TopologyConnection, error) {
 	return nil, nil
 }
-func (topologyConnectionRepositoryStub) GetTopologyConnection(context.Context, domain.ID) (domain.TopologyConnection, error) {
-	return domain.TopologyConnection{}, domain.ErrNotFound
+func (s topologyConnectionRepositoryStub) GetTopologyConnection(context.Context, domain.ID) (domain.TopologyConnection, error) {
+	if s.connection.ID == "" {
+		return domain.TopologyConnection{}, domain.ErrNotFound
+	}
+	return s.connection, nil
 }
 
 type topologyLinkOperationsStub struct {
@@ -40,15 +44,17 @@ func (*topologyLinkOperationsStub) DisconnectLink(context.Context, domain.ID, st
 }
 
 type topologyNetworkOperationsStub struct {
-	attachment domain.NetworkAttachment
-	objectLink domain.NetworkObjectLink
+	attachment         domain.NetworkAttachment
+	objectLink         domain.NetworkObjectLink
+	attachmentRevision domain.Revision
 }
 
 func (s *topologyNetworkOperationsStub) CreateAttachment(_ context.Context, _ domain.ID, objectID, interfaceID domain.ID, portName string, config map[string]any, _ string) (domain.NetworkAttachment, domain.OperationTask, error) {
-	s.attachment = domain.NetworkAttachment{ID: "attachment", NetworkObjectID: objectID, InterfaceID: interfaceID, PortName: portName, Config: config, ObservedState: "pending"}
+	s.attachment = domain.NetworkAttachment{ID: "attachment", NetworkObjectID: objectID, InterfaceID: interfaceID, PortName: portName, Config: config, Revision: 7, ObservedState: "pending"}
 	return s.attachment, domain.OperationTask{ID: "task-attachment", Kind: "network_attachment.create", ResourceType: "network_attachment", ResourceID: s.attachment.ID, State: domain.TaskQueued}, nil
 }
-func (*topologyNetworkOperationsStub) DeleteAttachment(context.Context, domain.ID, string) (domain.NetworkAttachment, domain.OperationTask, error) {
+func (s *topologyNetworkOperationsStub) DeleteAttachment(_ context.Context, _ domain.ID, revision domain.Revision, _ string) (domain.NetworkAttachment, domain.OperationTask, error) {
+	s.attachmentRevision = revision
 	return domain.NetworkAttachment{}, domain.OperationTask{}, nil
 }
 func (s *topologyNetworkOperationsStub) CreateObjectLink(_ context.Context, labID, objectAID domain.ID, portAName string, objectBID domain.ID, portBName, _ string) (domain.NetworkObjectLink, domain.OperationTask, error) {
@@ -75,12 +81,26 @@ func TestTopologyConnectionServiceChoosesBackingFromEndpoints(t *testing.T) {
 		t.Fatalf("connection=%+v task=%+v err=%v", connection, taskValue, err)
 	}
 	connection, _, err = service.Create(context.Background(), labID, nodeA, objectA, domain.TopologyConnectionConfig{PVID: 10, TaggedVLANs: []int{20}}, "attachment")
-	if err != nil || connection.BackingKind != domain.ConnectionBackingAttachment || networks.attachment.PortName != "eth0" {
+	if err != nil || connection.BackingKind != domain.ConnectionBackingAttachment || connection.Revision != 7 || networks.attachment.PortName != "eth0" {
 		t.Fatalf("connection=%+v attachment=%+v err=%v", connection, networks.attachment, err)
 	}
 	connection, _, err = service.Create(context.Background(), labID, objectA, objectB, domain.TopologyConnectionConfig{}, "object-link")
 	if err != nil || connection.BackingKind != domain.ConnectionBackingObjectLink {
 		t.Fatalf("connection=%+v err=%v", connection, err)
+	}
+}
+
+func TestTopologyConnectionServiceDeletesAttachmentWithAuthoritativeRevision(t *testing.T) {
+	connection := domain.TopologyConnection{ID: "attachment", BackingKind: domain.ConnectionBackingAttachment, Revision: 9}
+	networks := &topologyNetworkOperationsStub{}
+	service := NewTopologyConnectionService(topologyConnectionRepositoryStub{connection: connection}, &topologyLinkOperationsStub{}, networks)
+
+	deleted, _, err := service.Delete(context.Background(), connection.ID, connection.Revision, "delete-attachment")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if networks.attachmentRevision != connection.Revision || deleted.Revision != connection.Revision {
+		t.Fatalf("deleted=%+v attachment revision=%d", deleted, networks.attachmentRevision)
 	}
 }
 

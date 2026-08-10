@@ -108,6 +108,7 @@ type NetworkAttachment struct {
 	InterfaceID     ID             `json:"interface_id"`
 	PortName        string         `json:"port_name"`
 	Config          map[string]any `json:"config,omitempty"`
+	Revision        Revision       `json:"revision"`
 	ObservedState   string         `json:"observed_state"`
 	LastError       *Problem       `json:"last_error,omitempty"`
 }

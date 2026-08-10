@@ -33,7 +33,7 @@ func NewNetworkObjectTaskService(service *NetworkObjectService, runner *task.Run
 
 func (s *NetworkObjectTaskService) CreateAttachment(ctx context.Context, laboratoryID, objectID, interfaceID domain.ID, portName string, config map[string]any, idempotencyKey string) (domain.NetworkAttachment, domain.OperationTask, error) {
 	input := map[string]any{"laboratory_id": laboratoryID, "network_object_id": objectID, "interface_id": interfaceID, "port_name": strings.TrimSpace(portName), "config": config}
-	attachment := domain.NetworkAttachment{ID: domain.NewID(), NetworkObjectID: objectID, InterfaceID: interfaceID, PortName: strings.TrimSpace(portName), Config: config, ObservedState: "pending"}
+	attachment := domain.NetworkAttachment{ID: domain.NewID(), NetworkObjectID: objectID, InterfaceID: interfaceID, PortName: strings.TrimSpace(portName), Config: config, Revision: 1, ObservedState: "pending"}
 	operation := networkObjectOperation("network_attachment.create", attachment.ID, idempotencyKey, input)
 	operation.ResourceType = "network_attachment"
 	queued, err := s.runner.EnqueueOrGet(ctx, operation)
@@ -50,17 +50,23 @@ func (s *NetworkObjectTaskService) CreateAttachment(ctx context.Context, laborat
 	return attachment, queued, nil
 }
 
-func (s *NetworkObjectTaskService) DeleteAttachment(ctx context.Context, id domain.ID, idempotencyKey string) (domain.NetworkAttachment, domain.OperationTask, error) {
+func (s *NetworkObjectTaskService) DeleteAttachment(ctx context.Context, id domain.ID, revision domain.Revision, idempotencyKey string) (domain.NetworkAttachment, domain.OperationTask, error) {
 	attachment, err := s.service.GetAttachment(ctx, id)
 	if err != nil {
 		if idempotencyKey != "" {
 			if existing, lookupErr := s.runner.GetByIdempotency(ctx, "network_attachment.delete", idempotencyKey); lookupErr == nil && existing.ResourceID == id {
-				return domain.NetworkAttachment{ID: id, ObservedState: "disconnected"}, existing, nil
+				if domain.Revision(networkTaskInt64(existing.Input["revision"])) != revision {
+					return domain.NetworkAttachment{}, domain.OperationTask{}, domain.Problem{Code: "idempotency_conflict", Message: "idempotency key was already used with a different attachment revision", ResourceType: "network_attachment", ResourceID: id, TaskID: existing.ID, Phase: "delete_admission"}
+				}
+				return domain.NetworkAttachment{ID: id, Revision: revision, ObservedState: "disconnected"}, existing, nil
 			}
 		}
 		return domain.NetworkAttachment{}, domain.OperationTask{}, err
 	}
-	input := map[string]any{"network_object_id": attachment.NetworkObjectID, "interface_id": attachment.InterfaceID, "port_name": attachment.PortName, "config": attachment.Config}
+	if attachment.Revision != revision {
+		return domain.NetworkAttachment{}, domain.OperationTask{}, domain.Problem{Code: "revision_conflict", Message: fmt.Sprintf("expected revision %d, current revision is %d", revision, attachment.Revision), ResourceType: "network_attachment", ResourceID: id, Phase: "delete_admission"}
+	}
+	input := map[string]any{"revision": int64(revision), "network_object_id": attachment.NetworkObjectID, "interface_id": attachment.InterfaceID, "port_name": attachment.PortName, "config": attachment.Config}
 	operation := networkObjectOperation("network_attachment.delete", id, idempotencyKey, input)
 	operation.ResourceType = "network_attachment"
 	queued, err := s.runner.EnqueueOrGet(ctx, operation)
@@ -183,7 +189,7 @@ func (s *NetworkObjectTaskService) handleAttachmentDelete(ctx context.Context, v
 	if err := s.runner.Checkpoint(ctx, value); err != nil {
 		return nil, err
 	}
-	if err := s.service.DeleteAttachment(ctx, value.ResourceID, value.ID); err != nil {
+	if err := s.service.DeleteAttachment(ctx, value.ResourceID, domain.Revision(networkTaskInt64(value.Input["revision"])), value.ID); err != nil {
 		return nil, *command.NormalizeOperationProblem(err, domain.Problem{Code: "network_attachment_delete_failed", Message: "network attachment deletion failed", Retryable: true, ResourceType: "network_attachment", ResourceID: value.ResourceID, TaskID: value.ID, Phase: "cleanup", Cleanup: "attachment remains authoritative until cleanup succeeds", OperatorHint: "inspect runtime ownership and retry deletion"}, true)
 	}
 	value.ProgressCurrent = value.ProgressTotal

@@ -310,7 +310,7 @@ func topologyConnectionFromAttachment(laboratoryID domain.ID, value domain.Netwo
 			}
 		}
 	}
-	return domain.TopologyConnection{ID: value.ID, LaboratoryID: laboratoryID, Source: source, Target: target, BackingKind: domain.ConnectionBackingAttachment, BackingID: value.ID, Config: config, Revision: 1, DesiredState: "connected", ObservedState: value.ObservedState, Capabilities: topologyConnectionCapabilities(), LastError: value.LastError}
+	return domain.TopologyConnection{ID: value.ID, LaboratoryID: laboratoryID, Source: source, Target: target, BackingKind: domain.ConnectionBackingAttachment, BackingID: value.ID, Config: config, Revision: value.Revision, DesiredState: "connected", ObservedState: value.ObservedState, Capabilities: topologyConnectionCapabilities(), LastError: value.LastError}
 }
 
 func topologyConnectionFromObjectLink(value domain.NetworkObjectLink, source, target domain.ConnectionEndpoint) domain.TopologyConnection {
@@ -335,7 +335,7 @@ func (r *Repositories) CreateTopologyNetworkAttachment(ctx context.Context, obje
 }
 
 func (r *Repositories) CreateTopologyNetworkAttachmentAs(ctx context.Context, id, objectID, interfaceID domain.ID, portName string, config map[string]any, operationID domain.ID) (domain.NetworkAttachment, error) {
-	value := domain.NetworkAttachment{ID: id, NetworkObjectID: objectID, InterfaceID: interfaceID, PortName: portName, Config: config, ObservedState: "pending"}
+	value := domain.NetworkAttachment{ID: id, NetworkObjectID: objectID, InterfaceID: interfaceID, PortName: portName, Config: config, Revision: 1, ObservedState: "pending"}
 	body, _ := json.Marshal(config)
 	err := r.database.Write(ctx, func(tx *sql.Tx) error {
 		var objectLaboratoryID, interfaceLaboratoryID domain.ID
@@ -374,7 +374,7 @@ func (r *Repositories) CreateTopologyNetworkAttachmentAs(ctx context.Context, id
 func (r *Repositories) GetNetworkAttachment(ctx context.Context, id domain.ID) (domain.NetworkAttachment, error) {
 	var value domain.NetworkAttachment
 	var config, problem []byte
-	err := r.database.DB.QueryRowContext(ctx, `SELECT id,network_object_id,COALESCE(interface_id,''),port_name,config_json,observed_state,COALESCE(last_error_json,'') FROM network_attachments WHERE id=?`, id).Scan(&value.ID, &value.NetworkObjectID, &value.InterfaceID, &value.PortName, &config, &value.ObservedState, &problem)
+	err := r.database.DB.QueryRowContext(ctx, `SELECT id,network_object_id,COALESCE(interface_id,''),port_name,config_json,revision,observed_state,COALESCE(last_error_json,'') FROM network_attachments WHERE id=?`, id).Scan(&value.ID, &value.NetworkObjectID, &value.InterfaceID, &value.PortName, &config, &value.Revision, &value.ObservedState, &problem)
 	if err == sql.ErrNoRows {
 		return value, ErrNotFound
 	}
@@ -389,21 +389,29 @@ func (r *Repositories) GetNetworkAttachment(ctx context.Context, id domain.ID) (
 	return value, nil
 }
 
-func (r *Repositories) DeleteTopologyNetworkAttachment(ctx context.Context, id, operationID domain.ID) error {
+func (r *Repositories) DeleteTopologyNetworkAttachment(ctx context.Context, id domain.ID, expected domain.Revision, operationID domain.ID) error {
 	return r.database.Write(ctx, func(tx *sql.Tx) error {
 		var laboratoryID domain.ID
-		if err := tx.QueryRowContext(ctx, `SELECT o.laboratory_id FROM network_attachments a JOIN network_objects o ON o.id=a.network_object_id WHERE a.id=?`, id).Scan(&laboratoryID); err != nil {
+		var revision domain.Revision
+		if err := tx.QueryRowContext(ctx, `SELECT o.laboratory_id,a.revision FROM network_attachments a JOIN network_objects o ON o.id=a.network_object_id WHERE a.id=?`, id).Scan(&laboratoryID, &revision); err != nil {
 			if err == sql.ErrNoRows {
 				return ErrNotFound
 			}
 			return err
 		}
+		if revision != expected {
+			return domain.Problem{Code: "revision_conflict", Message: "network attachment revision mismatch", ResourceType: "network_attachment", ResourceID: id, Phase: "delete_admission"}
+		}
 		if err := releaseTopologyConnectionReservationsTx(ctx, tx, "network_attachment", id); err != nil {
 			return err
 		}
-		if _, err := tx.ExecContext(ctx, `DELETE FROM network_attachments WHERE id=?`, id); err != nil {
+		result, err := tx.ExecContext(ctx, `DELETE FROM network_attachments WHERE id=? AND revision=?`, id, expected)
+		if err != nil {
 			return err
 		}
-		return appendEvent(ctx, tx, "network_attachment.deleted", laboratoryID, "network_attachment", id, 1, operationID, nil)
+		if affected, _ := result.RowsAffected(); affected != 1 {
+			return domain.Problem{Code: "revision_conflict", Message: "network attachment revision changed during deletion", ResourceType: "network_attachment", ResourceID: id, Phase: "delete_commit"}
+		}
+		return appendEvent(ctx, tx, "network_attachment.deleted", laboratoryID, "network_attachment", id, expected.Next(), operationID, nil)
 	})
 }

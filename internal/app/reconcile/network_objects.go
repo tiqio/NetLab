@@ -309,10 +309,13 @@ func (s *NetworkObjectService) GetAttachment(ctx context.Context, id domain.ID) 
 	return repository.GetNetworkAttachment(ctx, id)
 }
 
-func (s *NetworkObjectService) DeleteAttachment(ctx context.Context, id, operationID domain.ID) error {
+func (s *NetworkObjectService) DeleteAttachment(ctx context.Context, id domain.ID, revision domain.Revision, operationID domain.ID) error {
 	value, err := s.GetAttachment(ctx, id)
 	if err != nil {
 		return err
+	}
+	if value.Revision != revision {
+		return domain.Problem{Code: "revision_conflict", Message: fmt.Sprintf("expected revision %d, current revision is %d", revision, value.Revision), ResourceType: "network_attachment", ResourceID: id, Phase: "delete_admission"}
 	}
 	if s.attachments != nil {
 		if err = s.attachments.DeleteAttachment(ctx, value); err != nil {
@@ -320,12 +323,12 @@ func (s *NetworkObjectService) DeleteAttachment(ctx context.Context, id, operati
 		}
 	}
 	repository, ok := s.repository.(interface {
-		DeleteTopologyNetworkAttachment(context.Context, domain.ID, domain.ID) error
+		DeleteTopologyNetworkAttachment(context.Context, domain.ID, domain.Revision, domain.ID) error
 	})
 	if !ok {
 		return domain.Problem{Code: "operation_unavailable", Message: "durable network attachment deletion unavailable", ResourceType: "network_attachment", ResourceID: id}
 	}
-	return repository.DeleteTopologyNetworkAttachment(ctx, id, operationID)
+	return repository.DeleteTopologyNetworkAttachment(ctx, id, revision, operationID)
 }
 
 func (s *NetworkObjectService) ListObjectLinks(ctx context.Context, laboratoryID domain.ID) ([]domain.NetworkObjectLink, error) {

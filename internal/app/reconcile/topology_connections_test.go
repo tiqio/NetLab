@@ -40,7 +40,7 @@ type unifiedNetworkRuntimeFake struct{ attachmentErr, objectLinkErr error }
 func (f unifiedNetworkRuntimeFake) CreateAttachment(_ context.Context, _ domain.ID, objectID, interfaceID domain.ID, port string, config map[string]any, _ string) (domain.NetworkAttachment, domain.OperationTask, error) {
 	return domain.NetworkAttachment{ID: "attachment", NetworkObjectID: objectID, InterfaceID: interfaceID, PortName: port, Config: config, ObservedState: "pending"}, domain.OperationTask{ID: "attachment-task", State: domain.TaskQueued}, f.attachmentErr
 }
-func (unifiedNetworkRuntimeFake) DeleteAttachment(context.Context, domain.ID, string) (domain.NetworkAttachment, domain.OperationTask, error) {
+func (unifiedNetworkRuntimeFake) DeleteAttachment(context.Context, domain.ID, domain.Revision, string) (domain.NetworkAttachment, domain.OperationTask, error) {
 	return domain.NetworkAttachment{}, domain.OperationTask{}, nil
 }
 func (f unifiedNetworkRuntimeFake) CreateObjectLink(_ context.Context, lab, first domain.ID, firstPort string, second domain.ID, secondPort, _ string) (domain.NetworkObjectLink, domain.OperationTask, error) {

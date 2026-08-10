@@ -55,6 +55,7 @@ const attachments = [
     network_object_id: "switch-a",
     interface_id: "if-a",
     port_name: "lan0",
+    revision: 1,
     observed_state: "active",
   },
 ] as NetworkAttachment[];
