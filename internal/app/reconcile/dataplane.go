@@ -15,6 +15,7 @@ type DataPlaneStore interface {
 	SetNetworkAttachmentState(context.Context, domain.ID, string, *domain.Problem) error
 	SetNetworkObjectLinkState(context.Context, domain.ID, string, *domain.Problem) error
 	DeleteLink(context.Context, domain.ID) error
+	DeleteTopologyNetworkAttachment(context.Context, domain.ID, domain.Revision, domain.ID) error
 	DeleteNetworkObjectLink(context.Context, domain.ID) error
 }
 
@@ -22,6 +23,7 @@ type DataPlaneRuntime interface {
 	EnsureLink(context.Context, domain.Link, domain.Interface, domain.Interface) error
 	DeleteLink(context.Context, domain.ID) error
 	Attach(context.Context, domain.Interface, domain.NetworkObject) error
+	DeleteAttachment(context.Context, domain.NetworkAttachment) error
 	EnsureNetworkObjectLink(context.Context, domain.NetworkObjectLink, domain.NetworkObject, domain.NetworkObject) error
 	DeleteNetworkObjectLink(context.Context, domain.NetworkObjectLink, domain.NetworkObject, domain.NetworkObject) error
 }
@@ -78,7 +80,13 @@ func (r *DataPlaneReconciler) Reconcile(ctx context.Context) (err error) {
 				continue
 			}
 			if err = r.runtime.EnsureLink(ctx, link, endpointA, endpointB); err != nil {
-				_ = r.store.SetLinkObservedState(ctx, link.ID, "failed")
+				cleanupErr := r.runtime.DeleteLink(ctx, link.ID)
+				if cleanupErr == nil {
+					cleanupErr = r.store.DeleteLink(ctx, link.ID)
+				}
+				if cleanupErr != nil {
+					_ = r.store.SetLinkObservedState(ctx, link.ID, "failed")
+				}
 				continue
 			}
 			_ = r.store.SetLinkObservedState(ctx, link.ID, "connected")
@@ -108,8 +116,14 @@ func (r *DataPlaneReconciler) Reconcile(ctx context.Context) (err error) {
 					attachErr = domain.Problem{Code: "capability_unsupported", Message: "namespace attachment runtime unavailable"}
 				}
 				if attachErr != nil {
-					problem := structuredProblem(attachErr, domain.Problem{Code: "attachment_failed", Retryable: true, ResourceType: "network_attachment", ResourceID: attachment.ID, Phase: "attachment_reconcile", Cleanup: "attachment remains detached", OperatorHint: "inspect the interface and network object then retry", RetryAfterSeconds: 2})
-					_ = r.store.SetNetworkAttachmentState(ctx, attachment.ID, "failed", problem)
+					cleanupErr := r.runtime.DeleteAttachment(ctx, attachment)
+					if cleanupErr == nil {
+						cleanupErr = r.store.DeleteTopologyNetworkAttachment(ctx, attachment.ID, attachment.Revision, "")
+					}
+					if cleanupErr != nil {
+						problem := structuredProblem(attachErr, domain.Problem{Code: "attachment_failed", Retryable: true, ResourceType: "network_attachment", ResourceID: attachment.ID, Phase: "attachment_reconcile", Cleanup: "partial runtime cleanup failed; attachment remains authoritative", OperatorHint: "inspect the interface and network object then retry", RetryAfterSeconds: 2})
+						_ = r.store.SetNetworkAttachmentState(ctx, attachment.ID, "failed", problem)
+					}
 					continue
 				}
 				_ = r.store.SetNetworkAttachmentState(ctx, attachment.ID, "active", nil)
@@ -138,8 +152,14 @@ func (r *DataPlaneReconciler) Reconcile(ctx context.Context) (err error) {
 				continue
 			}
 			if linkErr := r.runtime.EnsureNetworkObjectLink(ctx, link, objectA, objectB); linkErr != nil {
-				problem := structuredProblem(linkErr, domain.Problem{Code: "network_object_link_failed", Retryable: true, ResourceType: "network_object_link", ResourceID: link.ID, Phase: "link_reconcile", Cleanup: "link remains disconnected", OperatorHint: "inspect both namespace ports then retry", RetryAfterSeconds: 2})
-				_ = r.store.SetNetworkObjectLinkState(ctx, link.ID, "failed", problem)
+				cleanupErr := r.runtime.DeleteNetworkObjectLink(ctx, link, objectA, objectB)
+				if cleanupErr == nil {
+					cleanupErr = r.store.DeleteNetworkObjectLink(ctx, link.ID)
+				}
+				if cleanupErr != nil {
+					problem := structuredProblem(linkErr, domain.Problem{Code: "network_object_link_failed", Retryable: true, ResourceType: "network_object_link", ResourceID: link.ID, Phase: "link_reconcile", Cleanup: "partial runtime cleanup failed; link remains authoritative", OperatorHint: "inspect both namespace ports then retry", RetryAfterSeconds: 2})
+					_ = r.store.SetNetworkObjectLinkState(ctx, link.ID, "failed", problem)
+				}
 				continue
 			}
 			_ = r.store.SetNetworkObjectLinkState(ctx, link.ID, "connected", nil)

@@ -415,3 +415,7 @@ func (r *Repositories) DeleteTopologyNetworkAttachment(ctx context.Context, id d
 		return appendEvent(ctx, tx, "network_attachment.deleted", laboratoryID, "network_attachment", id, expected.Next(), operationID, nil)
 	})
 }
+
+func (r *TopologyRepository) DeleteTopologyNetworkAttachment(ctx context.Context, id domain.ID, expected domain.Revision, operationID domain.ID) error {
+	return NewRepositories(r.database).DeleteTopologyNetworkAttachment(ctx, id, expected, operationID)
+}

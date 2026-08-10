@@ -16,6 +16,7 @@ type dataPlaneStoreFake struct {
 	attachments       []domain.NetworkAttachment
 	attachmentState   string
 	attachmentError   *domain.Problem
+	attachmentDeleted bool
 	objectLinkState   string
 	objectLinkDeleted bool
 }
@@ -41,6 +42,10 @@ func (s *dataPlaneStoreFake) DeleteLink(context.Context, domain.ID) error {
 	s.deleted = true
 	return nil
 }
+func (s *dataPlaneStoreFake) DeleteTopologyNetworkAttachment(context.Context, domain.ID, domain.Revision, domain.ID) error {
+	s.attachmentDeleted = true
+	return nil
+}
 func (s *dataPlaneStoreFake) SetNetworkAttachmentState(_ context.Context, _ domain.ID, state string, problem *domain.Problem) error {
 	s.attachmentState, s.attachmentError = state, problem
 	return nil
@@ -56,8 +61,11 @@ func (s *dataPlaneStoreFake) DeleteNetworkObjectLink(context.Context, domain.ID)
 
 type dataPlaneRuntimeFake struct {
 	ensureError           error
+	attachmentError       error
+	objectLinkError       error
 	ensureCalls           int
 	deleted               bool
+	attachmentDeleted     bool
 	objectLinkEnsureCalls int
 	objectLinkDeleted     bool
 }
@@ -71,11 +79,86 @@ func (r *dataPlaneRuntimeFake) DeleteLink(context.Context, domain.ID) error {
 	return nil
 }
 func (r *dataPlaneRuntimeFake) Attach(context.Context, domain.Interface, domain.NetworkObject) error {
+	return r.attachmentError
+}
+func (r *dataPlaneRuntimeFake) DeleteAttachment(context.Context, domain.NetworkAttachment) error {
+	r.attachmentDeleted = true
 	return nil
 }
 func (r *dataPlaneRuntimeFake) EnsureNetworkObjectLink(context.Context, domain.NetworkObjectLink, domain.NetworkObject, domain.NetworkObject) error {
 	r.objectLinkEnsureCalls++
-	return nil
+	return r.objectLinkError
+}
+
+func TestDataPlaneCompensatesPartialConnectionCreationFailures(t *testing.T) {
+	tests := []struct {
+		name    string
+		store   *dataPlaneStoreFake
+		runtime *dataPlaneRuntimeFake
+		assert  func(*testing.T, *dataPlaneStoreFake, *dataPlaneRuntimeFake)
+	}{
+		{
+			name: "link",
+			store: &dataPlaneStoreFake{
+				lab:             domain.Laboratory{ID: "lab", LifecycleState: "active"},
+				interfaceStates: map[domain.ID]string{},
+				snapshot: domain.TopologySnapshot{
+					Nodes:      []domain.Node{{ID: "node-a", ObservedState: domain.ObservedRunning}, {ID: "node-b", ObservedState: domain.ObservedRunning}},
+					Interfaces: []domain.Interface{{ID: "a", NodeID: "node-a"}, {ID: "b", NodeID: "node-b"}},
+					Links:      []domain.Link{{ID: "link", EndpointAID: "a", EndpointBID: "b", DesiredState: "connected"}},
+				},
+			},
+			runtime: &dataPlaneRuntimeFake{ensureError: domain.ErrNotFound},
+			assert: func(t *testing.T, store *dataPlaneStoreFake, runtime *dataPlaneRuntimeFake) {
+				if !runtime.deleted || !store.deleted {
+					t.Fatal("link partial resources were not compensated")
+				}
+			},
+		},
+		{
+			name: "network attachment",
+			store: &dataPlaneStoreFake{
+				lab:             domain.Laboratory{ID: "lab", LifecycleState: "active"},
+				interfaceStates: map[domain.ID]string{},
+				attachments:     []domain.NetworkAttachment{{ID: "attachment", InterfaceID: "interface", NetworkObjectID: "object", Revision: 1}},
+				snapshot: domain.TopologySnapshot{
+					Interfaces:     []domain.Interface{{ID: "interface", NodeID: "node"}},
+					NetworkObjects: []domain.NetworkObject{{ID: "object", Kind: domain.NetworkBridge}},
+				},
+			},
+			runtime: &dataPlaneRuntimeFake{attachmentError: domain.ErrNotFound},
+			assert: func(t *testing.T, store *dataPlaneStoreFake, runtime *dataPlaneRuntimeFake) {
+				if !runtime.attachmentDeleted || !store.attachmentDeleted {
+					t.Fatal("attachment partial resources were not compensated")
+				}
+			},
+		},
+		{
+			name: "network object link",
+			store: &dataPlaneStoreFake{
+				lab:             domain.Laboratory{ID: "lab", LifecycleState: "active"},
+				interfaceStates: map[domain.ID]string{},
+				snapshot: domain.TopologySnapshot{
+					NetworkObjects:     []domain.NetworkObject{{ID: "a", ObservedState: "active"}, {ID: "b", ObservedState: "active"}},
+					NetworkObjectLinks: []domain.NetworkObjectLink{{ID: "object-link", ObjectAID: "a", ObjectBID: "b", DesiredState: "connected"}},
+				},
+			},
+			runtime: &dataPlaneRuntimeFake{objectLinkError: domain.ErrNotFound},
+			assert: func(t *testing.T, store *dataPlaneStoreFake, runtime *dataPlaneRuntimeFake) {
+				if !runtime.objectLinkDeleted || !store.objectLinkDeleted {
+					t.Fatal("object-link partial resources were not compensated")
+				}
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if err := NewDataPlaneReconciler(test.store, test.runtime).Reconcile(context.Background()); err != nil {
+				t.Fatal(err)
+			}
+			test.assert(t, test.store, test.runtime)
+		})
+	}
 }
 func (r *dataPlaneRuntimeFake) DeleteNetworkObjectLink(context.Context, domain.NetworkObjectLink, domain.NetworkObject, domain.NetworkObject) error {
 	r.objectLinkDeleted = true
