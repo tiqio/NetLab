@@ -45,15 +45,16 @@ func (s *TopologyConnectionService) Create(ctx context.Context, laboratoryID dom
 	if err != nil {
 		return domain.TopologyConnection{}, domain.OperationTask{}, err
 	}
-	if source.Availability != "" && source.Availability != domain.ConnectionEndpointFree {
-		return domain.TopologyConnection{}, domain.OperationTask{}, endpointUnavailableProblem(source)
-	}
-	if target.Availability != "" && target.Availability != domain.ConnectionEndpointFree {
-		return domain.TopologyConnection{}, domain.OperationTask{}, endpointUnavailableProblem(target)
-	}
 	backing, err := domain.ResolveTopologyConnectionBacking(source, target)
 	if err != nil {
 		return domain.TopologyConnection{}, domain.OperationTask{}, err
+	}
+	replay := s.hasExistingCreateTask(ctx, backing, idempotencyKey)
+	if !replay && source.Availability != "" && source.Availability != domain.ConnectionEndpointFree {
+		return domain.TopologyConnection{}, domain.OperationTask{}, endpointUnavailableProblem(source)
+	}
+	if !replay && target.Availability != "" && target.Availability != domain.ConnectionEndpointFree {
+		return domain.TopologyConnection{}, domain.OperationTask{}, endpointUnavailableProblem(target)
 	}
 	switch backing {
 	case domain.ConnectionBackingLink:
@@ -88,6 +89,32 @@ func (s *TopologyConnectionService) Create(ctx context.Context, laboratoryID dom
 	default:
 		return domain.TopologyConnection{}, domain.OperationTask{}, domain.Problem{Code: "endpoint_incompatible", Message: "unsupported connection endpoint combination", Phase: "connection_admission"}
 	}
+}
+
+func (s *TopologyConnectionService) hasExistingCreateTask(ctx context.Context, backing domain.ConnectionBackingKind, idempotencyKey string) bool {
+	if idempotencyKey == "" {
+		return false
+	}
+	lookup, ok := s.repository.(interface {
+		GetTaskByIdempotency(context.Context, string, string) (domain.OperationTask, error)
+	})
+	if !ok {
+		return false
+	}
+	kind := ""
+	switch backing {
+	case domain.ConnectionBackingLink:
+		kind = "link.connect"
+	case domain.ConnectionBackingAttachment:
+		kind = "network_attachment.create"
+	case domain.ConnectionBackingObjectLink:
+		kind = "network_object_link.create"
+	}
+	if kind == "" {
+		return false
+	}
+	_, err := lookup.GetTaskByIdempotency(ctx, kind, idempotencyKey)
+	return err == nil
 }
 
 func (s *TopologyConnectionService) List(ctx context.Context, laboratoryID domain.ID) ([]domain.TopologyConnection, error) {
