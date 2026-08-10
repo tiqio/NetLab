@@ -1,5 +1,5 @@
 import { expect, test } from "../fixtures/acceptanceFixture";
-import type { Locator } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { waitForCondition } from "../fixtures/waiters";
 import { selectLaboratoryByName } from "../pages/LaboratoryPage";
 import { TemplatePage } from "../pages/TemplatePage";
@@ -64,36 +64,31 @@ test("three lightweight objects form a shared browser-created path", async ({
   await selectLaboratoryByName(secondPage, laboratory.name);
 
   const canvas = page.getByLabel(/拓扑画布键盘操作区/);
-  await canvas.focus();
-  await focusTopologyResource(canvas, first.id);
-  await canvas.press("p");
-  await canvas.press("Enter");
-  await focusTopologyResource(canvas, middle.id);
-  await canvas.press("p");
-  await canvas.press("Enter");
-
-  await waitForCondition(
-    async () => (await templates.snapshot(laboratory.id)).network_object_links,
-    (items) => items.length === 1,
-    "first shared network object link",
-    30_000,
+  await createKeyboardObjectLink(
+    page,
+    canvas,
+    templates,
+    laboratory.id,
+    first.id,
+    "eth0",
+    middle.id,
+    "eth0",
+    1,
   );
   await expect(page.getByTestId("topology-a11y-summary")).toContainText(
     undirectedLinkPattern(names[0], "eth0", names[1], "eth0"),
   );
 
-  await focusTopologyResource(canvas, middle.id);
-  await canvas.press("p");
-  await canvas.press("Enter");
-  await focusTopologyResource(canvas, third.id);
-  await canvas.press("p");
-  await canvas.press("Enter");
-
-  const links = await waitForCondition(
-    async () => (await templates.snapshot(laboratory.id)).network_object_links,
-    (items) => items.length === 2,
-    "two shared network object links",
-    30_000,
+  const links = await createKeyboardObjectLink(
+    page,
+    canvas,
+    templates,
+    laboratory.id,
+    middle.id,
+    "eth1",
+    third.id,
+    "eth0",
+    2,
   );
   for (const link of links) {
     await ledger.add({
@@ -145,4 +140,51 @@ async function focusTopologyResource(canvas: Locator, resourceId: string) {
     if ((await announcement.textContent())?.includes(resourceId)) return;
   }
   throw new Error(`Unable to focus topology resource ${resourceId}`);
+}
+
+async function createKeyboardObjectLink(
+  page: Page,
+  canvas: Locator,
+  templates: TemplatePage,
+  laboratoryId: string,
+  sourceId: string,
+  sourcePort: string,
+  targetId: string,
+  targetPort: string,
+  expectedCount: number,
+) {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    await page.getByRole("button", { name: "刷新", exact: true }).click();
+    await canvas.focus();
+    await focusTopologyResource(canvas, sourceId);
+    await focusTopologyPort(canvas, sourcePort);
+    await canvas.press("Enter");
+    await canvas.focus();
+    await focusTopologyResource(canvas, targetId);
+    await focusTopologyPort(canvas, targetPort);
+    await canvas.press("Enter");
+    try {
+      return await waitForCondition(
+        async () => (await templates.snapshot(laboratoryId)).network_object_links,
+        (items) => items.length === expectedCount,
+        `${expectedCount} shared network object links`,
+        10_000,
+      );
+    } catch (error) {
+      if (attempt > 0) {
+        const statuses = await page.locator('[role="status"]').allTextContents();
+        throw new Error(`${String(error)}; statuses=${JSON.stringify(statuses)}`);
+      }
+    }
+  }
+  throw new Error("unreachable connection retry state");
+}
+
+async function focusTopologyPort(canvas: Locator, portName: string) {
+  const announcement = canvas.getByRole("status");
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    await canvas.press(attempt === 0 ? "p" : "ArrowRight");
+    if ((await announcement.textContent())?.includes(`接口 ${portName}`)) return;
+  }
+  throw new Error(`Unable to focus topology port ${portName}`);
 }

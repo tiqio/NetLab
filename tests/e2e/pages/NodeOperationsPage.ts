@@ -36,6 +36,13 @@ export class NodeOperationsPage extends BasePage {
   }
 
   async openTaskCenter() {
-    await this.page.getByRole("tab", { name: /Tasks/ }).click();
+    const tab = this.page.getByRole("tab", { name: /^(Tasks|任务)/ });
+    if (!(await tab.isVisible().catch(() => false))) {
+      await this.page
+        .getByRole("button", { name: "展开或收起操作区" })
+        .click();
+    }
+    await expect(tab).toBeVisible();
+    await tab.click();
   }
 }

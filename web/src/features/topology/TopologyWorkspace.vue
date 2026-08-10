@@ -38,6 +38,7 @@ import {
   useWorkspacePreferences,
 } from "@/composables/useWorkspacePreferences";
 import LaboratoryToolbar from "@/features/laboratories/LaboratoryToolbar.vue";
+import { randomUUID } from "@/lib/uuid";
 import { useLaboratoryStore } from "@/stores/laboratory";
 import type { BottomTab } from "@/types/workspace";
 import CreateTopologyResourceDrawer from "./CreateTopologyResourceDrawer.vue";
@@ -960,7 +961,7 @@ async function submitUnifiedConnection(
         entry_point:
           connectionDraft.value?.entryPoint || connectionEntryPoint.value,
       },
-      crypto.randomUUID(),
+      randomUUID(),
     );
     store.recordTopologyConnectionTask(envelope);
     connectionDraft.value = undefined;
