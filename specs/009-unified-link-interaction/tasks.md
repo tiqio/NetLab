@@ -156,7 +156,7 @@
 
 ### Tests for User Story 4
 
-- [ ] T062 [P] [US4] 为统一 create/delete task 的 queued/running/succeeded/failed/cancelling/cancelled、进度、最终查询和幂等结果编写失败测试到 `internal/app/command/topology_connection_tasks_test.go`
+- [X] T062 [P] [US4] 为统一 create/delete task 的 queued/running/succeeded/failed/cancelling/cancelled、进度、最终查询和幂等结果编写失败测试到 `internal/app/command/topology_connection_tasks_test.go`
 - [ ] T063 [P] [US4] 为事务中 task、backing record、预留、audit/outbox、revision 各故障点的全量回滚和 operation-owned cleanup 编写失败测试到 `internal/store/sqlite/topology_connection_repository_test.go`
 - [ ] T064 [P] [US4] 为运行中节点链路、附件和对象链路适配、部分 runtime 失败与补偿编写失败测试到 `internal/app/reconcile/topology_connections_test.go`
 - [ ] T065 [P] [US4] 为两个 HTTP 客户端与 MCP 同端口争用、兼容路由对称、冲突刷新和不同 key 重试编写失败测试到 `internal/api/http/topology_connection_concurrency_test.go` 与 `internal/api/mcp/topology_connection_tools_test.go`
