@@ -101,20 +101,20 @@
 
 ### Tests for User Story 2
 
-- [ ] T039 [P] [US2] 扩展画布失败测试，覆盖节点与网络对象一致的 connector 位置、capacity gate、hover/selection 可见性和逻辑 access 到 `web/src/features/topology/TopologyCanvas.test.ts`
-- [ ] T040 [P] [US2] 扩展工作区失败测试，覆盖单源自动选择、多源 chooser、加号后复用目标流程和取消到 `web/src/features/topology/TopologyWorkspace.test.ts`
-- [ ] T041 [P] [US2] 扩展键盘与无障碍失败测试，覆盖资源聚焦、加号、源/目标选择、live region、Enter/Space/Escape 到 `web/src/features/topology/topologyKeyboardController.test.ts` 与 `web/src/features/topology/TopologyCanvas.a11y.test.ts`
-- [ ] T042 [P] [US2] 增加普通节点和轻量对象加号、键盘连接及与拖拽结果对称的 Playwright 旅程到 `tests/e2e/journeys/unifiedPlusConnection.spec.ts`
+- [X] T039 [P] [US2] 扩展画布失败测试，覆盖节点与网络对象一致的 connector 位置、capacity gate、hover/selection 可见性和逻辑 access 到 `web/src/features/topology/TopologyCanvas.test.ts`
+- [X] T040 [P] [US2] 扩展工作区失败测试，覆盖单源自动选择、多源 chooser、加号后复用目标流程和取消到 `web/src/features/topology/TopologyWorkspace.test.ts`
+- [X] T041 [P] [US2] 扩展键盘与无障碍失败测试，覆盖资源聚焦、加号、源/目标选择、live region、Enter/Space/Escape 到 `web/src/features/topology/topologyKeyboardController.test.ts` 与 `web/src/features/topology/TopologyCanvas.a11y.test.ts`
+- [X] T042 [P] [US2] 增加普通节点和轻量对象加号、键盘连接及与拖拽结果对称的 Playwright 旅程到 `tests/e2e/journeys/unifiedPlusConnection.spec.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T043 [US2] 在 `web/src/features/topology/TopologyCanvas.vue` 将单节点 connector overlay 泛化为所有具有空闲端点或逻辑 access 的资源并附加稳定 resource selector
-- [ ] T044 [US2] 在 `web/src/features/topology/TopologyWorkspace.vue` 将 `startConnection` 泛化为统一资源 source 解析，并复用 US1 草稿、chooser、配置和提交路径
-- [ ] T045 [US2] 在 `web/src/features/topology/PortChooser.vue` 增加 source/target 模式标题、就近锚定、兼容性说明和键盘焦点恢复
-- [ ] T046 [US2] 在 `web/src/features/topology/topologyKeyboardController.ts` 实现资源到 connector、端口、chooser 的无指针导航和取消动作
-- [ ] T047 [US2] 在 `web/src/features/topology/TopologyWorkspace.vue` 与 `web/src/features/topology/topologySelection.ts` 统一命令面板 `begin_connection`、空白取消和 selection 恢复语义
+- [X] T043 [US2] 在 `web/src/features/topology/TopologyCanvas.vue` 将单节点 connector overlay 泛化为所有具有空闲端点或逻辑 access 的资源并附加稳定 resource selector
+- [X] T044 [US2] 在 `web/src/features/topology/TopologyWorkspace.vue` 将 `startConnection` 泛化为统一资源 source 解析，并复用 US1 草稿、chooser、配置和提交路径
+- [X] T045 [US2] 在 `web/src/features/topology/PortChooser.vue` 增加 source/target 模式标题、就近锚定、兼容性说明和键盘焦点恢复
+- [X] T046 [US2] 在 `web/src/features/topology/topologyKeyboardController.ts` 实现资源到 connector、端口、chooser 的无指针导航和取消动作
+- [X] T047 [US2] 在 `web/src/features/topology/TopologyWorkspace.vue` 与 `web/src/features/topology/topologySelection.ts` 统一命令面板 `begin_connection`、空白取消和 selection 恢复语义
 - [ ] T048 [US2] 运行 T039–T042、前端无障碍门禁和加号/键盘 Playwright 旅程，并记录结果到 `specs/009-unified-link-interaction/validation/milestones.md`
-- [ ] T049 [US2] 将统一加号与键盘入口作为聚焦 Git 提交，并把 commit SHA 写入 `specs/009-unified-link-interaction/validation/milestones.md`
+- [X] T049 [US2] 将统一加号与键盘入口作为聚焦 Git 提交，并把 commit SHA 写入 `specs/009-unified-link-interaction/validation/milestones.md`
 
 **Checkpoint**: US2 可独立演示；加号不是第二套连接实现，所有后续状态和提交结果与端口拖拽一致。
 

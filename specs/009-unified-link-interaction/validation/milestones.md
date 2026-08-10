@@ -18,6 +18,15 @@ Result: LOCAL PASS; TARGET JOURNEY PENDING (T037 remains open)
 Notes: Direct pointer-captured port drag now emits normalized endpoints for node links, node/object attachments, object links, Bridge access, and NAT access. The source-anchored preview, compatible target feedback, endpoint chooser, revision-conflict refresh, authoritative task merge, 50-drag budget, HTTP/MCP final-state symmetry, and 010 visual presentation reuse are covered locally. ESLint reports zero errors and the repository's existing warnings; Vite reports the existing large-chunk warning. The target-host Playwright journey is registered for three viewports but was not executed without the target runtime.
 ```
 
+### Milestone 2B — Unified Plus and Keyboard Entry
+
+```text
+Commit SHA: f13352ba9f09197e97576484b99d5f9b5946c3d7
+Focused tests: npm test -- TopologyCanvas TopologyCanvas.a11y TopologyWorkspace PortChooser topologyKeyboardController topologySelection topologyConnectionController topologyEndpointCompatibility laboratory; npm run format:check; npm run lint; npm run build; Playwright unifiedPlusConnection.spec.ts --list
+Result: LOCAL PASS; TARGET JOURNEY PENDING (T048 remains open)
+Notes: Node, lightweight L2/L3, Bridge, and NAT resources now expose the same top-right capacity-gated connector. Source selection, target selection, cancellation, selection restoration, live status, keyboard entry, and authoritative unified submission reuse the US1 flow. Vitest passed 77 tests; ESLint reported zero errors with existing warnings; Vite reported the existing large-chunk warning. The target-host Playwright journey is registered for three viewports but was not executed without the target runtime.
+```
+
 ## Milestone 3 — Four-Port Defaults and Live Lifecycle
 
 ```text
