@@ -175,8 +175,8 @@
 - [X] T075 [US4] 在 `web/src/stores/laboratory.ts` 与 `web/src/features/topology/TopologyWorkspace.vue` 实现 ordered event 收敛、revision 冲突刷新、新 key 重试和已提交任务取消/最终查询
 - [X] T076 [US4] 在 `web/src/features/topology/TopologyInspector.vue`、`web/src/features/topology/LinkContextMenu.vue` 与 `web/src/features/diagnostics/GlobalCaptureWorkspace.vue` 统一三类连接的删除、抓包、Wireshark 和 Traffic Filter 能力入口
 - [X] T077 [US4] 在 `internal/app/reconcile/laboratory_deletion.go` 与 `internal/store/sqlite/topology_connection_repository.go` 清理实验室拥有的 backing records、预留、失败 operation 和运行时资源
-- [ ] T078 [US4] 运行 T062–T070、20 次连接循环、恢复、抓包/Traffic Filter 和资源泄漏聚焦门禁，并记录结果到 `specs/009-unified-link-interaction/validation/milestones.md`
-- [ ] T079 [US4] 将实时连接、并发、恢复和清理作为聚焦 Git 提交，并把 commit SHA 写入 `specs/009-unified-link-interaction/validation/milestones.md`
+- [X] T078 [US4] 运行 T062–T070、20 次连接循环、恢复、抓包/Traffic Filter 和资源泄漏聚焦门禁，并记录结果到 `specs/009-unified-link-interaction/validation/milestones.md`
+- [X] T079 [US4] 将实时连接、并发、恢复和清理作为聚焦 Git 提交，并把 commit SHA 写入 `specs/009-unified-link-interaction/validation/milestones.md`
 
 **Checkpoint**: US4 可独立验收；共享连接状态、任务、观察和清理不因入口或 backing kind 不同而分叉。
 
@@ -186,12 +186,12 @@
 
 **Purpose**: 同步合同和文档，完成全量质量门禁、可复现候选、目标机混合拓扑验收和回滚证据。
 
-- [ ] T080 [P] 根据最终实现同步 `specs/009-unified-link-interaction/contracts/openapi.yaml`、`specs/009-unified-link-interaction/contracts/mcp-tools.json` 与 `web/src/api/generated.ts`
-- [ ] T081 [P] 更新 `specs/009-unified-link-interaction/quickstart.md` 与 `acceptance/README.md`，记录最终测试文件、命令、目标端口变量、证据和回滚流程
-- [ ] T082 [P] 运行键盘、axe、50 次拖拽性能、50%/100%/200% 缩放和 010 视觉回归检查，并将结果写入 `specs/009-unified-link-interaction/validation/final-local.md`
-- [ ] T083 运行 `go test ./...` 及仓库规定的格式、静态分析、合同、并发、恢复和资源泄漏测试，并将结果写入 `specs/009-unified-link-interaction/validation/final-local.md`
-- [ ] T084 运行 `npm run format:check`、`npm run lint`、`npm run build`、`npm test`、`npm run test:acceptance-unit` 和本地 Playwright，并将结果写入 `specs/009-unified-link-interaction/validation/final-local.md`
-- [ ] T085 运行 `specs/001-network-simulator-platform/quickstart.md` 要求的适用特权 integration、recovery 和 leak 门禁，记录无法本地执行项目的原因与目标机命令到 `specs/009-unified-link-interaction/validation/final-local.md`
+- [X] T080 [P] 根据最终实现同步 `specs/009-unified-link-interaction/contracts/openapi.yaml`、`specs/009-unified-link-interaction/contracts/mcp-tools.json` 与 `web/src/api/generated.ts`
+- [X] T081 [P] 更新 `specs/009-unified-link-interaction/quickstart.md` 与 `acceptance/README.md`，记录最终测试文件、命令、目标端口变量、证据和回滚流程
+- [X] T082 [P] 运行键盘、axe、50 次拖拽性能、50%/100%/200% 缩放和 010 视觉回归检查，并将结果写入 `specs/009-unified-link-interaction/validation/final-local.md`
+- [X] T083 运行 `go test ./...` 及仓库规定的格式、静态分析、合同、并发、恢复和资源泄漏测试，并将结果写入 `specs/009-unified-link-interaction/validation/final-local.md`
+- [X] T084 运行 `npm run format:check`、`npm run lint`、`npm run build`、`npm test`、`npm run test:acceptance-unit` 和本地 Playwright，并将结果写入 `specs/009-unified-link-interaction/validation/final-local.md`
+- [X] T085 运行 `specs/001-network-simulator-platform/quickstart.md` 要求的适用特权 integration、recovery 和 leak 门禁，记录无法本地执行项目的原因与目标机命令到 `specs/009-unified-link-interaction/validation/final-local.md`
 - [ ] T086 从干净 Git 提交构建部署候选，记录 commit SHA、制品摘要、迁移状态、合同版本和上一制品到 `specs/009-unified-link-interaction/validation/deployment.md`
 - [ ] T087 将已记录候选部署到 `10.72.1.7`，按 `specs/009-unified-link-interaction/quickstart.md` 验证五类连接、加号、键盘、四端口、50 次拖拽、双客户端/API/MCP、运行中资源、抓包、Traffic Filter、重启和清理
 - [ ] T088 将目标机结果、证据路径和资源清理摘要写入 `specs/009-unified-link-interaction/validation/target-acceptance.md`；若失败则回滚上一制品并返回本地修复、测试和新提交

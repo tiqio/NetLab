@@ -126,6 +126,9 @@ tests/e2e/journeys/unifiedPortConnection.spec.ts
 tests/e2e/journeys/unifiedConnectionConcurrency.spec.ts
 tests/e2e/journeys/lightweightFourPorts.spec.ts
 tests/e2e/journeys/unifiedConnectionRecovery.spec.ts
+tests/e2e/journeys/unifiedPlusConnection.spec.ts
+tests/e2e/journeys/topologyVisualRecognition.spec.ts
+tests/e2e/matrices/laboratoryNavigationInputMatrix.spec.ts
 ```
 
 Run:
@@ -133,7 +136,7 @@ Run:
 ```bash
 cd /home/dd/netlab/web
 npm run test:acceptance-unit
-npm run test:e2e:local
+NO_PROXY=127.0.0.1,localhost no_proxy=127.0.0.1,localhost npm run test:e2e:local
 ```
 
 Minimum UI matrix:
@@ -209,6 +212,33 @@ After all local gates pass:
 4. Deploy only that artifact to `10.72.1.7`; do not edit source on the host.
 5. Run the target-host acceptance profile with mixed QEMU, Docker, PC, L2, L3, Bridge and NAT resources.
 
+```bash
+cd /home/dd/netlab
+NETLAB_ACCEPTANCE_PROFILE=target-host \
+NETLAB_ACCEPTANCE_BASE_URL=http://10.72.1.7:8088 \
+NETLAB_ACCEPTANCE_OUTPUT_DIR=test-results/acceptance/009-target \
+NO_PROXY=10.72.1.7,127.0.0.1,localhost \
+no_proxy=10.72.1.7,127.0.0.1,localhost \
+  ./acceptance/frontend-acceptance.sh
+```
+
+Run privileged restart and leak checks from the deployed candidate checkout/artifact directory on the
+target host, using the service-local port:
+
+```bash
+NETLAB_BASE_URL=http://127.0.0.1:8088 ./acceptance/t225-service-restart.sh
+NETLAB_PRIVILEGED=1 CYCLES=20 go test ./tests/integration/... -run Leak -count=1
+```
+
+Store command output and Playwright evidence under a candidate-specific directory. Record the service
+unit status, `/healthz`, `/api/v1/version`, applied migration through
+`0014_network_attachment_revision.sql`, artifact SHA-256, contract digest, deployment time, previous
+artifact path, and cleanup counts in `validation/deployment.md` and `validation/target-acceptance.md`.
+
 Target acceptance must include two clients plus HTTP/MCP contention, 50 drag gestures, 20 create/delete/reconnect cycles, live running-resource mutations, capture, Wireshark, Traffic Filter, service restart and laboratory deletion cleanup.
 
 If any authority, runtime, visual, recovery or leak assertion fails, restore the previous recorded artifact and return to local development for a new tested commit and candidate.
+
+Rollback replaces the service binary with the previously recorded artifact, runs `systemctl daemon-reload`
+only if the unit changed, restarts `netlab.service`, waits for `/healthz`, verifies the reported release
+identity, and records the failed candidate plus rollback result. Never patch source on the target host.

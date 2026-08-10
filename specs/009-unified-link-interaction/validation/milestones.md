@@ -39,11 +39,18 @@ Notes: New lightweight L2/L3 create requests default to exactly eth0–eth3 in t
 ## Milestone 4 — Final Candidate and Target Validation
 
 ```text
-Commit SHA:
-Focused tests:
-Result:
+Commit SHA: 5018ebdb3e8edf2f56ce9e5162f655044814afd6; c2a01f60fa1bc3b2caf5e385e3718297897cd3ac; bf7177927bdfa91b82087f68cda5325f46b2828b; d4bbd8ca1da97ae8155889eb061d2deb64c01178
+Focused tests: make lint; go test ./... -count=1 -timeout=180s; make test-contract; make test-integration; make test-recovery; make test-leaks CYCLES=20; npm run format:check; npm run lint; npm run build; npm test; npm run test:acceptance-unit; npm run test:e2e:local
+Result: LOCAL PASS — Go unit/contract/integration/recovery/leak gates passed; frontend 78 files/375 tests and acceptance-unit 12 files/25 tests passed; Playwright 159 passed, 57 target-only skipped, 0 failed across desktop/standard/minimum.
 Candidate ID:
 Artifact digest:
 Target result:
 Rollback artifact:
 ```
+
+The focused US4 commits cover durable connection task execution and compensation (`5018ebd`), mixed
+backing restart/recovery and cleanup acceptance (`c2a01f6`), authoritative cancelled-task finalization
+(`bf71779`), and final local Playwright/viewport contract alignment (`d4bbd8c`). The 20-cycle leak gate,
+transaction failure matrix, three-backing recovery, audit redaction, local capture/Traffic Filter
+observability, keyboard/axe checks, 50-drag budget, and 50%/100%/200% parallel-link selection all pass.
+Target-only QEMU/Docker/namespace journeys remain assigned to T037, T048, T060, and T087–T088.

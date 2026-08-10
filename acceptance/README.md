@@ -30,6 +30,22 @@ NETLAB_ACCEPTANCE_BASE_URL=http://10.72.1.7:8088 \
   ./acceptance/frontend-acceptance.sh
 ```
 
+For feature 009 final acceptance, preserve evidence in a candidate-specific directory and bypass any
+management-network proxy for both the remote address and loopback:
+
+```bash
+NETLAB_ACCEPTANCE_PROFILE=target-host \
+NETLAB_ACCEPTANCE_BASE_URL=http://10.72.1.7:8088 \
+NETLAB_ACCEPTANCE_OUTPUT_DIR=test-results/acceptance/009-<candidate-id> \
+NO_PROXY=10.72.1.7,127.0.0.1,localhost \
+no_proxy=10.72.1.7,127.0.0.1,localhost \
+  ./acceptance/frontend-acceptance.sh
+```
+
+The full target profile includes the unified direct-port, plus/keyboard, four-port, contention, live
+runtime, capture/Traffic Filter, restart/recovery, zoom, and cleanup journeys. Do not replace it with a
+focused run for final sign-off. Record the output path with the candidate SHA and artifact digest.
+
 For an explicitly focused diagnostic rerun, set `NETLAB_ACCEPTANCE_SCOPE=focused`. This preserves
 schema, cleanup, release-identity, and unknown-interaction validation while deferring complete
 interaction and template-version coverage to the subsequent full target-host run.
@@ -72,6 +88,10 @@ The restart scenario records placement and connection summaries before restart, 
 coordinate/state equality after restart, rejects orphan placements, and verifies that laboratory
 deletion removes placements, links, network-object links, runtime ownership, namespaces, TAP/veth
 devices, capture state, and console ownership.
+
+For feature 009, the same restart scenario also verifies Link, NetworkAttachment, and NetworkObjectLink
+identity/state/reservation equality, orphan-reservation cleanup, missing-reservation reconstruction,
+failed-operation cleanup, and zero connection/task/runtime residue after laboratory deletion.
 
 Run the complete operator-image scenario after registering one legal QEMU image plus the official
 `busybox:1.36.1` and `ubuntu:24.04` OCI images. It creates one ten-node laboratory with four QEMU,
