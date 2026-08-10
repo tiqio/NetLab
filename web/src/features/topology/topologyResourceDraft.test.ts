@@ -113,7 +113,7 @@ describe("topology resource draft", () => {
   it.each([
     ["pc", { hostname: "PC", interfaces: [{ name: "eth0" }] }],
     ["bridge", { mtu: 1500, stp: false }],
-    ["nat_bridge", { ipv4_prefix: "10.10.0.0/24", uplink: "auto" }],
+    ["nat_bridge", { uplink: "auto" }],
     ["switch_l2", { vlan_filtering: true }],
     ["switch_l3", { forward_ipv4: true, forward_ipv6: true }],
   ] as const)("builds %s network object defaults", (kind, expected) => {
@@ -127,7 +127,12 @@ describe("topology resource draft", () => {
       name: kind === "pc" ? "PC" : kind,
       networkObjectKind: kind,
     };
-    const draft = createResourceDraft(selection, () => "unused");
+    const draft = createResourceDraft(
+      selection,
+      () => "unused",
+      [],
+      () => "resource-default-seed",
+    );
     const result = buildResourceCreateRequest(selection, draft, {
       template: undefined,
       version: undefined,
@@ -135,6 +140,33 @@ describe("topology resource draft", () => {
     expect(result.kind).toBe("network-object");
     if (result.kind === "network-object")
       expect(result.request.config).toMatchObject(expected);
+  });
+
+  it("generates distinct internally consistent NAT defaults", () => {
+    const selection: PaletteSelection = {
+      kind: "switch_l3",
+      name: "NAT bridge",
+      networkObjectKind: "nat_bridge",
+    };
+    const first = createResourceDraft(
+      selection,
+      () => "unused",
+      [],
+      () => "nat-seed-a",
+    ).networkObjectConfig;
+    const second = createResourceDraft(
+      selection,
+      () => "unused",
+      [],
+      () => "nat-seed-b",
+    ).networkObjectConfig;
+    expect(first.ipv4_prefix).not.toBe(second.ipv4_prefix);
+    const prefix = String(first.ipv4_prefix).replace(/\.0\/24$/, "");
+    expect(first.dhcpv4).toMatchObject({
+      start: `${prefix}.100`,
+      end: `${prefix}.200`,
+    });
+    expect(first.ipv6_prefix).toMatch(/^fd00:[0-9a-f]+::\/64$/);
   });
 
   it("validates long node fields and builds Docker/QEMU-compatible network payloads", () => {

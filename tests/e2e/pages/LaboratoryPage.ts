@@ -83,9 +83,21 @@ export class LaboratoryPage extends BasePage {
 
   async openCreateDialog() {
     const switcher = this.page.getByTestId("laboratory-switcher");
-    if ((await switcher.getAttribute("aria-expanded")) !== "true")
+    const createButton = this.page.getByTestId("new-laboratory");
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      if (await createButton.isVisible().catch(() => false)) {
+        await this.activate(createButton);
+        return;
+      }
       await switcher.click();
-    await this.activate(this.page.getByTestId("new-laboratory"));
+      try {
+        await expect(createButton).toBeVisible({ timeout: 5_000 });
+      } catch {
+        await this.page.waitForTimeout(250);
+      }
+    }
+    await expect(createButton).toBeVisible({ timeout: 5_000 });
+    await this.activate(createButton);
   }
 
   async openActiveActions() {

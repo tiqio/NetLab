@@ -51,7 +51,7 @@ test("keyboard connection chooser reconnect and disconnect preserve authoritativ
   await canvas.press("ArrowRight");
   await canvas.press("c");
   const sourceChooser = page.getByRole("dialog", {
-    name: "Choose source interface",
+    name: /^(Choose source interface|选择源接口)$/,
   });
   await expect(sourceChooser).toBeVisible();
   await sourceChooser.getByRole("option").first().click();
@@ -59,7 +59,7 @@ test("keyboard connection chooser reconnect and disconnect preserve authoritativ
   await canvas.press("ArrowRight");
   await canvas.press("Enter");
   const targetChooser = page.getByRole("dialog", {
-    name: "Choose target interface",
+    name: /^(Choose target interface|选择目标接口)$/,
   });
   await expect(targetChooser).toBeVisible();
   await targetChooser.getByRole("option").first().click();
@@ -83,7 +83,7 @@ test("keyboard connection chooser reconnect and disconnect preserve authoritativ
   await page.getByRole("button", { name: "链路操作" }).click();
   await page.getByRole("button", { name: "重新连接端点" }).click();
   const reconnectChooser = page.getByRole("dialog", {
-    name: "Choose replacement interface",
+    name: /^(Choose replacement interface|选择替换接口)$/,
   });
   await reconnectChooser.getByRole("option").first().click();
   await expect(page.getByTestId("reconnect-task-feedback")).toBeVisible();

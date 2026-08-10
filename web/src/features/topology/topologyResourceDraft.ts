@@ -14,6 +14,7 @@ import {
   supportsCloudInitBootstrap,
 } from "./cloudInit";
 import type { PaletteSelection } from "./TopologyResourceCatalog.vue";
+import { randomUUID } from "@/lib/uuid";
 
 export type AddressFamily = "ipv4" | "ipv6";
 export type IPv4Mode = "none" | "static" | "dhcpv4";
@@ -83,6 +84,7 @@ export function nextAvailableResourceName(
 
 function networkObjectDefaults(
   selection: PaletteSelection,
+  generateIdentifier: () => string,
 ): Record<string, unknown> {
   switch (selection.networkObjectKind) {
     case "pc":
@@ -90,18 +92,28 @@ function networkObjectDefaults(
         hostname: selection.name,
         interfaces: [{ name: "eth0", modes: ["dhcpv4", "dhcpv6", "slaac"] }],
       };
-    case "nat_bridge":
+    case "nat_bridge": {
+      let hash = 2166136261;
+      for (const character of generateIdentifier()) {
+        hash ^= character.charCodeAt(0);
+        hash = Math.imul(hash, 16777619);
+      }
+      const secondOctet = ((hash >>> 8) % 254) + 1;
+      const thirdOctet = (hash % 254) + 1;
+      const prefix = `10.${secondOctet}.${thirdOctet}`;
+      const ipv6Segment = (hash >>> 0).toString(16);
       return {
-        ipv4_prefix: "10.10.0.0/24",
-        ipv6_prefix: "2001:db8:10::/64",
+        ipv4_prefix: `${prefix}.0/24`,
+        ipv6_prefix: `fd00:${ipv6Segment}::/64`,
         uplink: "auto",
         dhcpv4: {
-          start: "10.10.0.100",
-          end: "10.10.0.200",
+          start: `${prefix}.100`,
+          end: `${prefix}.200`,
           lease_time: "1h",
         },
         dns_servers: ["1.1.1.1", "8.8.8.8"],
       };
+    }
     case "switch_l2":
     case "switch_l3":
       return defaultLightweightSwitchConfig(selection.networkObjectKind);
@@ -114,6 +126,7 @@ export function createResourceDraft(
   selection: PaletteSelection,
   generatePassword: () => string,
   existingNames: readonly string[] = [],
+  generateIdentifier: () => string = randomUUID,
 ): ResourceCreateDraft {
   const supportsBootstrap = supportsCloudInitBootstrap(
     selection.template?.template_key,
@@ -143,7 +156,7 @@ export function createResourceDraft(
       selection.template?.template_key === "vyos" ? "vyos" : "ubuntu",
     cloudPassword: supportsBootstrap ? generatePassword() : "",
     bootstrapUserData: "",
-    networkObjectConfig: networkObjectDefaults(selection),
+    networkObjectConfig: networkObjectDefaults(selection, generateIdentifier),
   };
 }
 

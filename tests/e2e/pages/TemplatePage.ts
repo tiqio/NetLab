@@ -89,7 +89,7 @@ export class TemplatePage extends BasePage {
     }
     if (options.interfaces) {
       await dialog
-        .getByLabel(/^(Interfaces \(count\)|接口数量)$/)
+        .locator('[data-field="interfaces"] input')
         .fill(String(options.interfaces));
     }
     const before = await this.snapshot(options.laboratoryId);
