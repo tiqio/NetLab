@@ -69,25 +69,25 @@
 
 ### Tests for User Story 1
 
-- [ ] T023 [P] [US1] 扩展连接草稿状态机失败测试，覆盖直接端口 drop、资源主体多端口 chooser、逻辑 access、同源取消和不兼容目标到 `web/src/features/topology/topologyConnectionController.test.ts`
-- [ ] T024 [P] [US1] 扩展手势互斥失败测试，覆盖 pointer capture、拖拽阈值、端口拖拽不触发节点移动/框选/平移和 pointer cancel 到 `web/src/features/topology/topologyInteractionController.test.ts`
-- [ ] T025 [P] [US1] 扩展画布组件、无障碍和性能失败测试，覆盖源锚定预览、目标状态、Bridge/NAT access、50%/100%/200% 命中和 50 次拖拽到 `web/src/features/topology/TopologyCanvas.test.ts`、`web/src/features/topology/TopologyCanvas.a11y.test.ts` 与 `web/src/features/topology/TopologyCanvas.performance.test.ts`
-- [ ] T026 [P] [US1] 扩展工作区失败测试，覆盖五类端点组合、资源主体 chooser、L2 VLAN 配置、冲突刷新和不产生 optimistic backing record 到 `web/src/features/topology/TopologyWorkspace.test.ts`
-- [ ] T027 [P] [US1] 为直接拖拽使用统一 HTTP 命令及 HTTP/MCP 最终状态对称编写失败合同测试到 `internal/api/http/topology_connection_contract_test.go` 与 `internal/api/mcp/topology_connection_tools_test.go`
-- [ ] T028 [P] [US1] 增加混合资源端口拖拽、目标反馈、取消和缩放稳定性的 Playwright 旅程到 `tests/e2e/journeys/unifiedPortConnection.spec.ts`
+- [X] T023 [P] [US1] 扩展连接草稿状态机失败测试，覆盖直接端口 drop、资源主体多端口 chooser、逻辑 access、同源取消和不兼容目标到 `web/src/features/topology/topologyConnectionController.test.ts`
+- [X] T024 [P] [US1] 扩展手势互斥失败测试，覆盖 pointer capture、拖拽阈值、端口拖拽不触发节点移动/框选/平移和 pointer cancel 到 `web/src/features/topology/topologyInteractionController.test.ts`
+- [X] T025 [P] [US1] 扩展画布组件、无障碍和性能失败测试，覆盖源锚定预览、目标状态、Bridge/NAT access、50%/100%/200% 命中和 50 次拖拽到 `web/src/features/topology/TopologyCanvas.test.ts`、`web/src/features/topology/TopologyCanvas.a11y.test.ts` 与 `web/src/features/topology/TopologyCanvas.performance.test.ts`
+- [X] T026 [P] [US1] 扩展工作区失败测试，覆盖五类端点组合、资源主体 chooser、L2 VLAN 配置、冲突刷新和不产生 optimistic backing record 到 `web/src/features/topology/TopologyWorkspace.test.ts`
+- [X] T027 [P] [US1] 为直接拖拽使用统一 HTTP 命令及 HTTP/MCP 最终状态对称编写失败合同测试到 `internal/api/http/topology_connection_contract_test.go` 与 `internal/api/mcp/topology_connection_tools_test.go`
+- [X] T028 [P] [US1] 增加混合资源端口拖拽、目标反馈、取消和缩放稳定性的 Playwright 旅程到 `tests/e2e/journeys/unifiedPortConnection.spec.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T029 [US1] 在 `web/src/features/topology/topologyConnectionController.ts` 实现统一 source/target 草稿、candidate 状态、chooser/configuring/submitting 转换和本地取消
-- [ ] T030 [US1] 在 `web/src/features/topology/topologyGeometry.ts` 与 `web/src/features/topology/topologyEndpointCompatibility.ts` 实现基于 010 footprint 的资源主体命中、最近端口和目标兼容解析
-- [ ] T031 [US1] 在 `web/src/features/topology/TopologyCanvas.vue` 实现端口 SVG pointer capture、源锚定预览线、候选反馈、逻辑 access 和互斥手势事件
-- [ ] T032 [US1] 在 `tests/e2e/fixtures/topologyConnectionAssertions.ts` 增加预览锚点、目标状态、端口命中、视口稳定和无幽灵线断言辅助函数
-- [ ] T033 [US1] 在 `web/src/features/topology/TopologyWorkspace.vue` 用统一草稿替换分离的 `pendingEndpoint`/`pendingObjectPort` 流程，并提交节点链路、附件和对象链路到统一 API
-- [ ] T034 [US1] 在 `web/src/features/topology/PortChooser.vue` 支持节点接口、对象命名端口和逻辑 access 候选，同时保留操作位置与草稿上下文
-- [ ] T035 [US1] 在 `web/src/stores/laboratory.ts` 合并统一连接 task/event 响应并以权威 snapshot 收敛，禁止客户端伪造 backing 连接
-- [ ] T036 [US1] 在 `web/src/features/topology/topologyConnectionPresentation.ts` 与 `web/src/features/topology/topologyVisualSemantics.test.ts` 验证 009 提交结果继续复用 010 状态、平行路由、抓包和 Traffic Filter 视觉合同
+- [X] T029 [US1] 在 `web/src/features/topology/topologyConnectionController.ts` 实现统一 source/target 草稿、candidate 状态、chooser/configuring/submitting 转换和本地取消
+- [X] T030 [US1] 在 `web/src/features/topology/topologyGeometry.ts` 与 `web/src/features/topology/topologyEndpointCompatibility.ts` 实现基于 010 footprint 的资源主体命中、最近端口和目标兼容解析
+- [X] T031 [US1] 在 `web/src/features/topology/TopologyCanvas.vue` 实现端口 SVG pointer capture、源锚定预览线、候选反馈、逻辑 access 和互斥手势事件
+- [X] T032 [US1] 在 `tests/e2e/fixtures/topologyConnectionAssertions.ts` 增加预览锚点、目标状态、端口命中、视口稳定和无幽灵线断言辅助函数
+- [X] T033 [US1] 在 `web/src/features/topology/TopologyWorkspace.vue` 用统一草稿替换分离的 `pendingEndpoint`/`pendingObjectPort` 流程，并提交节点链路、附件和对象链路到统一 API
+- [X] T034 [US1] 在 `web/src/features/topology/PortChooser.vue` 支持节点接口、对象命名端口和逻辑 access 候选，同时保留操作位置与草稿上下文
+- [X] T035 [US1] 在 `web/src/stores/laboratory.ts` 合并统一连接 task/event 响应并以权威 snapshot 收敛，禁止客户端伪造 backing 连接
+- [X] T036 [US1] 在 `web/src/features/topology/topologyConnectionPresentation.ts` 与 `web/src/features/topology/topologyVisualSemantics.test.ts` 验证 009 提交结果继续复用 010 状态、平行路由、抓包和 Traffic Filter 视觉合同
 - [ ] T037 [US1] 运行 T023–T028、五类连接聚焦 Go 测试和 Playwright 旅程，并记录结果到 `specs/009-unified-link-interaction/validation/milestones.md`
-- [ ] T038 [US1] 将直接端口拖拽 MVP 作为聚焦 Git 提交，并把 commit SHA 写入 `specs/009-unified-link-interaction/validation/milestones.md`
+- [X] T038 [US1] 将直接端口拖拽 MVP 作为聚焦 Git 提交，并把 commit SHA 写入 `specs/009-unified-link-interaction/validation/milestones.md`
 
 **Checkpoint**: US1 可独立演示；用户仅通过拖拽即可创建五类受支持连接，取消和失败均不留下共享状态。
 

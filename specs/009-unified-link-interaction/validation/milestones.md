@@ -12,10 +12,10 @@ Notes: Migration 0013, cross-backing endpoint reservations, unified domain/comma
 ## Milestone 2 — Unified Canvas Interaction
 
 ```text
-Commit SHA:
-Focused tests:
-Result:
-Notes:
+Commit SHA: 5d28414070c18f42c5b24c3d7222059e6fe76ade
+Focused tests: go test ./internal/api/http ./internal/api/mcp ./internal/app/command ./internal/app/reconcile ./internal/store/sqlite; npm test -- topologyConnectionController topologyInteractionController topologyGeometry topologyEndpointCompatibility PortChooser TopologyCanvas TopologyWorkspace topologyConnectionPresentation topologyVisualSemantics laboratory; npm run format:check; npm run lint; npm run build; Playwright unifiedPortConnection.spec.ts --list
+Result: LOCAL PASS; TARGET JOURNEY PENDING (T037 remains open)
+Notes: Direct pointer-captured port drag now emits normalized endpoints for node links, node/object attachments, object links, Bridge access, and NAT access. The source-anchored preview, compatible target feedback, endpoint chooser, revision-conflict refresh, authoritative task merge, 50-drag budget, HTTP/MCP final-state symmetry, and 010 visual presentation reuse are covered locally. ESLint reports zero errors and the repository's existing warnings; Vite reports the existing large-chunk warning. The target-host Playwright journey is registered for three viewports but was not executed without the target runtime.
 ```
 
 ## Milestone 3 — Four-Port Defaults and Live Lifecycle
