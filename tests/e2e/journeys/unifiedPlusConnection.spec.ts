@@ -37,7 +37,7 @@ test("unified plus and keyboard connection match direct drag results", async ({
   const sourceId = await connector.getAttribute("data-connector-resource-id");
   await connector.press("Enter");
   const canvasStatus = page.locator('p[role="status"].absolute');
-  await expect(canvasStatus).toContainText("请选择兼容目标");
+  await expect(canvasStatus).toContainText("选择兼容目标");
   const targetId = sourceId === first.id ? second.id : first.id;
   await canvas.focus();
   for (let attempt = 0; attempt < 4; attempt += 1) {
