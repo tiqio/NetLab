@@ -62,6 +62,39 @@ async function activateLaboratoryOption(
   throw lastError;
 }
 
+async function openLaboratoryCreateDialog(page: Page, method: Activation) {
+  const started = Date.now();
+  const switcher = page.getByTestId("laboratory-switcher");
+  const createButton = page.getByTestId("new-laboratory");
+  const dialog = page.getByRole("dialog", { name: "创建实验室" });
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    try {
+      if (!(await createButton.isVisible().catch(() => false))) {
+        if (method === "keyboard") {
+          await switcher.focus();
+          await switcher.press("Enter", { timeout: 2_000 });
+        } else {
+          await switcher.click({ timeout: 2_000 });
+        }
+      }
+      await expect(createButton).toBeVisible({ timeout: 2_000 });
+      if (method === "keyboard") {
+        await createButton.focus();
+        await createButton.press("Enter", { timeout: 2_000 });
+      } else {
+        await createButton.click({ timeout: 2_000 });
+      }
+      await expect(dialog).toBeVisible({ timeout: 2_000 });
+      return Math.max(1, Date.now() - started);
+    } catch (error) {
+      lastError = error;
+      await page.waitForTimeout(250);
+    }
+  }
+  throw lastError;
+}
+
 async function closeDialog(page: Page) {
   const dialog = page.locator('[role="dialog"]:visible');
   const close = dialog.getByRole("button", { name: /关闭(?:对话框|抽屉)/ });
@@ -118,12 +151,7 @@ test("laboratory navigation and shell controls support pointer and keyboard", as
       duration,
     );
 
-    const newButton = page.getByTestId("new-laboratory");
-    if (!(await newButton.isVisible().catch(() => false))) {
-      await activate(page, switcher, activation);
-      await expect(newButton).toBeVisible();
-    }
-    duration = await activate(page, newButton, activation);
+    duration = await openLaboratoryCreateDialog(page, activation);
     const createDialog = page.getByRole("dialog", {
       name: "创建实验室",
     });
