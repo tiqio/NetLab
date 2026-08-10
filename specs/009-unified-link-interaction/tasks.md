@@ -55,7 +55,7 @@
 - [X] T019 在 `web/src/api/generated.ts` 与 `web/src/api/index.ts` 增加合同生成类型和统一连接 API client
 - [X] T020 在 `web/src/features/topology/interactionTypes.ts` 与 `web/src/features/topology/topologyEndpointCompatibility.ts` 定义共享端点、草稿、候选状态和兼容性类型
 - [X] T021 运行 T005–T010 及迁移回放测试并将基础阶段结果记录到 `specs/009-unified-link-interaction/validation/milestones.md`
-- [ ] T022 将统一端点与命令基础作为聚焦 Git 提交，并把 commit SHA 写入 `specs/009-unified-link-interaction/validation/milestones.md`
+- [X] T022 将统一端点与命令基础作为聚焦 Git 提交，并把 commit SHA 写入 `specs/009-unified-link-interaction/validation/milestones.md`
 
 **Checkpoint**: UI、HTTP 和 MCP 可使用同一端点合同，SQLite 能跨三类 backing model 串行占用具体端点。
 
