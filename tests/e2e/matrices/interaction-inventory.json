@@ -598,7 +598,7 @@
         "name": "Connect resource*"
       },
       "applicable_states": ["resource-selected", "free-port"],
-      "activation": ["pointer"],
+      "activation": ["keyboard"],
       "outcome_class": "task",
       "operation": "link.connect",
       "cleanup_effect": "disconnect-connection",

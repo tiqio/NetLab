@@ -62,6 +62,11 @@ test("the right-side add drawer creates an authoritative lightweight resource", 
   expect(canvasAfter).toEqual(canvasBefore);
   interactionResults.push(
     result(
+      "topology.add-drawer.open",
+      testInfo.project.use.viewport!,
+      "pointer activation opened the right-side resource drawer",
+    ),
+    result(
       "topology.add-drawer.submit",
       testInfo.project.use.viewport!,
       "opened the right drawer and created an authoritative PC without moving the canvas",
@@ -75,7 +80,8 @@ test("the add drawer keeps long-form state and confirms dirty close", async ({
   automation,
   ledger,
   runId,
-}) => {
+  interactionResults,
+}, testInfo) => {
   await createOwnedLaboratory(page, automation, ledger, runId);
   const topology = new TopologyPage(page, automation);
   await topology.openResourceDrawer();
@@ -94,6 +100,16 @@ test("the add drawer keeps long-form state and confirms dirty close", async ({
   await expect(discard).toBeVisible();
   await discard.getByRole("button", { name: "继续编辑" }).click();
   await expect(name).toHaveValue(`draft-${runId.slice(0, 6)}`);
+  await form.getByRole("button", { name: "取消" }).click();
+  await discard.getByRole("button", { name: "放弃更改" }).click();
+  await expect(form).toBeHidden();
+  interactionResults.push(
+    result(
+      "topology.add-drawer.discard",
+      testInfo.project.use.viewport!,
+      "pointer activation discarded the browser-local dirty draft",
+    ),
+  );
 });
 
 test("the add drawer creates every lightweight resource kind through the real API", async ({

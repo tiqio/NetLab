@@ -1,6 +1,10 @@
 import { expect, test } from "./fixtures/acceptanceFixture";
+import { result } from "./journeys/completeRealJourney";
 
-test("主题切换即时生效并在刷新与路由切换后保持", async ({ page }) => {
+test("主题切换即时生效并在刷新与路由切换后保持", async ({
+  page,
+  interactionResults,
+}, testInfo) => {
   await page.goto("/");
   const selector = page.getByRole("combobox", { name: "外观主题" });
   await expect(selector).toBeVisible();
@@ -37,6 +41,43 @@ test("主题切换即时生效并在刷新与路由切换后保持", async ({ pa
         document.documentElement.clientWidth,
     );
     expect(overflow).toBeLessThanOrEqual(1);
+  }
+
+  await page.goto("/");
+  const themeSelector = page.getByRole("combobox", { name: "外观主题" });
+  for (const [theme, interactionId] of [
+    ["system", "appearance.theme.system"],
+    ["light", "appearance.theme.light"],
+    ["dark", "appearance.theme.dark"],
+  ] as const) {
+    await themeSelector.selectOption(theme);
+    await expect(themeSelector).toHaveValue(theme);
+    interactionResults.push(
+      result(
+        interactionId,
+        testInfo.project.use.viewport!,
+        `pointer-equivalent selection applied ${theme} theme preference`,
+      ),
+    );
+  }
+
+  await themeSelector.focus();
+  for (const [key, theme, interactionId] of [
+    ["Home", "system", "appearance.theme.system"],
+    ["ArrowDown", "light", "appearance.theme.light"],
+    ["ArrowDown", "dark", "appearance.theme.dark"],
+  ] as const) {
+    await page.keyboard.press(key);
+    await expect(themeSelector).toHaveValue(theme);
+    interactionResults.push(
+      result(
+        interactionId,
+        testInfo.project.use.viewport!,
+        `keyboard selection applied ${theme} theme preference`,
+        [],
+        "keyboard",
+      ),
+    );
   }
 });
 
