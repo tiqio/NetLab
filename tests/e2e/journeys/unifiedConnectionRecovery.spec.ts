@@ -23,6 +23,7 @@ test("unified connection tasks recover across cancellation restart and laborator
     "requires target-host connection runtime",
   );
   test.skip(!restartCommand, "NETLAB_ACCEPTANCE_RESTART_COMMAND is required");
+  const operationScope = `${runId}-${testInfo.project.name}`;
   const { laboratory } = await createOwnedLaboratory(
     page,
     automation,
@@ -54,7 +55,7 @@ test("unified connection tasks recover across cancellation restart and laborator
     {
       headers: {
         "If-Match": String(revision),
-        "Idempotency-Key": `${runId}-recovery-create`,
+        "Idempotency-Key": `${operationScope}-recovery-create`,
       },
       data: { source, target },
     },
@@ -88,7 +89,7 @@ test("unified connection tasks recover across cancellation restart and laborator
   const deletion = await automation.delete(`/api/v1/labs/${laboratory.id}`, {
     headers: {
       "If-Match": String(lab.laboratory.revision),
-      "Idempotency-Key": `${runId}-recovery-lab-delete`,
+      "Idempotency-Key": `${operationScope}-recovery-lab-delete`,
     },
   });
   expect(deletion.status()).toBe(202);
@@ -130,6 +131,7 @@ test("all unified connection backings preserve identity reservations and ownersh
     "requires target-host connection runtime",
   );
   test.skip(!restartCommand, "NETLAB_ACCEPTANCE_RESTART_COMMAND is required");
+  const operationScope = `${runId}-${testInfo.project.name}`;
   const { laboratory } = await createOwnedLaboratory(
     page,
     automation,
@@ -172,7 +174,7 @@ test("all unified connection backings preserve identity reservations and ownersh
     const start = await automation.put(`/api/v1/nodes/${node.id}/state`, {
       headers: {
         "If-Match": String(node.revision),
-        "Idempotency-Key": `${runId}-start-${node.id}`,
+        "Idempotency-Key": `${operationScope}-start-${node.id}`,
       },
       data: { desired_state: "running" },
     });
@@ -211,7 +213,7 @@ test("all unified connection backings preserve identity reservations and ownersh
       {
         headers: {
           "If-Match": String(current.laboratory_revision),
-          "Idempotency-Key": `${runId}-${key}`,
+          "Idempotency-Key": `${operationScope}-${key}`,
         },
         data: { source, target },
       },
@@ -331,7 +333,7 @@ test("all unified connection backings preserve identity reservations and ownersh
   const deletion = await automation.delete(`/api/v1/labs/${laboratory.id}`, {
     headers: {
       "If-Match": String(latestLab.laboratory.revision),
-      "Idempotency-Key": `${runId}-strict-recovery-delete`,
+      "Idempotency-Key": `${operationScope}-strict-recovery-delete`,
     },
   });
   expect(deletion.status()).toBe(202);

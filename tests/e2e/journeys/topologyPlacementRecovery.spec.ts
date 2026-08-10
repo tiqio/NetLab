@@ -12,8 +12,9 @@ test("authoritative placements and connection visuals survive service restart an
   automation,
   ledger,
   runId,
-}) => {
+}, testInfo) => {
   test.skip(!restartCommand, "NETLAB_ACCEPTANCE_RESTART_COMMAND is required");
+  const operationScope = `${runId}-${testInfo.project.name}`;
   const { laboratory } = await createOwnedLaboratory(
     page,
     automation,
@@ -28,7 +29,7 @@ test("authoritative placements and connection visuals survive service restart an
       {
         headers: {
           "If-Match": String(revision),
-          "Idempotency-Key": `${runId}-recovery-object-${index}`,
+          "Idempotency-Key": `${operationScope}-recovery-object-${index}`,
         },
         data: {
           name,
@@ -53,7 +54,7 @@ test("authoritative placements and connection visuals survive service restart an
   const linkResponse = await automation.post(
     `/api/v1/labs/${laboratory.id}/network-object-links`,
     {
-      headers: { "Idempotency-Key": `${runId}-recovery-link` },
+      headers: { "Idempotency-Key": `${operationScope}-recovery-link` },
       data: {
         object_a_id: objects[0].id,
         port_a_name: "eth0",
@@ -147,7 +148,7 @@ test("authoritative placements and connection visuals survive service restart an
   const deletion = await automation.delete(`/api/v1/labs/${laboratory.id}`, {
     headers: {
       "If-Match": String(current.laboratory.revision),
-      "Idempotency-Key": `${runId}-recovery-delete`,
+      "Idempotency-Key": `${operationScope}-recovery-delete`,
     },
   });
   expect(deletion.ok()).toBeTruthy();
