@@ -192,7 +192,7 @@
 - [X] T083 运行 `go test ./...` 及仓库规定的格式、静态分析、合同、并发、恢复和资源泄漏测试，并将结果写入 `specs/009-unified-link-interaction/validation/final-local.md`
 - [X] T084 运行 `npm run format:check`、`npm run lint`、`npm run build`、`npm test`、`npm run test:acceptance-unit` 和本地 Playwright，并将结果写入 `specs/009-unified-link-interaction/validation/final-local.md`
 - [X] T085 运行 `specs/001-network-simulator-platform/quickstart.md` 要求的适用特权 integration、recovery 和 leak 门禁，记录无法本地执行项目的原因与目标机命令到 `specs/009-unified-link-interaction/validation/final-local.md`
-- [ ] T086 从干净 Git 提交构建部署候选，记录 commit SHA、制品摘要、迁移状态、合同版本和上一制品到 `specs/009-unified-link-interaction/validation/deployment.md`
+- [X] T086 从干净 Git 提交构建部署候选，记录 commit SHA、制品摘要、迁移状态、合同版本和上一制品到 `specs/009-unified-link-interaction/validation/deployment.md`
 - [ ] T087 将已记录候选部署到 `10.72.1.7`，按 `specs/009-unified-link-interaction/quickstart.md` 验证五类连接、加号、键盘、四端口、50 次拖拽、双客户端/API/MCP、运行中资源、抓包、Traffic Filter、重启和清理
 - [ ] T088 将目标机结果、证据路径和资源清理摘要写入 `specs/009-unified-link-interaction/validation/target-acceptance.md`；若失败则回滚上一制品并返回本地修复、测试和新提交
 
