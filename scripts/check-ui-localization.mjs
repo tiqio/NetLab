@@ -60,7 +60,9 @@ export function localizationCandidate(value) {
 
 function stringLiterals(expression) {
   const values = [];
-  for (const match of expression.matchAll(/(['"`])((?:\\.|(?!\1)[\s\S])*)\1/g)) {
+  for (const match of expression.matchAll(
+    /(['"`])((?:\\.|(?!\1)[\s\S])*)\1/g,
+  )) {
     values.push(match[2]);
   }
   return values;
@@ -105,7 +107,7 @@ export function scanLocalizationSource(source, path = "component.vue") {
     }
   }
   for (const match of source.matchAll(
-    /(?:status\.value|message|description|hint|actionLabel|emptyMessage|helperMessage)\s*(?:=|:)\s*["'`]([^"'`]+)["'`]/g,
+    /(?<![:\w])(?:status\.value|message|description|hint|actionLabel|emptyMessage|helperMessage)\s*(?:=|:)\s*["'`]([^"'`]+)["'`]/g,
   )) {
     const value = localizationCandidate(match[1]);
     if (value) findings.push(`${path}: runtime: ${value}`);
