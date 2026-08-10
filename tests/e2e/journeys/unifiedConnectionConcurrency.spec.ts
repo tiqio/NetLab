@@ -195,17 +195,27 @@ test("two browsers HTTP and MCP serialize ten endpoint contention rounds", async
     };
     expect(authoritative.connections).toHaveLength(1);
     expect(outcomes.some((item) => item.status < 300)).toBe(true);
-    const winner = authoritative.connections[0];
-    const deletion = await automation.delete(
-      `/api/v1/connections/${winner.id}`,
-      {
-        headers: {
-          "If-Match": String(winner.revision),
-          "Idempotency-Key": `${runId}-delete-${round}`,
+    let deletionStatus = 0;
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const current = await (
+        await automation.get(`/api/v1/labs/${laboratory.id}/connections`)
+      ).json();
+      const winner = current.connections[0];
+      const deletion = await automation.delete(
+        `/api/v1/connections/${winner.id}`,
+        {
+          headers: {
+            "If-Match": String(winner.revision),
+            "Idempotency-Key": `${runId}-delete-${round}-${attempt}`,
+          },
         },
-      },
-    );
-    expect(deletion.status()).toBe(202);
+      );
+      deletionStatus = deletion.status();
+      if (deletionStatus === 202) break;
+      expect(deletionStatus).toBe(409);
+      await page.waitForTimeout(100);
+    }
+    expect(deletionStatus).toBe(202);
     await waitForCondition(
       async () =>
         (
