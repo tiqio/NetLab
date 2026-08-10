@@ -208,6 +208,29 @@ func TestOwnershipDiscoveryMarksMissingWithoutRemoval(t *testing.T) {
 	}
 }
 
+func TestOwnershipDiscoveryRemovesMissingNetworkObjectLinkAfterOwnerDeletion(t *testing.T) {
+	store := &discoveryStore{
+		records: []ownership.Record{{
+			ResourceType: "network_object_link",
+			ResourceID:   "link-1",
+			ObjectKind:   "network_object_link_endpoint",
+			ObjectName:   "namespace-a:eth0",
+			CleanupState: "missing_validation_required",
+		}},
+		owners: map[string]bool{},
+	}
+	audit := &discoveryAudit{}
+	if err := NewOwnershipDiscoveryReconciler(store, audit).Reconcile(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if len(store.records) != 0 {
+		t.Fatalf("stale network object link ownership retained: %+v", store.records)
+	}
+	if len(audit.actions) != 1 || audit.actions[0] != "ownership.resource.resolved" {
+		t.Fatalf("audit actions=%v", audit.actions)
+	}
+}
+
 func TestOwnershipDiscoveryAuditsScannerFailureAndContinues(t *testing.T) {
 	store := &discoveryStore{owners: map[string]bool{}}
 	audit := &discoveryAudit{}

@@ -178,6 +178,19 @@ func (r *OwnershipDiscoveryReconciler) Reconcile(ctx context.Context) (err error
 			r.record(ctx, "ownership.resource.resolved", value.ResourceType, value.ResourceID, "resolved", map[string]any{"object_kind": value.ObjectKind, "object_name": value.ObjectName})
 			continue
 		}
+		if value.ResourceType == "network_object_link" && value.CleanupState == "missing_validation_required" && !seen[ownershipKey(value.ObjectKind, value.ObjectName)] {
+			ownerExists, ownerErr := r.store.RuntimeOwnerExists(ctx, value.ResourceType, value.ResourceID)
+			if ownerErr != nil {
+				return ownerErr
+			}
+			if !ownerExists {
+				if err = r.store.DeleteRuntimeOwnership(ctx, value.ResourceType, value.ResourceID, value.ObjectKind, value.ObjectName); err != nil {
+					return err
+				}
+				r.record(ctx, "ownership.resource.resolved", value.ResourceType, value.ResourceID, "resolved", map[string]any{"object_kind": value.ObjectKind, "object_name": value.ObjectName, "reason": "domain owner deleted"})
+				continue
+			}
+		}
 		if value.CleanupState == "active" && !seen[ownershipKey(value.ObjectKind, value.ObjectName)] {
 			metadata := cloneMetadata(value.Metadata)
 			metadata["missing_since"] = time.Now().UTC().Format(time.RFC3339Nano)
