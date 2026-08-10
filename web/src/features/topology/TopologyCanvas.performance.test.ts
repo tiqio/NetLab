@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { defaultWorkspacePreferences } from "@/composables/useWorkspacePreferences";
 import { nodeFactory } from "@/test/factories";
 import type { Node } from "@/api";
+import { TopologyConnectionController } from "./topologyConnectionController";
 let captured: unknown;
 vi.mock("@/components/charts/EChart.vue", () => ({
   default: {
@@ -82,5 +83,22 @@ describe("TopologyCanvas scale fixture", () => {
     samples.sort((left, right) => left - right);
     expect(samples[Math.floor(samples.length * 0.95)]).toBeLessThan(100);
     wrapper.unmount();
+  });
+
+  it("keeps 50 connection drags within the local interaction budget", () => {
+    const start = performance.now();
+    for (let index = 0; index < 50; index += 1) {
+      const controller = new TopologyConnectionController();
+      controller.begin(`source-${index}`, { x: 10, y: 10 });
+      controller.move({ x: 100 + index, y: 80 });
+      controller.dropOnPort({
+        id: `target-${index}`,
+        ownerId: `node-${index}`,
+        name: "eth0",
+        available: true,
+      });
+      controller.cancel();
+    }
+    expect(performance.now() - start).toBeLessThan(100);
   });
 });

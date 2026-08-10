@@ -38,16 +38,18 @@ describe("topology endpoint compatibility", () => {
     expect(connectionBackingKind(node("a", "if-a"), node("b", "if-b"))).toBe(
       "link",
     );
-    expect(connectionBackingKind(node("a", "if-a"), objectPort("sw", "eth0"))).toBe(
-      "network_attachment",
-    );
-    expect(connectionBackingKind(objectPort("a", "eth0"), objectPort("b", "eth1"))).toBe(
-      "network_object_link",
-    );
+    expect(
+      connectionBackingKind(node("a", "if-a"), objectPort("sw", "eth0")),
+    ).toBe("network_attachment");
+    expect(
+      connectionBackingKind(objectPort("a", "eth0"), objectPort("b", "eth1")),
+    ).toBe("network_object_link");
   });
 
   it("rejects occupied, same-resource, cross-laboratory and unsupported pairs", () => {
-    expect(endpointsCompatible(node("a", "if-a"), node("a", "if-b"))).toMatchObject({
+    expect(
+      endpointsCompatible(node("a", "if-a"), node("a", "if-b")),
+    ).toMatchObject({
       compatible: false,
       reason: "invalid_topology",
     });
@@ -56,7 +58,10 @@ describe("topology endpoint compatibility", () => {
         ...objectPort("b", "eth0"),
         laboratoryId: "other",
       }),
-    ).toMatchObject({ compatible: false, reason: "cross_laboratory_connection" });
+    ).toMatchObject({
+      compatible: false,
+      reason: "cross_laboratory_connection",
+    });
     expect(
       endpointsCompatible(node("a", "if-a"), {
         ...objectPort("b", "eth0"),

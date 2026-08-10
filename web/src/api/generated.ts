@@ -201,9 +201,7 @@ export interface NetworkAttachment {
 }
 
 export type UnifiedConnectionEndpointKind =
-  | "node_interface"
-  | "network_object_port"
-  | "network_object_access";
+  "node_interface" | "network_object_port" | "network_object_access";
 
 export type UnifiedConnectionEndpointAvailability =
   | "free"

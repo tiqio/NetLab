@@ -11,6 +11,7 @@ import {
   type OperationTask,
   type PlacementIntent,
   type TrafficObservation,
+  type TopologyConnectionConfig,
 } from "@/api";
 import {
   Cable,
@@ -46,6 +47,11 @@ import PortChooser from "./PortChooser.vue";
 import TopologyCanvas from "./TopologyCanvas.vue";
 import TopologyInspector from "./TopologyInspector.vue";
 import { fitViewport } from "./topologyGeometry";
+import {
+  endpointKey,
+  endpointsCompatible,
+  type UnifiedConnectionEndpoint,
+} from "./topologyEndpointCompatibility";
 import { TopologyKeyboardController } from "./topologyKeyboardController";
 import { resolvePlacements } from "./topologyLayout";
 import { buildPlacementBatch } from "./topologyPlacementBatch";
@@ -134,14 +140,30 @@ const createDrawer = ref<{
   requestExternalDiscard: (action: () => void) => void;
 }>();
 const commandOpen = ref(false);
-const pendingEndpoint = ref("");
-const pendingObjectPort = ref<{ objectId: string; portName: string }>();
+const connectionDraft = ref<{
+  source: UnifiedConnectionEndpoint;
+  target?: UnifiedConnectionEndpoint;
+}>();
+const pendingEndpoint = computed(() =>
+  connectionDraft.value?.source.kind === "node_interface"
+    ? connectionDraft.value.source.portId || ""
+    : "",
+);
+const pendingObjectPort = computed(() =>
+  connectionDraft.value?.source.kind === "network_object_port"
+    ? {
+        objectId: connectionDraft.value.source.resourceId,
+        portName: connectionDraft.value.source.portName || "",
+      }
+    : undefined,
+);
 const canvasStatus = ref("");
 const portChooserOpen = ref(false);
 const portChooserMode = ref<"source" | "target" | "reconnect" | "capture">(
   "source",
 );
 const portChooserInterfaces = ref<NodeInterface[]>([]);
+const portChooserEndpoints = ref<UnifiedConnectionEndpoint[]>([]);
 const selectedInterfaceId = ref("");
 const reconnectingLink = ref<Link>();
 const editingRouteLinkId = ref("");
@@ -809,56 +831,146 @@ function objectPortOccupied(objectId: string, portName: string) {
   );
 }
 
-async function objectPortClicked(objectId: string, portName: string) {
+function endpointForInterface(value: NodeInterface): UnifiedConnectionEndpoint {
+  const node = store.active?.nodes.find((item) => item.id === value.node_id);
+  return {
+    kind: "node_interface",
+    laboratoryId: store.active?.laboratory.id || "",
+    resourceId: value.node_id,
+    resourceKind: node?.kind,
+    portId: value.id,
+    portName: value.name,
+    displayName: `${node?.name || value.node_id}:${value.name}`,
+    capabilities: [],
+    availability: value.desired_link_id ? "occupied" : "free",
+  };
+}
+
+function endpointForObjectPort(
+  objectId: string,
+  portName: string,
+): UnifiedConnectionEndpoint | undefined {
+  const object = store.active?.network_objects.find(
+    (item) => item.id === objectId,
+  );
+  if (!object) return undefined;
+  return {
+    kind: "network_object_port",
+    laboratoryId: store.active?.laboratory.id || "",
+    resourceId: objectId,
+    resourceKind: object.kind,
+    portName,
+    displayName: `${object.name}:${portName}`,
+    capabilities: [],
+    availability: objectPortOccupied(objectId, portName) ? "occupied" : "free",
+  };
+}
+
+function setConnectionSource(source: UnifiedConnectionEndpoint) {
+  connectionDraft.value = { source };
+  canvasStatus.value = `已选择 ${source.displayName}；请拖到或选择兼容目标。`;
+}
+
+async function submitUnifiedConnection(
+  source: UnifiedConnectionEndpoint,
+  target: UnifiedConnectionEndpoint,
+  config?: TopologyConnectionConfig,
+) {
   if (!store.active) return;
-  if (objectPortOccupied(objectId, portName)) {
-    canvasStatus.value = `${portName} 已被占用，请选择空闲端口。`;
-    return;
-  }
-  if (pendingEndpoint.value) {
-    canvasStatus.value =
-      "普通节点接口不能直接连接对象端口；请使用 Inspector 的 Attachment 操作。";
-    return;
-  }
-  const source = pendingObjectPort.value;
-  if (!source) {
-    pendingObjectPort.value = { objectId, portName };
-    canvasStatus.value = `已选择 ${portName}；请选择另一个网络对象的空闲端口。`;
-    return;
-  }
-  if (source.objectId === objectId && source.portName === portName) {
-    pendingObjectPort.value = undefined;
-    canvasStatus.value = "对象链路创建已取消。";
-    return;
-  }
-  if (source.objectId === objectId) {
-    canvasStatus.value = "对象间链路必须连接两个不同的网络对象。";
+  const compatibility = endpointsCompatible(source, target);
+  if (!compatibility.compatible) {
+    canvasStatus.value = compatibility.reason || "连接端点不兼容。";
     return;
   }
   try {
-    const envelope = await api.createNetworkObjectLink(
+    const envelope = await api.createTopologyConnection(
       store.active.laboratory.id,
+      store.active.laboratory.revision,
       {
-        object_a_id: source.objectId,
-        port_a_name: source.portName,
-        object_b_id: objectId,
-        port_b_name: portName,
+        source: {
+          kind: source.kind,
+          resource_id: source.resourceId,
+          port_id: source.portId,
+          port_name: source.portName,
+        },
+        target: {
+          kind: target.kind,
+          resource_id: target.resourceId,
+          port_id: target.portId,
+          port_name: target.portName,
+        },
+        config,
       },
+      crypto.randomUUID(),
     );
-    const index = store.tasks.findIndex((item) => item.id === envelope.task.id);
-    if (index >= 0) store.tasks[index] = envelope.task;
-    else store.tasks.unshift(envelope.task);
-    pendingObjectPort.value = undefined;
-    canvasStatus.value = `对象链路任务 ${envelope.task.id} 已提交。`;
+    store.recordTopologyConnectionTask(envelope);
+    connectionDraft.value = undefined;
+    portChooserOpen.value = false;
+    portChooserEndpoints.value = [];
+    canvasStatus.value = `连接任务 ${envelope.task.id} 已提交。`;
     await refreshActive();
-  } catch (value) {
-    const message = value instanceof Error ? value.message : String(value);
-    canvasStatus.value = message.includes("port_in_use")
-      ? "端口已被其他客户端占用，拓扑已刷新，请重新选择。"
-      : message;
-    pendingObjectPort.value = undefined;
+  } catch (error) {
+    connectionDraft.value = undefined;
+    if (
+      error instanceof ApiError &&
+      error.problem.code === "revision_conflict"
+    ) {
+      canvasStatus.value = "拓扑已被其他客户端更新，已刷新，请重新选择端点。";
+      await refreshActive();
+      return;
+    }
+    canvasStatus.value = error instanceof Error ? error.message : String(error);
     await refreshActive();
   }
+}
+
+async function handleUnifiedConnectionDrop(
+  source: UnifiedConnectionEndpoint,
+  target: UnifiedConnectionEndpoint | undefined,
+  targetResourceId: string,
+  candidates: UnifiedConnectionEndpoint[],
+) {
+  setConnectionSource(source);
+  if (target) {
+    await submitUnifiedConnection(source, target);
+    return;
+  }
+  const compatible = candidates.filter(
+    (candidate) => endpointsCompatible(source, candidate).compatible,
+  );
+  if (!compatible.length) {
+    canvasStatus.value = "目标没有可用的兼容端点。";
+    return;
+  }
+  if (compatible.length === 1) {
+    await submitUnifiedConnection(source, compatible[0]);
+    return;
+  }
+  portChooserMode.value = "target";
+  portChooserEndpoints.value = compatible;
+  portChooserInterfaces.value = [];
+  portChooserOpen.value = true;
+  canvasStatus.value = `请选择 ${targetResourceId} 上的目标端点。`;
+}
+
+async function objectPortClicked(objectId: string, portName: string) {
+  if (!store.active) return;
+  const endpoint = endpointForObjectPort(objectId, portName);
+  if (!endpoint || endpoint.availability !== "free") {
+    canvasStatus.value = `${portName} 已被占用，请选择空闲端口。`;
+    return;
+  }
+  const source = connectionDraft.value?.source;
+  if (!source) {
+    setConnectionSource(endpoint);
+    return;
+  }
+  if (endpointKey(source) === endpointKey(endpoint)) {
+    connectionDraft.value = undefined;
+    canvasStatus.value = "对象链路创建已取消。";
+    return;
+  }
+  await submitUnifiedConnection(source, endpoint);
 }
 
 function selectBox(
@@ -898,25 +1010,19 @@ async function interfaceClicked(interfaceId: string) {
     canvasStatus.value = `${target.name} is already connected. Select its link first to reconnect it.`;
     return;
   }
-  if (!pendingEndpoint.value) {
-    pendingEndpoint.value = interfaceId;
-    canvasStatus.value = `Selected ${target.name}; choose another available port.`;
+  const endpoint = endpointForInterface(target);
+  const source = connectionDraft.value?.source;
+  if (!source) {
+    setConnectionSource(endpoint);
     return;
   }
-  if (pendingEndpoint.value === interfaceId) {
-    pendingEndpoint.value = "";
+  if (endpointKey(source) === endpointKey(endpoint)) {
+    connectionDraft.value = undefined;
     canvasStatus.value =
       "Connection cancelled because the same port was selected twice.";
     return;
   }
-  await api.connectLink(
-    store.active.laboratory.id,
-    pendingEndpoint.value,
-    interfaceId,
-  );
-  canvasStatus.value = `Connected ${pendingEndpoint.value} to ${interfaceId}.`;
-  pendingEndpoint.value = "";
-  await refreshActive();
+  await submitUnifiedConnection(source, endpoint);
 }
 
 function availableInterfaces(nodeId: string) {
@@ -935,12 +1041,12 @@ function startConnection(nodeId: string) {
     return;
   }
   if (candidates.length === 1) {
-    pendingEndpoint.value = candidates[0].id;
-    canvasStatus.value = `Selected ${candidates[0].name}; choose a target node or interface.`;
+    setConnectionSource(endpointForInterface(candidates[0]));
     return;
   }
   portChooserMode.value = "source";
   portChooserInterfaces.value = candidates;
+  portChooserEndpoints.value = candidates.map(endpointForInterface);
   portChooserOpen.value = true;
 }
 
@@ -958,32 +1064,28 @@ async function chooseTargetNode(nodeId: string) {
   }
   portChooserMode.value = "target";
   portChooserInterfaces.value = candidates;
+  portChooserEndpoints.value = candidates.map(endpointForInterface);
   portChooserOpen.value = true;
 }
 
 async function connectPending(target: NodeInterface) {
-  if (!store.active || !pendingEndpoint.value) return;
-  const source = pendingEndpoint.value;
-  await api.connectLink(store.active.laboratory.id, source, target.id);
-  pendingEndpoint.value = "";
-  portChooserOpen.value = false;
-  canvasStatus.value = `Connected ${source} to ${target.id}.`;
-  await refreshActive();
+  const source = connectionDraft.value?.source;
+  if (!source) return;
+  await submitUnifiedConnection(source, endpointForInterface(target));
 }
 
-async function portChosen(value: NodeInterface) {
+async function portChosen(value: NodeInterface | UnifiedConnectionEndpoint) {
   if (portChooserMode.value === "capture") {
-    openInterfaceCapture(value);
+    if ("id" in value) openInterfaceCapture(value);
     return;
   }
   if (portChooserMode.value === "source") {
-    pendingEndpoint.value = value.id;
+    setConnectionSource("id" in value ? endpointForInterface(value) : value);
     portChooserOpen.value = false;
-    canvasStatus.value = `Selected ${value.name}; choose a target node or interface.`;
     return;
   }
   if (portChooserMode.value === "reconnect") {
-    if (!reconnectingLink.value) return;
+    if (!reconnectingLink.value || !("id" in value)) return;
     await submitReconnect(
       reconnectingLink.value,
       reconnectRetainedEndpoint.value,
@@ -991,7 +1093,12 @@ async function portChosen(value: NodeInterface) {
     );
     return;
   }
-  await connectPending(value);
+  const source = connectionDraft.value?.source;
+  if (!source) return;
+  await submitUnifiedConnection(
+    source,
+    "id" in value ? endpointForInterface(value) : value,
+  );
 }
 
 async function submitReconnect(
@@ -1063,9 +1170,9 @@ async function retryReconnect() {
 
 function cancelConnection() {
   const captureSelection = portChooserMode.value === "capture";
-  pendingEndpoint.value = "";
-  pendingObjectPort.value = undefined;
+  connectionDraft.value = undefined;
   portChooserOpen.value = false;
+  portChooserEndpoints.value = [];
   portChooserMode.value = "source";
   canvasStatus.value = captureSelection
     ? "Capture interface selection cancelled."
@@ -1429,6 +1536,7 @@ onBeforeUnmount(() => {
           :keyboard-announcement="keyboardAnnouncement"
           :editing-link-id="editingRouteLinkId"
           :pan-enabled="panEnabled"
+          :laboratory-id="store.active.laboratory.id"
           :connection-source-interface-id="pendingEndpoint"
           :connection-source-object-port-id="
             pendingObjectPort
@@ -1446,6 +1554,9 @@ onBeforeUnmount(() => {
           @viewport="setViewport"
           @interface="interfaceClicked"
           @object-port="objectPortClicked"
+          @connection-start="setConnectionSource"
+          @connection-drop="handleUnifiedConnectionDrop"
+          @connection-cancel="cancelConnection"
           @keyboard="topologyKeyboard"
           @box-select="selectBox"
           @route-point="updateRoutePoint"
@@ -1887,6 +1998,11 @@ onBeforeUnmount(() => {
           : undefined
       "
       :interfaces="portChooserInterfaces"
+      :endpoints="
+        portChooserMode === 'source' || portChooserMode === 'target'
+          ? portChooserEndpoints
+          : undefined
+      "
       @choose="portChosen"
       @cancel="cancelConnection"
     />

@@ -47,6 +47,58 @@ describe("laboratory store", () => {
     expect(store.sequence).toBe(2);
   });
 
+  it("records unified connection tasks without inventing a backing record", () => {
+    const store = useLaboratoryStore();
+    store.active = {
+      laboratory: laboratoryFactory({ id: "lab", revision: 3 }),
+      nodes: [],
+      interfaces: [],
+      links: [],
+      network_objects: [],
+      network_attachments: [],
+      network_object_links: [],
+      placements: [],
+      event_sequence: 0,
+    };
+    store.recordTopologyConnectionTask({
+      connection: {
+        id: "connection-1",
+        laboratory_id: "lab",
+        source: {
+          kind: "node_interface",
+          laboratory_id: "lab",
+          resource_id: "node-a",
+          port_id: "if-a",
+        },
+        target: {
+          kind: "node_interface",
+          laboratory_id: "lab",
+          resource_id: "node-b",
+          port_id: "if-b",
+        },
+        backing_kind: "link",
+        backing_id: "link-1",
+        revision: 1,
+        desired_state: "connected",
+        observed_state: "pending",
+      },
+      task: {
+        id: "task-1",
+        kind: "link.connect",
+        resource_type: "link",
+        resource_id: "link-1",
+        state: "queued",
+        progress_current: 0,
+        progress_total: 1,
+        created_at: "2026-08-10T00:00:00Z",
+      },
+      laboratory_revision: 4,
+    });
+    expect(store.tasks.map((item) => item.id)).toEqual(["task-1"]);
+    expect(store.active.links).toEqual([]);
+    expect(store.active.laboratory.revision).toBe(4);
+  });
+
   it("applies observed node state changes at the current revision", () => {
     const store = useLaboratoryStore();
     store.active = {

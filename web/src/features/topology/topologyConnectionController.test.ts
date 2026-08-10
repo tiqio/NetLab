@@ -1,11 +1,27 @@
 import { describe, expect, it } from "vitest";
 import { TopologyConnectionController } from "./topologyConnectionController";
+import type { UnifiedConnectionEndpoint } from "./topologyEndpointCompatibility";
 
 const port = (id: string, available = true) => ({
   id,
   ownerId: id.split(":")[0],
   name: id,
   available,
+});
+
+const endpoint = (
+  kind: UnifiedConnectionEndpoint["kind"],
+  resourceId: string,
+  portName?: string,
+): UnifiedConnectionEndpoint => ({
+  kind,
+  laboratoryId: "lab",
+  resourceId,
+  portId: kind === "node_interface" ? `${resourceId}:${portName}` : undefined,
+  portName,
+  displayName: portName ? `${resourceId}:${portName}` : resourceId,
+  capabilities: [],
+  availability: "free",
 });
 
 describe("TopologyConnectionController", () => {
@@ -80,5 +96,65 @@ describe("TopologyConnectionController", () => {
         { id: "switch-b:swp3", name: "swp3" },
       ],
     });
+  });
+
+  it("tracks normalized endpoint candidates through chooser and configuration", () => {
+    const controller = new TopologyConnectionController();
+    const source = endpoint("node_interface", "node-a", "eth0");
+    const target = endpoint("network_object_port", "switch-b", "eth1");
+
+    expect(controller.beginEndpoint(source, { x: 4, y: 8 })).toMatchObject({
+      type: "preview",
+      source,
+      phase: "dragging",
+    });
+    expect(controller.setCandidate(target)).toMatchObject({
+      type: "preview",
+      candidate: target,
+      valid: true,
+      backingKind: "network_attachment",
+    });
+    expect(
+      controller.dropOnResourceEndpoints("switch-b", [
+        target,
+        endpoint("network_object_port", "switch-b", "eth2"),
+      ]),
+    ).toMatchObject({ type: "choose_endpoint", phase: "choosing" });
+    expect(controller.chooseEndpoint(target)).toMatchObject({
+      type: "ready_endpoint",
+      source,
+      target,
+      phase: "configuring",
+    });
+    expect(controller.markSubmitting()).toMatchObject({
+      type: "submitting",
+      source,
+      target,
+    });
+  });
+
+  it("resolves logical access, cancels same-source drops, and rejects incompatible targets", () => {
+    const controller = new TopologyConnectionController();
+    const source = endpoint("node_interface", "node-a", "eth0");
+    controller.beginEndpoint(source, { x: 0, y: 0 });
+
+    expect(controller.dropOnEndpoint(source)).toEqual({
+      type: "cancelled",
+      reason: "same_endpoint",
+    });
+    controller.beginEndpoint(source, { x: 0, y: 0 });
+    expect(
+      controller.dropOnEndpoint(endpoint("network_object_access", "bridge-a")),
+    ).toMatchObject({
+      type: "ready_endpoint",
+      backingKind: "network_attachment",
+    });
+    controller.beginEndpoint(endpoint("network_object_access", "bridge-a"), {
+      x: 0,
+      y: 0,
+    });
+    expect(
+      controller.dropOnEndpoint(endpoint("network_object_access", "nat-a")),
+    ).toMatchObject({ type: "invalid", reason: "endpoint_incompatible" });
   });
 });

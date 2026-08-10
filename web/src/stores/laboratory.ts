@@ -12,6 +12,7 @@ import {
   type PlacementAssignment,
   type RuntimeCapabilityObservation,
   type TopologyPlacement,
+  type TopologyConnectionTaskEnvelope,
   type TopologySnapshot,
 } from "../api";
 
@@ -112,6 +113,14 @@ export const useLaboratoryStore = defineStore("laboratory", {
     },
     async loadTasks() {
       this.tasks = (await api.listTasks()) || [];
+    },
+    recordTopologyConnectionTask(value: TopologyConnectionTaskEnvelope) {
+      this.upsert(this.tasks, value.task.id, value.task);
+      if (
+        this.active &&
+        value.laboratory_revision >= this.active.laboratory.revision
+      )
+        this.active.laboratory.revision = value.laboratory_revision;
     },
     setNodeCapabilities(
       nodeId: string,

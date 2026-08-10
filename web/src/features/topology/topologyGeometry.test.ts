@@ -9,6 +9,8 @@ import {
   zoomAroundPoint,
   deterministicPortTrack,
   topologyLabelPriority,
+  resolveResourceBodyHit,
+  nearestPortHit,
 } from "./topologyGeometry";
 
 describe("topology geometry", () => {
@@ -48,6 +50,35 @@ describe("topology geometry", () => {
         route.flatMap((point) => [point.x, point.y]).every(Number.isFinite),
       ).toBe(true);
     }
+  });
+});
+
+describe("connection target geometry", () => {
+  it("resolves the nearest port with a screen-stable hit radius", () => {
+    expect(
+      nearestPortHit(
+        { x: 104, y: 98 },
+        [
+          { id: "far", x: 140, y: 100 },
+          { id: "near", x: 100, y: 100 },
+        ],
+        14,
+      )?.id,
+    ).toBe("near");
+  });
+
+  it("resolves resource bodies using their declared footprint", () => {
+    expect(
+      resolveResourceBodyHit({ x: 52, y: 25 }, [
+        { id: "node", center: { x: 0, y: 0 }, halfWidth: 32, halfHeight: 32 },
+        {
+          id: "bridge",
+          center: { x: 60, y: 30 },
+          halfWidth: 44,
+          halfHeight: 36,
+        },
+      ])?.id,
+    ).toBe("bridge");
   });
 });
 

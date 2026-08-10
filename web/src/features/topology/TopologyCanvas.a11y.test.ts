@@ -1,7 +1,7 @@
 import { mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 import { defaultWorkspacePreferences } from "@/composables/useWorkspacePreferences";
-import { nodeFactory } from "@/test/factories";
+import { nodeFactory, networkObjectFactory } from "@/test/factories";
 vi.mock("@/components/charts/EChart.vue", () => ({
   default: {
     name: "EChart",
@@ -39,5 +39,35 @@ describe("TopologyCanvas accessibility", () => {
       series: Array<{ animationDurationUpdate: number }>;
     };
     expect(option.series[0].animationDurationUpdate).toBe(0);
+  });
+
+  it("exposes non-color endpoint availability and logical access resources", () => {
+    const wrapper = mount(TopologyCanvas, {
+      props: {
+        nodes: [nodeFactory()],
+        interfaces: [
+          {
+            id: "if-1",
+            node_id: "node-1",
+            slot: 0,
+            name: "eth0",
+            driver: "virtio-net-pci",
+            mac_address: "02:00:00:00:00:01",
+            operational_state: "up",
+            revision: 1,
+          },
+        ],
+        links: [],
+        networkObjects: [
+          networkObjectFactory({ id: "bridge-a", kind: "bridge" }),
+        ],
+        preferences: defaultWorkspacePreferences("lab"),
+        selectedIds: ["node-1"],
+      },
+    });
+    const summary = wrapper.get('[data-testid="topology-a11y-summary"]');
+    expect(summary.attributes("aria-live")).toBe("polite");
+    expect(summary.text()).toContain("Bridge: 二层网桥");
+    expect(summary.text()).toContain("Ubuntu: QEMU 虚拟机");
   });
 });

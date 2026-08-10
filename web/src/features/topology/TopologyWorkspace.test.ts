@@ -6,6 +6,26 @@ import {
   openTopologyCreateDrawer,
 } from "./topologyCreateDrawerState";
 import { applyAuthoritativeCreation } from "./authoritativeCreation";
+import {
+  connectionBackingKind,
+  endpointsCompatible,
+  type UnifiedConnectionEndpoint,
+} from "./topologyEndpointCompatibility";
+
+const endpoint = (
+  kind: UnifiedConnectionEndpoint["kind"],
+  resourceId: string,
+  port?: string,
+): UnifiedConnectionEndpoint => ({
+  kind,
+  laboratoryId: "lab",
+  resourceId,
+  portId: kind === "node_interface" ? port : undefined,
+  portName: kind === "network_object_port" ? port : undefined,
+  displayName: `${resourceId}:${port || "access"}`,
+  capabilities: [],
+  availability: "free",
+});
 
 describe("TopologyWorkspace create drawer state", () => {
   it("opens one selecting drawer from the toolbar", () => {
@@ -89,6 +109,57 @@ describe("TopologyWorkspace create drawer state", () => {
       "focus:pc-1",
       "announce:已创建 PC 1，为避免重叠已自动放置到附近空白位置。",
     ]);
+  });
+});
+
+describe("TopologyWorkspace unified connection admission", () => {
+  it.each([
+    [
+      endpoint("node_interface", "node-a", "if-a"),
+      endpoint("node_interface", "node-b", "if-b"),
+      "link",
+    ],
+    [
+      endpoint("node_interface", "node-a", "if-a"),
+      endpoint("network_object_port", "pc-a", "eth0"),
+      "network_attachment",
+    ],
+    [
+      endpoint("network_object_port", "pc-a", "eth0"),
+      endpoint("network_object_port", "pc-b", "eth0"),
+      "network_object_link",
+    ],
+    [
+      endpoint("node_interface", "node-a", "if-a"),
+      endpoint("network_object_access", "bridge-a"),
+      "network_attachment",
+    ],
+    [
+      endpoint("node_interface", "node-a", "if-a"),
+      endpoint("network_object_access", "nat-a"),
+      "network_attachment",
+    ],
+  ])(
+    "maps a supported endpoint pair to %s without optimistic backing",
+    (source, target, backing) => {
+      expect(endpointsCompatible(source, target)).toMatchObject({
+        compatible: true,
+        backingKind: backing,
+      });
+      expect(connectionBackingKind(source, target)).toBe(backing);
+    },
+  );
+
+  it("rejects an occupied target so conflict handling can refresh authoritative state", () => {
+    const source = endpoint("node_interface", "node-a", "if-a");
+    const target = {
+      ...endpoint("network_object_port", "switch-a", "eth0"),
+      availability: "occupied" as const,
+    };
+    expect(endpointsCompatible(source, target)).toMatchObject({
+      compatible: false,
+      reason: "endpoint_occupied",
+    });
   });
 });
 

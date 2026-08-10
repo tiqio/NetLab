@@ -30,10 +30,17 @@ import type { WorkspacePreferences } from "@/types/workspace";
 import { resolvePlacements } from "./topologyLayout";
 import {
   deterministicPortTrack,
+  nearestPortHit,
+  resolveResourceBodyHit,
   screenToWorld,
   topologyLabelPriority,
   type PortTrackSide,
 } from "./topologyGeometry";
+import {
+  endpointKey,
+  endpointsCompatible,
+  type UnifiedConnectionEndpoint,
+} from "./topologyEndpointCompatibility";
 import {
   TopologyInteractionController,
   type InteractionAction,
@@ -60,6 +67,7 @@ const props = withDefaults(
     keyboardAnnouncement?: string;
     editingLinkId?: string;
     panEnabled?: boolean;
+    laboratoryId?: string;
     connectionSourceInterfaceId?: string;
     connectionSourceObjectPortId?: string;
     traffic?: TrafficObservation[];
@@ -92,6 +100,14 @@ const emit = defineEmits<{
   ];
   interface: [string];
   objectPort: [string, string];
+  connectionStart: [UnifiedConnectionEndpoint];
+  connectionDrop: [
+    UnifiedConnectionEndpoint,
+    UnifiedConnectionEndpoint | undefined,
+    string,
+    UnifiedConnectionEndpoint[],
+  ];
+  connectionCancel: [];
   connector: [string];
   move: [string, number, number];
   viewport: [{ centerX?: number; centerY?: number; zoom?: number }];
@@ -121,6 +137,16 @@ const GRAPH_WORLD_SIZE = 20000;
 const chart = ref<InstanceType<typeof EChart>>();
 const chartSize = ref({ width: 800, height: 600 });
 const connectionTarget = ref<{ x: number; y: number }>();
+const connectionCandidateKey = ref("");
+const connectionCandidateValid = ref<boolean>();
+const connectionGesture = ref<{
+  pointerId: number;
+  source: UnifiedConnectionEndpoint;
+  sourceOverlayId: string;
+  target?: UnifiedConnectionEndpoint;
+  targetResourceId: string;
+  candidates: UnifiedConnectionEndpoint[];
+}>();
 const connectionPreview = ref<{
   sourceX: number;
   sourceY: number;
@@ -262,10 +288,54 @@ const occupiedObjectPorts = computed(() => {
 });
 const connectionSourcePortId = computed(
   () =>
+    connectionGesture.value?.sourceOverlayId ||
     props.connectionSourceInterfaceId ||
     props.connectionSourceObjectPortId ||
     "",
 );
+function nodeEndpoint(value: NodeInterface): UnifiedConnectionEndpoint {
+  return {
+    kind: "node_interface",
+    laboratoryId: props.laboratoryId || "",
+    resourceId: value.node_id,
+    resourceKind: props.nodes.find((item) => item.id === value.node_id)?.kind,
+    portId: value.id,
+    portName: value.name,
+    displayName: value.name,
+    capabilities: [],
+    availability: value.desired_link_id ? "occupied" : "free",
+  };
+}
+function objectPortEndpoint(
+  value: NetworkObject,
+  portName: string,
+): UnifiedConnectionEndpoint {
+  return {
+    kind: "network_object_port",
+    laboratoryId: props.laboratoryId || value.laboratory_id,
+    resourceId: value.id,
+    resourceKind: value.kind,
+    portName,
+    displayName: `${value.name}:${portName}`,
+    capabilities: [],
+    availability: occupiedObjectPorts.value.has(
+      objectPortId(value.id, portName),
+    )
+      ? "occupied"
+      : "free",
+  };
+}
+function objectAccessEndpoint(value: NetworkObject): UnifiedConnectionEndpoint {
+  return {
+    kind: "network_object_access",
+    laboratoryId: props.laboratoryId || value.laboratory_id,
+    resourceId: value.id,
+    resourceKind: value.kind,
+    displayName: value.name,
+    capabilities: ["multi_access"],
+    availability: "free",
+  };
+}
 const availableInterfaceOwners = computed(
   () =>
     new Set(
@@ -296,14 +366,14 @@ function showPortDetails(nodeId: string) {
   return (
     selected.value.has(nodeId) ||
     hoveredResourceId.value === nodeId ||
-    Boolean(props.connectionSourceInterfaceId)
+    Boolean(props.connectionSourceInterfaceId || connectionGesture.value)
   );
 }
 function showObjectPortDetails(objectId: string) {
   return (
     selected.value.has(objectId) ||
     hoveredResourceId.value === objectId ||
-    Boolean(props.connectionSourceObjectPortId)
+    Boolean(props.connectionSourceObjectPortId || connectionGesture.value)
   );
 }
 const connectionPresentations = computed(() =>
@@ -1195,6 +1265,182 @@ function handleConnectionPointer(event: MouseEvent) {
   connectionTarget.value = { x: event.offsetX, y: event.offsetY };
   refreshOverlays();
 }
+function connectionPointerPoint(event: PointerEvent) {
+  const bounds = (
+    event.currentTarget as SVGElement
+  ).ownerSVGElement?.getBoundingClientRect();
+  return {
+    x: event.clientX - (bounds?.left || 0),
+    y: event.clientY - (bounds?.top || 0),
+  };
+}
+function resolveConnectionTarget(point: { x: number; y: number }) {
+  const source = connectionGesture.value?.source;
+  if (!source)
+    return { target: undefined, targetResourceId: "", candidates: [] };
+  const port = nearestPortHit(point, portOverlays.value, 16);
+  if (port) {
+    const target = endpointForOverlay(port);
+    return {
+      target,
+      targetResourceId: target.resourceId,
+      candidates: [target],
+    };
+  }
+  const bodies = [...props.nodes, ...props.networkObjects].flatMap(
+    (resource) => {
+      const center = chart.value?.graphItemPixel?.(resource.id);
+      return center
+        ? [{ resource, id: resource.id, center, halfWidth: 48, halfHeight: 42 }]
+        : [];
+    },
+  );
+  const body = resolveResourceBodyHit(point, bodies);
+  if (!body) return { target: undefined, targetResourceId: "", candidates: [] };
+  const resource = body.resource;
+  if ("runtime_kind" in resource) {
+    const candidates = (interfacesByOwner.value[resource.id] || [])
+      .map(nodeEndpoint)
+      .filter((endpoint) => endpointsCompatible(source, endpoint).compatible);
+    return { target: undefined, targetResourceId: resource.id, candidates };
+  }
+  const object = resource as NetworkObject;
+  const named = networkObjectPorts(object)
+    .map((name) => objectPortEndpoint(object, name))
+    .filter((endpoint) => endpointsCompatible(source, endpoint).compatible);
+  if (named.length)
+    return {
+      target: undefined,
+      targetResourceId: object.id,
+      candidates: named,
+    };
+  const access = objectAccessEndpoint(object);
+  return endpointsCompatible(source, access).compatible
+    ? { target: access, targetResourceId: object.id, candidates: [access] }
+    : { target: undefined, targetResourceId: object.id, candidates: [] };
+}
+function endpointForOverlay(port: (typeof portOverlays.value)[number]) {
+  if (port.kind === "node_interface")
+    return nodeEndpoint(interfaceById.value[port.id]);
+  const object = props.networkObjects.find((item) => item.id === port.ownerId)!;
+  return objectPortEndpoint(object, port.name);
+}
+function updateConnectionCandidate(point: { x: number; y: number }) {
+  if (!connectionGesture.value) return;
+  connectionTarget.value = point;
+  const resolved = resolveConnectionTarget(point);
+  const directTarget =
+    resolved.target ||
+    (resolved.candidates.length === 1 ? resolved.candidates[0] : undefined);
+  connectionGesture.value.target = directTarget;
+  connectionGesture.value.targetResourceId = resolved.targetResourceId;
+  connectionGesture.value.candidates = resolved.candidates;
+  connectionCandidateKey.value = directTarget ? endpointKey(directTarget) : "";
+  connectionCandidateValid.value = directTarget
+    ? endpointsCompatible(connectionGesture.value.source, directTarget)
+        .compatible
+    : resolved.candidates.length > 0;
+  refreshOverlays();
+}
+function beginPortConnection(
+  event: PointerEvent,
+  port: (typeof portOverlays.value)[number],
+) {
+  if (event.button !== 0 || !port.available) return;
+  const source = endpointForOverlay(port);
+  const point = connectionPointerPoint(event);
+  const actions = interaction.beginConnectionGesture(
+    pointerSample({
+      offsetX: point.x,
+      offsetY: point.y,
+      button: event.button,
+      pointerId: event.pointerId,
+    }),
+    source,
+  );
+  if (!actions.length) return;
+  connectionGesture.value = {
+    pointerId: event.pointerId,
+    source,
+    sourceOverlayId: port.id,
+    targetResourceId: "",
+    candidates: [],
+  };
+  connectionTarget.value = point;
+  emit("connectionStart", source);
+  (event.currentTarget as SVGElement).setPointerCapture?.(event.pointerId);
+  event.preventDefault();
+  event.stopPropagation();
+  refreshOverlays();
+}
+function movePortConnection(event: PointerEvent) {
+  if (connectionGesture.value?.pointerId !== event.pointerId) return;
+  const point = connectionPointerPoint(event);
+  interaction.pointerMove(
+    pointerSample({
+      offsetX: point.x,
+      offsetY: point.y,
+      button: event.button,
+      pointerId: event.pointerId,
+    }),
+  );
+  updateConnectionCandidate(point);
+  event.preventDefault();
+  event.stopPropagation();
+}
+function endPortConnection(event: PointerEvent) {
+  const gesture = connectionGesture.value;
+  if (!gesture || gesture.pointerId !== event.pointerId) return;
+  const point = connectionPointerPoint(event);
+  updateConnectionCandidate(point);
+  const resolved = resolveConnectionTarget(point);
+  const target =
+    resolved.target ||
+    (resolved.candidates.length === 1 ? resolved.candidates[0] : undefined);
+  interaction.pointerUp(
+    pointerSample({
+      offsetX: point.x,
+      offsetY: point.y,
+      button: event.button,
+      pointerId: event.pointerId,
+    }),
+  );
+  if (target && endpointKey(target) === endpointKey(gesture.source))
+    emit("connectionCancel");
+  else if (target || resolved.candidates.length)
+    emit(
+      "connectionDrop",
+      gesture.source,
+      target,
+      resolved.targetResourceId,
+      resolved.candidates,
+    );
+  else emit("connectionCancel");
+  clearPortConnection(event.currentTarget as SVGElement, event.pointerId);
+}
+function cancelPortConnection(event?: PointerEvent) {
+  if (!connectionGesture.value) return;
+  const pointerId = event?.pointerId ?? connectionGesture.value.pointerId;
+  interaction.pointerCancel(pointerId);
+  emit("connectionCancel");
+  clearPortConnection(
+    event?.currentTarget as SVGElement | undefined,
+    pointerId,
+  );
+}
+function clearPortConnection(
+  target: SVGElement | undefined,
+  pointerId: number,
+) {
+  if (target?.hasPointerCapture?.(pointerId))
+    target.releasePointerCapture(pointerId);
+  connectionGesture.value = undefined;
+  connectionTarget.value = undefined;
+  connectionPreview.value = undefined;
+  connectionCandidateKey.value = "";
+  connectionCandidateValid.value = undefined;
+  scheduleOverlayRefresh();
+}
 function handleDragStart(event: unknown) {
   const value = event as {
     data?: { id?: string; resourceType?: "node" | "network_object" };
@@ -1556,7 +1802,18 @@ defineExpose({
           />
         </g>
       </g>
-      <g v-if="connectionPreview" data-connection-preview>
+      <g
+        v-if="connectionPreview"
+        data-connection-preview
+        data-source-anchored="true"
+        :data-target-state="
+          connectionCandidateValid === undefined
+            ? 'idle'
+            : connectionCandidateValid
+              ? 'compatible'
+              : 'incompatible'
+        "
+      >
         <line
           :x1="connectionPreview.sourceX"
           :y1="connectionPreview.sourceY"
@@ -1581,9 +1838,21 @@ defineExpose({
         :data-port-side="port.side"
         :data-port-x="port.x"
         :data-port-y="port.y"
+        :data-connection-target-state="
+          connectionCandidateKey === endpointKey(endpointForOverlay(port))
+            ? connectionCandidateValid
+              ? 'compatible'
+              : 'incompatible'
+            : 'idle'
+        "
         role="button"
         :aria-label="`${port.name}，${port.available ? '可用' : '已连接'}，${port.state}`"
         tabindex="0"
+        @pointerdown="beginPortConnection($event, port)"
+        @pointermove="movePortConnection"
+        @pointerup="endPortConnection"
+        @pointercancel="cancelPortConnection"
+        @lostpointercapture="cancelPortConnection"
         @click.stop="
           port.kind === 'node_interface'
             ? $emit('interface', port.id)

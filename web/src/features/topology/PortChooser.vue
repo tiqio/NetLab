@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import type { NodeInterface } from "@/api";
+import type { UnifiedConnectionEndpoint } from "./topologyEndpointCompatibility";
 import { Button, Dialog } from "@/components/ui";
 
 const open = defineModel<boolean>({ required: true });
-defineProps<{
+const props = defineProps<{
   title?: string;
   description?: string;
-  interfaces: NodeInterface[];
+  interfaces?: NodeInterface[];
+  endpoints?: UnifiedConnectionEndpoint[];
 }>();
 const emit = defineEmits<{
-  choose: [NodeInterface];
+  choose: [NodeInterface | UnifiedConnectionEndpoint];
   cancel: [];
 }>();
 const listbox = ref<HTMLDivElement>();
@@ -25,7 +27,9 @@ watch(
   { immediate: true },
 );
 
-function choose(value: NodeInterface) {
+const choices = computed(() => props.endpoints || props.interfaces || []);
+
+function choose(value: NodeInterface | UnifiedConnectionEndpoint) {
   emit("choose", value);
   open.value = false;
 }
@@ -33,6 +37,18 @@ function choose(value: NodeInterface) {
 function cancel() {
   emit("cancel");
   open.value = false;
+}
+
+function choiceName(value: NodeInterface | UnifiedConnectionEndpoint) {
+  return "displayName" in value ? value.displayName : value.name;
+}
+
+function choiceDetail(value: NodeInterface | UnifiedConnectionEndpoint) {
+  if ("displayName" in value)
+    return value.kind === "network_object_access"
+      ? "逻辑接入"
+      : value.portName || value.kind;
+  return value.driver;
 }
 </script>
 
@@ -44,16 +60,22 @@ function cancel() {
   >
     <div ref="listbox" class="grid gap-2" role="listbox" aria-label="可用接口">
       <Button
-        v-for="item in interfaces"
-        :key="item.id"
+        v-for="item in choices"
+        :key="
+          'displayName' in item
+            ? `${item.kind}:${item.resourceId}:${item.portId || item.portName || ''}`
+            : item.id
+        "
         variant="secondary"
         class="justify-between"
         role="option"
-        :aria-label="`使用接口 ${item.name}`"
+        :aria-label="`使用接口 ${choiceName(item)}`"
         @click="choose(item)"
       >
-        <span>{{ item.name }}</span>
-        <span class="text-xs text-muted-foreground">{{ item.driver }}</span>
+        <span>{{ choiceName(item) }}</span>
+        <span class="text-xs text-muted-foreground">{{
+          choiceDetail(item)
+        }}</span>
       </Button>
     </div>
     <template #footer>

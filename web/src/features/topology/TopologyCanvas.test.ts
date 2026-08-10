@@ -23,7 +23,8 @@ vi.mock("@/components/charts/EChart.vue", () => ({
         captured = props.option;
       });
       expose({
-        graphItemPixel: () => ({ x: 100, y: 80 }),
+        graphItemPixel: (id: string) =>
+          id === "node-2" ? { x: 260, y: 80 } : { x: 100, y: 80 },
         dataPointAtCanvasCenter: () => ({ x: 0, y: 0 }),
       });
     },
@@ -487,5 +488,76 @@ describe("TopologyCanvas", () => {
     expect(port.attributes("aria-label")).toContain("swp1，可用");
     await port.trigger("click");
     expect(wrapper.emitted("objectPort")?.[0]).toEqual(["switch-a", "swp1"]);
+  });
+
+  it("anchors a captured port drag and emits normalized endpoints on drop", async () => {
+    const wrapper = mount(TopologyCanvas, {
+      attachTo: document.body,
+      props: {
+        laboratoryId: "lab",
+        nodes: [nodeFactory({ id: "node-1" }), nodeFactory({ id: "node-2" })],
+        interfaces: [
+          {
+            id: "if-1",
+            node_id: "node-1",
+            slot: 0,
+            name: "eth0",
+            driver: "virtio-net-pci",
+            mac_address: "02:00:00:00:00:01",
+            operational_state: "up",
+            revision: 1,
+          },
+          {
+            id: "if-2",
+            node_id: "node-2",
+            slot: 0,
+            name: "eth0",
+            driver: "virtio-net-pci",
+            mac_address: "02:00:00:00:00:02",
+            operational_state: "up",
+            revision: 1,
+          },
+        ],
+        links: [],
+        networkObjects: [],
+        preferences: defaultWorkspacePreferences("lab"),
+        selectedIds: ["node-1"],
+      },
+    });
+    await nextTick();
+    const source = wrapper.get('[data-interface-id="if-1"]');
+    await source.trigger("pointerdown", {
+      pointerId: 9,
+      button: 0,
+      clientX: 148,
+      clientY: 80,
+    });
+    await nextTick();
+    expect(wrapper.emitted("connectionStart")?.[0]?.[0]).toMatchObject({
+      kind: "node_interface",
+      portId: "if-1",
+    });
+    await source.trigger("pointermove", {
+      pointerId: 9,
+      button: 0,
+      clientX: 308,
+      clientY: 80,
+    });
+    expect(
+      wrapper
+        .get("[data-connection-preview]")
+        .attributes("data-source-anchored"),
+    ).toBe("true");
+    await source.trigger("pointerup", {
+      pointerId: 9,
+      button: 0,
+      clientX: 308,
+      clientY: 80,
+    });
+    expect(wrapper.emitted("connectionDrop")?.[0]?.[1]).toMatchObject({
+      kind: "node_interface",
+      portId: "if-2",
+    });
+    wrapper.unmount();
   });
 });

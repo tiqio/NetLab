@@ -1,7 +1,5 @@
 export type UnifiedConnectionEndpointKind =
-  | "node_interface"
-  | "network_object_port"
-  | "network_object_access";
+  "node_interface" | "network_object_port" | "network_object_access";
 
 export type UnifiedEndpointAvailability =
   | "free"
@@ -12,9 +10,7 @@ export type UnifiedEndpointAvailability =
   | "incompatible";
 
 export type UnifiedConnectionBackingKind =
-  | "link"
-  | "network_attachment"
-  | "network_object_link";
+  "link" | "network_attachment" | "network_object_link";
 
 export interface UnifiedConnectionEndpoint {
   kind: UnifiedConnectionEndpointKind;

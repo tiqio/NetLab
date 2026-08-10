@@ -23,10 +23,10 @@ func (s *topologyConnectionCommandsStub) Create(_ context.Context, laboratoryID 
 	return connection, taskValue, nil
 }
 func (*topologyConnectionCommandsStub) List(context.Context, domain.ID) ([]domain.TopologyConnection, error) {
-	return nil, nil
+	return []domain.TopologyConnection{{ID: "connection", LaboratoryID: "lab", BackingKind: domain.ConnectionBackingLink, BackingID: "link", Revision: 1, DesiredState: "connected", ObservedState: "connected"}}, nil
 }
 func (*topologyConnectionCommandsStub) Get(context.Context, domain.ID) (domain.TopologyConnection, error) {
-	return domain.TopologyConnection{}, nil
+	return domain.TopologyConnection{ID: "connection", LaboratoryID: "lab", BackingKind: domain.ConnectionBackingLink, BackingID: "link", Revision: 1, DesiredState: "connected", ObservedState: "connected"}, nil
 }
 func (*topologyConnectionCommandsStub) Delete(context.Context, domain.ID, domain.Revision, string) (domain.TopologyConnection, domain.OperationTask, error) {
 	return domain.TopologyConnection{}, domain.OperationTask{}, nil
@@ -35,7 +35,27 @@ func (*topologyConnectionCommandsStub) Delete(context.Context, domain.ID, domain
 type topologyConnectionReadStub struct{}
 
 func (topologyConnectionReadStub) ListConnectionEndpoints(context.Context, domain.ID) ([]domain.ConnectionEndpoint, error) {
-	return nil, nil
+	return []domain.ConnectionEndpoint{{Kind: domain.ConnectionEndpointNodeInterface, LaboratoryID: "lab", ResourceID: "node-a", PortID: "if-a", Availability: domain.ConnectionEndpointFree}}, nil
+}
+
+func TestUnifiedTopologyConnectionHTTPFinalStateIsSymmetric(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	engine := gin.New()
+	NewTopologyConnectionHandlers(&topologyConnectionCommandsStub{}, topologyConnectionReadStub{}).Register(engine)
+
+	listRequest := httptest.NewRequest(http.MethodGet, "/api/v1/labs/lab/connections", nil)
+	listResponse := httptest.NewRecorder()
+	engine.ServeHTTP(listResponse, listRequest)
+	if listResponse.Code != http.StatusOK || !strings.Contains(listResponse.Body.String(), `"observed_state":"connected"`) || !strings.Contains(listResponse.Body.String(), `"endpoints"`) {
+		t.Fatalf("list status=%d body=%s", listResponse.Code, listResponse.Body.String())
+	}
+
+	getRequest := httptest.NewRequest(http.MethodGet, "/api/v1/connections/connection", nil)
+	getResponse := httptest.NewRecorder()
+	engine.ServeHTTP(getResponse, getRequest)
+	if getResponse.Code != http.StatusOK || !strings.Contains(getResponse.Body.String(), `"id":"connection"`) || !strings.Contains(getResponse.Body.String(), `"observed_state":"connected"`) {
+		t.Fatalf("get status=%d body=%s", getResponse.Code, getResponse.Body.String())
+	}
 }
 func (topologyConnectionReadStub) GetLaboratory(context.Context, domain.ID) (domain.Laboratory, error) {
 	return domain.Laboratory{ID: "lab", Revision: 7}, nil

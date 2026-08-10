@@ -106,6 +106,38 @@ export function nearestPoint(
     .sort((left, right) => left.distance - right.distance)[0]?.candidate;
 }
 
+export function nearestPortHit<T extends Point & { id: string }>(
+  point: Point,
+  candidates: T[],
+  radius = 14,
+) {
+  return nearestPoint(point, candidates, radius) as T | undefined;
+}
+
+export interface ResourceBodyFootprint {
+  id: string;
+  center: Point;
+  halfWidth: number;
+  halfHeight: number;
+}
+
+export function resolveResourceBodyHit<T extends ResourceBodyFootprint>(
+  point: Point,
+  resources: T[],
+) {
+  return resources
+    .filter(
+      (resource) =>
+        Math.abs(point.x - resource.center.x) <= resource.halfWidth &&
+        Math.abs(point.y - resource.center.y) <= resource.halfHeight,
+    )
+    .sort((left, right) => {
+      const leftDistance = distance(point, left.center);
+      const rightDistance = distance(point, right.center);
+      return leftDistance - rightDistance;
+    })[0];
+}
+
 export function quadraticRoute(
   source: Point,
   target: Point,

@@ -14,10 +14,10 @@ func (topologyConnectionToolCommandsStub) Create(_ context.Context, laboratoryID
 	return domain.TopologyConnection{ID: "connection", LaboratoryID: laboratoryID, Source: source, Target: target, BackingKind: domain.ConnectionBackingLink, Revision: 1, DesiredState: "connected", ObservedState: "pending"}, domain.OperationTask{ID: "task", Kind: "link.connect", State: domain.TaskQueued}, nil
 }
 func (topologyConnectionToolCommandsStub) List(context.Context, domain.ID) ([]domain.TopologyConnection, error) {
-	return nil, nil
+	return []domain.TopologyConnection{{ID: "connection", LaboratoryID: "lab", BackingKind: domain.ConnectionBackingLink, BackingID: "link", Revision: 1, DesiredState: "connected", ObservedState: "connected"}}, nil
 }
 func (topologyConnectionToolCommandsStub) Get(context.Context, domain.ID) (domain.TopologyConnection, error) {
-	return domain.TopologyConnection{ID: "connection"}, nil
+	return domain.TopologyConnection{ID: "connection", LaboratoryID: "lab", BackingKind: domain.ConnectionBackingLink, BackingID: "link", Revision: 1, DesiredState: "connected", ObservedState: "connected"}, nil
 }
 func (topologyConnectionToolCommandsStub) Delete(context.Context, domain.ID, domain.Revision, string) (domain.TopologyConnection, domain.OperationTask, error) {
 	return domain.TopologyConnection{ID: "connection", Revision: 1, DesiredState: "disconnected", ObservedState: "disconnecting"}, domain.OperationTask{ID: "delete-task", State: domain.TaskQueued}, nil
@@ -29,7 +29,7 @@ func (topologyConnectionToolReadStub) GetLaboratory(context.Context, domain.ID) 
 	return domain.Laboratory{ID: "lab", Revision: 4}, nil
 }
 func (topologyConnectionToolReadStub) ListConnectionEndpoints(context.Context, domain.ID) ([]domain.ConnectionEndpoint, error) {
-	return nil, nil
+	return []domain.ConnectionEndpoint{{Kind: domain.ConnectionEndpointNodeInterface, LaboratoryID: "lab", ResourceID: "node-a", PortID: "if-a", Availability: domain.ConnectionEndpointFree}}, nil
 }
 
 func TestTopologyConnectionToolsExposeSymmetricCreateListGetDelete(t *testing.T) {
@@ -55,5 +55,20 @@ func TestTopologyConnectionToolsExposeSymmetricCreateListGetDelete(t *testing.T)
 	value := result.(map[string]any)
 	if value["connection"] == nil || value["task"] == nil || value["laboratory_revision"] != domain.Revision(4) {
 		t.Fatalf("result=%+v", result)
+	}
+	listResult, err := tools[1].Handler(contextValue, map[string]any{"laboratory_id": "lab"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	listValue := listResult.(map[string]any)
+	if listValue["connections"] == nil || listValue["endpoints"] == nil || listValue["laboratory_revision"] != domain.Revision(4) {
+		t.Fatalf("list result=%+v", listResult)
+	}
+	getResult, err := tools[2].Handler(contextValue, map[string]any{"connection_id": "connection"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if getResult.(domain.TopologyConnection).ObservedState != "connected" {
+		t.Fatalf("get result=%+v", getResult)
 	}
 }

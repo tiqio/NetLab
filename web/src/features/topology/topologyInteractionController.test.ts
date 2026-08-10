@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { TopologyInteractionController } from "./topologyInteractionController";
+import type { UnifiedConnectionEndpoint } from "./topologyEndpointCompatibility";
 
 const sample = (x: number, y: number, pointerId = 1) => ({
   x,
@@ -7,6 +8,17 @@ const sample = (x: number, y: number, pointerId = 1) => ({
   pointerId,
   button: 0,
   time: 1,
+});
+
+const endpoint = (resourceId: string): UnifiedConnectionEndpoint => ({
+  kind: "node_interface",
+  laboratoryId: "lab",
+  resourceId,
+  portId: `${resourceId}:eth0`,
+  portName: "eth0",
+  displayName: `${resourceId}:eth0`,
+  capabilities: [],
+  availability: "free",
 });
 
 describe("TopologyInteractionController", () => {
@@ -122,5 +134,38 @@ describe("TopologyInteractionController", () => {
     controller.pointerDown(sample(0, 0), { kind: "background" }, [], true);
     controller.pointerMove(sample(20, 20));
     expect(controller.cancel()[0]).toEqual({ type: "cancel" });
+  });
+
+  it("captures a connection pointer and excludes move, pan, and box gestures", () => {
+    const controller = new TopologyInteractionController();
+    expect(
+      controller.beginConnectionGesture(sample(20, 30, 7), endpoint("a")),
+    ).toEqual([
+      { type: "capture_pointer", pointerId: 7 },
+      expect.objectContaining({ type: "connection_preview" }),
+    ]);
+    expect(controller.state.mode).toBe("connecting");
+    expect(
+      controller.pointerDown(
+        sample(20, 30, 8),
+        { kind: "background" },
+        [],
+        true,
+      ),
+    ).toEqual([]);
+    expect(controller.pointerMove(sample(23, 33, 7))).toEqual([]);
+    expect(controller.pointerMove(sample(29, 38, 7))[0]).toMatchObject({
+      type: "connection_preview",
+    });
+  });
+
+  it("releases captured connection pointers on pointer cancel", () => {
+    const controller = new TopologyInteractionController();
+    controller.beginConnectionGesture(sample(0, 0, 12), endpoint("a"));
+    expect(controller.pointerCancel(12)).toEqual([
+      { type: "cancel" },
+      { type: "release_pointer", pointerId: 12 },
+    ]);
+    expect(controller.state.mode).toBe("idle");
   });
 });

@@ -8,6 +8,11 @@ import type {
 } from "./interactionTypes";
 import type { ConnectionPort } from "./topologyConnectionController";
 import {
+  endpointKey,
+  endpointsCompatible,
+  type UnifiedConnectionEndpoint,
+} from "./topologyEndpointCompatibility";
+import {
   DEFAULT_DRAG_THRESHOLD,
   exceedsDragThreshold,
   screenToWorld,
@@ -51,6 +56,8 @@ export type InteractionAction =
       type: "connection_ready";
       sourceInterfaceId: string;
       targetInterfaceId: string;
+      source?: UnifiedConnectionEndpoint;
+      target?: UnifiedConnectionEndpoint;
     }
   | { type: "connection_invalid"; connection: ConnectionDraft }
   | { type: "viewport"; viewport: ViewportState };
@@ -70,6 +77,7 @@ export class TopologyInteractionController {
     boxSelection = false,
   ): InteractionAction[] {
     if (sample.button !== 0) return [];
+    if (this.state.mode !== "idle") return [];
     this.state = {
       mode: "pressing",
       origin: sample,
@@ -87,6 +95,11 @@ export class TopologyInteractionController {
     if (!this.state.origin || sample.pointerId !== this.state.origin.pointerId)
       return [];
     this.state.current = sample;
+    if (this.state.mode === "connecting") {
+      if (!exceedsDragThreshold(this.state.origin, sample, this.threshold))
+        return [];
+      return this.moveConnection({ x: sample.x, y: sample.y });
+    }
     const dx = sample.x - this.state.origin.x;
     const dy = sample.y - this.state.origin.y;
     if (
@@ -170,6 +183,35 @@ export class TopologyInteractionController {
     return [{ type: "connection_preview", connection }];
   }
 
+  beginConnectionGesture(
+    sample: PointerSample,
+    source: UnifiedConnectionEndpoint,
+  ): InteractionAction[] {
+    if (sample.button !== 0 || this.state.mode !== "idle") return [];
+    const connection: ConnectionDraft = {
+      sourceInterfaceId: source.portId || endpointKey(source),
+      source,
+      pointer: { x: sample.x, y: sample.y },
+      valid: true,
+    };
+    this.state = {
+      mode: "connecting",
+      origin: sample,
+      current: sample,
+      selection: this.state.selection,
+      connection,
+    };
+    return [
+      { type: "capture_pointer", pointerId: sample.pointerId },
+      { type: "connection_preview", connection },
+    ];
+  }
+
+  pointerCancel(pointerId: number): InteractionAction[] {
+    if (this.state.origin?.pointerId !== pointerId) return [];
+    return this.cancel();
+  }
+
   moveConnection(pointer: Point): InteractionAction[] {
     if (
       !this.state.connection ||
@@ -226,6 +268,10 @@ export class TopologyInteractionController {
     )
       return [];
     const sourceInterfaceId = this.state.connection.sourceInterfaceId;
+    const source = this.state.connection.source;
+    const target = port.endpoint;
+    if (source && target && !endpointsCompatible(source, target).compatible)
+      return [];
     const selection = this.state.selection;
     this.state = { mode: "idle", selection };
     return [
@@ -233,6 +279,8 @@ export class TopologyInteractionController {
         type: "connection_ready",
         sourceInterfaceId,
         targetInterfaceId: port.id,
+        source,
+        target,
       },
     ];
   }

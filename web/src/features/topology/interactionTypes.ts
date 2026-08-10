@@ -1,4 +1,8 @@
 import type { Point } from "@/types/workspace";
+import type {
+  UnifiedConnectionBackingKind,
+  UnifiedConnectionEndpoint,
+} from "./topologyEndpointCompatibility";
 
 export type TopologyResourceType =
   | "node"
@@ -67,6 +71,8 @@ export type TopologyInteractionMode =
   | "dragging_resources"
   | "connecting"
   | "choosing_target_port"
+  | "configuring_connection"
+  | "submitting_connection"
   | "cancelling";
 
 export interface PointerSample extends Point {
@@ -88,9 +94,13 @@ export interface ResourceSelection {
 
 export interface ConnectionDraft {
   sourceInterfaceId: string;
+  source?: UnifiedConnectionEndpoint;
   pointer: Point;
   targetResourceId?: string;
   targetInterfaceId?: string;
+  target?: UnifiedConnectionEndpoint;
+  candidate?: UnifiedConnectionEndpoint;
+  backingKind?: UnifiedConnectionBackingKind;
   valid: boolean;
   reason?: string;
 }
