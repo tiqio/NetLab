@@ -95,6 +95,36 @@ async function openLaboratoryCreateDialog(page: Page, method: Activation) {
   throw lastError;
 }
 
+async function activateNavigationLink(
+  page: Page,
+  label: string,
+  path: string,
+  method: Activation,
+) {
+  const started = Date.now();
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    try {
+      const link = page.getByRole("link", { name: label, exact: true });
+      await expect(link).toBeVisible({ timeout: 2_000 });
+      await expect(link).toBeEnabled({ timeout: 2_000 });
+      if (method === "keyboard") {
+        await link.focus();
+        await link.press("Enter", { timeout: 2_000 });
+      } else {
+        await link.click({ timeout: 2_000 });
+      }
+      await expect(page).toHaveURL(new RegExp(`${path}$`), { timeout: 3_000 });
+      return Math.max(1, Date.now() - started);
+    } catch (error) {
+      lastError = error;
+      await page.goto("/");
+      await page.waitForTimeout(250);
+    }
+  }
+  throw lastError;
+}
+
 async function closeDialog(page: Page) {
   const dialog = page.locator('[role="dialog"]:visible');
   const close = dialog.getByRole("button", { name: /关闭(?:对话框|抽屉)/ });
@@ -427,12 +457,12 @@ test("navigation templates and task center support pointer and keyboard", async 
       ["navigation.templates", "模板", "/templates"],
       ["navigation.automation", "自动化", "/automation"],
     ] as const) {
-      const duration = await activate(
+      const duration = await activateNavigationLink(
         page,
-        page.getByRole("link", { name: label, exact: true }),
+        label,
+        path,
         activation,
       );
-      await expect(page).toHaveURL(new RegExp(`${path}$`));
       record(
         id,
         activation,

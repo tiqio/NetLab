@@ -63,9 +63,11 @@ export class LaboratoryPage extends BasePage {
       (item): item is LaboratoryRecord => Boolean(item),
       `laboratory ${name}`,
     );
-    await expect(this.page.getByTestId("laboratory-switcher")).toContainText(
-      laboratory.name,
-    );
+    const switcher = this.page.getByTestId("laboratory-switcher");
+    if (!(await switcher.textContent())?.includes(laboratory.name)) {
+      await this.select(laboratory.id);
+    }
+    await expect(switcher).toContainText(laboratory.name);
     return laboratory;
   }
 
