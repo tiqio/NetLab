@@ -37,32 +37,45 @@ test("every available template version creates through the frontend", async ({
     const family = catalog.find(
       (candidate) => candidate.template_key === observation.device_family,
     );
-    if (!family) throw new Error(`Missing template ${observation.device_family}`);
-    const selection = await resolveTemplateSelection(
-      automation,
-      family.template_key,
+    if (!family)
+      throw new Error(`Missing template ${observation.device_family}`);
+    const availableVersions = observation.versions.filter(
+      (version) => version.available,
     );
-    const node = await templates.createDevice({
-      ...selection,
-      nodeName: `${family.template_key.slice(0, 12)}-${runId.slice(0, 4)}`,
-      laboratoryId: laboratory.id,
-    });
-    await ledger.add({
-      resource_type: "node",
-      resource_id: node.id,
-      laboratory_id: laboratory.id,
-      revision: node.revision,
-      cleanup_method: "laboratory-cascade",
-    });
-    versionCoverage.push({
-      runtime: family.runtime_kind,
-      device_family: family.template_key,
-      version_id: selection.versionId,
-      image_id: selection.imageId,
-      coverage_level: "full-journey",
-      result: "passed",
-      interactions: ["template.node.create"],
-    });
+    for (const [index, version] of availableVersions.entries()) {
+      const selection = await resolveTemplateSelection(
+        automation,
+        family.template_key,
+        version.version_id,
+      );
+      const node = await templates.createDevice({
+        ...selection,
+        nodeName: `${family.template_key.slice(0, 8)}-${index}-${runId.slice(0, 4)}`,
+        laboratoryId: laboratory.id,
+      });
+      await ledger.add({
+        resource_type: "node",
+        resource_id: node.id,
+        laboratory_id: laboratory.id,
+        revision: node.revision,
+        cleanup_method: "laboratory-cascade",
+      });
+      versionCoverage.push({
+        runtime: family.runtime_kind,
+        device_family: family.template_key,
+        version_id: selection.versionId,
+        image_id: selection.imageId,
+        coverage_level: index === 0 ? "full-journey" : "lifecycle-connectivity",
+        result: "passed",
+        interactions: ["template.node.create"],
+      });
+    }
   }
-  expect(versionCoverage).toHaveLength(availableFamilies.length);
+  expect(versionCoverage).toHaveLength(
+    availableFamilies.reduce(
+      (total, family) =>
+        total + family.versions.filter((version) => version.available).length,
+      0,
+    ),
+  );
 });

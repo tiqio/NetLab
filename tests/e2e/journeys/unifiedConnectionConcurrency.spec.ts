@@ -31,6 +31,7 @@ test("two browsers HTTP and MCP serialize ten endpoint contention rounds", async
   );
   const peer = await page.context().newPage();
   await peer.goto(`/laboratories/${laboratory.id}`);
+  const idempotencyScope = `${runId}-${testInfo.project.name}-${laboratory.id.slice(-8)}`;
   const convergenceSamples: Array<Record<string, number>> = [];
   for (let round = 0; round < 10; round += 1) {
     const snapshot = await (
@@ -88,7 +89,7 @@ test("two browsers HTTP and MCP serialize ten endpoint contention rounds", async
           laboratoryId: laboratory.id,
           revisionValue: revision,
           requestBody: body,
-          idempotencyKey: `${runId}-browser-${round}-${key}`,
+          idempotencyKey: `${idempotencyScope}-browser-${round}-${key}`,
         },
       );
     const contentionStartedAt = Date.now();
@@ -99,7 +100,7 @@ test("two browsers HTTP and MCP serialize ten endpoint contention rounds", async
         .post(`/api/v1/labs/${laboratory.id}/connections`, {
           headers: {
             "If-Match": String(revision),
-            "Idempotency-Key": `${runId}-http-${round}`,
+            "Idempotency-Key": `${idempotencyScope}-http-${round}`,
           },
           data: body,
         })
@@ -119,7 +120,7 @@ test("two browsers HTTP and MCP serialize ten endpoint contention rounds", async
               arguments: {
                 laboratory_id: laboratory.id,
                 expected_revision: revision,
-                idempotency_key: `${runId}-mcp-${round}`,
+                idempotency_key: `${idempotencyScope}-mcp-${round}`,
                 source,
                 target,
               },
@@ -206,7 +207,7 @@ test("two browsers HTTP and MCP serialize ten endpoint contention rounds", async
         {
           headers: {
             "If-Match": String(winner.revision),
-            "Idempotency-Key": `${runId}-delete-${round}-${attempt}`,
+            "Idempotency-Key": `${idempotencyScope}-delete-${round}-${attempt}`,
           },
         },
       );

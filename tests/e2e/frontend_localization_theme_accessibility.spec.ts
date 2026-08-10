@@ -11,8 +11,13 @@ for (const viewport of [
       page,
     }) => {
       await page.setViewportSize(viewport);
-      await page.goto("/");
       const selector = page.getByRole("combobox", { name: "外观主题" });
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        await page.goto("/", { waitUntil: "domcontentloaded" });
+        if (await selector.isVisible({ timeout: 5_000 }).catch(() => false))
+          break;
+      }
+      await expect(selector).toBeVisible({ timeout: 10_000 });
       await selector.selectOption(theme);
       await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
       await expect(page.locator("body")).not.toHaveCSS("overflow-x", "scroll");

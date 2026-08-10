@@ -590,6 +590,69 @@
       "sensitive_evidence": []
     },
     {
+      "id": "topology.connection.unified-plus",
+      "area": "topology",
+      "label": "Connect resource from unified plus entry",
+      "locator": {
+        "role": "button",
+        "name": "Connect resource*"
+      },
+      "applicable_states": ["resource-selected", "free-port"],
+      "activation": ["pointer"],
+      "outcome_class": "task",
+      "operation": "link.connect",
+      "cleanup_effect": "disconnect-connection",
+      "sensitive_evidence": []
+    },
+    {
+      "id": "topology.connection.port-drag",
+      "area": "topology",
+      "label": "Drag between unified topology ports",
+      "locator": {
+        "role": "button",
+        "name": "Topology port*"
+      },
+      "applicable_states": ["two-compatible-free-ports"],
+      "activation": ["pointer"],
+      "outcome_class": "task",
+      "operation": "link.connect",
+      "cleanup_effect": "disconnect-connection",
+      "sensitive_evidence": []
+    },
+    {
+      "id": "topology.connection.concurrent-control-planes",
+      "area": "topology",
+      "label": "Serialize browser HTTP and MCP endpoint contention",
+      "locator": {
+        "role": "region",
+        "name": "Topology canvas keyboard area*"
+      },
+      "applicable_states": [
+        "two-compatible-free-ports",
+        "multiple-control-planes"
+      ],
+      "activation": ["pointer"],
+      "outcome_class": "task",
+      "operation": "link.connect",
+      "cleanup_effect": "disconnect-connection",
+      "sensitive_evidence": []
+    },
+    {
+      "id": "topology.lightweight-four-ports",
+      "area": "topology",
+      "label": "Create lightweight resource with four ports",
+      "locator": {
+        "role": "button",
+        "name": "Add to topology"
+      },
+      "applicable_states": ["lightweight-resource-draft"],
+      "activation": ["pointer"],
+      "outcome_class": "task",
+      "operation": "network_object.create",
+      "cleanup_effect": "laboratory-cascade",
+      "sensitive_evidence": []
+    },
+    {
       "id": "network-object-links.shared-browser-path",
       "area": "topology",
       "label": "Connect lightweight object ports across clients",

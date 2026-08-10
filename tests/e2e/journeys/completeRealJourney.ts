@@ -81,6 +81,7 @@ export async function createOwnedLightweightPair(
 export async function resolveTemplateSelection(
   request: APIRequestContext,
   templateKey: string,
+  versionId?: string,
 ) {
   const [templatesResponse, imagesResponse] = await Promise.all([
     request.get("/api/v1/templates"),
@@ -105,7 +106,9 @@ export async function resolveTemplateSelection(
   }>;
   const template = templates.find((item) => item.template_key === templateKey);
   if (!template) throw new Error(`Missing template ${templateKey}`);
-  const version = template.versions.find((item) => item.enabled);
+  const version = versionId
+    ? template.versions.find((item) => item.id === versionId && item.enabled)
+    : template.versions.find((item) => item.enabled);
   if (!version) throw new Error(`No enabled version for ${templateKey}`);
   const imageId =
     version.image_version_id ||
