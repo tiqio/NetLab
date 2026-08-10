@@ -2,10 +2,14 @@
 
 ## Active Feature
 
-- Specification: `specs/008-ui-overlap-remediation/spec.md`
-- Plan: `specs/008-ui-overlap-remediation/plan.md`
+- Specification: `specs/009-unified-link-interaction/spec.md`
+- Plan: `specs/009-unified-link-interaction/plan.md`
 - Constitution: `.specify/memory/constitution.md`
-- Contracts: `specs/008-ui-overlap-remediation/contracts/`
+- Contracts: `specs/009-unified-link-interaction/contracts/`
+- Topology visual compatibility specification: `specs/010-topology-visual-unification/spec.md`
+- Topology visual compatibility plan: `specs/010-topology-visual-unification/plan.md`
+- Previous visual overlap specification: `specs/008-ui-overlap-remediation/spec.md`
+- Previous visual overlap plan: `specs/008-ui-overlap-remediation/plan.md`
 - Previous UI localization specification: `specs/007-ui-localization-theme/spec.md`
 - Previous UI localization plan: `specs/007-ui-localization-theme/plan.md`
 - Governance closure specification: `specs/002-constitution-gap-closure/spec.md`
@@ -27,6 +31,13 @@
 - Give every process, interface, namespace, bridge, rule, socket, and artifact an explicit resource owner.
 - Adopt owned running resources after service restart; use lab recovery policy after host restart.
 - Validate revisions on concurrent mutations and publish ordered outbox events with durable state changes.
+- Keep initial topology placement server-authoritative across SPA, HTTP API, and MCP creation paths.
+- Preserve existing laboratory coordinates; never use automatic global relayout for new-resource placement.
+- Normalize connection presentation without collapsing distinct runtime ownership and reconciliation models.
+- Route port drag, resource-plus, keyboard, HTTP, and MCP connection creation through one endpoint model and application command.
+- Keep connection drafts, pointer positions, and port choosers local to the initiating browser until submission.
+- Serialize node-interface and network-object-port occupancy in durable SQLite state across all connection categories.
+- Default only newly created lightweight L2/L3 resources to `eth0` through `eth3`; never auto-expand existing objects.
 
 ## Safety and Testing
 

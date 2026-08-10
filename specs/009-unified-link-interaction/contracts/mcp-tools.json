@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NetLab Unified Topology Connection MCP Contract Delta",
+  "definitions": {
+    "endpointRef": {
+      "type": "object",
+      "required": ["kind", "resource_id"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["node_interface", "network_object_port", "network_object_access"]
+        },
+        "resource_id": { "type": "string", "minLength": 1 },
+        "port_id": { "type": "string", "minLength": 1 },
+        "port_name": { "type": "string", "minLength": 1, "maxLength": 64 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "node_interface" } } },
+          "then": { "required": ["port_id"] }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "network_object_port" } } },
+          "then": { "required": ["port_name"] }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "connectionConfig": {
+      "type": "object",
+      "properties": {
+        "pvid": { "type": "integer", "minimum": 0, "maximum": 4094 },
+        "tagged_vlans": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "integer", "minimum": 1, "maximum": 4094 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "connection": {
+      "type": "object",
+      "required": [
+        "id",
+        "laboratory_id",
+        "source",
+        "target",
+        "backing_kind",
+        "revision",
+        "desired_state",
+        "observed_state"
+      ]
+    },
+    "task": {
+      "type": "object",
+      "required": ["id", "kind", "state", "progress", "cleanup_state"]
+    }
+  },
+  "tools": [
+    {
+      "name": "netlab.topology_connections.create",
+      "description": "Create a topology connection from two normalized endpoints without selecting the backing model.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "laboratory_id",
+          "expected_revision",
+          "idempotency_key",
+          "source",
+          "target"
+        ],
+        "properties": {
+          "laboratory_id": { "type": "string", "minLength": 1 },
+          "expected_revision": { "type": "integer", "minimum": 1 },
+          "idempotency_key": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "entry_point": {
+            "type": "string",
+            "enum": ["mcp", "compatibility"],
+            "default": "mcp"
+          },
+          "source": { "$ref": "#/definitions/endpointRef" },
+          "target": { "$ref": "#/definitions/endpointRef" },
+          "config": { "$ref": "#/definitions/connectionConfig" }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": ["connection", "task", "laboratory_revision"],
+        "properties": {
+          "connection": { "$ref": "#/definitions/connection" },
+          "task": { "$ref": "#/definitions/task" },
+          "laboratory_revision": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    {
+      "name": "netlab.topology_connections.list",
+      "description": "List authoritative unified connections and endpoint availability for a laboratory.",
+      "inputSchema": {
+        "type": "object",
+        "required": ["laboratory_id"],
+        "properties": {
+          "laboratory_id": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": ["laboratory_revision", "connections", "endpoints"],
+        "properties": {
+          "laboratory_revision": { "type": "integer", "minimum": 1 },
+          "connections": {
+            "type": "array",
+            "items": { "$ref": "#/definitions/connection" }
+          },
+          "endpoints": { "type": "array", "items": { "type": "object" } }
+        }
+      }
+    },
+    {
+      "name": "netlab.topology_connections.get",
+      "description": "Get authoritative state for one unified topology connection.",
+      "inputSchema": {
+        "type": "object",
+        "required": ["connection_id"],
+        "properties": {
+          "connection_id": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": { "$ref": "#/definitions/connection" }
+    },
+    {
+      "name": "netlab.topology_connections.delete",
+      "description": "Delete a unified topology connection through a revisioned durable task.",
+      "inputSchema": {
+        "type": "object",
+        "required": ["connection_id", "expected_revision", "idempotency_key"],
+        "properties": {
+          "connection_id": { "type": "string", "minLength": 1 },
+          "expected_revision": { "type": "integer", "minimum": 1 },
+          "idempotency_key": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "entry_point": {
+            "type": "string",
+            "enum": ["mcp", "compatibility"],
+            "default": "mcp"
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": ["connection", "task", "laboratory_revision"],
+        "properties": {
+          "connection": { "$ref": "#/definitions/connection" },
+          "task": { "$ref": "#/definitions/task" },
+          "laboratory_revision": { "type": "integer", "minimum": 1 }
+        }
+      }
+    }
+  ],
+  "compatibility": [
+    "Existing link, attachment, and network-object-link MCP mutation tools remain available.",
+    "Compatibility tools must adapt their arguments into the same topology connection command.",
+    "Equivalent idempotency and structured problem semantics apply to all tools."
+  ],
+  "invariants": [
+    "The caller never chooses link, network_attachment, or network_object_link.",
+    "Concrete endpoint occupancy is serialized by server-authoritative SQLite state.",
+    "MCP and HTTP return the same connection and task representation.",
+    "Tool output never includes packet payloads, terminal contents, bootstrap secrets, or credentials."
+  ]
+}

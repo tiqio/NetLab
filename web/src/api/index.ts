@@ -25,6 +25,10 @@ import type {
   TopologySnapshot,
   TopologyPlacementResult,
   TopologyPlacementUpdate,
+  TopologyConnectionConfig,
+  TopologyConnectionSnapshot,
+  TopologyConnectionTaskEnvelope,
+  UnifiedConnectionEndpoint,
   TrafficFilter,
   UpdateNodeSettingsRequest,
 } from "./generated";
@@ -408,6 +412,43 @@ export const generatedApi = {
       `/labs/${labId}/network-object-links`,
       "POST",
       { body },
+    ),
+  listTopologyConnections: (labId: string) =>
+    request<TopologyConnectionSnapshot>(`/labs/${labId}/connections`),
+  createTopologyConnection: (
+    labId: string,
+    revision: number,
+    body: {
+      source: Pick<
+        UnifiedConnectionEndpoint,
+        "kind" | "resource_id" | "port_id" | "port_name"
+      >;
+      target: Pick<
+        UnifiedConnectionEndpoint,
+        "kind" | "resource_id" | "port_id" | "port_name"
+      >;
+      config?: TopologyConnectionConfig;
+    },
+    idempotencyKey?: string,
+  ) =>
+    request<TopologyConnectionTaskEnvelope>(
+      `/labs/${labId}/connections`,
+      "POST",
+      { body, revision, idempotencyKey },
+    ),
+  getTopologyConnection: (connectionId: string) =>
+    request<TopologyConnectionTaskEnvelope["connection"]>(
+      `/connections/${connectionId}`,
+    ),
+  deleteTopologyConnection: (
+    connectionId: string,
+    revision: number,
+    idempotencyKey?: string,
+  ) =>
+    request<TopologyConnectionTaskEnvelope>(
+      `/connections/${connectionId}`,
+      "DELETE",
+      { revision, idempotencyKey },
     ),
   getNetworkObjectLink: (linkId: string) =>
     request<NetworkObjectLink>(`/network-object-links/${linkId}`),

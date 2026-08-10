@@ -179,32 +179,8 @@ func (r *Repositories) DeleteNetworkObject(ctx context.Context, id domain.ID, ex
 }
 
 func (r *Repositories) CreateNetworkAttachment(ctx context.Context, objectID, interfaceID domain.ID, portName string, config map[string]any) error {
-	var existingObjectID domain.ID
-	err := r.database.DB.QueryRowContext(ctx, `SELECT network_object_id FROM network_attachments WHERE interface_id=? ORDER BY id LIMIT 1`, interfaceID).Scan(&existingObjectID)
-	if err == nil {
-		if existingObjectID == objectID {
-			return nil
-		}
-		return fmt.Errorf("interface is already attached to network object %s", existingObjectID)
-	}
-	if err != sql.ErrNoRows {
-		return err
-	}
-	body, _ := json.Marshal(config)
-	attachmentID := domain.NewID()
-	return r.database.Write(ctx, func(tx *sql.Tx) error {
-		var laboratoryID domain.ID
-		if err := tx.QueryRowContext(ctx, `SELECT laboratory_id FROM network_objects WHERE id=?`, objectID).Scan(&laboratoryID); err != nil {
-			return err
-		}
-		if portName != "" {
-			if _, err := tx.ExecContext(ctx, `INSERT INTO topology_endpoint_reservations(laboratory_id,owner_type,owner_id,port_name,resource_type,resource_id) VALUES(?,'network_object',?,?,'network_attachment',?)`, laboratoryID, objectID, portName, attachmentID); err != nil {
-				return domain.Problem{Code: "port_in_use", Message: "network object port is already occupied", ResourceType: "network_attachment", ResourceID: attachmentID}
-			}
-		}
-		_, err := tx.ExecContext(ctx, `INSERT INTO network_attachments(id,network_object_id,interface_id,port_name,config_json,observed_state) VALUES(?,?,?,?,?,'pending')`, attachmentID, objectID, nullable(string(interfaceID)), portName, body)
-		return err
-	})
+	_, err := r.CreateTopologyNetworkAttachment(ctx, objectID, interfaceID, portName, config, "")
+	return err
 }
 
 func (r *Repositories) ListNetworkAttachments(ctx context.Context, laboratoryID domain.ID) ([]domain.NetworkAttachment, error) {

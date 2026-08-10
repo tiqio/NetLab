@@ -215,6 +215,8 @@ func main() {
 	networkService.AddObjectLinkObserverCleanup(trafficFilterManager)
 	networkTasks := reconcile.NewNetworkObjectTaskService(networkService, taskRunner)
 	httpapi.NewNetworkHandlers(networkService, networkTasks, pcRuntime, bridgeRuntime, natRuntime, switchL3Runtime).Register(server.Engine())
+	topologyConnections := reconcile.NewUnifiedTopologyConnectionService(repositories, topologyTasks, networkTasks)
+	httpapi.NewTopologyConnectionHandlers(topologyConnections, repositories).Register(server.Engine())
 	server.Engine().GET("/api/v1/events", gin.WrapH(stream.NewEventHandler(publisher)))
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -250,6 +252,7 @@ func main() {
 	}
 	mcpTools := mcp.Tools(mcp.Services{Labs: labCommands, LabQueries: labQueries, Templates: templateQueries, Nodes: nodeCommands, NodeSettings: topologyRepository, Links: linkCommands, TopologyOps: topologyTasks, LabOps: laboratoryTasks, Interfaces: interfaceCommands, Guest: guestCommands, Mappings: portMappingCommands, Tasks: taskQueries, Exporter: exportService, Importer: importService, Automation: automationTasks, Captures: captureManager, Filters: trafficFilterManager, CaptureOps: captureTasks, Capabilities: capabilityQueries, ConsoleIdle: consoleLimits.IdleTimeout})
 	mcpTools = append(mcpTools, mcp.NetworkTools(networkService, networkTasks)...)
+	mcpTools = append(mcpTools, mcp.TopologyConnectionTools(topologyConnections, repositories)...)
 	mcpTools = append(mcpTools, mcp.TopologyPlacementTools(placementCommands)...)
 	mcpTools = append(mcpTools, mcp.LinkReconnectTools(linkReconnectTasks)...)
 	mcp.NewServer(mcpTools, idempotency, auditService).Register(server.Engine())

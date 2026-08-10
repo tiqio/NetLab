@@ -200,6 +200,70 @@ export interface NetworkAttachment {
   last_error?: Problem;
 }
 
+export type UnifiedConnectionEndpointKind =
+  | "node_interface"
+  | "network_object_port"
+  | "network_object_access";
+
+export type UnifiedConnectionEndpointAvailability =
+  | "free"
+  | "reserved"
+  | "occupied"
+  | "reconciling"
+  | "unavailable"
+  | "incompatible";
+
+export interface UnifiedConnectionEndpoint {
+  kind: UnifiedConnectionEndpointKind;
+  laboratory_id: string;
+  resource_id: string;
+  resource_kind?: string;
+  port_id?: string;
+  port_name?: string;
+  display_name?: string;
+  capabilities?: string[];
+  availability?: UnifiedConnectionEndpointAvailability;
+  unavailable_reason?: string;
+}
+
+export interface TopologyConnectionConfig {
+  pvid?: number;
+  tagged_vlans?: number[];
+}
+
+export interface UnifiedTopologyConnection {
+  id: string;
+  laboratory_id: string;
+  source: UnifiedConnectionEndpoint;
+  target: UnifiedConnectionEndpoint;
+  backing_kind: "link" | "network_attachment" | "network_object_link";
+  backing_id: string;
+  config?: TopologyConnectionConfig;
+  revision: number;
+  desired_state: "connected" | "disconnected";
+  observed_state:
+    | "pending"
+    | "connected"
+    | "failed"
+    | "disconnecting"
+    | "disconnected"
+    | "cancelled";
+  capabilities?: string[];
+  last_error?: Problem;
+}
+
+export interface TopologyConnectionSnapshot {
+  laboratory_revision: number;
+  connections: UnifiedTopologyConnection[];
+  endpoints: UnifiedConnectionEndpoint[];
+}
+
+export interface TopologyConnectionTaskEnvelope {
+  connection: UnifiedTopologyConnection;
+  task: OperationTask;
+  laboratory_revision: number;
+}
+
 export interface TemplateVersion {
   id: string;
   template_id: string;

@@ -288,6 +288,46 @@ func (s *NetworkObjectService) Attach(ctx context.Context, objectID, interfaceID
 	return s.repository.CreateNetworkAttachment(ctx, objectID, interfaceID, portName, config)
 }
 
+func (s *NetworkObjectService) AttachAs(ctx context.Context, id, objectID, interfaceID domain.ID, portName string, config map[string]any, operationID domain.ID) (value domain.NetworkAttachment, err error) {
+	defer normalizeTerminalError(&err, terminalProblem("network_attachment", id, "attachment_create"))
+	repository, ok := s.repository.(interface {
+		CreateTopologyNetworkAttachmentAs(context.Context, domain.ID, domain.ID, domain.ID, string, map[string]any, domain.ID) (domain.NetworkAttachment, error)
+	})
+	if !ok {
+		return value, domain.Problem{Code: "operation_unavailable", Message: "durable network attachment creation unavailable", ResourceType: "network_attachment", ResourceID: id}
+	}
+	return repository.CreateTopologyNetworkAttachmentAs(ctx, id, objectID, interfaceID, portName, config, operationID)
+}
+
+func (s *NetworkObjectService) GetAttachment(ctx context.Context, id domain.ID) (domain.NetworkAttachment, error) {
+	repository, ok := s.repository.(interface {
+		GetNetworkAttachment(context.Context, domain.ID) (domain.NetworkAttachment, error)
+	})
+	if !ok {
+		return domain.NetworkAttachment{}, domain.Problem{Code: "operation_unavailable", Message: "network attachment lookup unavailable", ResourceType: "network_attachment", ResourceID: id}
+	}
+	return repository.GetNetworkAttachment(ctx, id)
+}
+
+func (s *NetworkObjectService) DeleteAttachment(ctx context.Context, id, operationID domain.ID) error {
+	value, err := s.GetAttachment(ctx, id)
+	if err != nil {
+		return err
+	}
+	if s.attachments != nil {
+		if err = s.attachments.DeleteAttachment(ctx, value); err != nil {
+			return err
+		}
+	}
+	repository, ok := s.repository.(interface {
+		DeleteTopologyNetworkAttachment(context.Context, domain.ID, domain.ID) error
+	})
+	if !ok {
+		return domain.Problem{Code: "operation_unavailable", Message: "durable network attachment deletion unavailable", ResourceType: "network_attachment", ResourceID: id}
+	}
+	return repository.DeleteTopologyNetworkAttachment(ctx, id, operationID)
+}
+
 func (s *NetworkObjectService) ListObjectLinks(ctx context.Context, laboratoryID domain.ID) ([]domain.NetworkObjectLink, error) {
 	return s.repository.ListNetworkObjectLinks(ctx, laboratoryID)
 }

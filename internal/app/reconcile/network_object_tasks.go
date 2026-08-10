@@ -24,9 +24,51 @@ func NewNetworkObjectTaskService(service *NetworkObjectService, runner *task.Run
 	runner.Register("network_object.create", value.handleCreate)
 	runner.Register("network_object.update", value.handleUpdate)
 	runner.Register("network_object.delete", value.handleDelete)
+	runner.Register("network_attachment.create", value.handleAttachmentCreate)
+	runner.Register("network_attachment.delete", value.handleAttachmentDelete)
 	runner.Register("network_object_link.create", value.handleObjectLinkCreate)
 	runner.Register("network_object_link.delete", value.handleObjectLinkDelete)
 	return value
+}
+
+func (s *NetworkObjectTaskService) CreateAttachment(ctx context.Context, laboratoryID, objectID, interfaceID domain.ID, portName string, config map[string]any, idempotencyKey string) (domain.NetworkAttachment, domain.OperationTask, error) {
+	input := map[string]any{"laboratory_id": laboratoryID, "network_object_id": objectID, "interface_id": interfaceID, "port_name": strings.TrimSpace(portName), "config": config}
+	attachment := domain.NetworkAttachment{ID: domain.NewID(), NetworkObjectID: objectID, InterfaceID: interfaceID, PortName: strings.TrimSpace(portName), Config: config, ObservedState: "pending"}
+	operation := networkObjectOperation("network_attachment.create", attachment.ID, idempotencyKey, input)
+	operation.ResourceType = "network_attachment"
+	queued, err := s.runner.EnqueueOrGet(ctx, operation)
+	if err != nil {
+		return domain.NetworkAttachment{}, domain.OperationTask{}, err
+	}
+	if queued.ID != operation.ID {
+		attachment.ID = queued.ResourceID
+		attachment.NetworkObjectID = domain.ID(networkTaskText(queued.Input["network_object_id"]))
+		attachment.InterfaceID = domain.ID(networkTaskText(queued.Input["interface_id"]))
+		attachment.PortName = networkTaskText(queued.Input["port_name"])
+		attachment.Config, _ = networkTaskMap(queued.Input["config"])
+	}
+	return attachment, queued, nil
+}
+
+func (s *NetworkObjectTaskService) DeleteAttachment(ctx context.Context, id domain.ID, idempotencyKey string) (domain.NetworkAttachment, domain.OperationTask, error) {
+	attachment, err := s.service.GetAttachment(ctx, id)
+	if err != nil {
+		if idempotencyKey != "" {
+			if existing, lookupErr := s.runner.GetByIdempotency(ctx, "network_attachment.delete", idempotencyKey); lookupErr == nil && existing.ResourceID == id {
+				return domain.NetworkAttachment{ID: id, ObservedState: "disconnected"}, existing, nil
+			}
+		}
+		return domain.NetworkAttachment{}, domain.OperationTask{}, err
+	}
+	input := map[string]any{"network_object_id": attachment.NetworkObjectID, "interface_id": attachment.InterfaceID, "port_name": attachment.PortName, "config": attachment.Config}
+	operation := networkObjectOperation("network_attachment.delete", id, idempotencyKey, input)
+	operation.ResourceType = "network_attachment"
+	queued, err := s.runner.EnqueueOrGet(ctx, operation)
+	if err != nil {
+		return domain.NetworkAttachment{}, domain.OperationTask{}, err
+	}
+	attachment.ObservedState = "disconnecting"
+	return attachment, queued, nil
 }
 
 func (s *NetworkObjectTaskService) DeleteObjectLink(ctx context.Context, id domain.ID, revision domain.Revision, idempotencyKey string) (domain.NetworkObjectLink, domain.OperationTask, error) {
@@ -117,6 +159,35 @@ func (s *NetworkObjectTaskService) handleObjectLinkCreate(ctx context.Context, v
 	}
 	value.ProgressCurrent = value.ProgressTotal
 	return map[string]any{"network_object_link": link}, nil
+}
+
+func (s *NetworkObjectTaskService) handleAttachmentCreate(ctx context.Context, value *domain.OperationTask) (map[string]any, error) {
+	value.ProgressCurrent = 1
+	if err := s.runner.Checkpoint(ctx, value); err != nil {
+		return nil, err
+	}
+	config, err := networkTaskMap(value.Input["config"])
+	if err != nil {
+		return nil, err
+	}
+	attachment, err := s.service.AttachAs(ctx, value.ResourceID, domain.ID(networkTaskText(value.Input["network_object_id"])), domain.ID(networkTaskText(value.Input["interface_id"])), networkTaskText(value.Input["port_name"]), config, value.ID)
+	if err != nil {
+		return nil, *command.NormalizeOperationProblem(err, domain.Problem{Code: "network_attachment_create_failed", Message: "network attachment creation failed", ResourceType: "network_attachment", ResourceID: value.ResourceID, TaskID: value.ID, Phase: "endpoint_reservation", Cleanup: "no endpoint reservations retained", OperatorHint: "refresh the topology and choose free endpoints"}, false)
+	}
+	value.ProgressCurrent = value.ProgressTotal
+	return map[string]any{"network_attachment": attachment}, nil
+}
+
+func (s *NetworkObjectTaskService) handleAttachmentDelete(ctx context.Context, value *domain.OperationTask) (map[string]any, error) {
+	value.ProgressCurrent = 1
+	if err := s.runner.Checkpoint(ctx, value); err != nil {
+		return nil, err
+	}
+	if err := s.service.DeleteAttachment(ctx, value.ResourceID, value.ID); err != nil {
+		return nil, *command.NormalizeOperationProblem(err, domain.Problem{Code: "network_attachment_delete_failed", Message: "network attachment deletion failed", Retryable: true, ResourceType: "network_attachment", ResourceID: value.ResourceID, TaskID: value.ID, Phase: "cleanup", Cleanup: "attachment remains authoritative until cleanup succeeds", OperatorHint: "inspect runtime ownership and retry deletion"}, true)
+	}
+	value.ProgressCurrent = value.ProgressTotal
+	return map[string]any{"network_attachment_id": value.ResourceID, "deleted": true}, nil
 }
 
 func (s *NetworkObjectTaskService) handleObjectLinkDelete(ctx context.Context, value *domain.OperationTask) (map[string]any, error) {

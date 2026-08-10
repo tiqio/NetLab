@@ -442,14 +442,21 @@ func (r *TopologyRepository) ListInterfaces(ctx context.Context, labID domain.ID
 func (r *TopologyRepository) CreateLink(ctx context.Context, link domain.Link) error {
 	return r.database.Write(ctx, func(tx *sql.Tx) error {
 		var labA, labB domain.ID
-		if err := tx.QueryRowContext(ctx, `SELECT n.laboratory_id FROM interfaces i JOIN nodes n ON n.id=i.node_id WHERE i.id=?`, link.EndpointAID).Scan(&labA); err != nil {
+		var nameA, nameB string
+		if err := tx.QueryRowContext(ctx, `SELECT n.laboratory_id,i.name FROM interfaces i JOIN nodes n ON n.id=i.node_id WHERE i.id=?`, link.EndpointAID).Scan(&labA, &nameA); err != nil {
 			return err
 		}
-		if err := tx.QueryRowContext(ctx, `SELECT n.laboratory_id FROM interfaces i JOIN nodes n ON n.id=i.node_id WHERE i.id=?`, link.EndpointBID).Scan(&labB); err != nil {
+		if err := tx.QueryRowContext(ctx, `SELECT n.laboratory_id,i.name FROM interfaces i JOIN nodes n ON n.id=i.node_id WHERE i.id=?`, link.EndpointBID).Scan(&labB, &nameB); err != nil {
 			return err
 		}
 		if labA != labB || labA != link.LaboratoryID {
 			return fmt.Errorf("link endpoints must belong to laboratory")
+		}
+		if err := reserveTopologyEndpointTx(ctx, tx, labA, "node_interface", link.EndpointAID, nameA, "link", link.ID, ""); err != nil {
+			return err
+		}
+		if err := reserveTopologyEndpointTx(ctx, tx, labB, "node_interface", link.EndpointBID, nameB, "link", link.ID, ""); err != nil {
+			return err
 		}
 		if _, err := tx.ExecContext(ctx, `INSERT INTO links(id,laboratory_id,endpoint_a_id,endpoint_b_id,revision,desired_state,observed_state) VALUES(?,?,?,?,?,?,?)`, link.ID, link.LaboratoryID, link.EndpointAID, link.EndpointBID, link.Revision, link.DesiredState, link.ObservedState); err != nil {
 			return err
@@ -469,6 +476,9 @@ func (r *TopologyRepository) DeleteLink(ctx context.Context, id domain.ID) error
 			return err
 		}
 		if _, err := tx.ExecContext(ctx, `UPDATE interfaces SET desired_link_id=NULL WHERE desired_link_id=?`, id); err != nil {
+			return err
+		}
+		if err := releaseTopologyConnectionReservationsTx(ctx, tx, "link", id); err != nil {
 			return err
 		}
 		if _, err := tx.ExecContext(ctx, `DELETE FROM links WHERE id=?`, id); err != nil {

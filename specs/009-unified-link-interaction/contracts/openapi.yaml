@@ -1,0 +1,371 @@
+openapi: 3.1.0
+info:
+  title: NetLab Unified Topology Connection Contract Delta
+  version: 0.1.0
+  description: >-
+    Unified connection control-plane delta for node links, network attachments,
+    and network-object links. Existing specialized mutation routes remain as
+    compatibility wrappers and must invoke the same application command.
+paths:
+  /api/v1/labs/{labId}/connections:
+    get:
+      summary: List authoritative topology connections and endpoint availability
+      parameters:
+        - $ref: '#/components/parameters/LabId'
+      responses:
+        '200':
+          description: Unified connection snapshot
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [laboratory_revision, connections, endpoints]
+                properties:
+                  laboratory_revision:
+                    type: integer
+                    format: int64
+                    minimum: 1
+                  connections:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TopologyConnection'
+                  endpoints:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ConnectionEndpoint'
+    post:
+      summary: Create a connection without selecting its backing model
+      parameters:
+        - $ref: '#/components/parameters/LabId'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/EntryPoint'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTopologyConnectionRequest'
+      responses:
+        '202':
+          description: Connection creation accepted as a durable task
+          headers:
+            ETag:
+              $ref: '#/components/headers/Revision'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopologyConnectionTaskEnvelope'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/InvalidEndpoint'
+  /api/v1/connections/{connectionId}:
+    get:
+      summary: Get one authoritative unified connection
+      parameters:
+        - $ref: '#/components/parameters/ConnectionId'
+      responses:
+        '200':
+          description: Current connection state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopologyConnection'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Delete a connection through a durable task
+      parameters:
+        - $ref: '#/components/parameters/ConnectionId'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/EntryPoint'
+      responses:
+        '202':
+          description: Connection deletion accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopologyConnectionTaskEnvelope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+components:
+  parameters:
+    LabId:
+      name: labId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+    ConnectionId:
+      name: connectionId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      description: Expected laboratory revision for create or connection revision for delete.
+      schema:
+        type: string
+        minLength: 1
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: >-
+        Equivalent retries return the same task and connection. Reuse with a
+        different endpoint pair, configuration, or mutation is rejected.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+    EntryPoint:
+      name: X-NetLab-Entry-Point
+      in: header
+      required: false
+      description: Non-secret audit classification for the initiating control path.
+      schema:
+        type: string
+        enum: [port_click, port_drag, resource_plus, keyboard, http, mcp, compatibility]
+  headers:
+    Revision:
+      description: New laboratory revision after accepting the mutation.
+      schema:
+        type: string
+  schemas:
+    EndpointKind:
+      type: string
+      enum: [node_interface, network_object_port, network_object_access]
+    EndpointAvailability:
+      type: string
+      enum: [free, reserved, occupied, reconciling, unavailable, incompatible]
+    ConnectionEndpointRef:
+      type: object
+      required: [kind, resource_id]
+      properties:
+        kind:
+          $ref: '#/components/schemas/EndpointKind'
+        resource_id:
+          type: string
+          minLength: 1
+        port_id:
+          type: string
+          minLength: 1
+        port_name:
+          type: string
+          minLength: 1
+          maxLength: 64
+      allOf:
+        - if:
+            properties:
+              kind:
+                const: node_interface
+          then:
+            required: [port_id]
+        - if:
+            properties:
+              kind:
+                const: network_object_port
+          then:
+            required: [port_name]
+    ConnectionEndpoint:
+      allOf:
+        - $ref: '#/components/schemas/ConnectionEndpointRef'
+        - type: object
+          required:
+            - laboratory_id
+            - resource_kind
+            - display_name
+            - capabilities
+            - availability
+          properties:
+            laboratory_id:
+              type: string
+            resource_kind:
+              type: string
+            display_name:
+              type: string
+            capabilities:
+              type: array
+              uniqueItems: true
+              items:
+                type: string
+            availability:
+              $ref: '#/components/schemas/EndpointAvailability'
+            unavailable_reason:
+              type: string
+    ConnectionConfig:
+      type: object
+      properties:
+        pvid:
+          type: integer
+          minimum: 0
+          maximum: 4094
+        tagged_vlans:
+          type: array
+          uniqueItems: true
+          items:
+            type: integer
+            minimum: 1
+            maximum: 4094
+      additionalProperties: false
+    CreateTopologyConnectionRequest:
+      type: object
+      required: [source, target]
+      properties:
+        source:
+          $ref: '#/components/schemas/ConnectionEndpointRef'
+        target:
+          $ref: '#/components/schemas/ConnectionEndpointRef'
+        config:
+          $ref: '#/components/schemas/ConnectionConfig'
+      additionalProperties: false
+    TopologyConnection:
+      type: object
+      required:
+        - id
+        - laboratory_id
+        - source
+        - target
+        - backing_kind
+        - backing_id
+        - revision
+        - desired_state
+        - observed_state
+        - capabilities
+      properties:
+        id:
+          type: string
+        laboratory_id:
+          type: string
+        source:
+          $ref: '#/components/schemas/ConnectionEndpoint'
+        target:
+          $ref: '#/components/schemas/ConnectionEndpoint'
+        backing_kind:
+          type: string
+          readOnly: true
+          enum: [link, network_attachment, network_object_link]
+        backing_id:
+          type: string
+          readOnly: true
+        config:
+          $ref: '#/components/schemas/ConnectionConfig'
+        revision:
+          type: integer
+          format: int64
+          minimum: 1
+        desired_state:
+          type: string
+          enum: [connected, disconnected]
+        observed_state:
+          type: string
+          enum: [pending, connected, failed, disconnecting, disconnected, cancelled]
+        capabilities:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            enum: [select, delete, reconnect, capture, wireshark, traffic_filter]
+        last_error:
+          $ref: '#/components/schemas/Problem'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    OperationTask:
+      type: object
+      required: [id, kind, state, progress, cleanup_state]
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          enum: [topology_connection_create, topology_connection_delete]
+        state:
+          type: string
+          enum: [queued, running, succeeded, failed, cancelling, cancelled]
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+        connection_id:
+          type: string
+        cleanup_state:
+          type: string
+          enum: [not_required, pending, complete, failed]
+        problem:
+          $ref: '#/components/schemas/Problem'
+    TopologyConnectionTaskEnvelope:
+      type: object
+      required: [connection, task, laboratory_revision]
+      properties:
+        connection:
+          $ref: '#/components/schemas/TopologyConnection'
+        task:
+          $ref: '#/components/schemas/OperationTask'
+        laboratory_revision:
+          type: integer
+          format: int64
+          minimum: 1
+    Problem:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        resource_type:
+          type: string
+        resource_id:
+          type: string
+        phase:
+          type: string
+        cleanup:
+          type: string
+        operator_hint:
+          type: string
+  responses:
+    Conflict:
+      description: Revision, occupancy, capacity, or idempotency conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            endpointOccupied:
+              value:
+                code: endpoint_occupied
+                message: The selected endpoint is already owned by another connection.
+                phase: connection_validation
+                cleanup: No topology mutation was committed.
+                operator_hint: Refresh the topology and select another free endpoint.
+    InvalidEndpoint:
+      description: Missing, cross-laboratory, self, or incompatible endpoint
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Connection not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+x-netlab-invariants:
+  - UI, HTTP, MCP, and compatibility routes invoke the same application command.
+  - Callers provide endpoints, not a backing connection kind.
+  - A concrete endpoint is owned by at most one non-deleted connection.
+  - Connection, endpoint reservations, task, audit/outbox, and laboratory revision commit atomically.
+  - Existing lightweight objects are never expanded by this contract.
