@@ -97,6 +97,7 @@ func (r *TopologyRepository) FinalizeLaboratoryDeletion(ctx context.Context, id 
 			`DELETE FROM runtime_ownership WHERE resource_id IN (SELECT id FROM port_mappings WHERE node_id IN (SELECT id FROM nodes WHERE laboratory_id=?))`,
 			`DELETE FROM runtime_ownership WHERE resource_id IN (SELECT id FROM interfaces WHERE node_id IN (SELECT id FROM nodes WHERE laboratory_id=?))`,
 			`DELETE FROM runtime_ownership WHERE resource_id IN (SELECT id FROM links WHERE laboratory_id=?)`,
+			`DELETE FROM runtime_ownership WHERE resource_type='network_object_link' AND resource_id IN (SELECT id FROM network_object_links WHERE laboratory_id=?)`,
 			`DELETE FROM runtime_ownership WHERE resource_id IN (SELECT id FROM network_objects WHERE laboratory_id=?)`,
 			`DELETE FROM runtime_ownership WHERE resource_id IN (SELECT id FROM captures WHERE laboratory_id=?)`,
 			`DELETE FROM runtime_ownership WHERE resource_id IN (SELECT id FROM nodes WHERE laboratory_id=?)`,

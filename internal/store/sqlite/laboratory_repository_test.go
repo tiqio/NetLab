@@ -138,6 +138,11 @@ func TestFinalizeLaboratoryDeletionRemovesDeleteFailedRetry(t *testing.T) {
 	if err = repositories.CreateNetworkObjectLink(ctx, objectLink); err != nil {
 		t.Fatal(err)
 	}
+	for _, endpoint := range []string{"namespace-a:eth0", "namespace-b:eth0"} {
+		if err = repositories.UpsertRuntimeOwnership(ctx, "network_object_link", objectLink.ID, "network_object_link_endpoint", endpoint, nil, "active"); err != nil {
+			t.Fatal(err)
+		}
+	}
 	objectLinkTaskID := domain.NewID()
 	if _, err = database.DB.ExecContext(ctx, `INSERT INTO operation_tasks(id,kind,resource_type,resource_id,state,progress_current,progress_total,input_json,created_at) VALUES(?,'network_object_link.create','network_object_link',?,'failed',1,2,'{}',?)`, objectLinkTaskID, objectLink.ID, now.Format(time.RFC3339Nano)); err != nil {
 		t.Fatal(err)
@@ -170,6 +175,12 @@ func TestFinalizeLaboratoryDeletionRemovesDeleteFailedRetry(t *testing.T) {
 	}
 	if ownershipCount != 0 {
 		t.Fatalf("expected purged capture ownership to be deleted, got %d", ownershipCount)
+	}
+	if err = database.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM runtime_ownership WHERE resource_type='network_object_link' AND resource_id=?`, objectLink.ID).Scan(&ownershipCount); err != nil {
+		t.Fatal(err)
+	}
+	if ownershipCount != 0 {
+		t.Fatalf("expected purged network object link ownership to be deleted, got %d", ownershipCount)
 	}
 	for table, target := range map[string][2]string{
 		"network_object_links":           {"id", string(objectLink.ID)},

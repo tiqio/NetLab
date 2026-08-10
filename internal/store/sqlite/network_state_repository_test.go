@@ -168,14 +168,26 @@ func TestNetworkObjectLinkDeleteChecksRevisionReleasesEndpointsAndPublishesTask(
 	if err = repositories.CreateNetworkObjectLink(ctx, link); err != nil {
 		t.Fatal(err)
 	}
+	for _, endpoint := range []string{"namespace-a:swp1", "namespace-b:swp1"} {
+		if err = repositories.UpsertRuntimeOwnership(ctx, "network_object_link", link.ID, "network_object_link_endpoint", endpoint, nil, "active"); err != nil {
+			t.Fatal(err)
+		}
+	}
 	if err = repositories.DeleteNetworkObjectLinkRevision(ctx, link.ID, 2, "delete-task"); err == nil {
 		t.Fatal("expected revision conflict")
 	}
 	if _, err = repositories.GetNetworkObjectLink(ctx, link.ID); err != nil {
 		t.Fatalf("revision conflict removed link: %v", err)
 	}
+	var ownershipCount int
+	if err = database.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM runtime_ownership WHERE resource_type='network_object_link' AND resource_id=?`, link.ID).Scan(&ownershipCount); err != nil || ownershipCount != 2 {
+		t.Fatalf("revision conflict changed ownership count=%d err=%v", ownershipCount, err)
+	}
 	if err = repositories.DeleteNetworkObjectLinkRevision(ctx, link.ID, 1, "delete-task"); err != nil {
 		t.Fatal(err)
+	}
+	if err = database.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM runtime_ownership WHERE resource_type='network_object_link' AND resource_id=?`, link.ID).Scan(&ownershipCount); err != nil || ownershipCount != 0 {
+		t.Fatalf("network object link ownership count=%d err=%v", ownershipCount, err)
 	}
 	if err = repositories.CreateNetworkObjectLink(ctx, domain.NetworkObjectLink{ID: "replacement", LaboratoryID: lab.ID, ObjectAID: "delete-a", PortAName: "swp1", ObjectBID: "delete-b", PortBName: "swp1", Revision: 1, DesiredState: "connected", ObservedState: "pending"}); err != nil {
 		t.Fatalf("released endpoints were not reusable: %v", err)
