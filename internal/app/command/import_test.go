@@ -11,15 +11,29 @@ import (
 
 type routeImportRepository struct {
 	nodes              []domain.Node
+	networkObjects     []domain.NetworkObject
 	networkObjectLinks []domain.NetworkObjectLink
 	placements         []domain.TopologyPlacement
 }
 
-func (r *routeImportRepository) ImportTopology(_ context.Context, _ domain.Laboratory, nodes []domain.Node, _ []domain.Interface, _ []domain.Link, _ []domain.NetworkObject, objectLinks []domain.NetworkObjectLink, placements []domain.TopologyPlacement) error {
+func (r *routeImportRepository) ImportTopology(_ context.Context, _ domain.Laboratory, nodes []domain.Node, _ []domain.Interface, _ []domain.Link, networkObjects []domain.NetworkObject, objectLinks []domain.NetworkObjectLink, placements []domain.TopologyPlacement) error {
 	r.nodes = nodes
+	r.networkObjects = networkObjects
 	r.networkObjectLinks = objectLinks
 	r.placements = placements
 	return nil
+}
+
+func TestImportPreservesLegacySinglePortNetworkObject(t *testing.T) {
+	repository := &routeImportRepository{}
+	bundle := LaboratoryExport{SchemaVersion: 1, Laboratory: ExportLaboratory{Name: "legacy", RecoveryPolicy: domain.RecoveryRemainStopped}, NetworkObjects: []map[string]any{{"export_id": "legacy-switch", "name": "Legacy", "kind": "switch_l2", "config": map[string]any{"ports": []any{map[string]any{"name": "lan0"}}}}}, Redaction: ExportRedaction{ImagesExcluded: true, CredentialsExcluded: true, BootstrapSecretsExcluded: true, CapturesExcluded: true}}
+	if _, err := NewImportService(repository, nil).ImportAs(context.Background(), "legacy", bundle); err != nil {
+		t.Fatal(err)
+	}
+	ports := repository.networkObjects[0].Config["ports"].([]any)
+	if len(ports) != 1 || ports[0].(map[string]any)["name"] != "lan0" {
+		t.Fatalf("import expanded legacy ports: %+v", repository.networkObjects[0].Config)
+	}
 }
 
 func TestImportRemapsNetworkObjectLinkEndpoints(t *testing.T) {

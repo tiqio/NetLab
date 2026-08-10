@@ -78,4 +78,17 @@ func TestTopologyCreationContractReturnsAuthoritativePlacement(t *testing.T) {
 	if !objectAssignment["adjusted"].(bool) || object["laboratory_revision"].(float64) != 3 {
 		t.Fatalf("object=%+v", object)
 	}
+
+	switchBody := map[string]any{"name": "switch", "kind": "switch_l2"}
+	switchObject := create("/api/v1/labs/"+string(laboratory.ID)+"/network-objects", "3", "switch-key", switchBody, http.StatusAccepted)
+	createdSwitch := switchObject["network_object"].(map[string]any)
+	config := createdSwitch["config"].(map[string]any)
+	ports := config["ports"].([]any)
+	if len(ports) != 4 || ports[0].(map[string]any)["name"] != "eth0" || ports[3].(map[string]any)["name"] != "eth3" {
+		t.Fatalf("switch=%+v", switchObject)
+	}
+	replayed := create("/api/v1/labs/"+string(laboratory.ID)+"/network-objects", "3", "switch-key", switchBody, http.StatusAccepted)
+	if replayed["network_object"].(map[string]any)["id"] != createdSwitch["id"] {
+		t.Fatalf("replay mismatch first=%+v replay=%+v", switchObject, replayed)
+	}
 }

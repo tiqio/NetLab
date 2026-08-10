@@ -5,9 +5,40 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/netlab/netlab/internal/domain"
+	storesqlite "github.com/netlab/netlab/internal/store/sqlite"
 )
+
+func TestNetworkRecoveryPreservesLegacySinglePortConfiguration(t *testing.T) {
+	ctx := context.Background()
+	database, err := storesqlite.Open(ctx, "file:"+string(domain.NewID())+"?mode=memory&cache=shared")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer database.Close()
+	repositories := storesqlite.NewRepositories(database)
+	topology := storesqlite.NewTopologyRepository(database)
+	now := time.Now().UTC()
+	lab := domain.Laboratory{ID: domain.NewID(), Name: "legacy", Revision: 1, RecoveryPolicy: domain.RecoveryAutoRestore, LifecycleState: "active", CreatedAt: now, UpdatedAt: now}
+	if err = topology.CreateLaboratory(ctx, lab); err != nil {
+		t.Fatal(err)
+	}
+	object := domain.NetworkObject{ID: domain.NewID(), LaboratoryID: lab.ID, Name: "legacy", Kind: domain.NetworkSwitchL2, Revision: 1, DesiredState: "active", ObservedState: "pending", Config: map[string]any{"ports": []any{map[string]any{"name": "lan0"}}}, CreatedAt: now, UpdatedAt: now}
+	if err = repositories.CreateNetworkObject(ctx, object); err != nil {
+		t.Fatal(err)
+	}
+	runtime := &networkTaskRuntimeFake{configured: map[domain.ID]bool{}, values: map[domain.ID]domain.NetworkObject{}}
+	service := NewNetworkObjectService(repositories, NetworkRuntimeDispatch{SwitchL2: runtime})
+	if err = service.RestoreLaboratory(ctx, lab.ID); err != nil {
+		t.Fatal(err)
+	}
+	ports := runtime.values[object.ID].Config["ports"].([]any)
+	if len(ports) != 1 || ports[0].(map[string]any)["name"] != "lan0" {
+		t.Fatalf("recovery expanded legacy ports: %+v", runtime.values[object.ID].Config)
+	}
+}
 
 type recoveryTaskStoreFake struct {
 	created   []domain.OperationTask

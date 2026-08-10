@@ -41,3 +41,22 @@ func TestExportPreservesNetworkObjectLinkIntentWithoutRuntimeLocators(t *testing
 		t.Fatalf("bundle=%s", body)
 	}
 }
+
+func TestExportPreservesLegacySinglePortNetworkObject(t *testing.T) {
+	snapshot := domain.TopologySnapshot{
+		Laboratory: domain.Laboratory{Name: "legacy", RecoveryPolicy: domain.RecoveryRemainStopped},
+		NetworkObjects: []domain.NetworkObject{{
+			ID: "legacy", Name: "Legacy", Kind: domain.NetworkSwitchL2,
+			Config: map[string]any{"ports": []any{map[string]any{"name": "lan0"}}},
+		}},
+	}
+	bundle, err := NewExportService(routeExportReader{snapshot: snapshot}, nil).Build(context.Background(), "lab")
+	if err != nil {
+		t.Fatal(err)
+	}
+	config := bundle.NetworkObjects[0]["config"].(map[string]any)
+	ports := config["ports"].([]any)
+	if len(ports) != 1 || ports[0].(map[string]any)["name"] != "lan0" {
+		t.Fatalf("export expanded legacy ports: %+v", config)
+	}
+}

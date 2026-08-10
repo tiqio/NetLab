@@ -126,6 +126,20 @@ func TestTopologyCreationToolsReturnAuthoritativePlacementAndConflicts(t *testin
 	if !bytes.Contains(stale, []byte("revision_conflict")) || !bytes.Contains(stale, []byte(`"retryable":true`)) {
 		t.Fatalf("expected structured revision conflict: %s", stale)
 	}
+	switchArguments := map[string]any{
+		"lab_id": string(laboratory.ID), "name": "switch-a", "kind": "switch_l3",
+		"expected_revision": 3, "idempotency_key": "mcp-switch",
+	}
+	switchFirst := callNamedTool(t, engine, "netlab.network_objects.create", switchArguments)
+	switchReplay := callNamedTool(t, engine, "netlab.network_objects.create", switchArguments)
+	for _, expected := range []string{`"name":"eth0"`, `"name":"eth1"`, `"name":"eth2"`, `"name":"eth3"`} {
+		if !bytes.Contains(switchFirst, []byte(expected)) {
+			t.Fatalf("missing %s in %s", expected, switchFirst)
+		}
+	}
+	if string(switchFirst) != string(switchReplay) {
+		t.Fatalf("switch replay mismatch\n%s\n%s", switchFirst, switchReplay)
+	}
 }
 
 func callTool(t *testing.T, handler http.Handler, arguments map[string]any) []byte {
