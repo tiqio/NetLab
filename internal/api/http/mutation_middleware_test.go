@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/netlab/netlab/internal/app/audit"
 	"github.com/netlab/netlab/internal/app/command"
+	"github.com/netlab/netlab/internal/domain"
 	storesqlite "github.com/netlab/netlab/internal/store/sqlite"
 )
 
@@ -105,7 +106,7 @@ func TestUnifiedConnectionAuditRecordsGestureEntryPoint(t *testing.T) {
 		c.Set("topology_entry_point", "port_drag")
 		c.JSON(http.StatusAccepted, gin.H{"task": map[string]any{"id": "connection-task", "resource_type": "link", "resource_id": "link-1"}})
 	})
-	request := httptest.NewRequest(http.MethodPost, "/api/v1/labs/lab-1/connections", bytes.NewBufferString(`{"entry_point":"port_drag"}`))
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/labs/lab-1/connections", bytes.NewBufferString(`{"entry_point":"port_drag","source":{"kind":"node_interface","resource_id":"node-a","port_id":"if-a"},"target":{"kind":"network_object_port","resource_id":"switch-a","port_name":"eth0"},"config":{"pvid":10},"secret":"do-not-log"}`))
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Idempotency-Key", "connection-entry")
 	response := httptest.NewRecorder()
@@ -117,7 +118,31 @@ func TestUnifiedConnectionAuditRecordsGestureEntryPoint(t *testing.T) {
 		t.Fatalf("compatibility entry point=%q", compatibilityEntryPoint)
 	}
 	events, err := repositories.ListAuditEvents(ctx, 10)
-	if err != nil || len(events) != 1 || events[0].TaskID != "connection-task" || events[0].Details["entry_point"] != "port_drag" {
+	if err != nil || len(events) != 1 || events[0].TaskID != "connection-task" || events[0].Details["entry_point"] != "port_drag" || events[0].Details["source"] == nil || events[0].Details["target"] == nil || events[0].Details["config"] == nil || events[0].Details["secret"] != nil {
+		t.Fatalf("events=%+v err=%v", events, err)
+	}
+}
+
+func TestUnifiedConnectionAuditRecordsConflictCleanup(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	ctx := context.Background()
+	database, err := storesqlite.Open(ctx, "file:connection-conflict-audit?mode=memory&cache=shared")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer database.Close()
+	repositories := storesqlite.NewRepositories(database)
+	engine := gin.New()
+	engine.Use(MutationAutomation(command.NewIdempotencyService(repositories, time.Hour), repositories, audit.NewService(repositories)))
+	engine.POST("/api/v1/labs/:labId/connections", func(c *gin.Context) {
+		c.JSON(http.StatusConflict, domain.Problem{Code: "port_in_use", Message: "occupied", Cleanup: "no reservation committed"})
+	})
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/labs/lab-1/connections", bytes.NewBufferString(`{"source":{"kind":"node_interface","resource_id":"node-a","port_id":"if-a"},"target":{"kind":"node_interface","resource_id":"node-b","port_id":"if-b"}}`))
+	request.Header.Set("Content-Type", "application/json")
+	response := httptest.NewRecorder()
+	engine.ServeHTTP(response, request)
+	events, err := repositories.ListAuditEvents(ctx, 10)
+	if err != nil || len(events) != 1 || events[0].Outcome != "conflict" || events[0].Details["problem_code"] != "port_in_use" || events[0].Details["cleanup"] != "no reservation committed" {
 		t.Fatalf("events=%+v err=%v", events, err)
 	}
 }

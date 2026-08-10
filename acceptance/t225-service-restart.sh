@@ -111,6 +111,7 @@ DOCKER_IF=$(jq -r '.interfaces[0].id' <<<"$docker")
 LAB_REVISION=$(api GET "/labs/$LAB_ID" | jq -r .laboratory.revision)
 namespace=$(api POST "/labs/$LAB_ID/nodes" '{"name":"namespace","kind":"pc","cpu_count":1,"memory_mib":32,"interface_count":1}' "$LAB_REVISION")
 NAMESPACE_NODE=$(jq -r .node.id <<<"$namespace")
+NAMESPACE_IF=$(jq -r '.interfaces[0].id' <<<"$namespace")
 
 set_state "$QEMU_NODE" running
 set_state "$DOCKER_NODE" running
@@ -132,6 +133,29 @@ for _ in $(seq 1 30); do
   sleep 1
 done
 [[ $(sqlite3 "$DB" "select observed_state from network_attachments where id='$ATTACHMENT_ID';") == active ]]
+
+for switch_name in switch-a switch-b; do
+  LAB_REVISION=$(api GET "/labs/$LAB_ID" | jq -r .laboratory.revision)
+  switch_value=$(api POST "/labs/$LAB_ID/network-objects" "$(jq -nc --arg name "$switch_name" '{name:$name,kind:"switch_l2",config:{}}')" "$LAB_REVISION")
+  wait_task "$(jq -r .task.id <<<"$switch_value")" >/dev/null
+  if [[ $switch_name == switch-a ]]; then
+    SWITCH_A_ID=$(jq -r .network_object.id <<<"$switch_value")
+  else
+    SWITCH_B_ID=$(jq -r .network_object.id <<<"$switch_value")
+  fi
+done
+object_link=$(api POST "/labs/$LAB_ID/network-object-links" "$(jq -nc --arg a "$SWITCH_A_ID" --arg b "$SWITCH_B_ID" '{object_a_id:$a,port_a_name:"eth0",object_b_id:$b,port_b_name:"eth0"}')")
+OBJECT_LINK_ID=$(jq -r .network_object_link.id <<<"$object_link")
+wait_task "$(jq -r .task.id <<<"$object_link")" >/dev/null
+
+FAILED_CONNECTION_TASK=$(python3 - <<'PY'
+import secrets, time
+print(f"{int(time.time() * 1000):012x}-{secrets.token_hex(10)}")
+PY
+)
+NOW=$(date -u +%Y-%m-%dT%H:%M:%S.%NZ)
+sqlite3 "$DB" "insert into operation_tasks(id,kind,resource_type,resource_id,state,progress_current,progress_total,input_json,created_at) values('$FAILED_CONNECTION_TASK','topology_connection.create','topology_connection','orphan-connection','failed',1,2,'{\"laboratory_id\":\"$LAB_ID\"}','$NOW');"
+sqlite3 "$DB" "insert into topology_endpoint_reservations(laboratory_id,owner_type,owner_id,port_name,resource_type,resource_id,operation_id,state,created_at) values('$LAB_ID','node_interface','$NAMESPACE_IF','eth0','link','orphan-connection','$FAILED_CONNECTION_TASK','occupied','$NOW');"
 
 capture=$(api POST /captures "$(jq -nc --arg laboratory "$LAB_ID" --arg source "$LINK_ID" '{laboratory_id:$laboratory,source_type:"link",source_id:$source,format:"pcap",retain:true,duration_seconds:180,max_bytes:1048576}')")
 CAPTURE_ID=$(jq -r .capture.id <<<"$capture")
@@ -157,6 +181,8 @@ BEFORE_SNAPSHOT=$(api GET "/labs/$LAB_ID")
 BEFORE_SEQUENCE=$(jq -r .event_sequence <<<"$BEFORE_SNAPSHOT")
 BEFORE_PLACEMENTS=$(jq -c '.placements | sort_by(.resource_id) | map({resource_id,resource_type,x,y,revision})' <<<"$BEFORE_SNAPSHOT")
 BEFORE_CONNECTIONS=$(jq -c '{links:(.links|sort_by(.id)|map({id,endpoint_a_id,endpoint_b_id,desired_state,observed_state})),attachments:(.network_attachments|sort_by(.id)|map({id,network_object_id,interface_id,port_name,desired_state,observed_state})),object_links:(.network_object_links|sort_by(.id)|map({id,object_a_id,port_a_name,object_b_id,port_b_name,desired_state,observed_state}))}' <<<"$BEFORE_SNAPSHOT")
+BEFORE_RESERVATIONS=$(sqlite3 -json "$DB" "select owner_type,owner_id,port_name,resource_type,resource_id,state from topology_endpoint_reservations where laboratory_id='$LAB_ID' and resource_id in ('$LINK_ID','$ATTACHMENT_ID','$OBJECT_LINK_ID') order by resource_type,resource_id,owner_type,owner_id,port_name;")
+[[ $(jq 'length' <<<"$BEFORE_RESERVATIONS") == 6 ]]
 EXPECTED_PLACEMENTS=$(( $(jq '.nodes | length' <<<"$BEFORE_SNAPSHOT") + $(jq '.network_objects | length' <<<"$BEFORE_SNAPSHOT") ))
 [[ $(jq '.placements | length' <<<"$BEFORE_SNAPSHOT") == "$EXPECTED_PLACEMENTS" ]]
 ORPHAN_PLACEMENTS=$(sqlite3 "$DB" "select count(*) from topology_placements p left join nodes n on n.id=p.resource_id and p.resource_type='node' left join network_objects o on o.id=p.resource_id and p.resource_type='network_object' where p.laboratory_id='$LAB_ID' and n.id is null and o.id is null;")
@@ -194,6 +220,9 @@ AFTER_CONNECTIONS=$(jq -c '{links:(.links|sort_by(.id)|map({id,endpoint_a_id,end
 [[ $AFTER_PLACEMENTS == "$BEFORE_PLACEMENTS" ]]
 [[ $AFTER_CONNECTIONS == "$BEFORE_CONNECTIONS" ]]
 [[ $(jq '.placements | length' <<<"$AFTER_SNAPSHOT") == "$EXPECTED_PLACEMENTS" ]]
+AFTER_RESERVATIONS=$(sqlite3 -json "$DB" "select owner_type,owner_id,port_name,resource_type,resource_id,state from topology_endpoint_reservations where laboratory_id='$LAB_ID' and resource_id in ('$LINK_ID','$ATTACHMENT_ID','$OBJECT_LINK_ID') order by resource_type,resource_id,owner_type,owner_id,port_name;")
+[[ $AFTER_RESERVATIONS == "$BEFORE_RESERVATIONS" ]]
+[[ $(sqlite3 "$DB" "select count(*) from topology_endpoint_reservations where resource_id='orphan-connection';") == 0 ]]
 
 QEMU_PID_AFTER=$(sqlite3 "$DB" "select object_name from runtime_ownership where resource_type='node' and resource_id='$QEMU_NODE' and object_kind='qemu_process' and cleanup_state='active' order by rowid desc limit 1;")
 DOCKER_SHORT_ID_AFTER=$(docker ps -q --filter "label=io.netlab.node_id=$DOCKER_NODE")
@@ -216,6 +245,7 @@ RECOVERY=$(api GET /tasks | jq -c 'map(select(.kind=="system.recovery" and .reso
 jq -e --arg id "$QEMU_NODE" --arg runtime "$QEMU_PID" '.result.resource_outcomes | any(.resource_type=="node" and .resource_id==$id and .runtime_id==$runtime)' <<<"$RECOVERY" >/dev/null
 jq -e --arg id "$DOCKER_NODE" --arg runtime "$DOCKER_ID" '.result.resource_outcomes | any(.resource_type=="node" and .resource_id==$id and .runtime_id==$runtime)' <<<"$RECOVERY" >/dev/null
 jq -e --arg id "$NAMESPACE_NODE" --arg runtime "$NAMESPACE_NAME" '.result.resource_outcomes | any(.resource_type=="node" and .resource_id==$id and .runtime_id==$runtime)' <<<"$RECOVERY" >/dev/null
+jq -e '.result.resource_outcomes | any(.resource_type=="link" and .resource_id=="orphan-connection" and .details.action=="orphan_reservation_removed")' <<<"$RECOVERY" >/dev/null
 
 python3 - "$BEFORE_SEQUENCE" "$EVENT_HOST" "$EVENT_PORT" <<'PY'
 import base64, json, os, socket, struct, sys
@@ -253,10 +283,13 @@ LAB_ID=""
 ! netlab_mount_exec ip -n "$NAMESPACE_NAME" link show lo >/dev/null 2>&1
 ! ip link show "$LINK_NAME" >/dev/null 2>&1
 ! ip link show "$ATTACHMENT_NAME" >/dev/null 2>&1
-OWNERSHIP_COUNT=$(sqlite3 "$DB" "select count(*) from runtime_ownership where resource_id in ('$QEMU_NODE','$DOCKER_NODE','$NAMESPACE_NODE','$LINK_ID','$ATTACHMENT_ID','$NETWORK_OBJECT_ID','$CAPTURE_ID');")
+OWNERSHIP_COUNT=$(sqlite3 "$DB" "select count(*) from runtime_ownership where resource_id in ('$QEMU_NODE','$DOCKER_NODE','$NAMESPACE_NODE','$LINK_ID','$ATTACHMENT_ID','$OBJECT_LINK_ID','$NETWORK_OBJECT_ID','$SWITCH_A_ID','$SWITCH_B_ID','$CAPTURE_ID');")
 [[ $OWNERSHIP_COUNT == 0 ]]
 [[ $(sqlite3 "$DB" "select count(*) from topology_placements where laboratory_id='$DELETED_LAB_ID';") == 0 ]]
 [[ $(sqlite3 "$DB" "select count(*) from links where laboratory_id='$DELETED_LAB_ID';") == 0 ]]
 [[ $(sqlite3 "$DB" "select count(*) from network_object_links where laboratory_id='$DELETED_LAB_ID';") == 0 ]]
+[[ $(sqlite3 "$DB" "select count(*) from network_attachments a join network_objects o on o.id=a.network_object_id where o.laboratory_id='$DELETED_LAB_ID';") == 0 ]]
+[[ $(sqlite3 "$DB" "select count(*) from topology_endpoint_reservations where laboratory_id='$DELETED_LAB_ID';") == 0 ]]
+[[ $(sqlite3 "$DB" "select count(*) from operation_tasks where id='$FAILED_CONNECTION_TASK' or resource_id in ('$LINK_ID','$ATTACHMENT_ID','$OBJECT_LINK_ID');") == 0 ]]
 
 echo "PASS T225 lab=$name placements=$EXPECTED_PLACEMENTS qemu_pid=$QEMU_PID docker_id=$DOCKER_ID namespace=$NAMESPACE_NAME task=$RESUME_TASK capture=$CAPTURE_STATE console=$CONSOLE_STATE"

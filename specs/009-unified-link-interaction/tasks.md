@@ -164,14 +164,14 @@
 - [X] T067 [P] [US4] 为三类统一连接的选择、删除、抓包、Wireshark 和 Traffic Filter 能力无回归编写失败测试到 `web/src/features/topology/TopologyInspector.test.ts`、`web/src/features/diagnostics/GlobalCaptureWorkspace.test.ts` 与 `web/src/features/diagnostics/TrafficFilterPanel.test.ts`
 - [X] T068 [P] [US4] 增加双浏览器、HTTP、MCP 十组并发端口争用和 2 秒收敛 Playwright 旅程到 `tests/e2e/journeys/unifiedConnectionConcurrency.spec.ts`
 - [X] T069 [P] [US4] 增加连接创建/删除/取消、服务重启、恢复和实验室删除零泄漏 Playwright 旅程到 `tests/e2e/journeys/unifiedConnectionRecovery.spec.ts`
-- [ ] T070 [P] [US4] 扩展特权服务重启脚本，覆盖混合 backing connection 身份采用、端点预留、孤立资源和泄漏断言到 `acceptance/t225-service-restart.sh`
+- [X] T070 [P] [US4] 扩展特权服务重启脚本，覆盖混合 backing connection 身份采用、端点预留、孤立资源和泄漏断言到 `acceptance/t225-service-restart.sh`
 
 ### Implementation for User Story 4
 
 - [X] T071 [US4] 在 `internal/app/command/topology_connection_tasks.go` 实现 create/delete/cancel task runner、进度、最终状态检查和 operation-owned 补偿清理
 - [X] T072 [US4] 在 `internal/app/reconcile/topology_connections.go` 与 `internal/app/reconcile/recovery_coordinator.go` 实现服务重启采用、缺失/孤立预留修复、部分资源清理和结构化恢复问题
-- [ ] T073 [US4] 在 `internal/api/http/topology_handlers.go`、`internal/api/http/network_handlers.go`、`internal/api/mcp/tools.go` 与 `internal/api/mcp/network_tools.go` 将旧专用 mutation 适配到统一应用命令和 durable task 语义
-- [ ] T074 [US4] 在 `internal/app/audit/service.go` 与 `internal/domain/topology_connection.go` 记录 entry point、端点/配置摘要、task、冲突和 cleanup，排除终端内容、包载荷和秘密
+- [X] T073 [US4] 在 `internal/api/http/topology_handlers.go`、`internal/api/http/network_handlers.go`、`internal/api/mcp/tools.go` 与 `internal/api/mcp/network_tools.go` 将旧专用 mutation 适配到统一应用命令和 durable task 语义
+- [X] T074 [US4] 在 `internal/app/audit/service.go` 与 `internal/domain/topology_connection.go` 记录 entry point、端点/配置摘要、task、冲突和 cleanup，排除终端内容、包载荷和秘密
 - [ ] T075 [US4] 在 `web/src/stores/laboratory.ts` 与 `web/src/features/topology/TopologyWorkspace.vue` 实现 ordered event 收敛、revision 冲突刷新、新 key 重试和已提交任务取消/最终查询
 - [X] T076 [US4] 在 `web/src/features/topology/TopologyInspector.vue`、`web/src/features/topology/LinkContextMenu.vue` 与 `web/src/features/diagnostics/GlobalCaptureWorkspace.vue` 统一三类连接的删除、抓包、Wireshark 和 Traffic Filter 能力入口
 - [X] T077 [US4] 在 `internal/app/reconcile/laboratory_deletion.go` 与 `internal/store/sqlite/topology_connection_repository.go` 清理实验室拥有的 backing records、预留、失败 operation 和运行时资源

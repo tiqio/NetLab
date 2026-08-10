@@ -40,6 +40,13 @@ func MutationAutomation(idempotency *command.IdempotencyService, _ MutationTaskS
 		c.Request = c.Request.WithContext(command.WithTopologyConnectionEntryPoint(c.Request.Context(), "compatibility_http"))
 		c.Set(command.TopologyConnectionEntryPointContextKey, "compatibility_http")
 		if durableTaskMutation(c.Request.Method, c.Request.URL.Path) {
+			body, readErr := io.ReadAll(c.Request.Body)
+			if readErr != nil {
+				handleError(c, readErr)
+				c.Abort()
+				return
+			}
+			c.Request.Body = io.NopCloser(bytes.NewReader(body))
 			writer := &captureWriter{ResponseWriter: c.Writer}
 			c.Writer = writer
 			c.Next()
@@ -55,14 +62,25 @@ func MutationAutomation(idempotency *command.IdempotencyService, _ MutationTaskS
 					resourceID = envelope.Task.ResourceID
 				}
 				outcome := "accepted"
+				var problem domain.Problem
 				if c.Writer.Status() >= 400 {
 					outcome = "failed"
+					if json.Unmarshal(writer.body.Bytes(), &problem) == nil && (problem.Code == "port_in_use" || problem.Code == "revision_conflict" || problem.Code == "idempotency_conflict") {
+						outcome = "conflict"
+					}
 				}
 				entryPoint := c.GetString("topology_entry_point")
 				if entryPoint == "" {
 					entryPoint = command.TopologyConnectionEntryPoint(c.Request.Context(), "compatibility_http")
 				}
-				_, _ = audits.Record(context.Background(), "api", c.Request.Method+":"+c.FullPath(), resourceType, resourceID, taskID, outcome, string(taskID), map[string]any{"status": c.Writer.Status(), "entry_point": entryPoint})
+				details := topologyMutationAuditDetails(c.Request.URL.Path, body)
+				details["status"] = c.Writer.Status()
+				details["entry_point"] = entryPoint
+				if problem.Code != "" {
+					details["problem_code"] = problem.Code
+					details["cleanup"] = problem.Cleanup
+				}
+				_, _ = audits.Record(context.Background(), "api", c.Request.Method+":"+c.FullPath(), resourceType, resourceID, taskID, outcome, string(taskID), details)
 			}
 			return
 		}
@@ -109,6 +127,26 @@ func MutationAutomation(idempotency *command.IdempotencyService, _ MutationTaskS
 			c.Abort()
 		}
 	}
+}
+
+func topologyMutationAuditDetails(path string, body []byte) map[string]any {
+	details := map[string]any{}
+	if len(body) == 0 {
+		return details
+	}
+	var input map[string]any
+	if json.Unmarshal(body, &input) != nil {
+		return details
+	}
+	for _, key := range []string{"source", "target", "config", "endpoint_a_id", "endpoint_b_id", "interface_id", "port_name", "object_a_id", "port_a_name", "object_b_id", "port_b_name"} {
+		if value, ok := input[key]; ok {
+			details[key] = value
+		}
+	}
+	if strings.Contains(path, "/connections") || strings.Contains(path, "/links") || strings.Contains(path, "/attachments") {
+		details["connection_summary"] = true
+	}
+	return details
 }
 
 func selfManagedIdempotency(method, path string) bool {
