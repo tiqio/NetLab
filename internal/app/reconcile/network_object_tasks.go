@@ -241,6 +241,7 @@ func (s *NetworkObjectTaskService) Update(ctx context.Context, id domain.ID, rev
 }
 
 func (s *NetworkObjectTaskService) Create(ctx context.Context, laboratoryID domain.ID, name, kind string, config map[string]any, idempotencyKey string) (domain.NetworkObject, domain.OperationTask, error) {
+	config = domain.ApplyLightweightPortDefaultsOnCreate(kind, config)
 	if idempotencyKey != "" {
 		if existing, lookupErr := s.runner.GetByIdempotency(ctx, "network_object.create", idempotencyKey); lookupErr == nil {
 			existingConfig, _ := networkTaskMap(existing.Input["config"])
@@ -262,11 +263,15 @@ func (s *NetworkObjectTaskService) Create(ctx context.Context, laboratoryID doma
 }
 
 func (s *NetworkObjectTaskService) CreateWithPlacement(ctx context.Context, laboratoryID domain.ID, expectedRevision domain.Revision, name, kind string, config map[string]any, intent *domain.PlacementIntent, idempotencyKey, entry string) (domain.NetworkObject, domain.PlacementAssignment, domain.Revision, domain.OperationTask, error) {
+	config = domain.ApplyLightweightPortDefaultsOnCreate(kind, config)
 	name = strings.TrimSpace(name)
 	if name == "" || len(name) > 128 {
 		return domain.NetworkObject{}, domain.PlacementAssignment{}, 0, domain.OperationTask{}, fmt.Errorf("network object name must be 1-128 characters")
 	}
 	if err := domain.ValidateNetworkKind(kind); err != nil {
+		return domain.NetworkObject{}, domain.PlacementAssignment{}, 0, domain.OperationTask{}, err
+	}
+	if err := domain.ValidateUniqueLightweightPortNames(kind, config); err != nil {
 		return domain.NetworkObject{}, domain.PlacementAssignment{}, 0, domain.OperationTask{}, err
 	}
 	object := domain.NetworkObject{ID: domain.NewID(), LaboratoryID: laboratoryID, Name: name, Kind: kind, Revision: 1, DesiredState: "active", ObservedState: "provisioning", Config: config}

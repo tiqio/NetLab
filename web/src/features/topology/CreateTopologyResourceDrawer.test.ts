@@ -175,7 +175,12 @@ describe("CreateTopologyResourceDrawer", () => {
       kind: "switch_l2",
       config: {
         vlan_filtering: true,
-        ports: [{ name: "lan0", pvid: 10, tagged: [20, 30] }],
+        ports: [
+          { name: "lan0", pvid: 10, tagged: [20, 30] },
+          { name: "eth1", pvid: 1, tagged: [] },
+          { name: "eth2", pvid: 1, tagged: [] },
+          { name: "eth3", pvid: 1, tagged: [] },
+        ],
       },
       placement_intent: undefined,
     });
@@ -188,14 +193,21 @@ describe("CreateTopologyResourceDrawer", () => {
       kind: "switch_l2" as const,
       expectedConfig: {
         vlan_filtering: true,
-        ports: [{ name: "eth0", pvid: 1, tagged: [] }],
+        ports: [0, 1, 2, 3].map((index) => ({
+          name: `eth${index}`,
+          pvid: 1,
+          tagged: [],
+        })),
       },
     },
     {
       name: "Lightweight L3 Switch",
       kind: "switch_l3" as const,
       expectedConfig: {
-        interfaces: [{ name: "eth0", addresses: [] }],
+        interfaces: [0, 1, 2, 3].map((index) => ({
+          name: `eth${index}`,
+          addresses: [],
+        })),
         routes: [],
         forward_ipv4: true,
         forward_ipv6: true,

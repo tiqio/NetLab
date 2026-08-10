@@ -28,10 +28,17 @@ export function defaultLightweightSwitchConfig(kind: LightweightSwitchKind) {
   if (kind === "switch_l2")
     return {
       vlan_filtering: true,
-      ports: [{ name: "eth0", pvid: 1, tagged: [] as number[] }],
+      ports: Array.from({ length: 4 }, (_, index) => ({
+        name: `eth${index}`,
+        pvid: 1,
+        tagged: [] as number[],
+      })),
     };
   return {
-    interfaces: [{ name: "eth0", addresses: [] as string[] }],
+    interfaces: Array.from({ length: 4 }, (_, index) => ({
+      name: `eth${index}`,
+      addresses: [] as string[],
+    })),
     routes: [] as Array<{
       destination: string;
       gateway?: string;
