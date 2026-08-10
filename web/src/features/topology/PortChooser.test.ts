@@ -97,4 +97,30 @@ describe("PortChooser", () => {
     expect(wrapper.emitted("choose")?.[0]?.[0]).toEqual(endpoints[1]);
     wrapper.unmount();
   });
+
+  it("labels source and target modes and restores focus after cancellation", async () => {
+    const trigger = document.createElement("button");
+    document.body.appendChild(trigger);
+    trigger.focus();
+    const wrapper = mount(PortChooser, {
+      attachTo: document.body,
+      props: {
+        modelValue: true,
+        mode: "source" as const,
+        endpoints: [],
+        "onUpdate:modelValue": (value: boolean) =>
+          wrapper.setProps({ modelValue: value }),
+      },
+    });
+    expect(document.body.textContent).toContain("选择源端点");
+    expect(document.body.textContent).toContain("与拖拽连接完全一致");
+    const cancel = Array.from(document.body.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "取消",
+    );
+    cancel?.click();
+    await flushPromises();
+    expect(document.activeElement).toBe(trigger);
+    wrapper.unmount();
+    trigger.remove();
+  });
 });

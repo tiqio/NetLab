@@ -6,6 +6,8 @@ import {
   selectAll,
   selectOne,
   toggleSelected,
+  captureSelection,
+  restoreSelection,
 } from "./topologySelection";
 
 const bounds = [
@@ -48,5 +50,20 @@ describe("topology selection", () => {
       "c",
     ]);
     expect(selected).toEqual(["a", "missing", "c"]);
+  });
+});
+
+describe("connection selection restoration", () => {
+  it("captures immutable selection and restores a fresh copy", () => {
+    const selected = ["node-a"];
+    const snapshot = captureSelection(selected, "node", "node-a");
+    selected.push("node-b");
+    const restored = restoreSelection(snapshot);
+    expect(restored).toEqual({
+      ids: ["node-a"],
+      type: "node",
+      focusedResourceId: "node-a",
+    });
+    expect(restored.ids).not.toBe(snapshot.ids);
   });
 });

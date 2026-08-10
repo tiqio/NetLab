@@ -1,11 +1,15 @@
 import { mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
+import { nextTick } from "vue";
 import { defaultWorkspacePreferences } from "@/composables/useWorkspacePreferences";
 import { nodeFactory, networkObjectFactory } from "@/test/factories";
 vi.mock("@/components/charts/EChart.vue", () => ({
   default: {
     name: "EChart",
     props: ["option", "ariaLabel"],
+    setup(_props: unknown, { expose }: { expose: (value: object) => void }) {
+      expose({ graphItemPixel: () => ({ x: 100, y: 80 }) });
+    },
     template: '<div role="img" :aria-label="ariaLabel" />',
   },
 }));
@@ -69,5 +73,31 @@ describe("TopologyCanvas accessibility", () => {
     expect(summary.attributes("aria-live")).toBe("polite");
     expect(summary.text()).toContain("Bridge: 二层网桥");
     expect(summary.text()).toContain("Ubuntu: QEMU 虚拟机");
+  });
+
+  it("exposes a keyboard-operable connector with a resource-specific label", async () => {
+    const wrapper = mount(TopologyCanvas, {
+      props: {
+        nodes: [],
+        interfaces: [],
+        links: [],
+        networkObjects: [
+          networkObjectFactory({
+            id: "nat-a",
+            name: "NAT A",
+            kind: "nat_bridge",
+          }),
+        ],
+        preferences: defaultWorkspacePreferences("lab"),
+        selectedIds: ["nat-a"],
+      },
+    });
+    await nextTick();
+    const connector = wrapper.get('[aria-label="开始连接 NAT A"]');
+    expect(connector.attributes("role")).toBe("button");
+    expect(connector.attributes("tabindex")).toBe("0");
+    await connector.trigger("keydown", { key: "Enter" });
+    await connector.trigger("keydown", { key: " " });
+    expect(wrapper.emitted("connector")).toHaveLength(2);
   });
 });

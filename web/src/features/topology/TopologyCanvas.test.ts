@@ -236,6 +236,67 @@ describe("TopologyCanvas", () => {
     expect(wrapper.emitted("connector")?.[0]).toEqual(["node-1"]);
   });
 
+  it.each([
+    ["switch_l2", { ports: [{ name: "eth0" }] }],
+    ["switch_l3", { interfaces: [{ name: "eth0" }] }],
+    ["bridge", {}],
+    ["nat_bridge", {}],
+  ] as const)(
+    "places the unified connector on selected %s resources",
+    async (kind, config) => {
+      const object = networkObjectFactory({
+        id: `object-${kind}`,
+        kind,
+        config,
+      });
+      const wrapper = mount(TopologyCanvas, {
+        props: {
+          nodes: [],
+          interfaces: [],
+          links: [],
+          networkObjects: [object],
+          preferences: defaultWorkspacePreferences("lab"),
+          selectedIds: [object.id],
+        },
+      });
+      await nextTick();
+      const connector = wrapper.get("[data-topology-connector]");
+      expect(connector.attributes("data-connector-resource-id")).toBe(
+        object.id,
+      );
+      expect(connector.attributes("data-connector-position")).toBe("top-right");
+      await connector.trigger("click");
+      expect(wrapper.emitted("connector")?.[0]).toEqual([object.id]);
+    },
+  );
+
+  it("hides the connector when a selected resource has no source capacity", async () => {
+    const wrapper = mount(TopologyCanvas, {
+      props: {
+        nodes: [nodeFactory()],
+        interfaces: [
+          {
+            id: "if-1",
+            node_id: "node-1",
+            slot: 0,
+            name: "eth0",
+            driver: "virtio-net-pci",
+            mac_address: "02:00:00:00:00:01",
+            desired_link_id: "link-1",
+            operational_state: "up",
+            revision: 1,
+          },
+        ],
+        links: [],
+        networkObjects: [],
+        preferences: defaultWorkspacePreferences("lab"),
+        selectedIds: ["node-1"],
+      },
+    });
+    await nextTick();
+    expect(wrapper.find("[data-topology-connector]").exists()).toBe(false);
+  });
+
   it("keeps port tracks stable through selection and viewport changes", async () => {
     const wrapper = mount(TopologyCanvas, {
       props: {

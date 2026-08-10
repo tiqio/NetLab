@@ -47,6 +47,7 @@ import PortChooser from "./PortChooser.vue";
 import TopologyCanvas from "./TopologyCanvas.vue";
 import TopologyInspector from "./TopologyInspector.vue";
 import { fitViewport } from "./topologyGeometry";
+import { resolveConnectionSourceCandidates } from "./topologyConnectionSources";
 import {
   endpointKey,
   endpointsCompatible,
@@ -66,10 +67,12 @@ import {
 } from "./topologyCreateDrawerState";
 import {
   boxSelect,
+  captureSelection,
   cleanSelection,
   rangeSelect,
   selectOne,
   toggleSelected,
+  restoreSelection,
 } from "./topologySelection";
 
 const store = useLaboratoryStore();
@@ -143,6 +146,12 @@ const commandOpen = ref(false);
 const connectionDraft = ref<{
   source: UnifiedConnectionEndpoint;
   target?: UnifiedConnectionEndpoint;
+}>();
+const connectionSelectionSnapshot = ref<{
+  selectedIds: string[];
+  selectedType: typeof selectedType.value;
+  focusedResourceId: string;
+  activeElement: HTMLElement | null;
 }>();
 const pendingEndpoint = computed(() =>
   connectionDraft.value?.source.kind === "node_interface"
@@ -867,6 +876,22 @@ function endpointForObjectPort(
 }
 
 function setConnectionSource(source: UnifiedConnectionEndpoint) {
+  if (!connectionDraft.value)
+    connectionSelectionSnapshot.value = {
+      ...(() => {
+        const snapshot = captureSelection(
+          selectedIds.value,
+          selectedType.value,
+          focusedResourceId.value,
+        );
+        return {
+          selectedIds: snapshot.ids,
+          selectedType: snapshot.type,
+          focusedResourceId: snapshot.focusedResourceId,
+        };
+      })(),
+      activeElement: document.activeElement as HTMLElement | null,
+    };
   connectionDraft.value = { source };
   canvasStatus.value = `已选择 ${source.displayName}；请拖到或选择兼容目标。`;
 }
@@ -905,6 +930,7 @@ async function submitUnifiedConnection(
     );
     store.recordTopologyConnectionTask(envelope);
     connectionDraft.value = undefined;
+    connectionSelectionSnapshot.value = undefined;
     portChooserOpen.value = false;
     portChooserEndpoints.value = [];
     canvasStatus.value = `连接任务 ${envelope.task.id} 已提交。`;
@@ -1034,19 +1060,58 @@ function availableInterfaces(nodeId: string) {
   );
 }
 
-function startConnection(nodeId: string) {
-  const candidates = availableInterfaces(nodeId);
+function connectionSourceCandidates(resourceId: string) {
+  if (!store.active) return [];
+  const occupied = new Set<string>();
+  for (const attachment of store.active.network_attachments || [])
+    if (attachment.port_name)
+      occupied.add(`${attachment.network_object_id}:${attachment.port_name}`);
+  for (const link of store.active.network_object_links || []) {
+    occupied.add(`${link.object_a_id}:${link.port_a_name}`);
+    occupied.add(`${link.object_b_id}:${link.port_b_name}`);
+  }
+  return resolveConnectionSourceCandidates(resourceId, {
+    laboratoryId: store.active.laboratory.id,
+    nodes: store.active.nodes,
+    interfaces: store.active.interfaces,
+    networkObjects: store.active.network_objects,
+    occupiedObjectPorts: occupied,
+  });
+}
+
+function startConnection(resourceId: string) {
+  const candidates = connectionSourceCandidates(resourceId);
   if (!candidates.length) {
-    canvasStatus.value = "所选节点没有可用接口。";
+    canvasStatus.value = "所选资源没有可用连接端点。";
     return;
   }
   if (candidates.length === 1) {
-    setConnectionSource(endpointForInterface(candidates[0]));
+    setConnectionSource(candidates[0]);
     return;
   }
   portChooserMode.value = "source";
-  portChooserInterfaces.value = candidates;
-  portChooserEndpoints.value = candidates.map(endpointForInterface);
+  portChooserInterfaces.value = [];
+  portChooserEndpoints.value = candidates;
+  portChooserOpen.value = true;
+}
+
+async function chooseTargetResource(resourceId: string) {
+  const source = connectionDraft.value?.source;
+  if (!source) return;
+  const candidates = connectionSourceCandidates(resourceId).filter(
+    (endpoint) => endpointsCompatible(source, endpoint).compatible,
+  );
+  if (!candidates.length) {
+    canvasStatus.value = "目标资源没有兼容的可用端点。";
+    return;
+  }
+  if (candidates.length === 1) {
+    await submitUnifiedConnection(source, candidates[0]);
+    return;
+  }
+  portChooserMode.value = "target";
+  portChooserInterfaces.value = [];
+  portChooserEndpoints.value = candidates;
   portChooserOpen.value = true;
 }
 
@@ -1177,6 +1242,19 @@ function cancelConnection() {
   canvasStatus.value = captureSelection
     ? "Capture interface selection cancelled."
     : "Connection cancelled; no topology mutation was sent.";
+  const snapshot = connectionSelectionSnapshot.value;
+  connectionSelectionSnapshot.value = undefined;
+  if (snapshot && !captureSelection) {
+    const restored = restoreSelection({
+      ids: snapshot.selectedIds,
+      type: snapshot.selectedType,
+      focusedResourceId: snapshot.focusedResourceId,
+    });
+    selectedIds.value = restored.ids;
+    selectedType.value = restored.type;
+    focusedResourceId.value = restored.focusedResourceId;
+    requestAnimationFrame(() => snapshot.activeElement?.focus());
+  }
 }
 
 async function disconnectSelectedLink() {
@@ -1405,7 +1483,8 @@ async function topologyKeyboard(event: KeyboardEvent) {
     const target = keyboardResources.value.find(
       (item) => item.id === action.resourceId,
     );
-    if (target?.type === "node") await chooseTargetNode(target.id);
+    if (target?.type === "node" || target?.type === "network_object")
+      await chooseTargetResource(target.id);
   }
   if (action.type === "open_inspector") shell.value?.openInspector();
   if (action.type === "open_terminal") {
@@ -1998,6 +2077,7 @@ onBeforeUnmount(() => {
           : undefined
       "
       :interfaces="portChooserInterfaces"
+      :mode="portChooserMode"
       :endpoints="
         portChooserMode === 'source' || portChooserMode === 'target'
           ? portChooserEndpoints

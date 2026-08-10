@@ -6,6 +6,7 @@ import {
   openTopologyCreateDrawer,
 } from "./topologyCreateDrawerState";
 import { applyAuthoritativeCreation } from "./authoritativeCreation";
+import { resolveConnectionSourceCandidates } from "./topologyConnectionSources";
 import {
   connectionBackingKind,
   endpointsCompatible,
@@ -160,6 +161,37 @@ describe("TopologyWorkspace unified connection admission", () => {
       compatible: false,
       reason: "endpoint_occupied",
     });
+  });
+});
+
+describe("TopologyWorkspace unified plus source resolution", () => {
+  it("auto-selects one source, opens a chooser for many, and exposes logical access", () => {
+    const resources = {
+      laboratoryId: "lab",
+      nodes: [{ id: "node-a", name: "Node A", kind: "qemu" as const }],
+      interfaces: [
+        { id: "if-a", node_id: "node-a", name: "eth0" },
+        { id: "if-b", node_id: "node-a", name: "eth1" },
+      ],
+      networkObjects: [
+        {
+          id: "bridge-a",
+          name: "Bridge A",
+          kind: "bridge" as const,
+          config: {},
+        },
+      ],
+      occupiedObjectPorts: new Set<string>(),
+    };
+    expect(resolveConnectionSourceCandidates("node-a", resources)).toHaveLength(
+      2,
+    );
+    expect(resolveConnectionSourceCandidates("bridge-a", resources)).toEqual([
+      expect.objectContaining({
+        kind: "network_object_access",
+        resourceId: "bridge-a",
+      }),
+    ]);
   });
 });
 

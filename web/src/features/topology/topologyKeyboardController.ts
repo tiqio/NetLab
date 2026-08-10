@@ -105,7 +105,7 @@ export class TopologyKeyboardController {
       const resource = this.resources.find(
         (item) => item.id === this.focusedResourceId,
       );
-      if (resource?.type === "node")
+      if (resource?.type === "node" || resource?.type === "network_object")
         return { type: "begin_connection", resourceId: resource.id };
     }
     if (input.key.toLowerCase() === "t" && this.focusedResourceId) {

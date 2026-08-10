@@ -9,6 +9,30 @@ export interface SelectableBounds extends SelectionRectangle {
   id: string;
 }
 
+export interface SelectionSnapshot<T extends string = string> {
+  ids: string[];
+  type?: T;
+  focusedResourceId: string;
+}
+
+export function captureSelection<T extends string>(
+  ids: readonly string[],
+  type: T | undefined,
+  focusedResourceId: string,
+): SelectionSnapshot<T> {
+  return { ids: [...ids], type, focusedResourceId };
+}
+
+export function restoreSelection<T extends string>(
+  snapshot: SelectionSnapshot<T>,
+) {
+  return {
+    ids: [...snapshot.ids],
+    type: snapshot.type,
+    focusedResourceId: snapshot.focusedResourceId,
+  };
+}
+
 export function selectOne(id: string): string[] {
   return id ? [id] : [];
 }

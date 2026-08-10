@@ -8,6 +8,7 @@ const open = defineModel<boolean>({ required: true });
 const props = defineProps<{
   title?: string;
   description?: string;
+  mode?: "source" | "target" | "capture" | "reconnect";
   interfaces?: NodeInterface[];
   endpoints?: UnifiedConnectionEndpoint[];
 }>();
@@ -16,11 +17,18 @@ const emit = defineEmits<{
   cancel: [];
 }>();
 const listbox = ref<HTMLDivElement>();
+let returnFocus: HTMLElement | null = null;
 
 watch(
   open,
   async (value) => {
-    if (!value) return;
+    if (!value) {
+      await nextTick();
+      returnFocus?.focus();
+      returnFocus = null;
+      return;
+    }
+    returnFocus = document.activeElement as HTMLElement | null;
     await nextTick();
     listbox.value?.querySelector<HTMLButtonElement>('[role="option"]')?.focus();
   },
@@ -28,6 +36,19 @@ watch(
 );
 
 const choices = computed(() => props.endpoints || props.interfaces || []);
+const dialogTitle = computed(() => {
+  if (props.title) return props.title;
+  if (props.mode === "source") return "选择源端点";
+  if (props.mode === "target") return "选择目标端点";
+  return "选择接口";
+});
+const dialogDescription = computed(() => {
+  if (props.description) return props.description;
+  if (props.mode === "source")
+    return "选择一个空闲源端点；后续目标、配置和提交与拖拽连接完全一致。";
+  if (props.mode === "target") return "仅显示与当前源兼容且可用的目标端点。";
+  return "请选择一个可用接口，然后确认连接。";
+});
 
 function choose(value: NodeInterface | UnifiedConnectionEndpoint) {
   emit("choose", value);
@@ -53,11 +74,7 @@ function choiceDetail(value: NodeInterface | UnifiedConnectionEndpoint) {
 </script>
 
 <template>
-  <Dialog
-    v-model="open"
-    :title="title || '选择接口'"
-    :description="description || '请选择一个可用接口，然后确认连接。'"
-  >
+  <Dialog v-model="open" :title="dialogTitle" :description="dialogDescription">
     <div ref="listbox" class="grid gap-2" role="listbox" aria-label="可用接口">
       <Button
         v-for="item in choices"

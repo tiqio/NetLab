@@ -172,7 +172,12 @@ const portOverlays = ref<
     kind: "node_interface" | "network_object_port";
   }>
 >([]);
-const connectorOverlay = ref<{ ownerId: string; x: number; y: number }>();
+const connectorOverlay = ref<{
+  ownerId: string;
+  ownerName: string;
+  x: number;
+  y: number;
+}>();
 const draggingResource = ref(false);
 const selectionRectangle = ref<{
   left: number;
@@ -253,9 +258,14 @@ const effectiveLabelPriority = computed(() =>
     effectiveLabelDensity.value,
   ),
 );
-const selectedConnectorNode = computed(() => {
-  if ((props.selectedIds || []).length !== 1) return undefined;
-  return props.nodes.find((node) => node.id === props.selectedIds?.[0]);
+const connectorResource = computed(() => {
+  const selectedId =
+    (props.selectedIds || []).length === 1 ? props.selectedIds?.[0] : "";
+  const resourceId = selectedId || hoveredResourceId.value;
+  return (
+    props.nodes.find((item) => item.id === resourceId) ||
+    props.networkObjects.find((item) => item.id === resourceId)
+  );
 });
 function networkObjectPorts(value: NetworkObject) {
   const rows =
@@ -344,6 +354,16 @@ const availableInterfaceOwners = computed(
         .map((item) => item.node_id),
     ),
 );
+function resourceHasConnectionCapacity(resourceId: string) {
+  if (availableInterfaceOwners.value.has(resourceId)) return true;
+  const object = props.networkObjects.find((item) => item.id === resourceId);
+  if (!object) return false;
+  if (object.kind === "bridge" || object.kind === "nat_bridge") return true;
+  return networkObjectPorts(object).some(
+    (portName) =>
+      !occupiedObjectPorts.value.has(objectPortId(object.id, portName)),
+  );
+}
 function resourceLabel(
   name: string,
   kind: string,
@@ -1093,12 +1113,17 @@ function refreshOverlays() {
   }
   portOverlays.value = nextPorts;
   if (
-    selectedConnectorNode.value &&
-    availableInterfaceOwners.value.has(selectedConnectorNode.value.id)
+    connectorResource.value &&
+    resourceHasConnectionCapacity(connectorResource.value.id)
   ) {
-    const pixel = chart.value?.graphItemPixel?.(selectedConnectorNode.value.id);
+    const pixel = chart.value?.graphItemPixel?.(connectorResource.value.id);
     connectorOverlay.value = pixel
-      ? { ownerId: selectedConnectorNode.value.id, x: pixel.x + 72, y: pixel.y }
+      ? {
+          ownerId: connectorResource.value.id,
+          ownerName: connectorResource.value.name,
+          x: pixel.x + 52,
+          y: pixel.y - 42,
+        }
       : undefined;
   } else connectorOverlay.value = undefined;
   const trafficPaths: TrafficPathOverlay[] = [];
@@ -1913,8 +1938,10 @@ defineExpose({
         v-if="connectorOverlay"
         class="pointer-events-auto cursor-crosshair"
         data-topology-connector
+        :data-connector-resource-id="connectorOverlay.ownerId"
+        data-connector-position="top-right"
         role="button"
-        aria-label="开始连接"
+        :aria-label="`开始连接 ${connectorOverlay.ownerName}`"
         tabindex="0"
         @click.stop="$emit('connector', connectorOverlay.ownerId)"
         @keydown.enter.prevent="$emit('connector', connectorOverlay.ownerId)"

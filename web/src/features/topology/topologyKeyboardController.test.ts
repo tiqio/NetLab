@@ -122,4 +122,33 @@ describe("TopologyKeyboardController", () => {
       resourceIds: ["a", "b", "link"],
     });
   });
+
+  it("starts and completes a connection from a focused network object", () => {
+    const controller = new TopologyKeyboardController(
+      [
+        { id: "switch-a", type: "network_object", x: 0, y: 0 },
+        { id: "bridge-a", type: "network_object", x: 100, y: 0 },
+      ],
+      [],
+    );
+    controller.focusResource("switch-a");
+    expect(controller.handle({ key: "c" }, ["switch-a"])).toEqual({
+      type: "begin_connection",
+      resourceId: "switch-a",
+    });
+    controller.focusResource("bridge-a");
+    expect(
+      controller.handle({ key: "Enter" }, ["bridge-a"], {
+        connection: true,
+      }),
+    ).toEqual({
+      type: "choose_connection_target",
+      resourceId: "bridge-a",
+    });
+    expect(
+      controller.handle({ key: "Escape" }, ["bridge-a"], {
+        connection: true,
+      }),
+    ).toEqual({ type: "cancel_connection" });
+  });
 });
