@@ -178,7 +178,7 @@ func (r *OwnershipDiscoveryReconciler) Reconcile(ctx context.Context) (err error
 			r.record(ctx, "ownership.resource.resolved", value.ResourceType, value.ResourceID, "resolved", map[string]any{"object_kind": value.ObjectKind, "object_name": value.ObjectName})
 			continue
 		}
-		if value.ResourceType == "network_object_link" && value.CleanupState == "missing_validation_required" && !seen[ownershipKey(value.ObjectKind, value.ObjectName)] {
+		if runtimeOwnerCanBeValidated(value.ResourceType) && value.CleanupState == "missing_validation_required" && !seen[ownershipKey(value.ObjectKind, value.ObjectName)] {
 			ownerExists, ownerErr := r.store.RuntimeOwnerExists(ctx, value.ResourceType, value.ResourceID)
 			if ownerErr != nil {
 				return ownerErr
@@ -201,6 +201,15 @@ func (r *OwnershipDiscoveryReconciler) Reconcile(ctx context.Context) (err error
 		}
 	}
 	return nil
+}
+
+func runtimeOwnerCanBeValidated(resourceType string) bool {
+	switch resourceType {
+	case "node", "interface", "network_object", "link", "laboratory", "network_attachment", "network_object_link", "capture":
+		return true
+	default:
+		return false
+	}
 }
 
 type ownershipScanResult struct {
