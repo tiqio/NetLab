@@ -23,16 +23,22 @@ export class TemplatePage extends BasePage {
   }
 
   async chooseDevice(displayName: string, runtime: "QEMU" | "DOCKER") {
+    const paletteName =
+      displayName === "Ruijie Switch"
+        ? "锐捷二层交换机"
+        : displayName === "Ruijie Router"
+          ? "锐捷三层路由器"
+          : displayName;
     await this.openPalette();
     const button = this.page
       .getByRole("button")
-      .filter({ hasText: displayName })
+      .filter({ hasText: paletteName })
       .filter({ hasText: runtime })
       .first();
     await expect(button).toBeVisible();
     await button.click();
     return this.page.getByRole("dialog", {
-      name: new RegExp(`(?:Add|添加) ${displayName}`, "i"),
+      name: new RegExp(`(?:Add|添加) ${paletteName}`, "i"),
     });
   }
 

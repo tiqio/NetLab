@@ -77,6 +77,9 @@ test("node operations execute through pointer and keyboard", async ({
     return node;
   };
   const openInspector = async (nodeName: string) => {
+    await page.evaluate((laboratoryId) => {
+      localStorage.setItem("netlab.active-laboratory.v1", laboratoryId);
+    }, laboratory.id);
     await page.reload();
     const canvas = page.getByLabel(/拓扑画布键盘操作区/);
     await canvas.focus();
@@ -130,15 +133,17 @@ test("node operations execute through pointer and keyboard", async ({
     );
     await openInspector(primary.name);
 
-    await page.getByLabel("vCPUs").fill(activation === "pointer" ? "1" : "2");
-    await page.getByLabel("CPU 配额（微秒）").fill("50000");
+    await page
+      .getByLabel("vCPU 数量")
+      .fill(activation === "pointer" ? "1" : "2");
+    await page.getByLabel("CPU 配额（核心）").fill("0.5");
     await page.getByLabel("内存（MiB）").fill("128");
     duration = await activate(
       page.getByRole("button", { name: "应用限制" }),
       activation,
     );
     await expect(
-      page.getByRole("status").filter({ hasText: /vCPUs limited/ }),
+      page.getByRole("status").filter({ hasText: /个 vCPU，CPU 配额/ }),
     ).toBeVisible();
     record(
       "node.resources.apply",
