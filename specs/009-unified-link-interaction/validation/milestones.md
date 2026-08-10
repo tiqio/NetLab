@@ -30,10 +30,10 @@ Notes: Node, lightweight L2/L3, Bridge, and NAT resources now expose the same to
 ## Milestone 3 — Four-Port Defaults and Live Lifecycle
 
 ```text
-Commit SHA:
-Focused tests:
-Result:
-Notes:
+Commit SHA: 736add1d04e462a2a8dc5a9d3a485016e589a103; compatibility tests a4f75b2
+Focused tests: go test ./internal/domain ./internal/api/http ./internal/api/mcp ./internal/app/command ./internal/app/reconcile; npm test -- lightweightSwitchConfig.test.ts topologyResourceDraft.test.ts CreateTopologyResourceDrawer.test.ts; npm run format:check; npm run lint; npm run build; Playwright lightweightFourPorts.spec.ts --list
+Result: LOCAL PASS; TARGET JOURNEY PENDING (T060 remains open)
+Notes: New lightweight L2/L3 create requests default to exactly eth0–eth3 in the server-authoritative create path, while explicit configurations and legacy single-port import, export, update, and recovery paths preserve their saved port sets. HTTP and MCP default creation and idempotent replay are covered locally; the SPA/HTTP/MCP Playwright journey is registered for three viewports but was not executed without the target runtime.
 ```
 
 ## Milestone 4 — Final Candidate and Target Validation

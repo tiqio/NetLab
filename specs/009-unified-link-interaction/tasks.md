@@ -129,10 +129,10 @@
 ### Tests for User Story 3
 
 - [X] T050 [P] [US3] 为 L2/L3 四端口默认、显式配置优先、唯一名称和旧配置不扩展编写失败领域测试到 `internal/domain/lightweight_ports_test.go`
-- [ ] T051 [P] [US3] 为 SPA/HTTP/MCP 缺省创建一致、幂等重试和返回配置编写失败合同测试到 `internal/api/http/topology_creation_contract_test.go` 与 `internal/api/mcp/server_test.go`
+- [X] T051 [P] [US3] 为 SPA/HTTP/MCP 缺省创建一致、幂等重试和返回配置编写失败合同测试到 `internal/api/http/topology_creation_contract_test.go` 与 `internal/api/mcp/server_test.go`
 - [X] T052 [P] [US3] 为创建草稿、配置编辑器、drawer 可增删改端口和四端口提交编写失败前端测试到 `web/src/features/topology/topologyResourceDraft.test.ts`、`web/src/features/topology/CreateTopologyResourceDrawer.test.ts` 与 `web/src/features/nodes/lightweightSwitchConfig.test.ts`
-- [ ] T053 [P] [US3] 为旧单端口对象升级、导入导出和恢复不扩口编写失败测试到 `internal/app/command/import_test.go`、`internal/app/command/export_test.go` 与 `internal/app/reconcile/recovery_coordinator_test.go`
-- [ ] T054 [P] [US3] 增加 SPA/HTTP/MCP 新建四端口、四端口独立连接和旧对象保持的 Playwright 旅程到 `tests/e2e/journeys/lightweightFourPorts.spec.ts`
+- [X] T053 [P] [US3] 为旧单端口对象升级、导入导出和恢复不扩口编写失败测试到 `internal/app/command/import_test.go`、`internal/app/command/export_test.go` 与 `internal/app/reconcile/recovery_coordinator_test.go`
+- [X] T054 [P] [US3] 增加 SPA/HTTP/MCP 新建四端口、四端口独立连接和旧对象保持的 Playwright 旅程到 `tests/e2e/journeys/lightweightFourPorts.spec.ts`
 
 ### Implementation for User Story 3
 
@@ -140,9 +140,9 @@
 - [X] T056 [US3] 在 `internal/app/reconcile/network_objects.go` 与 `internal/app/reconcile/network_object_tasks.go` 对 SPA/HTTP/MCP 创建统一应用服务端默认值，显式配置、更新、导入和恢复不补端口
 - [X] T057 [US3] 在 `web/src/features/nodes/lightweightSwitchConfig.ts` 与 `web/src/features/topology/topologyResourceDraft.ts` 将新建 L2/L3 草稿初始化为四端口并保持可编辑
 - [X] T058 [US3] 在 `web/src/features/nodes/LightweightSwitchConfigEditor.vue` 与 `web/src/features/topology/CreateTopologyResourceDrawer.vue` 支持创建前增加、删除、重命名和分别配置四个默认端口
-- [ ] T059 [US3] 在 `internal/app/command/import.go` 与 `internal/app/command/export.go` 保持实际保存端口集合并禁止导入/恢复路径调用创建默认扩展
+- [X] T059 [US3] 在 `internal/app/command/import.go` 与 `internal/app/command/export.go` 保持实际保存端口集合并禁止导入/恢复路径调用创建默认扩展
 - [ ] T060 [US3] 运行 T050–T054、创建合同、导入导出和四端口 Playwright 旅程，并记录结果到 `specs/009-unified-link-interaction/validation/milestones.md`
-- [ ] T061 [US3] 将服务端权威四端口默认和兼容保护作为聚焦 Git 提交，并把 commit SHA 写入 `specs/009-unified-link-interaction/validation/milestones.md`
+- [X] T061 [US3] 将服务端权威四端口默认和兼容保护作为聚焦 Git 提交，并把 commit SHA 写入 `specs/009-unified-link-interaction/validation/milestones.md`
 
 **Checkpoint**: US3 可独立演示；所有创建控制面默认一致，旧实验室不会因升级自动改变端口或连接。
 
