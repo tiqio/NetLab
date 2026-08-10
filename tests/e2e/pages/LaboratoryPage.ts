@@ -35,10 +35,19 @@ export class LaboratoryPage extends BasePage {
   }
 
   async open() {
-    await this.page.goto("/");
-    await expect(
-      this.page.getByLabel(/^(Laboratory toolbar|实验室工具栏)$/),
-    ).toBeVisible();
+    const toolbar = this.page.getByLabel(/^(Laboratory toolbar|实验室工具栏)$/);
+    let lastError: unknown;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        await this.page.goto("/", { waitUntil: "domcontentloaded" });
+        await expect(toolbar).toBeVisible({ timeout: 5_000 });
+        return;
+      } catch (error) {
+        lastError = error;
+        await this.page.waitForTimeout(250);
+      }
+    }
+    throw lastError;
   }
 
   async list(): Promise<LaboratoryRecord[]> {
