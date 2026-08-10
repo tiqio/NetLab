@@ -119,6 +119,63 @@ test("node operations execute through pointer and keyboard", async ({
     );
     await openInspector(primary.name);
 
+    const advancedMapping = page.getByRole("button", { name: "高级设置" });
+    if ((await advancedMapping.getAttribute("aria-expanded")) !== "true") {
+      await advancedMapping.click();
+    }
+    await page.getByLabel("节点地址").fill("127.0.0.1");
+    await page.getByLabel("宿主机端口").fill("0");
+    const mappingResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes(`/api/v1/nodes/${primary.id}/port-mappings`) &&
+        response.request().method() === "POST",
+    );
+    duration = await activate(
+      page.getByRole("button", { name: "保存并生效" }),
+      activation,
+    );
+    const mappingOutcome = await mappingResponse;
+    expect(mappingOutcome.status()).toBe(202);
+    const mappingEnvelope = (await mappingOutcome.json()) as {
+      port_mapping: { id: string; host_port: number };
+      task: { id: string };
+    };
+    const hostPort = String(mappingEnvelope.port_mapping.host_port);
+    await waitForCondition(
+      async () =>
+        (
+          await automation.get(`/api/v1/tasks/${mappingEnvelope.task.id}`)
+        ).json(),
+      (task: { state?: string }) => task.state === "succeeded",
+      `port mapping task ${mappingEnvelope.task.id}`,
+      60_000,
+    );
+    await waitForCondition(
+      async () =>
+        (
+          await automation.get(`/api/v1/nodes/${primary.id}/port-mappings`)
+        ).json(),
+      (mappings: Array<{ id: string }>) =>
+        mappings.some(
+          (mapping) => mapping.id === mappingEnvelope.port_mapping.id,
+        ),
+      `port mapping ${mappingEnvelope.port_mapping.id}`,
+      30_000,
+    );
+    const mappingSection = page.locator("section").filter({
+      has: page.getByRole("heading", { name: "端口映射" }),
+    });
+    await expect(
+      mappingSection.getByText(new RegExp(hostPort)).first(),
+    ).toBeVisible();
+    record(
+      "node.port.publish",
+      activation,
+      `host port ${hostPort} mapping succeeded and remained visible`,
+      [primary.id],
+      duration,
+    );
+
     duration = await activate(
       page.getByRole("button", { name: /^(Stop|停止)$/, exact: true }),
       activation,
@@ -177,25 +234,6 @@ test("node operations execute through pointer and keyboard", async ({
       "node.interface.add",
       activation,
       `interface request returned HTTP ${interfaceOutcome.status()} with visible feedback`,
-      [primary.id],
-      duration,
-    );
-
-    const hostPort = activation === "pointer" ? "22231" : "22232";
-    await page.getByLabel("宿主机端口").fill(hostPort);
-    duration = await activate(
-      page.getByRole("button", { name: "保存并生效" }),
-      activation,
-    );
-    await expect(
-      page
-        .getByRole("status")
-        .filter({ hasText: /正在创建端口映射|正在发布端口|端口映射已生效/ }),
-    ).toBeVisible();
-    record(
-      "node.port.publish",
-      activation,
-      `host port ${hostPort} mapping was queued`,
       [primary.id],
       duration,
     );
