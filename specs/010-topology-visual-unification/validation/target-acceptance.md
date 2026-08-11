@@ -219,3 +219,33 @@ recent NetLab error-level journal entries: 0
 resource counts before/after: 2 laboratories, 6 nodes, 2 links, 0 Traffic Filters
 rollback SHA-256 verification: ok
 ```
+
+## Unlimited QEMU Capacity Acceptance
+
+Candidate `qemu-unlimited-20260811T071624Z-r2` was deployed from clean commit
+`3b7f4121f1cf3faf270f957b2fdd7834837f4fe5` with `resources.max_running_qemu: 0`. The setting removes
+only the count ceiling and leaves host-resource admission and per-node isolation protections active.
+
+The component-matrix laboratory `019feee704ee-c5b2bd57159bebe86bed` simultaneously ran six QEMU
+nodes covering Ubuntu/QGA, VyOS and four vendor appliance templates. Every node reached `running`
+with an empty `last_error`; the runtime query returned `running_qemu: 6`. Three QEMU-to-QEMU links
+were also observed as `connected`.
+
+```text
+netlab.service: active
+/healthz: ok
+candidate: qemu-unlimited-20260811T071624Z-r2
+commit: 3b7f4121f1cf3faf270f957b2fdd7834837f4fe5
+artifact SHA-256: d2bfd22b133dde62677f94b9013f282ff0907a43aafa66e25eac6eeb75575b1d
+migration: 15
+configured max_running_qemu: 0
+simultaneous running QEMU nodes: 6
+QEMU nodes with last_error: 0
+tested direct QEMU links connected: 3
+host memory: 125 GiB total, approximately 115 GiB available
+live and rollback database integrity: ok
+rollback: /var/lib/netlab/rollback/qemu-unlimited-20260811T071624Z-r2-predeploy
+```
+
+The deployed frontend bundle contains both `资源创建失败` and `节点操作失败`, confirming that
+admission failures and asynchronous start/stop task failures have explicit warning-dialog paths.

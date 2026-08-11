@@ -197,3 +197,35 @@ connected successfully when selected, switching back also reconnected successful
 canvas existed while a VNC tab was active, and zero VNC canvases existed while the serial tab was
 active. The browser reported no page errors. The authoritative service remained healthy with no
 error-level journal entries and unchanged user resource counts.
+
+## Post-Acceptance Correction — Unlimited QEMU Capacity
+
+Commits `efe2fbf` and `3b7f412` replace the original four-running-QEMU admission ceiling with the
+`resources.max_running_qemu` operator setting. A value of `0` disables the count ceiling; negative
+values are rejected and positive values retain finite admission control. Host-memory, disk,
+per-node resource, interface-capacity and cgroup protections remain active independently of this
+setting. Resource creation failures and asynchronous node-operation failures now open structured
+warning dialogs in the topology workspace.
+
+```text
+Candidate ID: qemu-unlimited-20260811T071624Z-r2
+Source commit SHA: 3b7f4121f1cf3faf270f957b2fdd7834837f4fe5
+Artifact SHA-256: d2bfd22b133dde62677f94b9013f282ff0907a43aafa66e25eac6eeb75575b1d
+Contract digest: sha256:2e1a4279f16d7e6c282b741f06c52e75f1db210e91dbf4b99180bea5c9da808b
+Build time: 2026-08-11T07:16:24Z
+Deployment date: 2026-08-11
+Migration: 15 (unchanged)
+Configured max_running_qemu: 0 (unlimited)
+Rollback directory: /var/lib/netlab/rollback/qemu-unlimited-20260811T071624Z-r2-predeploy
+```
+
+The clean candidate passed `go test ./...`, `go vet ./...`, the focused topology Vitest suite,
+production frontend build, ESLint and Prettier before deployment. The rollback directory contains
+the previous binary and configuration, template readiness data, an online SQLite backup and verified
+SHA-256 manifests. Both the backup and live database passed `PRAGMA integrity_check`.
+
+On the target, laboratory `019feee704ee-c5b2bd57159bebe86bed` ran six QEMU nodes concurrently:
+Ubuntu QEMU/QGA, VyOS, FancyWAN, FortiGate, Ruijie Router and Ruijie Switch. All six reported
+`running` without `last_error`, and all three tested direct QEMU links reported `connected`. The
+service remained active, `/healthz` returned `ok`, migration 15 remained installed, and the host
+reported approximately 115 GiB of 125 GiB RAM available during acceptance.
