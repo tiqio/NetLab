@@ -139,6 +139,25 @@ func NetworkTools(service *reconcile.NetworkObjectService, operations *reconcile
 			}
 			return map[string]any{"network_object": object, "task": taskValue, "placement_assignment": assignment, "laboratory_revision": laboratoryRevision}, nil
 		}},
+		{Name: "netlab.network_objects.update", Description: "Update network-object configuration through the same revisioned durable operation as HTTP.", InputSchema: mutationSchema(map[string]any{"object_id": stringProperty("Network object ID"), "name": stringProperty("Network object name"), "config": map[string]any{"type": "object"}}, "object_id", "name", "config", "expected_revision"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
+			if operations == nil {
+				return unavailable("network object update")
+			}
+			id, err := argumentString(args, "object_id")
+			if err != nil {
+				return nil, err
+			}
+			name, err := argumentString(args, "name")
+			if err != nil {
+				return nil, err
+			}
+			config, _ := args["config"].(map[string]any)
+			object, taskValue, err := operations.Update(c, domain.ID(id), revisionArgument(args), name, config, optionalString(args, "idempotency_key"))
+			if err != nil {
+				return nil, err
+			}
+			return map[string]any{"network_object": object, "task": taskValue}, nil
+		}},
 		{Name: "netlab.network_objects.get", Description: "Get network object state and configuration.", InputSchema: requiredObject(map[string]any{"object_id": stringProperty("Network object ID")}, "object_id"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
 			id, err := argumentString(args, "object_id")
 			if err != nil {
