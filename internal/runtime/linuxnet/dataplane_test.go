@@ -247,3 +247,21 @@ func TestDeleteNetworkObjectLinkDoesNotTouchUnrelatedInterfaces(t *testing.T) {
 		t.Fatalf("owned endpoint was not targeted exactly: %s", commands)
 	}
 }
+
+func TestDeleteNetworkObjectLinkSkipsNamespaceCleanupForPlainBridge(t *testing.T) {
+	bridge := domain.NetworkObject{ID: "bridge", Kind: domain.NetworkBridge}
+	l3 := domain.NetworkObject{ID: "l3", Kind: domain.NetworkSwitchL3}
+	link := domain.NetworkObjectLink{ID: "link", ObjectAID: bridge.ID, PortAName: "uplink0", ObjectBID: l3.ID, PortBName: "eth2"}
+	executor := &dataPlaneExecutor{}
+	runtime, _ := NewDataPlane(executor)
+	if err := runtime.DeleteNetworkObjectLink(context.Background(), link, bridge, l3); err != nil {
+		t.Fatal(err)
+	}
+	commands := strings.Join(executor.commands, "\n")
+	if strings.Contains(commands, "nlbr") {
+		t.Fatalf("plain bridge was treated as namespace-backed: %s", commands)
+	}
+	if !strings.Contains(commands, "ip -n "+SwitchL3NamespaceName(l3.ID)+" link delete eth2") {
+		t.Fatalf("namespace endpoint was not cleaned: %s", commands)
+	}
+}

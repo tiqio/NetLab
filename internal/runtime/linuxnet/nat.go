@@ -8,6 +8,7 @@ import (
 	"net/netip"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/netlab/netlab/internal/domain"
 	"github.com/netlab/netlab/internal/runtime/ownership"
@@ -71,6 +72,25 @@ type BridgeRuntime struct {
 	executor CommandExecutor
 	ip       string
 	bridge   string
+}
+
+func inspectHostBridgeBacking(ctx context.Context, executor CommandExecutor, ip, name string) domain.RuntimeBackingObservation {
+	observation := domain.RuntimeBackingObservation{Kind: domain.RuntimeBackingHostBridge, RuntimeName: name, Owned: true, Adoptable: true, Recreatable: true, ObservedAt: time.Now().UTC()}
+	_, err := executor.Output(ctx, ip, "link", "show", "dev", name)
+	observation.Usable = err == nil
+	if err != nil {
+		problem := domain.Problem{Code: "runtime_backing_unusable", Message: err.Error(), Retryable: true, Phase: "runtime_inspection", Cleanup: "owned bridge will be recreated during reconciliation", OperatorHint: "retry reconciliation and inspect host bridge support", Details: map[string]any{"runtime_name": name}}
+		observation.Problem = &problem
+	}
+	return observation
+}
+
+func (r *BridgeRuntime) InspectNetworkObject(ctx context.Context, object domain.NetworkObject) (domain.RuntimeBackingObservation, error) {
+	return inspectHostBridgeBacking(ctx, r.executor, r.ip, ownership.Name("nlbr", object.ID, 15)), nil
+}
+
+func (r *NATRuntime) InspectNetworkObject(ctx context.Context, object domain.NetworkObject) (domain.RuntimeBackingObservation, error) {
+	return inspectHostBridgeBacking(ctx, r.executor, r.ip, ownership.Name("nlnat", object.ID, 15)), nil
 }
 
 func NewBridgeRuntime(executor CommandExecutor) (*BridgeRuntime, error) {

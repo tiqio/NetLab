@@ -210,7 +210,8 @@ func main() {
 	if switchL3RuntimeErr != nil {
 		logger.Warn("L3 switch runtime unavailable", "error", switchL3RuntimeErr)
 	}
-	networkService := reconcile.NewNetworkObjectService(repositories, reconcile.NetworkRuntimeDispatch{Bridge: bridgeRuntime, NAT: natRuntime, PC: pcRuntime, SwitchL2: switchL2Runtime, SwitchL3: switchL3Runtime})
+	networkRuntimes := reconcile.NetworkRuntimeDispatch{Bridge: bridgeRuntime, NAT: natRuntime, PC: pcRuntime, SwitchL2: switchL2Runtime, SwitchL3: switchL3Runtime}
+	networkService := reconcile.NewNetworkObjectService(repositories, networkRuntimes)
 	networkService.AddObjectLinkObserverCleanup(captureManager)
 	networkService.AddObjectLinkObserverCleanup(trafficFilterManager)
 	networkTasks := reconcile.NewNetworkObjectTaskService(networkService, taskRunner)

@@ -2,6 +2,7 @@ package linuxnet
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -263,26 +264,25 @@ func (d *DataPlane) AttachNamespace(ctx context.Context, attachment domain.Netwo
 }
 
 func (d *DataPlane) DeleteNetworkObjectLink(ctx context.Context, link domain.NetworkObjectLink, objectA, objectB domain.NetworkObject) error {
-	namespaceA, err := networkObjectNamespace(objectA)
-	if err != nil {
-		return err
+	type endpoint struct {
+		object domain.NetworkObject
+		port   string
 	}
-	err = d.executor.Run(ctx, d.ip, "-n", namespaceA, "link", "delete", link.PortAName)
-	if err == nil {
-		return nil
+	var cleanupErrors []error
+	for _, value := range []endpoint{{object: objectA, port: link.PortAName}, {object: objectB, port: link.PortBName}} {
+		namespace, err := networkObjectNamespace(value.object)
+		if err != nil {
+			if value.object.Kind == domain.NetworkBridge || value.object.Kind == domain.NetworkNAT {
+				continue
+			}
+			cleanupErrors = append(cleanupErrors, err)
+			continue
+		}
+		if err = d.executor.Run(ctx, d.ip, "-n", namespace, "link", "delete", value.port); err != nil && !missingLinkError(err) {
+			cleanupErrors = append(cleanupErrors, err)
+		}
 	}
-	namespaceB, namespaceErr := networkObjectNamespace(objectB)
-	if namespaceErr != nil {
-		return namespaceErr
-	}
-	fallbackErr := d.executor.Run(ctx, d.ip, "-n", namespaceB, "link", "delete", link.PortBName)
-	if fallbackErr == nil || missingLinkError(fallbackErr) {
-		return nil
-	}
-	if missingLinkError(err) {
-		return fallbackErr
-	}
-	return fmt.Errorf("delete endpoint A: %v; delete endpoint B: %w", err, fallbackErr)
+	return errors.Join(cleanupErrors...)
 }
 
 func missingLinkError(err error) bool {

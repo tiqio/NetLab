@@ -13,6 +13,10 @@ type SwitchL2Runtime struct {
 	ip, bridge string
 }
 
+func (r *SwitchL2Runtime) InspectNetworkObject(ctx context.Context, object domain.NetworkObject) (domain.RuntimeBackingObservation, error) {
+	return inspectNamespaceBacking(ctx, r.executor, r.ip, SwitchL2NamespaceName(object.ID)), nil
+}
+
 func NewSwitchL2Runtime(executor CommandExecutor) (*SwitchL2Runtime, error) {
 	if executor != nil {
 		return &SwitchL2Runtime{executor: executor, ip: "ip", bridge: "bridge"}, nil

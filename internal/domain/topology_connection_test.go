@@ -2,6 +2,12 @@ package domain
 
 import "testing"
 
+func TestConnectionEndpointBackingKindDoesNotPermitNamespaceForHostBridge(t *testing.T) {
+	if RuntimeBackingHostBridge == RuntimeBackingNamespace {
+		t.Fatal("host bridge and namespace backing must remain distinct")
+	}
+}
+
 func TestResolveTopologyConnectionBacking(t *testing.T) {
 	tests := []struct {
 		name   string

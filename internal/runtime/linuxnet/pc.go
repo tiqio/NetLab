@@ -28,6 +28,10 @@ type PCRuntime struct {
 	now                func() time.Time
 }
 
+func (r *PCRuntime) InspectNetworkObject(ctx context.Context, object domain.NetworkObject) (domain.RuntimeBackingObservation, error) {
+	return inspectNamespaceBacking(ctx, r.executor, r.ip, ownership.Name("nlpc", object.ID, 15)), nil
+}
+
 type PCDiagnostics struct {
 	Addresses    json.RawMessage   `json:"addresses"`
 	Routes       json.RawMessage   `json:"routes"`

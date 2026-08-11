@@ -22,6 +22,14 @@ type NetworkRuntime interface {
 	Disconnect(context.Context, domain.Link) error
 	InspectLink(context.Context, domain.Link) (string, error)
 }
+
+type NetworkObjectRuntimeInspector interface {
+	InspectNetworkObject(context.Context, domain.NetworkObject) (domain.RuntimeBackingObservation, error)
+}
+
+type ConnectionEndpointRuntimeInspector interface {
+	InspectEndpoint(context.Context, domain.ConnectionEndpoint) (domain.RuntimeBackingObservation, error)
+}
 type CgroupRuntime interface {
 	Apply(context.Context, domain.Node) error
 	Remove(context.Context, domain.ID) error

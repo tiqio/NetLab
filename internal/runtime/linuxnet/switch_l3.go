@@ -17,6 +17,10 @@ type SwitchL3Runtime struct {
 	ip       string
 }
 
+func (r *SwitchL3Runtime) InspectNetworkObject(ctx context.Context, object domain.NetworkObject) (domain.RuntimeBackingObservation, error) {
+	return inspectNamespaceBacking(ctx, r.executor, r.ip, SwitchL3NamespaceName(object.ID)), nil
+}
+
 func (r *SwitchL3Runtime) Diagnostics(ctx context.Context, id domain.ID) (map[string]any, error) {
 	namespace := SwitchL3NamespaceName(id)
 	routes, err := r.executor.Output(ctx, r.ip, "-n", namespace, "-j", "route", "show", "table", "all")

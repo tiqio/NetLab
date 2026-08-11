@@ -26,15 +26,15 @@
 
 **⚠️ CRITICAL**: Complete this phase before implementing any user story.
 
-- [ ] T006 Write failing domain tests for runtime backing kinds, ownership, usability and legal recovery transitions in `internal/domain/runtime_observation_test.go`
-- [ ] T007 [P] Write failing domain tests for endpoint backing classification and illegal namespace operations on host bridges in `internal/domain/topology_connection_test.go`
-- [ ] T008 Define recoverable runtime backing and forwarding/VLAN observation value types without runtime dependencies in `internal/domain/runtime_observation.go`
-- [ ] T009 Extend structured runtime problems with consistent recovery, cleanup and mismatch details in `internal/app/reconcile/problems.go`
-- [ ] T010 Implement endpoint backing classification for namespace ports, host bridges, QEMU taps and Docker veths in `internal/app/reconcile/endpoint_backing.go`
-- [ ] T011 [P] Add endpoint backing classifier tests covering every supported endpoint kind in `internal/app/reconcile/endpoint_backing_test.go`
-- [ ] T012 Add runtime inspection interfaces for network objects and connection endpoints in `internal/app/ports/network_runtime.go`
-- [ ] T013 Wire runtime inspection dependencies without changing existing mutation entry points in `cmd/netlabd/main.go`
-- [ ] T014 Run focused foundational tests and record the passing commands and results in `specs/011-network-path-recovery/validation/foundation.md`
+- [X] T006 Write failing domain tests for runtime backing kinds, ownership, usability and legal recovery transitions in `internal/domain/runtime_observation_test.go`
+- [X] T007 [P] Write failing domain tests for endpoint backing classification and illegal namespace operations on host bridges in `internal/domain/topology_connection_test.go`
+- [X] T008 Define recoverable runtime backing and forwarding/VLAN observation value types without runtime dependencies in `internal/domain/runtime_observation.go`
+- [X] T009 Extend structured runtime problems with consistent recovery, cleanup and mismatch details in `internal/app/reconcile/problems.go`
+- [X] T010 Implement endpoint backing classification for namespace ports, host bridges, QEMU taps and Docker veths in `internal/app/reconcile/endpoint_backing.go`
+- [X] T011 [P] Add endpoint backing classifier tests covering every supported endpoint kind in `internal/app/reconcile/endpoint_backing_test.go`
+- [X] T012 Add runtime inspection interfaces for network objects and connection endpoints in `internal/app/ports/network_runtime.go`
+- [X] T013 Wire runtime inspection dependencies without changing existing mutation entry points in `cmd/netlabd/main.go`
+- [X] T014 Run focused foundational tests and record the passing commands and results in `specs/011-network-path-recovery/validation/foundation.md`
 
 **Checkpoint**: Shared runtime truth and endpoint ownership primitives are ready.
 
@@ -48,9 +48,9 @@
 
 ### Tests for User Story 1
 
-- [ ] T015 [P] [US1] Write failing namespace tests for listed-but-invalid references, owned recreation, unowned refusal and idempotent deletion in `internal/runtime/linuxnet/namespace_test.go`
+- [X] T015 [P] [US1] Write failing namespace tests for listed-but-invalid references, owned recreation, unowned refusal and idempotent deletion in `internal/runtime/linuxnet/namespace_test.go`
 - [ ] T016 [P] [US1] Write failing recovery coordinator tests for dependency order, partial failure isolation and checkpoint outcomes in `internal/app/reconcile/recovery_coordinator_test.go`
-- [ ] T017 [P] [US1] Write failing dataplane tests proving plain-bridge cleanup never enters namespace cleanup in `internal/app/reconcile/dataplane_test.go`
+- [X] T017 [P] [US1] Write failing dataplane tests proving plain-bridge cleanup never enters namespace cleanup in `internal/app/reconcile/dataplane_test.go`
 - [ ] T018 [P] [US1] Write failing network-object task tests for retryable reconcile tasks, revision conflicts, cancellation and deletion of failed links in `internal/app/reconcile/network_object_tasks_test.go`
 - [ ] T019 [P] [US1] Write failing SQLite recovery tests for pending/disconnecting reservation finalization and ordered outbox events in `internal/store/sqlite/recovery_repository_test.go`
 - [ ] T020 [P] [US1] Write failing HTTP contract tests for object/link reconcile endpoints and structured diagnostics in `internal/api/http/network_recovery_contract_test.go`
@@ -61,12 +61,12 @@
 
 ### Implementation for User Story 1
 
-- [ ] T025 [US1] Replace namespace name-presence checks with in-namespace usability and ownership validation in `internal/runtime/linuxnet/namespace.go`
-- [ ] T026 [US1] Implement safe adopt, recreate, quarantine and delete outcomes for owned namespace backing in `internal/runtime/linuxnet/namespace.go`
-- [ ] T027 [US1] Add inspect methods for PC, L2 and L3 runtime backing and required interfaces in `internal/runtime/linuxnet/pc.go`, `internal/runtime/linuxnet/switch_l2.go`, and `internal/runtime/linuxnet/switch_l3.go`
+- [X] T025 [US1] Replace namespace name-presence checks with in-namespace usability and ownership validation in `internal/runtime/linuxnet/namespace.go`
+- [X] T026 [US1] Implement safe adopt, recreate, quarantine and delete outcomes for owned namespace backing in `internal/runtime/linuxnet/namespace.go`
+- [X] T027 [US1] Add inspect methods for PC, L2 and L3 runtime backing and required interfaces in `internal/runtime/linuxnet/pc.go`, `internal/runtime/linuxnet/switch_l2.go`, and `internal/runtime/linuxnet/switch_l3.go`
 - [ ] T028 [US1] Reorder startup reconciliation across object backing, ports, attachments/object links and unified connection state in `internal/app/reconcile/recovery_coordinator.go`
-- [ ] T029 [US1] Mark unusable runtime backing failed instead of active and preserve unrelated recovery progress in `internal/app/reconcile/network_objects.go`
-- [ ] T030 [US1] Dispatch object-link create, compensation and deletion by endpoint backing kind in `internal/app/reconcile/dataplane.go`
+- [X] T029 [US1] Mark unusable runtime backing failed instead of active and preserve unrelated recovery progress in `internal/app/reconcile/network_objects.go`
+- [X] T030 [US1] Dispatch object-link create, compensation and deletion by endpoint backing kind in `internal/app/reconcile/dataplane.go`
 - [ ] T031 [US1] Finalize exhausted pending/disconnecting links with structured failed outcomes and retry/delete eligibility in `internal/app/reconcile/topology_connections.go`
 - [ ] T032 [US1] Add durable object/link reconcile commands and task handlers in `internal/app/reconcile/network_object_tasks.go`
 - [ ] T033 [US1] Expose reconcile endpoints and desired-versus-observed diagnostics in `internal/api/http/network_handlers.go`

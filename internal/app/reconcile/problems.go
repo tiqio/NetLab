@@ -6,6 +6,11 @@ import (
 
 func structuredProblem(err error, fallback domain.Problem) *domain.Problem {
 	problem := domain.NormalizeProblem(err, fallback)
+	if problem.Details == nil {
+		problem.Details = map[string]any{}
+	}
+	problem.Details["phase"] = problem.Phase
+	problem.Details["cleanup"] = problem.Cleanup
 	return &problem
 }
 

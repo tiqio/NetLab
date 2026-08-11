@@ -49,6 +49,26 @@ type NetworkObjectRuntime interface {
 	Delete(context.Context, domain.ID) error
 }
 
+type networkObjectRuntimeInspector interface {
+	InspectNetworkObject(context.Context, domain.NetworkObject) (domain.RuntimeBackingObservation, error)
+}
+
+func inspectNetworkObjectRuntime(ctx context.Context, runtime NetworkObjectRuntime, value domain.NetworkObject, phase, cleanup string) *domain.Problem {
+	inspector, ok := runtime.(networkObjectRuntimeInspector)
+	if !ok {
+		return nil
+	}
+	observation, err := inspector.InspectNetworkObject(ctx, value)
+	if err == nil && observation.Healthy() {
+		return nil
+	}
+	fallback := domain.Problem{Code: "runtime_backing_unusable", Message: "network object runtime backing did not become usable", Retryable: true, ResourceType: "network_object", ResourceID: value.ID, Phase: phase, Cleanup: cleanup, OperatorHint: "retry reconciliation and inspect runtime backing", Details: map[string]any{"backing_kind": observation.Kind, "runtime_name": observation.RuntimeName}}
+	if observation.Problem != nil && err == nil {
+		err = *observation.Problem
+	}
+	return structuredProblem(err, fallback)
+}
+
 type NetworkRuntimeDispatch struct {
 	Bridge   NetworkObjectRuntime
 	NAT      NetworkObjectRuntime
@@ -156,6 +176,10 @@ func (s *NetworkObjectService) CreateAs(ctx context.Context, id, labID domain.ID
 		_ = s.repository.SetNetworkObjectState(context.Background(), value.ID, "failed", problem)
 		return value, *problem
 	}
+	if problem := inspectNetworkObjectRuntime(ctx, runtime, value, "provisioning_inspection", "owned partial state is retained for retry"); problem != nil {
+		_ = s.repository.SetNetworkObjectState(context.Background(), value.ID, "failed", problem)
+		return value, *problem
+	}
 	value.ObservedState = "active"
 	_ = s.repository.SetNetworkObjectState(context.Background(), value.ID, "active", nil)
 	if value.Kind == domain.NetworkNAT {
@@ -207,6 +231,10 @@ func (s *NetworkObjectService) Update(ctx context.Context, id domain.ID, revisio
 	}
 	if err = runtime.Configure(ctx, value); err != nil {
 		problem := structuredProblem(err, domain.Problem{Code: "reconciliation_failed", Retryable: true, ResourceType: "network_object", ResourceID: value.ID, Phase: "updating", Cleanup: "updated configuration retained for retry", OperatorHint: "inspect the network namespace and retry", RetryAfterSeconds: 3})
+		_ = s.repository.SetNetworkObjectState(context.Background(), value.ID, "failed", problem)
+		return value, *problem
+	}
+	if problem := inspectNetworkObjectRuntime(ctx, runtime, value, "update_inspection", "updated configuration retained for retry"); problem != nil {
 		_ = s.repository.SetNetworkObjectState(context.Background(), value.ID, "failed", problem)
 		return value, *problem
 	}
@@ -490,6 +518,13 @@ func (s *NetworkObjectService) RestoreLaboratoryWithCheckpoints(ctx context.Cont
 			problem := structuredProblem(err, domain.Problem{Code: "recovery_failed", Retryable: true, ResourceType: "network_object", ResourceID: value.ID, Phase: "recovery", Cleanup: "owned partial network state is retained for retry", OperatorHint: "inspect the network namespace or bridge and retry recovery", RetryAfterSeconds: 3})
 			_ = s.repository.SetNetworkObjectState(ctx, value.ID, "failed", problem)
 			if checkpointErr := checkpoint(RecoveryResourceOutcome{ResourceType: "network_object", ResourceID: value.ID, State: "failed", Error: err.Error()}); checkpointErr != nil {
+				return checkpointErr
+			}
+			continue
+		}
+		if problem := inspectNetworkObjectRuntime(ctx, runtime, value, "recovery_inspection", "owned runtime state is retained for retry"); problem != nil {
+			_ = s.repository.SetNetworkObjectState(ctx, value.ID, "failed", problem)
+			if checkpointErr := checkpoint(RecoveryResourceOutcome{ResourceType: "network_object", ResourceID: value.ID, State: "failed", Error: problem.Message}); checkpointErr != nil {
 				return checkpointErr
 			}
 			continue
