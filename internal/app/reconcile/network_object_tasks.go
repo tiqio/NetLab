@@ -280,6 +280,9 @@ func (s *NetworkObjectTaskService) CreateWithPlacement(ctx context.Context, labo
 	if err := domain.ValidateUniqueLightweightPortNames(kind, config); err != nil {
 		return domain.NetworkObject{}, domain.PlacementAssignment{}, 0, domain.OperationTask{}, err
 	}
+	if err := validateSwitchConfiguration(kind, config); err != nil {
+		return domain.NetworkObject{}, domain.PlacementAssignment{}, 0, domain.OperationTask{}, err
+	}
 	object := domain.NetworkObject{ID: domain.NewID(), LaboratoryID: laboratoryID, Name: name, Kind: kind, Revision: 1, DesiredState: "active", ObservedState: "provisioning", Config: config}
 	input := map[string]any{"laboratory_id": laboratoryID, "laboratory_revision": int64(expectedRevision), "name": name, "kind": kind, "config": config, "placement_intent": intent}
 	value := networkObjectOperation("network_object.create", object.ID, idempotencyKey, input)

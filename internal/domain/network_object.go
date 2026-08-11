@@ -322,9 +322,6 @@ func ValidateSwitchL3Config(config SwitchL3Config) error {
 			return fmt.Errorf("duplicate layer-3 interface %q", iface.Name)
 		}
 		seen[iface.Name] = struct{}{}
-		if len(iface.Addresses) == 0 {
-			return fmt.Errorf("layer-3 interface %q requires an address", iface.Name)
-		}
 		for _, address := range iface.Addresses {
 			if _, err := netip.ParsePrefix(address); err != nil {
 				return fmt.Errorf("invalid layer-3 address %q", address)

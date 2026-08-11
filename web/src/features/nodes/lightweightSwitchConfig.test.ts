@@ -23,6 +23,7 @@ describe("lightweight switch defaults", () => {
       "eth2",
       "eth3",
     ]);
+    expect(validateLightweightSwitchConfig("switch_l3", config)).toEqual([]);
   });
 
   it("rejects duplicate edited names", () => {

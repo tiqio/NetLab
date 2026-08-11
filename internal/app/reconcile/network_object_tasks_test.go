@@ -180,6 +180,27 @@ func TestNetworkObjectTaskIdempotencyAndRecovery(t *testing.T) {
 	database.Close()
 }
 
+func TestNetworkObjectCreateValidatesExplicitL3ConfigurationBeforePersistence(t *testing.T) {
+	runtime := &networkTaskRuntimeFake{configured: map[domain.ID]bool{}}
+	ctx, database, repositories, service, runner, lab := newNetworkTaskFixture(t, runtime)
+	defer database.Close()
+	defer runner.Close()
+
+	_, _, err := service.Create(ctx, lab.ID, "invalid-l3", domain.NetworkSwitchL3, map[string]any{
+		"interfaces": []any{map[string]any{"name": "eth0", "addresses": []any{"not-cidr"}}},
+	}, "invalid-l3")
+	if err == nil {
+		t.Fatal("expected invalid L3 configuration to be rejected")
+	}
+	objects, listErr := repositories.ListNetworkObjects(ctx, lab.ID)
+	if listErr != nil {
+		t.Fatal(listErr)
+	}
+	if len(objects) != 0 {
+		t.Fatalf("invalid L3 configuration persisted objects: %+v", objects)
+	}
+}
+
 func TestNetworkAttachmentDeleteIdempotencyIncludesRevision(t *testing.T) {
 	runtime := &networkTaskRuntimeFake{configured: map[domain.ID]bool{}}
 	ctx, database, repositories, service, runner, lab := newNetworkTaskFixture(t, runtime)

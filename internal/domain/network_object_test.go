@@ -22,6 +22,9 @@ func TestValidateSwitchConfigurations(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
+	if err := ValidateSwitchL3Config(SwitchL3Config{Interfaces: []L3InterfaceConfig{{Name: "lan0"}}}); err != nil {
+		t.Fatalf("unaddressed L3 interface should remain configurable and connectable: %v", err)
+	}
 	if ValidateSwitchL3Config(SwitchL3Config{Interfaces: []L3InterfaceConfig{{Name: "lan0", Addresses: []string{"not-cidr"}}}}) == nil {
 		t.Fatal("expected invalid L3 address")
 	}

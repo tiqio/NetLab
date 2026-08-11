@@ -24,6 +24,26 @@ func TestL3AddressRouteAndForwarding(t *testing.T) {
 	}
 }
 
+func TestL3AllowsUnaddressedConnectableInterfaces(t *testing.T) {
+	executor := &scriptExecutor{}
+	runtime, _ := NewSwitchL3Runtime(executor)
+	object := domain.NetworkObject{ID: "r-unaddressed", Config: map[string]any{
+		"interfaces":   []any{map[string]any{"name": "eth0", "addresses": []any{}}},
+		"forward_ipv4": true,
+		"forward_ipv6": true,
+	}}
+	if err := runtime.Configure(context.Background(), object); err != nil {
+		t.Fatal(err)
+	}
+	commands := strings.Join(executor.commands, "\n")
+	if !strings.Contains(commands, "link set eth0 up") {
+		t.Fatalf("unaddressed interface was not brought up:\n%s", commands)
+	}
+	if strings.Contains(commands, "address replace") {
+		t.Fatalf("unaddressed interface unexpectedly received an address:\n%s", commands)
+	}
+}
+
 type retryRouteExecutor struct {
 	scriptExecutor
 	routeAttempts int
