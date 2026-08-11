@@ -194,3 +194,28 @@ rollback package: 1.6G, database integrity ok, all SHA-256 checks passed
 
 The host still reports the pre-existing failed `cpulimit.service` and `netlab-preview.service`; the
 authoritative `netlab.service` is healthy and neither failed unit was modified by this deployment.
+
+## Post-Acceptance r4 Deployment
+
+Candidate `topology-visual-010-20260811T031446Z-r4` was deployed from commit `e6bac12` at
+`2026-08-11T03:16:28Z`. The installed binary SHA-256 is
+`39ccf99e66f71df82bee5b215432f71f56310d239615d4ce73a72e0e28ffcbb7`; migration remained `15`.
+
+The running Ubuntu QEMU node was used for a non-mutating browser console check with one serial tab and
+two VNC tabs. Both VNC tabs reached `connected`, remained displayable after switching away and back,
+and only the selected VNC renderer was mounted. Selecting serial removed every VNC canvas. The add
+terminal tooltip correctly states that QEMU has one serial channel and multiple independent terminals
+require SSH.
+
+```text
+netlab.service: active
+/healthz: ok
+release/config/readiness candidate: topology-visual-010-20260811T031446Z-r4
+migration: 15
+target Chromium page errors: 0
+active VNC canvases: 1
+serial-active VNC canvases: 0
+recent NetLab error-level journal entries: 0
+resource counts before/after: 2 laboratories, 6 nodes, 2 links, 0 Traffic Filters
+rollback SHA-256 verification: ok
+```

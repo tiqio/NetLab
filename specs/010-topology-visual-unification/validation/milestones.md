@@ -78,3 +78,17 @@ Target state: netlab active, health ok, no NetLab error-level journal entries, u
 Rollback: 1.6G online SQLite backup integrity ok and all recorded SHA-256 checks passed
 Previous candidate rollback: /var/lib/netlab/rollback/topology-visual-010-20260811T024306Z-r3-predeploy
 ```
+
+## Post-Acceptance r4
+
+```text
+Candidate ID: topology-visual-010-20260811T031446Z-r4
+Commit SHA: e6bac120b24774851ccef7c5d036200283dd6e62
+Artifact digest: sha256:39ccf99e66f71df82bee5b215432f71f56310d239615d4ce73a72e0e28ffcbb7
+Deployment time: 2026-08-11T03:16:28Z
+Migration state: 15 (unchanged)
+Result: PASS — QEMU serial limitation clarified and two VNC tabs repeatedly connected and displayed
+Target state: netlab active, health ok, zero NetLab error-level journal entries, user resources unchanged
+Rollback verification: all recorded r3 file SHA-256 checks passed
+Previous candidate rollback: /var/lib/netlab/rollback/topology-visual-010-20260811T031446Z-r4-predeploy
+```

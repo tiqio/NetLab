@@ -167,3 +167,33 @@ did not change the two user laboratories, six nodes, two links or zero existing 
 Rollback for r3 stops the service, restores `netlabd`, `netlab.yaml`, `template-readiness.json` and
 `netlab.service` from the recorded directory, replaces `/var/lib/netlab/netlab.db` with the online
 backup after removing its WAL/SHM files, reloads systemd and restarts the service.
+
+## Post-Acceptance Correction — r4
+
+Commit `e6bac12` corrects QEMU console workspace behavior. QEMU serial remains one exclusive physical
+channel and the disabled add-terminal tooltip now explains that multiple independent terminals require
+a reachable SSH service. Multiple VNC tabs remain available, but only the active VNC renderer stays
+mounted and connected; noVNC scales locally and no longer requests remote desktop resizing from QEMU.
+
+```text
+Candidate ID: topology-visual-010-20260811T031446Z-r4
+Source commit SHA: e6bac120b24774851ccef7c5d036200283dd6e62
+Artifact SHA-256: 39ccf99e66f71df82bee5b215432f71f56310d239615d4ce73a72e0e28ffcbb7
+Contract digest: sha256:2e1a4279f16d7e6c282b741f06c52e75f1db210e91dbf4b99180bea5c9da808b
+Build time: 2026-08-11T03:14:46Z
+Deployment time: 2026-08-11T03:16:28Z
+Migration: 15 (unchanged)
+Previous candidate: topology-visual-010-20260811T024306Z-r3
+Rollback directory: /var/lib/netlab/rollback/topology-visual-010-20260811T031446Z-r4-predeploy
+```
+
+The production build, 15 focused console/diagnostics tests, ESLint and Prettier passed before
+deployment. Because r4 introduces no migration, the rollback package contains the r3 binary,
+configuration, template-readiness document, service unit, release identity, service status and
+resource summary; all recorded hashes passed `sha256sum -c`.
+
+Target Chromium restored one serial tab and two VNC tabs for the running Ubuntu node. Each VNC tab
+connected successfully when selected, switching back also reconnected successfully, exactly one VNC
+canvas existed while a VNC tab was active, and zero VNC canvases existed while the serial tab was
+active. The browser reported no page errors. The authoritative service remained healthy with no
+error-level journal entries and unchanged user resource counts.
