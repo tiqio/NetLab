@@ -50,6 +50,30 @@ func (r *networkTaskRuntimeFake) Configure(ctx context.Context, value domain.Net
 	return nil
 }
 
+func TestNetworkObjectReconcileIsRevisionedAndDurable(t *testing.T) {
+	runtime := &networkTaskRuntimeFake{configured: map[domain.ID]bool{}}
+	ctx, database, repositories, operations, runner, lab := newNetworkTaskFixture(t, runtime)
+	defer database.Close()
+	defer runner.Close()
+	created, createTask, err := operations.Create(ctx, lab.ID, "bridge", domain.NetworkBridge, map[string]any{"mtu": 1500, "stp": true}, "reconcile-create")
+	if err != nil {
+		t.Fatal(err)
+	}
+	waitForNetworkTask(t, repositories, createTask.ID, func(value domain.OperationTask) bool { return value.State == domain.TaskSucceeded })
+	current, err := repositories.GetNetworkObject(ctx, created.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err = operations.ReconcileObject(ctx, current.ID, current.Revision+1, "wrong-revision"); domain.NormalizeProblem(err, domain.Problem{}).Code != "revision_conflict" {
+		t.Fatalf("err=%v", err)
+	}
+	_, reconcileTask, err := operations.ReconcileObject(ctx, current.ID, current.Revision, "reconcile-object")
+	if err != nil {
+		t.Fatal(err)
+	}
+	waitForNetworkTask(t, repositories, reconcileTask.ID, func(value domain.OperationTask) bool { return value.State == domain.TaskSucceeded })
+}
+
 func TestNetworkObjectUpdatePersistsVersionedSwitchConfiguration(t *testing.T) {
 	ctx := context.Background()
 	database, err := storesqlite.Open(ctx, "file:"+string(domain.NewID())+"?mode=memory&cache=shared")

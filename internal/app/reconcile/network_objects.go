@@ -83,9 +83,7 @@ type NetworkObjectService struct {
 	attachments interface {
 		DeleteAttachment(context.Context, domain.NetworkAttachment) error
 	}
-	objectLinks interface {
-		DeleteNetworkObjectLink(context.Context, domain.NetworkObjectLink, domain.NetworkObject, domain.NetworkObject) error
-	}
+	objectLinks         any
 	objectLinkObservers []interface{ StopNetworkObjectLink(domain.ID) }
 }
 
@@ -95,10 +93,77 @@ func (s *NetworkObjectService) SetAttachmentRuntime(runtime interface {
 	s.attachments = runtime
 }
 
-func (s *NetworkObjectService) SetObjectLinkRuntime(runtime interface {
-	DeleteNetworkObjectLink(context.Context, domain.NetworkObjectLink, domain.NetworkObject, domain.NetworkObject) error
-}) {
+func (s *NetworkObjectService) SetObjectLinkRuntime(runtime any) {
 	s.objectLinks = runtime
+}
+
+func (s *NetworkObjectService) ReconcileObject(ctx context.Context, id domain.ID, expectedRevision domain.Revision) (domain.NetworkObject, error) {
+	value, err := s.repository.GetNetworkObject(ctx, id)
+	if err != nil {
+		return domain.NetworkObject{}, err
+	}
+	if value.Revision != expectedRevision {
+		return domain.NetworkObject{}, domain.Problem{Code: "revision_conflict", Message: fmt.Sprintf("expected revision %d, current revision is %d", expectedRevision, value.Revision), ResourceType: "network_object", ResourceID: id, Phase: "reconcile_admission"}
+	}
+	runtime := s.runtime(value.Kind)
+	if runtime == nil {
+		return value, domain.Problem{Code: "capability_unsupported", Message: "network runtime is unavailable", ResourceType: "network_object", ResourceID: id, Phase: "reconcile"}
+	}
+	if err = runtime.Configure(ctx, value); err == nil {
+		if problem := inspectNetworkObjectRuntime(ctx, runtime, value, "reconcile_inspection", "owned runtime state is retained for retry"); problem != nil {
+			err = *problem
+		}
+	}
+	if err != nil {
+		problem := structuredProblem(err, domain.Problem{Code: "reconciliation_failed", Message: "network object reconciliation failed", Retryable: true, ResourceType: "network_object", ResourceID: id, Phase: "reconcile", Cleanup: "owned partial state is retained for retry", OperatorHint: "inspect diagnostics and retry", RetryAfterSeconds: 3})
+		_ = s.repository.SetNetworkObjectState(context.Background(), id, "failed", problem)
+		return value, *problem
+	}
+	value.ObservedState = "active"
+	value.LastError = nil
+	_ = s.repository.SetNetworkObjectState(context.Background(), id, "active", nil)
+	return value, nil
+}
+
+func (s *NetworkObjectService) ReconcileObjectLink(ctx context.Context, id domain.ID, expectedRevision domain.Revision) (domain.NetworkObjectLink, error) {
+	link, err := s.repository.GetNetworkObjectLink(ctx, id)
+	if err != nil {
+		return domain.NetworkObjectLink{}, err
+	}
+	if link.Revision != expectedRevision {
+		return domain.NetworkObjectLink{}, domain.Problem{Code: "revision_conflict", Message: fmt.Sprintf("expected revision %d, current revision is %d", expectedRevision, link.Revision), ResourceType: "network_object_link", ResourceID: id, Phase: "reconcile_admission"}
+	}
+	linkRuntime, ok := s.objectLinks.(interface {
+		EnsureNetworkObjectLink(context.Context, domain.NetworkObjectLink, domain.NetworkObject, domain.NetworkObject) error
+	})
+	if !ok {
+		return link, domain.Problem{Code: "capability_unsupported", Message: "network object link runtime is unavailable", ResourceType: "network_object_link", ResourceID: id, Phase: "reconcile"}
+	}
+	objectA, err := s.repository.GetNetworkObject(ctx, link.ObjectAID)
+	if err != nil {
+		return link, err
+	}
+	objectB, err := s.repository.GetNetworkObject(ctx, link.ObjectBID)
+	if err != nil {
+		return link, err
+	}
+	if err = linkRuntime.EnsureNetworkObjectLink(ctx, link, objectA, objectB); err != nil {
+		problem := structuredProblem(err, domain.Problem{Code: "reconciliation_failed", Message: "network object link reconciliation failed", Retryable: true, ResourceType: "network_object_link", ResourceID: id, Phase: "reconcile", Cleanup: "owned partial link state is retained for retry", OperatorHint: "inspect both endpoints and retry", RetryAfterSeconds: 3})
+		if setter, ok := s.repository.(interface {
+			SetNetworkObjectLinkState(context.Context, domain.ID, string, *domain.Problem) error
+		}); ok {
+			_ = setter.SetNetworkObjectLinkState(context.Background(), id, "failed", problem)
+		}
+		return link, *problem
+	}
+	link.ObservedState = "connected"
+	link.LastError = nil
+	if setter, ok := s.repository.(interface {
+		SetNetworkObjectLinkState(context.Context, domain.ID, string, *domain.Problem) error
+	}); ok {
+		_ = setter.SetNetworkObjectLinkState(context.Background(), id, "connected", nil)
+	}
+	return link, nil
 }
 
 func (s *NetworkObjectService) AddObjectLinkObserverCleanup(cleaner interface{ StopNetworkObjectLink(domain.ID) }) {
@@ -202,6 +267,19 @@ func (s *NetworkObjectService) List(ctx context.Context, labID domain.ID) (value
 func (s *NetworkObjectService) Get(ctx context.Context, id domain.ID) (value domain.NetworkObject, err error) {
 	defer normalizeTerminalError(&err, terminalProblem("network_object", id, "network_object_get"))
 	return s.repository.GetNetworkObject(ctx, id)
+}
+
+func (s *NetworkObjectService) InspectObject(ctx context.Context, id domain.ID) (domain.RuntimeBackingObservation, error) {
+	value, err := s.repository.GetNetworkObject(ctx, id)
+	if err != nil {
+		return domain.RuntimeBackingObservation{}, err
+	}
+	runtime := s.runtime(value.Kind)
+	inspector, ok := runtime.(networkObjectRuntimeInspector)
+	if !ok {
+		return domain.RuntimeBackingObservation{}, domain.Problem{Code: "capability_unsupported", Message: "runtime backing inspection is unavailable", ResourceType: "network_object", ResourceID: id, Phase: "runtime_inspection"}
+	}
+	return inspector.InspectNetworkObject(ctx, value)
 }
 
 func (s *NetworkObjectService) Update(ctx context.Context, id domain.ID, revision domain.Revision, name string, config map[string]any) (value domain.NetworkObject, err error) {
@@ -426,7 +504,9 @@ func (s *NetworkObjectService) DeleteObjectLinkRevision(ctx context.Context, id 
 	for _, cleaner := range s.objectLinkObservers {
 		cleaner.StopNetworkObjectLink(id)
 	}
-	if s.objectLinks != nil {
+	if runtime, ok := s.objectLinks.(interface {
+		DeleteNetworkObjectLink(context.Context, domain.NetworkObjectLink, domain.NetworkObject, domain.NetworkObject) error
+	}); ok {
 		objectA, err := s.repository.GetNetworkObject(ctx, link.ObjectAID)
 		if err != nil {
 			return err
@@ -435,7 +515,7 @@ func (s *NetworkObjectService) DeleteObjectLinkRevision(ctx context.Context, id 
 		if err != nil {
 			return err
 		}
-		if err := s.objectLinks.DeleteNetworkObjectLink(ctx, link, objectA, objectB); err != nil {
+		if err := runtime.DeleteNetworkObjectLink(ctx, link, objectA, objectB); err != nil {
 			return err
 		}
 	}

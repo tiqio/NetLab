@@ -28,7 +28,53 @@ func NewNetworkObjectTaskService(service *NetworkObjectService, runner *task.Run
 	runner.Register("network_attachment.delete", value.handleAttachmentDelete)
 	runner.Register("network_object_link.create", value.handleObjectLinkCreate)
 	runner.Register("network_object_link.delete", value.handleObjectLinkDelete)
+	runner.Register("network_object.reconcile", value.handleObjectReconcile)
+	runner.Register("network_object_link.reconcile", value.handleObjectLinkReconcile)
 	return value
+}
+
+func (s *NetworkObjectTaskService) ReconcileObject(ctx context.Context, id domain.ID, revision domain.Revision, idempotencyKey string) (domain.NetworkObject, domain.OperationTask, error) {
+	value, err := s.service.Get(ctx, id)
+	if err != nil {
+		return domain.NetworkObject{}, domain.OperationTask{}, err
+	}
+	if value.Revision != revision {
+		return domain.NetworkObject{}, domain.OperationTask{}, domain.Problem{Code: "revision_conflict", Message: fmt.Sprintf("expected revision %d, current revision is %d", revision, value.Revision), ResourceType: "network_object", ResourceID: id, Phase: "reconcile_admission"}
+	}
+	op := networkObjectOperation("network_object.reconcile", id, idempotencyKey, map[string]any{"revision": int64(revision)})
+	queued, err := s.runner.EnqueueOrGet(ctx, op)
+	return value, queued, err
+}
+
+func (s *NetworkObjectTaskService) ReconcileObjectLink(ctx context.Context, id domain.ID, revision domain.Revision, idempotencyKey string) (domain.NetworkObjectLink, domain.OperationTask, error) {
+	value, err := s.service.GetObjectLink(ctx, id)
+	if err != nil {
+		return domain.NetworkObjectLink{}, domain.OperationTask{}, err
+	}
+	if value.Revision != revision {
+		return domain.NetworkObjectLink{}, domain.OperationTask{}, domain.Problem{Code: "revision_conflict", Message: fmt.Sprintf("expected revision %d, current revision is %d", revision, value.Revision), ResourceType: "network_object_link", ResourceID: id, Phase: "reconcile_admission"}
+	}
+	op := networkObjectLinkOperation("network_object_link.reconcile", id, idempotencyKey, map[string]any{"revision": int64(revision)})
+	queued, err := s.runner.EnqueueOrGet(ctx, op)
+	return value, queued, err
+}
+
+func (s *NetworkObjectTaskService) handleObjectReconcile(ctx context.Context, taskValue *domain.OperationTask) (map[string]any, error) {
+	value, err := s.service.ReconcileObject(ctx, taskValue.ResourceID, domain.Revision(networkTaskInt64(taskValue.Input["revision"])))
+	if err != nil {
+		return nil, err
+	}
+	taskValue.ProgressCurrent = taskValue.ProgressTotal
+	return map[string]any{"network_object": value}, nil
+}
+
+func (s *NetworkObjectTaskService) handleObjectLinkReconcile(ctx context.Context, taskValue *domain.OperationTask) (map[string]any, error) {
+	value, err := s.service.ReconcileObjectLink(ctx, taskValue.ResourceID, domain.Revision(networkTaskInt64(taskValue.Input["revision"])))
+	if err != nil {
+		return nil, err
+	}
+	taskValue.ProgressCurrent = taskValue.ProgressTotal
+	return map[string]any{"network_object_link": value}, nil
 }
 
 func (s *NetworkObjectTaskService) CreateAttachment(ctx context.Context, laboratoryID, objectID, interfaceID domain.ID, portName string, config map[string]any, idempotencyKey string) (domain.NetworkAttachment, domain.OperationTask, error) {

@@ -51,10 +51,10 @@
 - [X] T015 [P] [US1] Write failing namespace tests for listed-but-invalid references, owned recreation, unowned refusal and idempotent deletion in `internal/runtime/linuxnet/namespace_test.go`
 - [ ] T016 [P] [US1] Write failing recovery coordinator tests for dependency order, partial failure isolation and checkpoint outcomes in `internal/app/reconcile/recovery_coordinator_test.go`
 - [X] T017 [P] [US1] Write failing dataplane tests proving plain-bridge cleanup never enters namespace cleanup in `internal/app/reconcile/dataplane_test.go`
-- [ ] T018 [P] [US1] Write failing network-object task tests for retryable reconcile tasks, revision conflicts, cancellation and deletion of failed links in `internal/app/reconcile/network_object_tasks_test.go`
+- [X] T018 [P] [US1] Write failing network-object task tests for retryable reconcile tasks, revision conflicts, cancellation and deletion of failed links in `internal/app/reconcile/network_object_tasks_test.go`
 - [ ] T019 [P] [US1] Write failing SQLite recovery tests for pending/disconnecting reservation finalization and ordered outbox events in `internal/store/sqlite/recovery_repository_test.go`
-- [ ] T020 [P] [US1] Write failing HTTP contract tests for object/link reconcile endpoints and structured diagnostics in `internal/api/http/network_recovery_contract_test.go`
-- [ ] T021 [P] [US1] Write failing MCP parity tests for object/link reconcile and diagnostics tools in `internal/api/mcp/network_recovery_tools_test.go`
+- [X] T020 [P] [US1] Write failing HTTP contract tests for object/link reconcile endpoints and structured diagnostics in `internal/api/http/network_recovery_contract_test.go`
+- [X] T021 [P] [US1] Write failing MCP parity tests for object/link reconcile and diagnostics tools in `internal/api/mcp/network_recovery_tools_test.go`
 - [ ] T022 [P] [US1] Write failing frontend tests for honest failed state, retry/delete actions and structured warnings in `web/src/features/diagnostics/DiagnosticsPanel.test.ts`
 - [ ] T023 [P] [US1] Write a failing privileged service-restart test with an invalid `/run/netns` reference in `tests/recovery/network_namespace_recovery_test.go`
 - [ ] T024 [P] [US1] Write a failing 20-cycle bridge-to-L3 failure cleanup and leak test in `tests/integration/network_object_link_cleanup_test.go`
@@ -68,9 +68,9 @@
 - [X] T029 [US1] Mark unusable runtime backing failed instead of active and preserve unrelated recovery progress in `internal/app/reconcile/network_objects.go`
 - [X] T030 [US1] Dispatch object-link create, compensation and deletion by endpoint backing kind in `internal/app/reconcile/dataplane.go`
 - [ ] T031 [US1] Finalize exhausted pending/disconnecting links with structured failed outcomes and retry/delete eligibility in `internal/app/reconcile/topology_connections.go`
-- [ ] T032 [US1] Add durable object/link reconcile commands and task handlers in `internal/app/reconcile/network_object_tasks.go`
-- [ ] T033 [US1] Expose reconcile endpoints and desired-versus-observed diagnostics in `internal/api/http/network_handlers.go`
-- [ ] T034 [US1] Add matching MCP reconcile and diagnostics tools in `internal/api/mcp/network_tools.go`
+- [X] T032 [US1] Add durable object/link reconcile commands and task handlers in `internal/app/reconcile/network_object_tasks.go`
+- [X] T033 [US1] Expose reconcile endpoints and desired-versus-observed diagnostics in `internal/api/http/network_handlers.go`
+- [X] T034 [US1] Add matching MCP reconcile and diagnostics tools in `internal/api/mcp/network_tools.go`
 - [ ] T035 [US1] Render backing health, recovery phase, cleanup, operator hint and retry/delete actions in `web/src/features/diagnostics/DiagnosticsPanel.vue`
 - [ ] T036 [US1] Integrate network-object recovery tasks and warning dialogs into `web/src/features/topology/TopologyWorkspace.vue`
 - [ ] T037 [US1] Run US1 unit, contract, privileged recovery and leak gates, record results in `specs/011-network-path-recovery/validation/us1-recovery.md`, and commit the milestone with a focused Git commit

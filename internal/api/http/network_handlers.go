@@ -48,6 +48,34 @@ func (h *NetworkHandlers) Register(engine *gin.Engine) {
 	api.GET("/network-object-links/:linkId", h.getObjectLink)
 	api.DELETE("/network-object-links/:linkId", h.deleteObjectLink)
 	api.GET("/network-objects/:objectId/diagnostics", h.diagnostics)
+	api.POST("/network-objects/:objectId/reconcile", h.reconcileObject)
+	api.POST("/network-object-links/:linkId/reconcile", h.reconcileObjectLink)
+}
+
+func (h *NetworkHandlers) reconcileObject(c *gin.Context) {
+	revision, ok := RevisionFromRequest(c)
+	if !ok {
+		return
+	}
+	value, taskValue, err := h.operations.ReconcileObject(c, domain.ID(c.Param("objectId")), revision, c.GetHeader("Idempotency-Key"))
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+	c.JSON(http.StatusAccepted, gin.H{"network_object": value, "task": taskValue})
+}
+
+func (h *NetworkHandlers) reconcileObjectLink(c *gin.Context) {
+	revision, ok := RevisionFromRequest(c)
+	if !ok {
+		return
+	}
+	value, taskValue, err := h.operations.ReconcileObjectLink(c, domain.ID(c.Param("linkId")), revision, c.GetHeader("Idempotency-Key"))
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+	c.JSON(http.StatusAccepted, gin.H{"network_object_link": value, "task": taskValue})
 }
 
 func (h *NetworkHandlers) listObjectLinks(c *gin.Context) {
@@ -247,5 +275,6 @@ func (h *NetworkHandlers) diagnostics(c *gin.Context) {
 		handleError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, diagnostics)
+	backing, _ := h.service.InspectObject(c, value.ID)
+	c.JSON(http.StatusOK, gin.H{"object_id": value.ID, "desired_state": value.DesiredState, "observed_state": value.ObservedState, "backing": backing, "runtime": diagnostics})
 }
