@@ -181,9 +181,9 @@ func (r *Repositories) ListTopologyConnections(ctx context.Context, laboratoryID
 		if resolveErr != nil {
 			return nil, resolveErr
 		}
-		objectKind := domain.ConnectionEndpointNetworkObjectPort
-		if attachment.PortName == "" {
-			objectKind = domain.ConnectionEndpointNetworkObjectAccess
+		objectKind, kindErr := r.attachmentEndpointKind(ctx, attachment.NetworkObjectID, attachment.PortName)
+		if kindErr != nil {
+			return nil, kindErr
 		}
 		target, resolveErr := r.ResolveConnectionEndpoint(ctx, domain.ConnectionEndpoint{Kind: objectKind, LaboratoryID: laboratoryID, ResourceID: attachment.NetworkObjectID, PortName: attachment.PortName})
 		if resolveErr != nil {
@@ -228,9 +228,9 @@ func (r *Repositories) GetTopologyConnection(ctx context.Context, id domain.ID) 
 		if sourceErr != nil {
 			return domain.TopologyConnection{}, sourceErr
 		}
-		objectKind := domain.ConnectionEndpointNetworkObjectPort
-		if attachment.PortName == "" {
-			objectKind = domain.ConnectionEndpointNetworkObjectAccess
+		objectKind, kindErr := r.attachmentEndpointKind(ctx, attachment.NetworkObjectID, attachment.PortName)
+		if kindErr != nil {
+			return domain.TopologyConnection{}, kindErr
 		}
 		target, targetErr := r.ResolveConnectionEndpoint(ctx, domain.ConnectionEndpoint{Kind: objectKind, LaboratoryID: laboratoryID, ResourceID: attachment.NetworkObjectID, PortName: attachment.PortName})
 		if targetErr != nil {
@@ -250,6 +250,17 @@ func (r *Repositories) GetTopologyConnection(ctx context.Context, id domain.ID) 
 		return topologyConnectionFromObjectLink(link, source, target), nil
 	}
 	return domain.TopologyConnection{}, ErrNotFound
+}
+
+func (r *Repositories) attachmentEndpointKind(ctx context.Context, objectID domain.ID, portName string) (domain.ConnectionEndpointKind, error) {
+	var kind string
+	if err := r.database.DB.QueryRowContext(ctx, `SELECT kind FROM network_objects WHERE id=?`, objectID).Scan(&kind); err != nil {
+		return "", err
+	}
+	if kind == domain.NetworkBridge || kind == domain.NetworkNAT || strings.TrimSpace(portName) == "" {
+		return domain.ConnectionEndpointNetworkObjectAccess, nil
+	}
+	return domain.ConnectionEndpointNetworkObjectPort, nil
 }
 
 func networkObjectPortNames(kind string, configJSON []byte) []string {

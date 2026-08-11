@@ -78,8 +78,14 @@ func (s *NetworkObjectTaskService) handleObjectLinkReconcile(ctx context.Context
 }
 
 func (s *NetworkObjectTaskService) CreateAttachment(ctx context.Context, laboratoryID, objectID, interfaceID domain.ID, portName string, config map[string]any, idempotencyKey string) (domain.NetworkAttachment, domain.OperationTask, error) {
-	input := map[string]any{"laboratory_id": laboratoryID, "network_object_id": objectID, "interface_id": interfaceID, "port_name": strings.TrimSpace(portName), "config": config, "entry_point": command.TopologyConnectionEntryPoint(ctx, "compatibility_http")}
-	attachment := domain.NetworkAttachment{ID: domain.NewID(), NetworkObjectID: objectID, InterfaceID: interfaceID, PortName: strings.TrimSpace(portName), Config: config, Revision: 1, ObservedState: "pending"}
+	attachmentID := domain.NewID()
+	portName = strings.TrimSpace(portName)
+	if portName == "" {
+		sum := sha256.Sum256([]byte(attachmentID))
+		portName = "access-" + hex.EncodeToString(sum[:4])
+	}
+	input := map[string]any{"laboratory_id": laboratoryID, "network_object_id": objectID, "interface_id": interfaceID, "port_name": portName, "config": config, "entry_point": command.TopologyConnectionEntryPoint(ctx, "compatibility_http")}
+	attachment := domain.NetworkAttachment{ID: attachmentID, NetworkObjectID: objectID, InterfaceID: interfaceID, PortName: portName, Config: config, Revision: 1, ObservedState: "pending"}
 	operation := networkObjectOperation("network_attachment.create", attachment.ID, idempotencyKey, input)
 	operation.ResourceType = "network_attachment"
 	queued, err := s.runner.EnqueueOrGet(ctx, operation)
