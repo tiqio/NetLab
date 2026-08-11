@@ -83,10 +83,10 @@ func saveTrafficFilterObservation(ctx context.Context, tx *sql.Tx, filter domain
 	objectLinkIDs, _ := json.Marshal(filter.NetworkObjectLinkIDs)
 	observations, _ := json.Marshal(filter.Observations)
 	lastError, _ := json.Marshal(filter.LastError)
-	if _, err := tx.ExecContext(ctx, `INSERT INTO traffic_filters(id,laboratory_id,expression,color,state,max_observations,interface_ids_json,link_ids_json,network_object_link_ids_json,observations_json,created_at,finished_at,last_error_json)
-		VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
-		ON CONFLICT(id) DO UPDATE SET expression=excluded.expression,color=excluded.color,state=excluded.state,max_observations=excluded.max_observations,interface_ids_json=excluded.interface_ids_json,link_ids_json=excluded.link_ids_json,network_object_link_ids_json=excluded.network_object_link_ids_json,observations_json=excluded.observations_json,finished_at=excluded.finished_at,last_error_json=excluded.last_error_json`,
-		filter.ID, filter.LaboratoryID, filter.Expression, filter.Color, filter.State, filter.MaxObservations, interfaceIDs, linkIDs, objectLinkIDs, observations, filter.CreatedAt.Format(time.RFC3339Nano), formatTime(filter.FinishedAt), nullableBytes(lastError, filter.LastError != nil)); err != nil {
+	if _, err := tx.ExecContext(ctx, `INSERT INTO traffic_filters(id,laboratory_id,expression,color,state,max_observations,interface_ids_json,link_ids_json,network_object_link_ids_json,observations_json,fingerprint_count,matched_packets,matched_bytes,first_match_at,last_match_at,created_at,finished_at,last_error_json)
+		VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+		ON CONFLICT(id) DO UPDATE SET expression=excluded.expression,color=excluded.color,state=excluded.state,max_observations=excluded.max_observations,interface_ids_json=excluded.interface_ids_json,link_ids_json=excluded.link_ids_json,network_object_link_ids_json=excluded.network_object_link_ids_json,observations_json=excluded.observations_json,fingerprint_count=excluded.fingerprint_count,matched_packets=excluded.matched_packets,matched_bytes=excluded.matched_bytes,first_match_at=excluded.first_match_at,last_match_at=excluded.last_match_at,finished_at=excluded.finished_at,last_error_json=excluded.last_error_json`,
+		filter.ID, filter.LaboratoryID, filter.Expression, filter.Color, filter.State, filter.MaxObservations, interfaceIDs, linkIDs, objectLinkIDs, observations, filter.FingerprintCount, filter.MatchedPackets, filter.MatchedBytes, formatTime(filter.FirstMatchAt), formatTime(filter.LastMatchAt), filter.CreatedAt.Format(time.RFC3339Nano), formatTime(filter.FinishedAt), nullableBytes(lastError, filter.LastError != nil)); err != nil {
 		return err
 	}
 	if _, err := tx.ExecContext(ctx, `DELETE FROM traffic_observations WHERE traffic_filter_id=?`, filter.ID); err != nil {
@@ -105,8 +105,8 @@ func (r *Repositories) GetTrafficFilterObservation(ctx context.Context, id domai
 	var filter domain.TrafficFilter
 	var interfaceIDs, linkIDs, objectLinkIDs, lastError []byte
 	var createdAt string
-	var finishedAt sql.NullString
-	err := r.database.DB.QueryRowContext(ctx, `SELECT id,laboratory_id,expression,color,state,max_observations,interface_ids_json,link_ids_json,network_object_link_ids_json,created_at,finished_at,COALESCE(last_error_json,'') FROM traffic_filters WHERE id=?`, id).Scan(&filter.ID, &filter.LaboratoryID, &filter.Expression, &filter.Color, &filter.State, &filter.MaxObservations, &interfaceIDs, &linkIDs, &objectLinkIDs, &createdAt, &finishedAt, &lastError)
+	var finishedAt, firstMatchAt, lastMatchAt sql.NullString
+	err := r.database.DB.QueryRowContext(ctx, `SELECT id,laboratory_id,expression,color,state,max_observations,interface_ids_json,link_ids_json,network_object_link_ids_json,fingerprint_count,matched_packets,matched_bytes,first_match_at,last_match_at,created_at,finished_at,COALESCE(last_error_json,'') FROM traffic_filters WHERE id=?`, id).Scan(&filter.ID, &filter.LaboratoryID, &filter.Expression, &filter.Color, &filter.State, &filter.MaxObservations, &interfaceIDs, &linkIDs, &objectLinkIDs, &filter.FingerprintCount, &filter.MatchedPackets, &filter.MatchedBytes, &firstMatchAt, &lastMatchAt, &createdAt, &finishedAt, &lastError)
 	if err == sql.ErrNoRows {
 		return filter, ErrNotFound
 	}
@@ -118,6 +118,8 @@ func (r *Repositories) GetTrafficFilterObservation(ctx context.Context, id domai
 	_ = json.Unmarshal(objectLinkIDs, &filter.NetworkObjectLinkIDs)
 	filter.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 	filter.FinishedAt = parseNullTime(finishedAt)
+	filter.FirstMatchAt = parseNullTime(firstMatchAt)
+	filter.LastMatchAt = parseNullTime(lastMatchAt)
 	if len(lastError) > 0 {
 		filter.LastError = &domain.Problem{}
 		_ = json.Unmarshal(lastError, filter.LastError)

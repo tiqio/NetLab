@@ -271,9 +271,7 @@ func (m *TrafficFilterManager) Get(id domain.ID) (domain.TrafficFilter, bool, er
 	if value == nil {
 		return domain.TrafficFilter{}, false, fmt.Errorf("traffic filter not found")
 	}
-	result := value.metadata
-	var ambiguous bool
-	result.Observations, ambiguous = value.correlator.Snapshot()
+	result, ambiguous := trafficFilterSnapshot(value.metadata, value.correlator)
 	return result, ambiguous, nil
 }
 
@@ -288,8 +286,7 @@ func (m *TrafficFilterManager) List(laboratoryID domain.ID) []domain.TrafficFilt
 	m.mu.RUnlock()
 	result := make([]domain.TrafficFilter, 0, len(values))
 	for _, value := range values {
-		metadata := value.metadata
-		metadata.Observations, _ = value.correlator.Snapshot()
+		metadata, _ := trafficFilterSnapshot(value.metadata, value.correlator)
 		result = append(result, metadata)
 	}
 	sort.Slice(result, func(i, j int) bool { return result[i].CreatedAt.After(result[j].CreatedAt) })
@@ -332,7 +329,7 @@ func (m *TrafficFilterManager) Stop(id domain.ID) (domain.TrafficFilter, error) 
 	now := time.Now().UTC()
 	value.metadata.State = "stopped"
 	value.metadata.FinishedAt = &now
-	value.metadata.Observations, _ = value.correlator.Snapshot()
+	value.metadata, _ = trafficFilterSnapshot(value.metadata, value.correlator)
 	if m.captures != nil {
 		for _, captureID := range value.captureIDs {
 			_, _ = m.captures.Stop(captureID)
@@ -379,8 +376,7 @@ func (m *TrafficFilterManager) persistLocked() {
 	}
 	records := make([]trafficFilterRecord, 0, len(m.values))
 	for _, value := range m.values {
-		metadata := value.metadata
-		metadata.Observations, _ = value.correlator.Snapshot()
+		metadata, _ := trafficFilterSnapshot(value.metadata, value.correlator)
 		records = append(records, trafficFilterRecord{Metadata: metadata, Match: value.match})
 	}
 	body, err := json.Marshal(records)
@@ -411,13 +407,14 @@ func (m *TrafficFilterManager) load() {
 			metadata.LastError = &domain.Problem{Code: "traffic_filter_abandoned", Message: "Traffic Filter observation ended during service restart", Retryable: true, ResourceType: "traffic_filter", ResourceID: metadata.ID, Phase: "recovery", Cleanup: "capture workers were finalized independently", OperatorHint: "start a new Traffic Filter to resume observation", RetryAfterSeconds: 1}
 		}
 		correlator := captureRuntime.NewCorrelator(2*time.Second, metadata.MaxObservations)
-		for _, observation := range metadata.Observations {
-			length := int(observation.Bytes / max(observation.Count, 1))
-			correlator.ObservePacket(observation.Fingerprint, observation.InterfaceID, observation.LinkID, observation.Direction, captureRuntime.PacketKey{
-				Source: observation.SourceAddress, Destination: observation.DestinationAddress,
-				SourceMAC: observation.SourceMAC, DestinationMAC: observation.DestinationMAC, Length: length,
-			}, observation.FirstSeen)
+		statistics := captureRuntime.CorrelationStatistics{FingerprintCount: metadata.FingerprintCount, MatchedPackets: metadata.MatchedPackets, MatchedBytes: metadata.MatchedBytes}
+		if metadata.FirstMatchAt != nil {
+			statistics.FirstMatchAt = *metadata.FirstMatchAt
 		}
+		if metadata.LastMatchAt != nil {
+			statistics.LastMatchAt = *metadata.LastMatchAt
+		}
+		correlator.Restore(metadata.Observations, statistics)
 		interfaces, links, objectLinks := map[domain.ID]bool{}, map[domain.ID]bool{}, map[domain.ID]bool{}
 		for _, id := range metadata.InterfaceIDs {
 			interfaces[id] = true
@@ -431,4 +428,24 @@ func (m *TrafficFilterManager) load() {
 		m.values[metadata.ID] = &managedFilter{metadata: metadata, correlator: correlator, match: record.Match, interfaces: interfaces, links: links, objectLinks: objectLinks, decoders: map[string]*captureRuntime.PacketDecoder{}}
 	}
 	m.persistLocked()
+}
+
+func trafficFilterSnapshot(metadata domain.TrafficFilter, correlator *captureRuntime.Correlator) (domain.TrafficFilter, bool) {
+	observations, ambiguous := correlator.Snapshot()
+	metadata.Observations = observations
+	statistics := correlator.Statistics()
+	metadata.FingerprintCount = statistics.FingerprintCount
+	metadata.MatchedPackets = statistics.MatchedPackets
+	metadata.MatchedBytes = statistics.MatchedBytes
+	metadata.FirstMatchAt = nil
+	metadata.LastMatchAt = nil
+	if !statistics.FirstMatchAt.IsZero() {
+		value := statistics.FirstMatchAt
+		metadata.FirstMatchAt = &value
+	}
+	if !statistics.LastMatchAt.IsZero() {
+		value := statistics.LastMatchAt
+		metadata.LastMatchAt = &value
+	}
+	return metadata, ambiguous
 }

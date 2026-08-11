@@ -867,31 +867,11 @@ function applyExample(value: string | number | undefined) {
           <dt>表达式</dt>
           <dd>{{ filter?.expression || expression }}</dd>
           <dt>流量指纹</dt>
-          <dd>
-            {{
-              new Set(
-                (filter?.observations || []).map((item) => item.fingerprint),
-              ).size
-            }}
-          </dd>
+          <dd>{{ filter?.fingerprint_count ?? 0 }}</dd>
           <dt>匹配包数</dt>
-          <dd>
-            {{
-              (filter?.observations || []).reduce(
-                (total, item) => total + item.count,
-                0,
-              )
-            }}
-          </dd>
+          <dd>{{ filter?.matched_packets ?? 0 }}</dd>
           <dt>匹配字节</dt>
-          <dd>
-            {{
-              (filter?.observations || []).reduce(
-                (total, item) => total + item.bytes,
-                0,
-              )
-            }}
-          </dd>
+          <dd>{{ filter?.matched_bytes ?? 0 }}</dd>
         </dl>
         <p
           v-if="active && !(filter?.observations || []).length"

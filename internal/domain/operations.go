@@ -83,6 +83,11 @@ type TrafficFilter struct {
 	LinkIDs              []ID                 `json:"link_ids,omitempty"`
 	NetworkObjectLinkIDs []ID                 `json:"network_object_link_ids,omitempty"`
 	Observations         []TrafficObservation `json:"observations"`
+	FingerprintCount     int64                `json:"fingerprint_count"`
+	MatchedPackets       int64                `json:"matched_packets"`
+	MatchedBytes         int64                `json:"matched_bytes"`
+	FirstMatchAt         *time.Time           `json:"first_match_at,omitempty"`
+	LastMatchAt          *time.Time           `json:"last_match_at,omitempty"`
 	CreatedAt            time.Time            `json:"created_at"`
 	FinishedAt           *time.Time           `json:"finished_at,omitempty"`
 	LastError            *Problem             `json:"last_error,omitempty"`

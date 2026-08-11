@@ -293,6 +293,9 @@ describe("TrafficFilterPanel interactions", () => {
           state: "running",
           max_observations: 1000,
           interface_ids: ["if-a", "if-b"],
+          fingerprint_count: 3,
+          matched_packets: 12,
+          matched_bytes: 2048,
           link_ids: [],
           network_object_link_ids: [],
           observations: [],
@@ -667,6 +670,9 @@ describe("TrafficFilterPanel interactions", () => {
         state: "running",
         max_observations: 1000,
         interface_ids: ["if-a", "if-b"],
+        fingerprint_count: 3,
+        matched_packets: 12,
+        matched_bytes: 2048,
         observations: [
           {
             fingerprint: "icmp-a",
@@ -708,6 +714,9 @@ describe("TrafficFilterPanel interactions", () => {
     expect(wrapper.text()).toContain("自动刷新匹配结果");
     expect(wrapper.text()).toContain("拓扑流量高亮");
     expect(wrapper.text()).toContain("匹配的数据包直接在主拓扑链路上流动显示");
+    expect(wrapper.findAll("dd").map((value) => value.text())).toEqual(
+      expect.arrayContaining(["3", "12", "2048"]),
+    );
     const overlayEvents = wrapper.emitted("overlay") || [];
     expect(overlayEvents.at(-1)).toEqual([
       [expect.objectContaining({ link_id: "link-a", count: 4 })],

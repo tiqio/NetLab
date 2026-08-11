@@ -473,6 +473,11 @@ export interface TrafficFilter {
   link_ids?: string[];
   network_object_link_ids?: string[];
   observations: TrafficObservation[];
+  fingerprint_count?: number;
+  matched_packets?: number;
+  matched_bytes?: number;
+  first_match_at?: string;
+  last_match_at?: string;
   created_at: string;
   finished_at?: string;
   last_error?: Problem;

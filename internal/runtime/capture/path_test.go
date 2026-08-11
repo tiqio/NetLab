@@ -37,6 +37,26 @@ func TestCompileFingerprintCorrelationAndAmbiguity(t *testing.T) {
 	}
 }
 
+func TestCorrelatorKeepsSessionStatisticsAfterHighlightWindowExpires(t *testing.T) {
+	correlator := NewCorrelator(time.Second, 100)
+	now := time.Now().UTC()
+	correlator.Observe("fingerprint-a", "if-a", "link-a", "egress", 64, now)
+	correlator.Observe("fingerprint-a", "if-b", "link-a", "ingress", 64, now.Add(time.Millisecond))
+	correlator.Observe("fingerprint-b", "if-a", "link-a", "egress", 128, now.Add(2*time.Millisecond))
+
+	values, _ := correlator.SnapshotAt(now.Add(2 * time.Second))
+	if len(values) != 0 {
+		t.Fatalf("expired highlight observations=%+v", values)
+	}
+	statistics := correlator.Statistics()
+	if statistics.FingerprintCount != 2 || statistics.MatchedPackets != 3 || statistics.MatchedBytes != 256 {
+		t.Fatalf("statistics=%+v", statistics)
+	}
+	if !statistics.FirstMatchAt.Equal(now) || !statistics.LastMatchAt.Equal(now.Add(2*time.Millisecond)) {
+		t.Fatalf("statistics timestamps=%+v", statistics)
+	}
+}
+
 func TestCompileRecursiveBooleanFilter(t *testing.T) {
 	expression, err := Compile(Match{And: []Match{
 		{Protocol: "tcp"},

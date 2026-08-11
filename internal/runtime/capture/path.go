@@ -44,10 +44,24 @@ func Fingerprint(packet PacketKey) string {
 }
 
 type Correlator struct {
-	window       time.Duration
-	maximum      int
-	mu           sync.Mutex
-	observations map[string]map[string]domain.TrafficObservation
+	window           time.Duration
+	maximum          int
+	mu               sync.Mutex
+	observations     map[string]map[string]domain.TrafficObservation
+	fingerprints     map[string]struct{}
+	fingerprintCount int64
+	matchedPackets   int64
+	matchedBytes     int64
+	firstMatchAt     time.Time
+	lastMatchAt      time.Time
+}
+
+type CorrelationStatistics struct {
+	FingerprintCount int64
+	MatchedPackets   int64
+	MatchedBytes     int64
+	FirstMatchAt     time.Time
+	LastMatchAt      time.Time
 }
 
 func NewCorrelator(window time.Duration, maximum int) *Correlator {
@@ -57,7 +71,7 @@ func NewCorrelator(window time.Duration, maximum int) *Correlator {
 	if maximum <= 0 {
 		maximum = 10000
 	}
-	return &Correlator{window: window, maximum: maximum, observations: map[string]map[string]domain.TrafficObservation{}}
+	return &Correlator{window: window, maximum: maximum, observations: map[string]map[string]domain.TrafficObservation{}, fingerprints: map[string]struct{}{}}
 }
 
 func (c *Correlator) Observe(fingerprint string, interfaceID, linkID domain.ID, direction string, length int, at time.Time) {
@@ -75,8 +89,12 @@ func (c *Correlator) ObserveNetworkObjectLinkPacket(fingerprint string, linkID d
 func (c *Correlator) observe(fingerprint string, interfaceID, linkID, objectLinkID domain.ID, direction string, packet PacketKey, at time.Time) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if c.observations[fingerprint] == nil && len(c.observations) >= c.maximum {
-		return
+	if _, exists := c.fingerprints[fingerprint]; !exists {
+		if c.fingerprintCount >= int64(c.maximum) {
+			return
+		}
+		c.fingerprints[fingerprint] = struct{}{}
+		c.fingerprintCount++
 	}
 	if c.observations[fingerprint] == nil {
 		c.observations[fingerprint] = map[string]domain.TrafficObservation{}
@@ -102,6 +120,65 @@ func (c *Correlator) observe(fingerprint string, interfaceID, linkID, objectLink
 	value.Count++
 	value.Bytes += int64(packet.Length)
 	c.observations[fingerprint][key] = value
+	c.matchedPackets++
+	c.matchedBytes += int64(packet.Length)
+	if c.firstMatchAt.IsZero() || at.Before(c.firstMatchAt) {
+		c.firstMatchAt = at
+	}
+	if c.lastMatchAt.IsZero() || at.After(c.lastMatchAt) {
+		c.lastMatchAt = at
+	}
+}
+
+func (c *Correlator) Statistics() CorrelationStatistics {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return CorrelationStatistics{
+		FingerprintCount: c.fingerprintCount,
+		MatchedPackets:   c.matchedPackets,
+		MatchedBytes:     c.matchedBytes,
+		FirstMatchAt:     c.firstMatchAt,
+		LastMatchAt:      c.lastMatchAt,
+	}
+}
+
+func (c *Correlator) Restore(observations []domain.TrafficObservation, statistics CorrelationStatistics) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for _, observation := range observations {
+		if c.observations[observation.Fingerprint] == nil {
+			c.observations[observation.Fingerprint] = map[string]domain.TrafficObservation{}
+		}
+		key := string(observation.InterfaceID) + ":" + string(observation.LinkID) + ":" + string(observation.NetworkObjectLinkID) + ":" + observation.Direction
+		c.observations[observation.Fingerprint][key] = observation
+		if _, exists := c.fingerprints[observation.Fingerprint]; !exists {
+			c.fingerprints[observation.Fingerprint] = struct{}{}
+			c.fingerprintCount++
+		}
+		if statistics.MatchedPackets == 0 {
+			c.matchedPackets += observation.Count
+			c.matchedBytes += observation.Bytes
+		}
+		if c.firstMatchAt.IsZero() || observation.FirstSeen.Before(c.firstMatchAt) {
+			c.firstMatchAt = observation.FirstSeen
+		}
+		if c.lastMatchAt.IsZero() || observation.LastSeen.After(c.lastMatchAt) {
+			c.lastMatchAt = observation.LastSeen
+		}
+	}
+	if statistics.FingerprintCount > c.fingerprintCount {
+		c.fingerprintCount = statistics.FingerprintCount
+	}
+	if statistics.MatchedPackets > 0 {
+		c.matchedPackets = statistics.MatchedPackets
+		c.matchedBytes = statistics.MatchedBytes
+	}
+	if !statistics.FirstMatchAt.IsZero() {
+		c.firstMatchAt = statistics.FirstMatchAt
+	}
+	if !statistics.LastMatchAt.IsZero() {
+		c.lastMatchAt = statistics.LastMatchAt
+	}
 }
 
 func packetRole(packet PacketKey) string {

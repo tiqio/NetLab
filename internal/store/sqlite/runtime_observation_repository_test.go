@@ -30,7 +30,8 @@ func TestRuntimeObservationRepositoryPersistsObjectLinkAttribution(t *testing.T)
 		t.Fatalf("capture=%+v", loaded)
 	}
 
-	filter := domain.TrafficFilter{ID: "filter-1", LaboratoryID: "lab-1", Expression: "icmp", Color: "#22c55e", State: "running", MaxObservations: 100, NetworkObjectLinkIDs: []domain.ID{"object-link-1", "object-link-2"}, CreatedAt: now, Observations: []domain.TrafficObservation{{Fingerprint: "icmp:a", ResourceType: "network_object_link", ResourceID: "object-link-1", NetworkObjectLinkID: "object-link-1", Direction: "a_to_b", FirstSeen: now, LastSeen: now, Count: 2, Bytes: 128}, {Fingerprint: "icmp:b", ResourceType: "network_object_link", ResourceID: "object-link-2", NetworkObjectLinkID: "object-link-2", Direction: "ambiguous", FirstSeen: now, LastSeen: now, Count: 1, Bytes: 64}}}
+	lastMatch := now.Add(time.Second)
+	filter := domain.TrafficFilter{ID: "filter-1", LaboratoryID: "lab-1", Expression: "icmp", Color: "#22c55e", State: "running", MaxObservations: 100, NetworkObjectLinkIDs: []domain.ID{"object-link-1", "object-link-2"}, FingerprintCount: 2, MatchedPackets: 3, MatchedBytes: 192, FirstMatchAt: &now, LastMatchAt: &lastMatch, CreatedAt: now, Observations: []domain.TrafficObservation{{Fingerprint: "icmp:a", ResourceType: "network_object_link", ResourceID: "object-link-1", NetworkObjectLinkID: "object-link-1", Direction: "a_to_b", FirstSeen: now, LastSeen: now, Count: 2, Bytes: 128}, {Fingerprint: "icmp:b", ResourceType: "network_object_link", ResourceID: "object-link-2", NetworkObjectLinkID: "object-link-2", Direction: "ambiguous", FirstSeen: now, LastSeen: now, Count: 1, Bytes: 64}}}
 	if err = repositories.SaveTrafficFilterObservation(ctx, filter); err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +39,7 @@ func TestRuntimeObservationRepositoryPersistsObjectLinkAttribution(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if loadedFilter.Color != filter.Color || len(loadedFilter.NetworkObjectLinkIDs) != 2 || len(loadedFilter.Observations) != 2 || loadedFilter.Observations[0].ResourceType != "network_object_link" {
+	if loadedFilter.Color != filter.Color || len(loadedFilter.NetworkObjectLinkIDs) != 2 || len(loadedFilter.Observations) != 2 || loadedFilter.Observations[0].ResourceType != "network_object_link" || loadedFilter.FingerprintCount != 2 || loadedFilter.MatchedPackets != 3 || loadedFilter.MatchedBytes != 192 || loadedFilter.FirstMatchAt == nil || loadedFilter.LastMatchAt == nil {
 		t.Fatalf("filter=%+v", loadedFilter)
 	}
 }
