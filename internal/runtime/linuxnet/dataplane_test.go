@@ -15,6 +15,7 @@ type dataPlaneExecutor struct {
 	bridgeExists bool
 	failMaster   string
 	existing     map[string]bool
+	outputs      map[string]string
 }
 
 type missingFirstEndpointExecutor struct {
@@ -47,13 +48,52 @@ func (e *dataPlaneExecutor) Run(_ context.Context, name string, args ...string) 
 	return nil
 }
 func (e *dataPlaneExecutor) Output(_ context.Context, name string, args ...string) ([]byte, error) {
-	if e.existing != nil && e.existing[strings.Join(append([]string{name}, args...), " ")] {
+	command := strings.Join(append([]string{name}, args...), " ")
+	if output, ok := e.outputs[command]; ok {
+		return []byte(output), nil
+	}
+	if e.existing != nil && e.existing[command] {
 		return []byte("exists"), nil
 	}
 	if e.bridgeExists {
 		return []byte("bridge"), nil
 	}
 	return nil, errors.New("missing")
+}
+
+func TestNetworkObjectLinkDoesNotReattachHealthyEndpoints(t *testing.T) {
+	link := domain.NetworkObjectLink{ID: "healthy-link", ObjectAID: "l2", PortAName: "uplink0", ObjectBID: "bridge", PortBName: "uplink0"}
+	l2 := domain.NetworkObject{ID: "l2", Kind: domain.NetworkSwitchL2, Config: map[string]any{
+		"ports": []any{map[string]any{"name": "uplink0", "pvid": 10}},
+	}}
+	bridge := domain.NetworkObject{ID: "bridge", Kind: domain.NetworkBridge}
+	namespace := SwitchL2NamespaceName(l2.ID)
+	hostEndpoint := ownership.Name("nvb", link.ID, 15)
+	bridgeName, err := NetworkBridgeName(bridge)
+	if err != nil {
+		t.Fatal(err)
+	}
+	executor := &dataPlaneExecutor{outputs: map[string]string{
+		"ip -n " + namespace + " link show uplink0":    "exists",
+		"ip link show " + hostEndpoint:                 "exists",
+		"ip -n " + namespace + " -d link show uplink0": "1: uplink0: <BROADCAST,MULTICAST,UP,LOWER_UP> master br0",
+		"ip -d link show " + hostEndpoint:              "2: " + hostEndpoint + ": <BROADCAST,MULTICAST,UP,LOWER_UP> master " + bridgeName,
+	}}
+	runtime, _ := NewDataPlane(executor)
+	if err := runtime.EnsureNetworkObjectLink(context.Background(), link, l2, bridge); err != nil {
+		t.Fatal(err)
+	}
+	commands := strings.Join(executor.commands, "\n")
+	for _, disruptive := range []string{
+		"uplink0 master br0",
+		hostEndpoint + " master " + bridgeName,
+		"link set uplink0 up",
+		"link set " + hostEndpoint + " up",
+	} {
+		if strings.Contains(commands, disruptive) {
+			t.Fatalf("healthy endpoint was reattached with %q in %s", disruptive, commands)
+		}
+	}
 }
 
 func TestNetworkObjectLinkReplacesPartialNamespacePair(t *testing.T) {

@@ -183,8 +183,14 @@ func (d *DataPlane) placeNetworkObjectLinkEndpoint(ctx context.Context, endpoint
 
 func (d *DataPlane) prepareNetworkObjectLinkEndpoint(ctx context.Context, endpoint networkObjectLinkEndpointSpec) error {
 	if endpoint.namespace == "" {
-		if err := d.executor.Run(ctx, d.ip, "link", "set", endpoint.runtimeName, "master", endpoint.hostBridge); err != nil {
-			return err
+		state, _ := d.executor.Output(ctx, d.ip, "-d", "link", "show", endpoint.runtimeName)
+		if !strings.Contains(string(state), "master "+endpoint.hostBridge) {
+			if err := d.executor.Run(ctx, d.ip, "link", "set", endpoint.runtimeName, "master", endpoint.hostBridge); err != nil {
+				return err
+			}
+		}
+		if linkIsUp(state) {
+			return nil
 		}
 		return d.executor.Run(ctx, d.ip, "link", "set", endpoint.runtimeName, "up")
 	}
@@ -199,18 +205,39 @@ func (d *DataPlane) configureNetworkObjectLinkEndpoint(ctx context.Context, endp
 }
 
 func (d *DataPlane) prepareNetworkObjectLinkPort(ctx context.Context, namespace, portName string, object domain.NetworkObject) error {
+	state, _ := d.executor.Output(ctx, d.ip, "-n", namespace, "-d", "link", "show", portName)
 	if object.Kind == domain.NetworkSwitchL2 {
-		if err := d.executor.Run(ctx, d.ip, "-n", namespace, "link", "set", portName, "master", "br0"); err != nil {
-			return err
+		if !strings.Contains(string(state), "master br0") {
+			if err := d.executor.Run(ctx, d.ip, "-n", namespace, "link", "set", portName, "master", "br0"); err != nil {
+				return err
+			}
 		}
 		if err := d.configureSwitchL2Port(ctx, namespace, portName, object); err != nil {
 			return err
 		}
 	}
+	if linkIsUp(state) {
+		return nil
+	}
 	if err := d.executor.Run(ctx, d.ip, "-n", namespace, "link", "set", portName, "up"); err != nil {
 		return err
 	}
 	return nil
+}
+
+func linkIsUp(state []byte) bool {
+	line := string(state)
+	flagsStart := strings.Index(line, "<")
+	flagsEnd := strings.Index(line, ">")
+	if flagsStart < 0 || flagsEnd <= flagsStart {
+		return false
+	}
+	for _, flag := range strings.Split(line[flagsStart+1:flagsEnd], ",") {
+		if flag == "UP" {
+			return true
+		}
+	}
+	return false
 }
 
 func networkObjectNamespace(object domain.NetworkObject) (string, error) {
