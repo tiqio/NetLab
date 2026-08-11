@@ -6,6 +6,7 @@ import type {
   EnvironmentSnapshot,
 } from "./acceptanceTypes";
 import { enforceAcceptanceArtifactPolicy } from "./artifactPolicy";
+import { requiresCompleteAcceptanceCoverage } from "./acceptanceScope";
 import { cleanupOwnedResources } from "./cleanupCoordinator";
 import { writeEvidence } from "./evidenceReporter";
 import { assertCompleteInteractionCoverage } from "./interactionCoverage";
@@ -89,17 +90,20 @@ export default async function globalTeardown(config: FullConfig) {
       ),
     };
     const gateErrors: string[] = [];
-    const focused = process.env.NETLAB_ACCEPTANCE_SCOPE === "focused";
+    const completeCoverage = requiresCompleteAcceptanceCoverage(
+      environment.target_kind,
+      process.env.NETLAB_ACCEPTANCE_SCOPE,
+    );
     try {
       assertCompleteInteractionCoverage(
         inventoryDocument.interactions,
         aggregate,
-        environment.target_kind === "remote-privileged" && !focused,
+        completeCoverage,
       );
     } catch (error) {
       gateErrors.push(error instanceof Error ? error.message : String(error));
     }
-    if (environment.target_kind === "remote-privileged" && !focused) {
+    if (completeCoverage) {
       try {
         assertCompleteVersionCoverage(environment, aggregate.version_coverage);
       } catch (error) {
