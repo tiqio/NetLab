@@ -58,6 +58,7 @@ import { TopologyKeyboardController } from "./topologyKeyboardController";
 import { resolvePlacements } from "./topologyLayout";
 import { buildPlacementBatch } from "./topologyPlacementBatch";
 import { runObjectLinkDeletion } from "./objectLinkDeletion";
+import { useTemporaryPanShortcut } from "./useTemporaryPanShortcut";
 import { waitForTopologyTaskFinal } from "./topologyTaskFinalization";
 import {
   applyAuthoritativeCreation,
@@ -83,6 +84,15 @@ const shell = ref<InstanceType<typeof LaboratoryShell>>();
 const topologyCanvas = ref<InstanceType<typeof TopologyCanvas>>();
 const initialized = ref(false);
 const panEnabled = ref(false);
+const {
+  temporaryPanHeld,
+  handleTemporaryPanKeyDown,
+  handleTemporaryPanKeyUp,
+  releaseTemporaryPan,
+} = useTemporaryPanShortcut();
+const effectivePanEnabled = computed(
+  () => panEnabled.value || temporaryPanHeld.value,
+);
 const resourceContext = ref<{
   id: string;
   type: "node" | "link" | "network_object" | "network_object_link";
@@ -1433,6 +1443,7 @@ const commands = computed(() => [
 ]);
 
 function keydown(event: KeyboardEvent) {
+  handleTemporaryPanKeyDown(event);
   if (event.key === "Escape" && resourceContext.value) {
     closeResourceContext();
     return;
@@ -1441,6 +1452,15 @@ function keydown(event: KeyboardEvent) {
     event.preventDefault();
     commandOpen.value = true;
   }
+}
+
+function keyup(event: KeyboardEvent) {
+  handleTemporaryPanKeyUp(event);
+}
+
+function handleWorkspaceBlur() {
+  releaseTemporaryPan();
+  cancelWorkspaceTransient();
 }
 
 function cancelWorkspaceTransient() {
@@ -1460,7 +1480,9 @@ function cancelWorkspaceTransient() {
 }
 
 function cancelOnVisibilityLoss() {
-  if (document.visibilityState === "hidden") cancelWorkspaceTransient();
+  if (document.visibilityState !== "hidden") return;
+  releaseTemporaryPan();
+  cancelWorkspaceTransient();
 }
 
 async function topologyKeyboard(event: KeyboardEvent) {
@@ -1591,7 +1613,8 @@ async function topologyKeyboard(event: KeyboardEvent) {
 
 onMounted(async () => {
   window.addEventListener("keydown", keydown);
-  window.addEventListener("blur", cancelWorkspaceTransient);
+  window.addEventListener("keyup", keyup);
+  window.addEventListener("blur", handleWorkspaceBlur);
   document.addEventListener("visibilitychange", cancelOnVisibilityLoss);
   try {
     await store.loadLabs();
@@ -1610,7 +1633,8 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener("keydown", keydown);
-  window.removeEventListener("blur", cancelWorkspaceTransient);
+  window.removeEventListener("keyup", keyup);
+  window.removeEventListener("blur", handleWorkspaceBlur);
   document.removeEventListener("visibilitychange", cancelOnVisibilityLoss);
   store.stopEvents();
 });
@@ -1665,7 +1689,7 @@ onBeforeUnmount(() => {
           :focused-resource-id="focusedResourceId"
           :keyboard-announcement="keyboardAnnouncement"
           :editing-link-id="editingRouteLinkId"
-          :pan-enabled="panEnabled"
+          :pan-enabled="effectivePanEnabled"
           :laboratory-id="store.active.laboratory.id"
           :connection-source-interface-id="pendingEndpoint"
           :connection-source-object-port-id="
@@ -1699,13 +1723,14 @@ onBeforeUnmount(() => {
         <div class="absolute left-3 right-28 top-3 flex flex-wrap gap-2">
           <Button
             size="sm"
-            :variant="panEnabled ? 'default' : 'ghost'"
-            :aria-pressed="panEnabled"
-            title="切换画布平移模式"
+            :variant="effectivePanEnabled ? 'default' : 'ghost'"
+            :aria-pressed="effectivePanEnabled"
+            title="切换画布平移模式（按住 Ctrl 临时启用）"
             data-testid="pan-view"
             @click="panEnabled = !panEnabled"
           >
-            <Hand :size="13" /> {{ panEnabled ? "正在平移" : "平移视图" }}
+            <Hand :size="13" />
+            {{ effectivePanEnabled ? "正在平移" : "平移视图" }}
           </Button>
           <Button
             size="sm"

@@ -194,6 +194,12 @@ const panGesture = ref<{
   centerY: number;
   zoom: number;
 }>();
+watch(
+  () => props.panEnabled,
+  (enabled) => {
+    if (!enabled) panGesture.value = undefined;
+  },
+);
 const hoveredResourceId = ref("");
 const hoveredNode = computed(() =>
   props.nodes.find((item) => item.id === hoveredResourceId.value),

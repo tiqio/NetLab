@@ -91,6 +91,41 @@ describe("TopologyCanvas", () => {
     expect(wheelViewport.zoom).toBeGreaterThan(1);
     expect(wheelViewport.centerX).toBeLessThan(0);
   });
+  it("stops an active pan gesture when temporary pan mode is released", async () => {
+    const wrapper = mount(TopologyCanvas, {
+      props: {
+        nodes: [nodeFactory()],
+        interfaces: [],
+        links: [],
+        networkObjects: [],
+        preferences: defaultWorkspacePreferences("lab"),
+        panEnabled: true,
+      },
+    });
+    const surface = wrapper.get(".topology-surface");
+    await surface.trigger("pointerdown", {
+      button: 0,
+      pointerId: 1,
+      clientX: 100,
+      clientY: 100,
+    });
+    await surface.trigger("pointermove", {
+      pointerId: 1,
+      clientX: 120,
+      clientY: 110,
+    });
+    expect(wrapper.emitted("viewport")).toHaveLength(1);
+
+    await wrapper.setProps({ panEnabled: false });
+    await surface.trigger("pointermove", {
+      pointerId: 1,
+      clientX: 140,
+      clientY: 120,
+    });
+
+    expect(wrapper.attributes("data-pan-enabled")).toBe("false");
+    expect(wrapper.emitted("viewport")).toHaveLength(1);
+  });
   it("keeps the canvas reachable at minimum height", () => {
     const wrapper = mount(TopologyCanvas, {
       props: {
