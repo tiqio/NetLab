@@ -10,6 +10,7 @@ import type {
   Laboratory,
   Link,
   NetworkObject,
+  NetworkObjectDiagnostics,
   NetworkObjectLink,
   NetworkObjectLinkTaskEnvelope,
   Node,
@@ -463,8 +464,25 @@ export const generatedApi = {
       "DELETE",
       { revision: value.revision, idempotencyKey },
     ),
+  reconcileNetworkObject: (
+    value: Pick<NetworkObject, "id" | "revision">,
+    idempotencyKey?: string,
+  ) =>
+    request<TaskEnvelope>(`/network-objects/${value.id}/reconcile`, "POST", {
+      revision: value.revision,
+      idempotencyKey,
+    }),
+  reconcileNetworkObjectLink: (
+    value: Pick<NetworkObjectLink, "id" | "revision">,
+    idempotencyKey?: string,
+  ) =>
+    request<NetworkObjectLinkTaskEnvelope>(
+      `/network-object-links/${value.id}/reconcile`,
+      "POST",
+      { revision: value.revision, idempotencyKey },
+    ),
   getNetworkObjectDiagnostics: (objectId: string) =>
-    request<Record<string, unknown>>(
+    request<NetworkObjectDiagnostics>(
       `/network-objects/${objectId}/diagnostics`,
     ),
 };

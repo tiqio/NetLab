@@ -22,6 +22,7 @@ const props = defineProps<{
   selectedInterface?: NodeInterface;
   selectedLinkId?: string;
   selectedObjectLinkId?: string;
+  selectedNetworkObjectId?: string;
   interfaceOwners?: Record<string, string>;
   coordinates?: Record<string, { x: number; y: number }>;
   resourceIds?: string[];
@@ -41,6 +42,9 @@ const emit = defineEmits<{
   navigate: [string, string];
   trafficOverlay: [TrafficObservation[], boolean, string];
   captureOverlay: [{ connectionIds: string[]; interfaceIds: string[] }];
+  reconcileNetworkObject: [NetworkObject];
+  reconcileNetworkObjectLink: [NetworkObjectLink];
+  deleteNetworkObjectLink: [NetworkObjectLink];
 }>();
 const value = computed({
   get: () => props.modelValue,
@@ -78,6 +82,7 @@ const value = computed({
           :interface-id="selectedInterface?.id"
           :link-id="selectedLinkId"
           :object-link-id="selectedObjectLinkId"
+          :network-object-id="selectedNetworkObjectId"
           :interface-owners="interfaceOwners"
           :coordinates="coordinates"
           :initial-section="active"
@@ -92,6 +97,11 @@ const value = computed({
           :console-request-key="consoleRequestKey"
           @traffic-overlay="(...args) => $emit('trafficOverlay', ...args)"
           @capture-overlay="$emit('captureOverlay', $event)"
+          @reconcile-network-object="$emit('reconcileNetworkObject', $event)"
+          @reconcile-network-object-link="
+            $emit('reconcileNetworkObjectLink', $event)
+          "
+          @delete-network-object-link="$emit('deleteNetworkObjectLink', $event)"
         />
       </div>
     </template>

@@ -31,7 +31,11 @@ func (r *TopologyConnectionRecoveryReconciler) ReconcileWithCheckpoints(ctx cont
 		return err
 	}
 	for _, outcome := range outcomes {
-		if err = checkpoint(RecoveryResourceOutcome{ResourceType: outcome.ResourceType, ResourceID: outcome.ResourceID, State: "recovered", Details: map[string]string{"action": outcome.Action}}); err != nil {
+		state := outcome.State
+		if state == "" {
+			state = "recovered"
+		}
+		if err = checkpoint(RecoveryResourceOutcome{ResourceType: outcome.ResourceType, ResourceID: outcome.ResourceID, State: state, Error: outcome.Error, Details: map[string]string{"action": outcome.Action}}); err != nil {
 			return err
 		}
 	}

@@ -94,6 +94,26 @@ export interface NetworkObject {
   desired_state: string;
   observed_state: string;
   config: Record<string, unknown>;
+  last_error?: Problem;
+}
+
+export interface RuntimeBackingObservation {
+  backing_kind: "namespace" | "host_bridge" | "qemu_tap" | "docker_veth";
+  runtime_name?: string;
+  owned: boolean;
+  usable: boolean;
+  adoptable: boolean;
+  recreatable: boolean;
+  observed_at: string;
+  problem?: Problem;
+}
+
+export interface NetworkObjectDiagnostics extends Record<string, unknown> {
+  object_id?: string;
+  desired_state?: string;
+  observed_state?: string;
+  backing?: RuntimeBackingObservation;
+  runtime?: Record<string, unknown>;
 }
 
 export interface NetworkObjectLink {

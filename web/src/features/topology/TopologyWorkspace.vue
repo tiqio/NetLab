@@ -10,6 +10,7 @@ import {
   type NodeInterface,
   type OperationTask,
   type PlacementIntent,
+  type Problem,
   type TrafficObservation,
   type TopologyConnectionConfig,
 } from "@/api";
@@ -105,6 +106,9 @@ const contextDeleteObject = ref<NetworkObject>();
 const deletingObjectLinkIds = ref<string[]>([]);
 const deletingAttachmentIds = ref<string[]>([]);
 const failedObjectLinkDelete = ref<NetworkObjectLink>();
+const recoveryDeleteObjectLink = ref<NetworkObjectLink>();
+const recoveryFailureOpen = ref(false);
+const recoveryFailure = ref<Problem>();
 const trafficObservations = ref<TrafficObservation[]>([]);
 const trafficOverlayActive = ref(false);
 const trafficOverlayColor = ref("#f59e0b");
@@ -311,6 +315,54 @@ async function deleteObjectLink(link: NetworkObjectLink) {
       (id) => id !== link.id,
     );
   }
+}
+
+function recordRecoveryTask(task: OperationTask) {
+  const index = store.tasks.findIndex((item) => item.id === task.id);
+  if (index >= 0) store.tasks[index] = task;
+  else store.tasks.unshift(task);
+}
+
+function showRecoveryFailure(error: unknown) {
+  recoveryFailure.value =
+    error instanceof ApiError
+      ? error.problem
+      : {
+          code: "reconciliation_failed",
+          message: error instanceof Error ? error.message : String(error),
+          retryable: true,
+          phase: "reconcile",
+          operator_hint: "刷新拓扑后重试，或删除失败资源。",
+        };
+  recoveryFailureOpen.value = true;
+}
+
+async function reconcileNetworkObject(object: NetworkObject) {
+  try {
+    const envelope = await api.reconcileNetworkObject(object);
+    recordRecoveryTask(envelope.task);
+    canvasStatus.value = `网络对象恢复任务 ${envelope.task.id} 已提交。`;
+    await refreshActive();
+  } catch (error) {
+    showRecoveryFailure(error);
+  }
+}
+
+async function reconcileNetworkObjectLink(link: NetworkObjectLink) {
+  try {
+    const envelope = await api.reconcileNetworkObjectLink(link);
+    recordRecoveryTask(envelope.task);
+    canvasStatus.value = `对象链路恢复任务 ${envelope.task.id} 已提交。`;
+    await refreshActive();
+  } catch (error) {
+    showRecoveryFailure(error);
+  }
+}
+
+async function confirmRecoveryObjectLinkDelete() {
+  const link = recoveryDeleteObjectLink.value;
+  recoveryDeleteObjectLink.value = undefined;
+  if (link) await deleteObjectLink(link);
 }
 
 async function retryObjectLinkDelete() {
@@ -1946,6 +1998,7 @@ onBeforeUnmount(() => {
           :selected-interface="selectedInterface"
           :selected-link-id="selectedLink?.id"
           :selected-object-link-id="selectedObjectLink?.id"
+          :selected-network-object-id="selectedObject?.id"
           :interface-owners="interfaceOwners"
           :coordinates="coordinates"
           :resource-ids="resourceIds"
@@ -1971,6 +2024,9 @@ onBeforeUnmount(() => {
             }
           "
           @capture-overlay="captureOverlay = $event"
+          @reconcile-network-object="reconcileNetworkObject"
+          @reconcile-network-object-link="reconcileNetworkObjectLink"
+          @delete-network-object-link="recoveryDeleteObjectLink = $event"
         />
       </template>
     </LaboratoryShell>
@@ -2115,6 +2171,28 @@ onBeforeUnmount(() => {
         </section>
       </div>
     </Teleport>
+    <ConfirmationDialog
+      :model-value="Boolean(recoveryDeleteObjectLink)"
+      title="删除失败连线"
+      :resource="recoveryDeleteObjectLink?.id || ''"
+      description="该连线当前未恢复成功。删除会清理已拥有的端点和预约。"
+      impact="删除后如需恢复通信，必须重新创建连线。"
+      confirm-label="删除连线"
+      @update:model-value="!$event && (recoveryDeleteObjectLink = undefined)"
+      @confirm="confirmRecoveryObjectLinkDelete"
+    />
+    <Dialog
+      v-model="recoveryFailureOpen"
+      title="恢复操作失败"
+      description="系统保留了结构化诊断信息，未把失败资源标记为健康。"
+    >
+      <StructuredProblem v-if="recoveryFailure" :problem="recoveryFailure" />
+      <template #footer>
+        <Button variant="secondary" @click="recoveryFailureOpen = false"
+          >知道了</Button
+        >
+      </template>
+    </Dialog>
     <ConfirmationDialog
       :model-value="Boolean(contextDeleteNode)"
       title="删除节点"

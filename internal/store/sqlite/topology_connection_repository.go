@@ -397,9 +397,88 @@ func (r *Repositories) RecoverTopologyConnectionReservations(ctx context.Context
 				return err
 			}
 		}
-		return nil
+		finalized, err := finalizeExhaustedTopologyConnectionsTx(ctx, tx)
+		outcomes = append(outcomes, finalized...)
+		return err
 	})
 	return outcomes, err
+}
+
+func finalizeExhaustedTopologyConnectionsTx(ctx context.Context, tx *sql.Tx) ([]domain.TopologyConnectionRecoveryOutcome, error) {
+	outcomes := []domain.TopologyConnectionRecoveryOutcome{}
+	type exhaustedConnection struct {
+		resourceType string
+		resourceID   domain.ID
+		laboratoryID domain.ID
+		revision     domain.Revision
+		state        string
+	}
+	queries := []struct {
+		resourceType string
+		query        string
+	}{
+		{"link", `SELECT l.id,l.laboratory_id,l.revision,l.observed_state FROM links l WHERE l.observed_state IN ('pending','disconnecting') AND EXISTS (SELECT 1 FROM operation_tasks t WHERE t.resource_id=l.id AND t.state IN ('failed','cancelled')) AND NOT EXISTS (SELECT 1 FROM operation_tasks t WHERE t.resource_id=l.id AND t.state IN ('queued','running'))`},
+		{"network_attachment", `SELECT a.id,o.laboratory_id,a.revision,a.observed_state FROM network_attachments a JOIN network_objects o ON o.id=a.network_object_id WHERE a.observed_state IN ('pending','disconnecting') AND EXISTS (SELECT 1 FROM operation_tasks t WHERE t.resource_id=a.id AND t.state IN ('failed','cancelled')) AND NOT EXISTS (SELECT 1 FROM operation_tasks t WHERE t.resource_id=a.id AND t.state IN ('queued','running'))`},
+		{"network_object_link", `SELECT l.id,l.laboratory_id,l.revision,l.observed_state FROM network_object_links l WHERE l.observed_state IN ('pending','disconnecting') AND EXISTS (SELECT 1 FROM operation_tasks t WHERE t.resource_id=l.id AND t.state IN ('failed','cancelled')) AND NOT EXISTS (SELECT 1 FROM operation_tasks t WHERE t.resource_id=l.id AND t.state IN ('queued','running'))`},
+	}
+	for _, candidate := range queries {
+		rows, err := tx.QueryContext(ctx, candidate.query)
+		if err != nil {
+			return nil, err
+		}
+		var values []exhaustedConnection
+		for rows.Next() {
+			value := exhaustedConnection{resourceType: candidate.resourceType}
+			if err = rows.Scan(&value.resourceID, &value.laboratoryID, &value.revision, &value.state); err != nil {
+				rows.Close()
+				return nil, err
+			}
+			values = append(values, value)
+		}
+		if err = rows.Close(); err != nil {
+			return nil, err
+		}
+		for _, value := range values {
+			problem := domain.Problem{
+				Code:              "connection_recovery_exhausted",
+				Message:           "interrupted topology connection has no active recovery task",
+				Retryable:         true,
+				ResourceType:      value.resourceType,
+				ResourceID:        value.resourceID,
+				Phase:             "startup_recovery",
+				Cleanup:           "endpoint reservations are retained for retry or delete",
+				OperatorHint:      "retry reconciliation or delete the failed connection",
+				RetryAfterSeconds: 3,
+			}
+			body, _ := json.Marshal(problem)
+			switch value.resourceType {
+			case "link":
+				if _, err = tx.ExecContext(ctx, `UPDATE links SET observed_state='failed' WHERE id=?`, value.resourceID); err != nil {
+					return nil, err
+				}
+				if err = appendEvent(ctx, tx, "link.observed_state_changed", value.laboratoryID, value.resourceType, value.resourceID, value.revision, "", map[string]any{"observed_state": "failed", "last_error": problem}); err != nil {
+					return nil, err
+				}
+			case "network_attachment":
+				if _, err = tx.ExecContext(ctx, `UPDATE network_attachments SET observed_state='failed',last_error_json=? WHERE id=?`, body, value.resourceID); err != nil {
+					return nil, err
+				}
+				if err = appendEvent(ctx, tx, "network_attachment.state_changed", value.laboratoryID, value.resourceType, value.resourceID, value.revision, "", map[string]any{"observed_state": "failed", "last_error": problem}); err != nil {
+					return nil, err
+				}
+			case "network_object_link":
+				if _, err = tx.ExecContext(ctx, `UPDATE network_object_links SET observed_state='failed',last_error_json=? WHERE id=?`, body, value.resourceID); err != nil {
+					return nil, err
+				}
+				if err = appendEvent(ctx, tx, "network_object_link.state_changed", value.laboratoryID, value.resourceType, value.resourceID, value.revision, "", map[string]any{"observed_state": "failed", "last_error": problem}); err != nil {
+					return nil, err
+				}
+			}
+			action := "exhausted_" + value.state + "_failed"
+			outcomes = append(outcomes, domain.TopologyConnectionRecoveryOutcome{ResourceType: value.resourceType, ResourceID: value.resourceID, Action: action, State: "failed", Error: problem.Message})
+		}
+	}
+	return outcomes, nil
 }
 
 func (r *Repositories) CreateTopologyNetworkAttachment(ctx context.Context, objectID, interfaceID domain.ID, portName string, config map[string]any, operationID domain.ID) (domain.NetworkAttachment, error) {

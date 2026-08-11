@@ -23,6 +23,16 @@ type RecoveryCoordinator struct {
 	participants []Reconciler
 }
 
+type StartupRecoveryParticipants struct {
+	Nodes          Reconciler
+	NetworkObjects Reconciler
+	DurableTasks   Reconciler
+	Reservations   Reconciler
+	DataPlane      Reconciler
+	PortMappings   Reconciler
+	Captures       Reconciler
+}
+
 type RecoveryResourceOutcome struct {
 	ResourceType string            `json:"resource_type"`
 	ResourceID   domain.ID         `json:"resource_id"`
@@ -59,6 +69,24 @@ func (r *DurableTaskRecoveryReconciler) Reconcile(ctx context.Context) error {
 
 func NewRecoveryCoordinator(store RecoveryTaskStore, participants ...Reconciler) *RecoveryCoordinator {
 	return &RecoveryCoordinator{store: store, participants: participants}
+}
+
+func NewStartupRecoveryCoordinator(store RecoveryTaskStore, participants StartupRecoveryParticipants) *RecoveryCoordinator {
+	ordered := make([]Reconciler, 0, 7)
+	for _, participant := range []Reconciler{
+		participants.Nodes,
+		participants.NetworkObjects,
+		participants.DurableTasks,
+		participants.Reservations,
+		participants.DataPlane,
+		participants.PortMappings,
+		participants.Captures,
+	} {
+		if participant != nil {
+			ordered = append(ordered, participant)
+		}
+	}
+	return NewRecoveryCoordinator(store, ordered...)
 }
 
 func (c *RecoveryCoordinator) Execute(ctx context.Context, mode string, prepare func(context.Context) error) (domain.OperationTask, error) {

@@ -66,6 +66,8 @@ type TopologyConnectionRecoveryOutcome struct {
 	ResourceType string `json:"resource_type"`
 	ResourceID   ID     `json:"resource_id"`
 	Action       string `json:"action"`
+	State        string `json:"state,omitempty"`
+	Error        string `json:"error,omitempty"`
 }
 
 func (e ConnectionEndpoint) Key() string {

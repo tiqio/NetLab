@@ -62,9 +62,10 @@ func (s *recoveryTaskStoreFake) UpdateTask(_ context.Context, task domain.Operat
 }
 
 type recoveryParticipantFake struct {
-	name string
-	err  error
-	runs int
+	name  string
+	err   error
+	runs  int
+	order *[]string
 }
 
 type durableTaskRecovererFake struct{ calls int }
@@ -106,7 +107,34 @@ func (p *objectLinkCheckpointParticipant) ReconcileWithCheckpoints(_ context.Con
 func (p *recoveryParticipantFake) Name() string { return p.name }
 func (p *recoveryParticipantFake) Reconcile(context.Context) error {
 	p.runs++
+	if p.order != nil {
+		*p.order = append(*p.order, p.name)
+	}
 	return p.err
+}
+
+func TestStartupRecoveryCoordinatorOrdersBackingBeforeConnections(t *testing.T) {
+	store := &recoveryTaskStoreFake{}
+	var order []string
+	participant := func(name string) *recoveryParticipantFake {
+		return &recoveryParticipantFake{name: name, order: &order}
+	}
+	coordinator := NewStartupRecoveryCoordinator(store, StartupRecoveryParticipants{
+		Captures:       participant("captures"),
+		DataPlane:      participant("data-plane"),
+		Reservations:   participant("reservations"),
+		DurableTasks:   participant("durable-tasks"),
+		NetworkObjects: participant("network-objects"),
+		Nodes:          participant("nodes"),
+		PortMappings:   participant("port-mappings"),
+	})
+	if _, err := coordinator.Execute(context.Background(), "service_restart", nil); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"nodes", "network-objects", "durable-tasks", "reservations", "data-plane", "port-mappings", "captures"}
+	if strings.Join(order, ",") != strings.Join(want, ",") {
+		t.Fatalf("order=%v want=%v", order, want)
+	}
 }
 
 func TestRecoveryCoordinatorPublishesProgressAndCompletion(t *testing.T) {

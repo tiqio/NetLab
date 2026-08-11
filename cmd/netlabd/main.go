@@ -323,11 +323,15 @@ func main() {
 		} else {
 			logger.Warn("data-plane reconciler unavailable", "error", dataPlaneErr)
 		}
-		recoveryParticipants := []reconcile.Reconciler{nodeReconciler, reconcile.NewDurableTaskRecoveryReconciler(taskRunner), reconcile.NewTopologyConnectionRecoveryReconciler(repositories), networkRecovery, portMappingRecovery, reconcile.NewCaptureRecoveryReconciler(captureManager)}
-		if dataPlaneReconciler != nil {
-			recoveryParticipants = append(recoveryParticipants, dataPlaneReconciler)
-		}
-		recovery := reconcile.NewRecoveryCoordinator(repositories, recoveryParticipants...)
+		recovery := reconcile.NewStartupRecoveryCoordinator(repositories, reconcile.StartupRecoveryParticipants{
+			Nodes:          nodeReconciler,
+			NetworkObjects: networkRecovery,
+			DurableTasks:   reconcile.NewDurableTaskRecoveryReconciler(taskRunner),
+			Reservations:   reconcile.NewTopologyConnectionRecoveryReconciler(repositories),
+			DataPlane:      dataPlaneReconciler,
+			PortMappings:   portMappingRecovery,
+			Captures:       reconcile.NewCaptureRecoveryReconciler(captureManager),
+		})
 		hostRestarted, bootErr := reconcile.DetectHostRestart(cfg.StateDir)
 		if bootErr != nil {
 			logger.Warn("host restart detection failed", "error", bootErr)
