@@ -5,9 +5,9 @@ import { nodeFactory } from "@/test/factories";
 
 vi.mock("./ConsoleWorkspace.vue", () => ({
   default: {
-    props: ["nodeId", "resourceType", "autoOpen"],
+    props: ["nodeId", "resourceType", "autoOpen", "autoMode"],
     template:
-      '<div data-console-workspace :data-node-id="nodeId" :data-resource-type="resourceType">{{ nodeId }}</div>',
+      '<div data-console-workspace :data-node-id="nodeId" :data-resource-type="resourceType" :data-mode="autoMode">{{ nodeId }}</div>',
   },
 }));
 
@@ -88,6 +88,45 @@ describe("GlobalConsoleWorkspace", () => {
       wrapper.get('[aria-label="新增串口终端"]').attributes("disabled"),
     ).toBeDefined();
     expect(wrapper.findAll("[data-console-workspace]")).toHaveLength(1);
+  });
+
+  it("keeps only the active VNC renderer mounted", async () => {
+    vi.spyOn(api, "listNodeConsoles").mockResolvedValue([
+      {
+        mode: "telnet",
+        stream_url: "/serial",
+        reconnectable: true,
+        idle_seconds: 1800,
+      },
+      {
+        mode: "vnc",
+        stream_url: "/vnc",
+        reconnectable: true,
+        idle_seconds: 1800,
+      },
+    ]);
+    const wrapper = mount(GlobalConsoleWorkspace, {
+      props: {
+        nodes: [nodeFactory({ id: "ubuntu", name: "Ubuntu", kind: "qemu" })],
+        requestNodeId: "ubuntu",
+        requestKey: 1,
+      },
+    });
+    await flushPromises();
+
+    const addVNC = wrapper.get('[aria-label="新增 VNC 会话"]');
+    await addVNC.trigger("click");
+    await addVNC.trigger("click");
+
+    expect(wrapper.get('[aria-label="终端会话"]').text()).toContain("VNC 2");
+    expect(
+      wrapper
+        .findAll("[data-console-workspace]")
+        .map((item) => item.attributes("data-mode")),
+    ).toEqual(["telnet", "vnc"]);
+
+    await wrapper.get('[aria-label="终端会话"] button').trigger("click");
+    expect(wrapper.findAll('[data-mode="vnc"]')).toHaveLength(0);
   });
 
   it("keeps each opened node console mounted while switching tabs", async () => {

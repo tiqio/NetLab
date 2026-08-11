@@ -212,7 +212,7 @@ async function open(mode: ConsoleMode) {
     } else {
       rfb = new RFB(vncHost.value!, url.toString(), { shared: true });
       rfb.scaleViewport = true;
-      rfb.resizeSession = true;
+      rfb.resizeSession = false;
       rfb.addEventListener("connect", () => updateSessionState("connected"));
       rfb.addEventListener("disconnect", () => {
         if (!intentionalClose) updateSessionState("reconnecting");

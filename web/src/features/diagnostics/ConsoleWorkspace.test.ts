@@ -5,6 +5,8 @@ const dispose = vi.fn();
 const disconnect = vi.fn();
 let terminalOptions: Record<string, unknown> | undefined;
 let terminalInstanceOptions: { theme?: Record<string, string> } | undefined;
+let vncScaleViewport = false;
+let vncResizeSession = false;
 vi.mock("@xterm/xterm", () => ({
   Terminal: class {
     options: { theme?: Record<string, string> };
@@ -26,9 +28,19 @@ vi.mock("@xterm/addon-fit", () => ({
 }));
 vi.mock("@novnc/novnc", () => ({
   default: class {
-    scaleViewport = false;
-    resizeSession = false;
     disconnect = disconnect;
+    get scaleViewport() {
+      return vncScaleViewport;
+    }
+    set scaleViewport(value: boolean) {
+      vncScaleViewport = value;
+    }
+    get resizeSession() {
+      return vncResizeSession;
+    }
+    set resizeSession(value: boolean) {
+      vncResizeSession = value;
+    }
     addEventListener() {}
   },
 }));
@@ -137,5 +149,24 @@ describe("ConsoleWorkspace", () => {
     vi.unstubAllGlobals();
     document.documentElement.style.removeProperty("--terminal-background");
     document.documentElement.style.removeProperty("--terminal-foreground");
+  });
+
+  it("scales VNC locally without resizing the shared QEMU display", async () => {
+    vi.spyOn(api, "listNodeConsoles").mockResolvedValue([
+      { mode: "vnc", stream_url: "/vnc", idle_seconds: 60 },
+    ]);
+    const wrapper = mount(ConsoleWorkspace, {
+      props: {
+        nodeId: "node-1",
+        sessionId: "vnc-session-1",
+        autoOpen: true,
+        autoMode: "vnc",
+      },
+    });
+    await flushPromises();
+
+    expect(vncScaleViewport).toBe(true);
+    expect(vncResizeSession).toBe(false);
+    wrapper.unmount();
   });
 });

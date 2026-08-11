@@ -378,6 +378,21 @@ function addVNCForActiveNode() {
 function addSerialForActiveNode() {
   if (activeWorkspace.value) addSession(activeWorkspace.value, "telnet");
 }
+function isActiveSession(
+  workspace: NodeConsoleWorkspace,
+  session: TerminalSession,
+) {
+  return (
+    activeNodeId.value === workspace.nodeId &&
+    workspace.activeSessionId === session.id
+  );
+}
+function shouldMountSession(
+  workspace: NodeConsoleWorkspace,
+  session: TerminalSession,
+) {
+  return session.mode !== "vnc" || isActiveSession(workspace, session);
+}
 </script>
 
 <template>
@@ -449,7 +464,7 @@ function addSerialForActiveNode() {
             ? '新增容器终端会话'
             : canAddSSH
               ? '新增 SSH 终端会话'
-              : 'SSH 不可用；请将节点接入可达网络并配置有效的引导凭据'
+              : 'QEMU 串口只有一个；如需多个独立终端，请将节点接入可达网络并配置 SSH 凭据'
         "
         :disabled="!['docker', 'pc'].includes(String(activeKind)) && !canAddSSH"
         @click="addForActiveNode"
@@ -491,21 +506,19 @@ function addSerialForActiveNode() {
       data-layout-region="console-content"
     >
       <template v-for="workspace in workspaces" :key="workspace.nodeId">
-        <ConsoleWorkspace
-          v-for="session in workspace.sessions"
-          v-show="
-            activeNodeId === workspace.nodeId &&
-            workspace.activeSessionId === session.id
-          "
-          :key="session.id"
-          :node-id="workspace.nodeId"
-          :resource-type="
-            isNetworkObject(workspace.nodeId) ? 'network_object' : 'node'
-          "
-          :session-id="session.id"
-          auto-open
-          :auto-mode="session.mode"
-        />
+        <template v-for="session in workspace.sessions" :key="session.id">
+          <ConsoleWorkspace
+            v-if="shouldMountSession(workspace, session)"
+            v-show="isActiveSession(workspace, session)"
+            :node-id="workspace.nodeId"
+            :resource-type="
+              isNetworkObject(workspace.nodeId) ? 'network_object' : 'node'
+            "
+            :session-id="session.id"
+            auto-open
+            :auto-mode="session.mode"
+          />
+        </template>
       </template>
     </div>
     <div
