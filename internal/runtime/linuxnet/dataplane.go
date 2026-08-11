@@ -269,6 +269,7 @@ func (d *DataPlane) DeleteNetworkObjectLink(ctx context.Context, link domain.Net
 		port   string
 	}
 	var cleanupErrors []error
+	attempted := false
 	for _, value := range []endpoint{{object: objectA, port: link.PortAName}, {object: objectB, port: link.PortBName}} {
 		namespace, err := networkObjectNamespace(value.object)
 		if err != nil {
@@ -278,9 +279,15 @@ func (d *DataPlane) DeleteNetworkObjectLink(ctx context.Context, link domain.Net
 			cleanupErrors = append(cleanupErrors, err)
 			continue
 		}
-		if err = d.executor.Run(ctx, d.ip, "-n", namespace, "link", "delete", value.port); err != nil && !missingLinkError(err) {
+		attempted = true
+		if err = d.executor.Run(ctx, d.ip, "-n", namespace, "link", "delete", value.port); err == nil {
+			return nil
+		} else if !missingLinkError(err) {
 			cleanupErrors = append(cleanupErrors, err)
 		}
+	}
+	if attempted && len(cleanupErrors) == 0 {
+		return nil
 	}
 	return errors.Join(cleanupErrors...)
 }
