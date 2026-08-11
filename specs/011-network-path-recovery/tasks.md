@@ -12,11 +12,11 @@
 
 **Purpose**: Preserve compatibility context and create repeatable local/target evidence before runtime changes.
 
-- [ ] T001 Record the current component-matrix resource, link, namespace, VLAN, route, Traffic Filter and leak baseline in `specs/011-network-path-recovery/validation/baseline.md`
-- [ ] T002 Inspect relevant `git log` and `git blame` history for recovery, network objects, endpoint cleanup, VLAN and Traffic Filter behavior and record compatibility constraints in `specs/011-network-path-recovery/validation/history.md`
-- [ ] T003 [P] Add reusable component-matrix resource identifiers and redacted target-query helpers in `tests/testsupport/network_path_recovery_fixtures.go`
-- [ ] T004 [P] Add privileged host baseline and leak-diff helpers for namespaces, interfaces, bridge memberships, routes, rules, sockets, processes and captures in `tests/testsupport/runtime_leak_baseline.go`
-- [ ] T005 [P] Add feature validation evidence templates for local milestones, target acceptance, deployment identity and rollback in `specs/011-network-path-recovery/validation/README.md`
+- [X] T001 Record the current component-matrix resource, link, namespace, VLAN, route, Traffic Filter and leak baseline in `specs/011-network-path-recovery/validation/baseline.md`
+- [X] T002 Inspect relevant `git log` and `git blame` history for recovery, network objects, endpoint cleanup, VLAN and Traffic Filter behavior and record compatibility constraints in `specs/011-network-path-recovery/validation/history.md`
+- [X] T003 [P] Add reusable component-matrix resource identifiers and redacted target-query helpers in `tests/testsupport/network_path_recovery_fixtures.go`
+- [X] T004 [P] Add privileged host baseline and leak-diff helpers for namespaces, interfaces, bridge memberships, routes, rules, sockets, processes and captures in `tests/testsupport/runtime_leak_baseline.go`
+- [X] T005 [P] Add feature validation evidence templates for local milestones, target acceptance, deployment identity and rollback in `specs/011-network-path-recovery/validation/README.md`
 
 ---
 
