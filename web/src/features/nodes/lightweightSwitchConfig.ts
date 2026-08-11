@@ -24,6 +24,40 @@ export function splitList(value: string) {
     .filter(Boolean);
 }
 
+export function validateL2PortDrafts(ports: L2PortDraft[]) {
+  const names = new Map<string, number>();
+  return ports
+    .map((port) => {
+      const errors: string[] = [];
+      const name = port.name.trim();
+      if (!/^[A-Za-z0-9_.-]{1,15}$/.test(name))
+        errors.push("端口名称必须为 1-15 位字母、数字、点、下划线或短横线");
+      names.set(name, (names.get(name) || 0) + 1);
+      const pvid = Number(port.pvid);
+      if (!Number.isInteger(pvid) || pvid < 0 || pvid > 4094)
+        errors.push("PVID 必须是 0-4094 的整数");
+      const taggedValues = splitList(port.tagged);
+      const tagged = taggedValues.map(Number);
+      if (
+        taggedValues.some(
+          (value, index) =>
+            !/^\d+$/.test(value) || tagged[index] < 1 || tagged[index] > 4094,
+        )
+      )
+        errors.push("Tagged VLAN 必须是 1-4094 的整数列表");
+      if (new Set(tagged).size !== tagged.length)
+        errors.push("Tagged VLAN 不能重复");
+      if (pvid > 0 && tagged.includes(pvid))
+        errors.push("PVID 不能同时出现在 Tagged VLAN 中");
+      return errors;
+    })
+    .map((errors, index) => {
+      const name = ports[index].name.trim();
+      if (name && (names.get(name) || 0) > 1) errors.push("端口名称不能重复");
+      return errors;
+    });
+}
+
 export function defaultLightweightSwitchConfig(kind: LightweightSwitchKind) {
   if (kind === "switch_l2")
     return {

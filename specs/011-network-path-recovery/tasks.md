@@ -121,24 +121,24 @@
 
 ### Tests for User Story 3
 
-- [ ] T056 [P] [US3] Write failing domain validation tests for VLAN ranges, duplicates and contradictory PVID/tagged membership in `internal/domain/network_object_test.go`
-- [ ] T057 [P] [US3] Write failing L2 runtime tests for late-port membership, VLAN 1 removal, tagged trunks and readback in `internal/runtime/linuxnet/switch_l2_test.go`
-- [ ] T058 [P] [US3] Write failing dataplane tests proving attachment/link transitions trigger L2 membership reconciliation in `internal/app/reconcile/dataplane_test.go`
+- [X] T056 [P] [US3] Write failing domain validation tests for VLAN ranges, duplicates and contradictory PVID/tagged membership in `internal/domain/network_object_test.go`
+- [X] T057 [P] [US3] Write failing L2 runtime tests for late-port membership, VLAN 1 removal, tagged trunks and readback in `internal/runtime/linuxnet/switch_l2_test.go`
+- [X] T058 [P] [US3] Write failing dataplane tests proving attachment/link transitions trigger L2 membership reconciliation in `internal/app/reconcile/dataplane_test.go`
 - [ ] T059 [P] [US3] Write failing HTTP contract tests for VLAN validation and observed diagnostics in `internal/api/http/network_vlan_contract_test.go`
 - [ ] T060 [P] [US3] Write failing MCP parity tests for L2 updates and VLAN diagnostics in `internal/api/mcp/network_vlan_tools_test.go`
-- [ ] T061 [P] [US3] Write failing frontend tests for PVID/tagged editing, preserved invalid drafts and pending/mismatch states in `web/src/features/topology/NetworkObjectEditor.test.ts`
+- [X] T061 [P] [US3] Write failing frontend tests for PVID/tagged editing, preserved invalid drafts and pending/mismatch states in `web/src/features/topology/NetworkObjectEditor.test.ts`
 - [ ] T062 [P] [US3] Write a failing privileged VLAN access/trunk/isolation test in `tests/integration/vlan_trunk_path_test.go`
 - [ ] T063 [P] [US3] Write a failing VLAN restart persistence test in `tests/recovery/vlan_membership_recovery_test.go`
 
 ### Implementation for User Story 3
 
-- [ ] T064 [US3] Strengthen L2 VLAN configuration validation and normalization in `internal/domain/network_object.go`
-- [ ] T065 [US3] Implement idempotent clear/apply/readback of PVID, untagged and tagged membership in `internal/runtime/linuxnet/switch_l2.go`
-- [ ] T066 [US3] Reapply desired VLAN membership whenever an L2 port becomes available in `internal/app/reconcile/dataplane.go`
-- [ ] T067 [US3] Mark L2 objects pending or failed until required observed membership matches desired state in `internal/app/reconcile/network_objects.go`
-- [ ] T068 [US3] Extend diagnostics and OpenAPI response mapping with per-port VLAN observations in `internal/api/http/network_handlers.go`
-- [ ] T069 [US3] Add PVID and tagged VLAN editing with client-side validation to `web/src/features/topology/NetworkObjectEditor.vue`
-- [ ] T070 [US3] Display desired/observed VLAN membership and mismatch guidance in `web/src/features/diagnostics/DiagnosticsPanel.vue`
+- [X] T064 [US3] Strengthen L2 VLAN configuration validation and normalization in `internal/domain/network_object.go`
+- [X] T065 [US3] Implement idempotent clear/apply/readback of PVID, untagged and tagged membership in `internal/runtime/linuxnet/switch_l2.go`
+- [X] T066 [US3] Reapply desired VLAN membership whenever an L2 port becomes available in `internal/app/reconcile/dataplane.go`
+- [X] T067 [US3] Mark L2 objects pending or failed until required observed membership matches desired state in `internal/app/reconcile/network_objects.go`
+- [X] T068 [US3] Extend diagnostics and OpenAPI response mapping with per-port VLAN observations in `internal/api/http/network_handlers.go`
+- [X] T069 [US3] Add PVID and tagged VLAN editing with client-side validation to `web/src/features/topology/NetworkObjectEditor.vue`
+- [X] T070 [US3] Display desired/observed VLAN membership and mismatch guidance in `web/src/features/diagnostics/DiagnosticsPanel.vue`
 - [ ] T071 [US3] Configure the component-matrix VLAN 10/20 access ports and a two-VLAN tagged trunk through revisioned operations documented in `specs/011-network-path-recovery/validation/vlan-topology.md`
 - [ ] T072 [US3] Run US3 domain, runtime, contract, UI, privileged VLAN and restart gates, record results in `specs/011-network-path-recovery/validation/us3-vlan.md`, and commit the milestone with a focused Git commit
 

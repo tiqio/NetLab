@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/netip"
 	"regexp"
+	"slices"
 	"strings"
 )
 
@@ -307,6 +308,19 @@ func ValidateSwitchL2Config(config SwitchL2Config) error {
 		}
 	}
 	return nil
+}
+
+func NormalizeSwitchL2Config(config SwitchL2Config) (SwitchL2Config, error) {
+	if err := ValidateSwitchL2Config(config); err != nil {
+		return SwitchL2Config{}, err
+	}
+	normalized := config
+	normalized.Ports = append([]VLANPort(nil), config.Ports...)
+	for index := range normalized.Ports {
+		normalized.Ports[index].Tagged = append([]int(nil), normalized.Ports[index].Tagged...)
+		slices.Sort(normalized.Ports[index].Tagged)
+	}
+	return normalized, nil
 }
 
 func ValidateSwitchL3Config(config SwitchL3Config) error {

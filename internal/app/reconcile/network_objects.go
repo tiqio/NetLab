@@ -53,6 +53,27 @@ type networkObjectRuntimeInspector interface {
 	InspectNetworkObject(context.Context, domain.NetworkObject) (domain.RuntimeBackingObservation, error)
 }
 
+type networkObjectConfigurationObserver interface {
+	ConfigurationConverged(context.Context, domain.NetworkObject) (bool, map[string]any, error)
+}
+
+type networkObjectDiagnosticsRuntime interface {
+	DiagnosticsObject(context.Context, domain.NetworkObject) (map[string]any, error)
+}
+
+func inspectNetworkObjectConfiguration(ctx context.Context, runtime NetworkObjectRuntime, value domain.NetworkObject) *domain.Problem {
+	observer, ok := runtime.(networkObjectConfigurationObserver)
+	if !ok {
+		return nil
+	}
+	converged, diagnostics, err := observer.ConfigurationConverged(ctx, value)
+	if err == nil && converged {
+		return nil
+	}
+	fallback := domain.Problem{Code: "network_configuration_pending", Message: "network object configuration is waiting for runtime ports or membership convergence", Retryable: true, ResourceType: "network_object", ResourceID: value.ID, Phase: "configuration_observation", Cleanup: "desired configuration remains authoritative", OperatorHint: "connect the required ports or inspect observed VLAN membership and retry", RetryAfterSeconds: 2, Details: diagnostics}
+	return structuredProblem(err, fallback)
+}
+
 func inspectNetworkObjectRuntime(ctx context.Context, runtime NetworkObjectRuntime, value domain.NetworkObject, phase, cleanup string) *domain.Problem {
 	inspector, ok := runtime.(networkObjectRuntimeInspector)
 	if !ok {
@@ -118,6 +139,12 @@ func (s *NetworkObjectService) ReconcileObject(ctx context.Context, id domain.ID
 		problem := structuredProblem(err, domain.Problem{Code: "reconciliation_failed", Message: "network object reconciliation failed", Retryable: true, ResourceType: "network_object", ResourceID: id, Phase: "reconcile", Cleanup: "owned partial state is retained for retry", OperatorHint: "inspect diagnostics and retry", RetryAfterSeconds: 3})
 		_ = s.repository.SetNetworkObjectState(context.Background(), id, "failed", problem)
 		return value, *problem
+	}
+	if problem := inspectNetworkObjectConfiguration(ctx, runtime, value); problem != nil {
+		value.ObservedState = "pending"
+		value.LastError = problem
+		_ = s.repository.SetNetworkObjectState(context.Background(), id, "pending", problem)
+		return value, nil
 	}
 	value.ObservedState = "active"
 	value.LastError = nil
@@ -245,6 +272,12 @@ func (s *NetworkObjectService) CreateAs(ctx context.Context, id, labID domain.ID
 		_ = s.repository.SetNetworkObjectState(context.Background(), value.ID, "failed", problem)
 		return value, *problem
 	}
+	if problem := inspectNetworkObjectConfiguration(ctx, runtime, value); problem != nil {
+		value.ObservedState = "pending"
+		value.LastError = problem
+		_ = s.repository.SetNetworkObjectState(context.Background(), value.ID, "pending", problem)
+		return value, nil
+	}
 	value.ObservedState = "active"
 	_ = s.repository.SetNetworkObjectState(context.Background(), value.ID, "active", nil)
 	if value.Kind == domain.NetworkNAT {
@@ -282,6 +315,18 @@ func (s *NetworkObjectService) InspectObject(ctx context.Context, id domain.ID) 
 	return inspector.InspectNetworkObject(ctx, value)
 }
 
+func (s *NetworkObjectService) DiagnosticsObject(ctx context.Context, id domain.ID) (map[string]any, error) {
+	value, err := s.repository.GetNetworkObject(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	runtime, ok := s.runtime(value.Kind).(networkObjectDiagnosticsRuntime)
+	if !ok {
+		return nil, domain.Problem{Code: "capability_unsupported", Message: "runtime configuration diagnostics are unavailable", ResourceType: "network_object", ResourceID: id, Phase: "configuration_diagnostics"}
+	}
+	return runtime.DiagnosticsObject(ctx, value)
+}
+
 func (s *NetworkObjectService) Update(ctx context.Context, id domain.ID, revision domain.Revision, name string, config map[string]any) (value domain.NetworkObject, err error) {
 	defer normalizeTerminalError(&err, terminalProblem("network_object", id, "updating"))
 	current, err := s.repository.GetNetworkObject(ctx, id)
@@ -315,6 +360,12 @@ func (s *NetworkObjectService) Update(ctx context.Context, id domain.ID, revisio
 	if problem := inspectNetworkObjectRuntime(ctx, runtime, value, "update_inspection", "updated configuration retained for retry"); problem != nil {
 		_ = s.repository.SetNetworkObjectState(context.Background(), value.ID, "failed", problem)
 		return value, *problem
+	}
+	if problem := inspectNetworkObjectConfiguration(ctx, runtime, value); problem != nil {
+		value.ObservedState = "pending"
+		value.LastError = problem
+		_ = s.repository.SetNetworkObjectState(context.Background(), value.ID, "pending", problem)
+		return value, nil
 	}
 	value.ObservedState = "active"
 	_ = s.repository.SetNetworkObjectState(context.Background(), value.ID, "active", nil)

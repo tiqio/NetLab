@@ -215,7 +215,7 @@ func main() {
 	networkService.AddObjectLinkObserverCleanup(captureManager)
 	networkService.AddObjectLinkObserverCleanup(trafficFilterManager)
 	networkTasks := reconcile.NewNetworkObjectTaskService(networkService, taskRunner)
-	httpapi.NewNetworkHandlers(networkService, networkTasks, pcRuntime, bridgeRuntime, natRuntime, switchL3Runtime).Register(server.Engine())
+	httpapi.NewNetworkHandlers(networkService, networkTasks, pcRuntime, bridgeRuntime, natRuntime, switchL2Runtime, switchL3Runtime).Register(server.Engine())
 	topologyConnections := reconcile.NewUnifiedTopologyConnectionService(repositories, topologyTasks, networkTasks)
 	httpapi.NewTopologyConnectionHandlers(topologyConnections, repositories).Register(server.Engine())
 	server.Engine().GET("/api/v1/events", gin.WrapH(stream.NewEventHandler(publisher)))

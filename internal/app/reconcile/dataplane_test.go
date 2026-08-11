@@ -93,9 +93,9 @@ func (r *dataPlaneRuntimeFake) EnsureNetworkObjectLink(context.Context, domain.N
 	return r.objectLinkError
 }
 
-type l3ObjectReconcilerFake struct{ ids []domain.ID }
+type dependentObjectReconcilerFake struct{ ids []domain.ID }
 
-func (r *l3ObjectReconcilerFake) ReconcileObject(_ context.Context, id domain.ID, _ domain.Revision) (domain.NetworkObject, error) {
+func (r *dependentObjectReconcilerFake) ReconcileObject(_ context.Context, id domain.ID, _ domain.Revision) (domain.NetworkObject, error) {
 	r.ids = append(r.ids, id)
 	return domain.NetworkObject{ID: id}, nil
 }
@@ -115,7 +115,7 @@ func TestDataPlaneReconcilesL3AfterLateAttachmentAndObjectLink(t *testing.T) {
 		},
 	}
 	runtime := &dataPlaneRuntimeFake{}
-	objects := &l3ObjectReconcilerFake{}
+	objects := &dependentObjectReconcilerFake{}
 	reconciler := NewDataPlaneReconciler(store, runtime)
 	reconciler.SetNetworkObjectReconciler(objects)
 	if err := reconciler.Reconcile(context.Background()); err != nil {
@@ -129,6 +129,27 @@ func TestDataPlaneReconcilesL3AfterLateAttachmentAndObjectLink(t *testing.T) {
 		if objects.ids[index] != want[index] {
 			t.Fatalf("reconciled=%v want=%v", objects.ids, want)
 		}
+	}
+}
+
+func TestDataPlaneReconcilesL2AfterLateAttachment(t *testing.T) {
+	store := &dataPlaneStoreFake{
+		lab:             domain.Laboratory{ID: "lab", LifecycleState: "active"},
+		interfaceStates: map[domain.ID]string{},
+		attachments:     []domain.NetworkAttachment{{ID: "attachment", InterfaceID: "if-1", NetworkObjectID: "l2", PortName: "access0", Revision: 1}},
+		snapshot: domain.TopologySnapshot{
+			Interfaces:     []domain.Interface{{ID: "if-1", NodeID: "node"}},
+			NetworkObjects: []domain.NetworkObject{{ID: "l2", Kind: domain.NetworkSwitchL2, Revision: 2, ObservedState: "active"}},
+		},
+	}
+	objects := &dependentObjectReconcilerFake{}
+	reconciler := NewDataPlaneReconciler(store, &dataPlaneRuntimeFake{})
+	reconciler.SetNetworkObjectReconciler(objects)
+	if err := reconciler.Reconcile(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if len(objects.ids) != 1 || objects.ids[0] != "l2" {
+		t.Fatalf("late L2 port did not trigger membership reconcile: %v", objects.ids)
 	}
 }
 

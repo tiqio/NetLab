@@ -88,6 +88,21 @@ const networkObjectMismatches = computed(() => {
     { mismatches?: string[] } | undefined;
   return runtime?.mismatches || [];
 });
+const vlanDiagnostics = computed(() => {
+  if (recoveryObject.value?.kind !== "switch_l2") return undefined;
+  const runtime = recoveryDiagnostics.value?.runtime as
+    | {
+        desired?: {
+          vlan_filtering?: boolean;
+          ports?: Array<{ name: string; pvid?: number; tagged?: number[] }>;
+        };
+        observed?: {
+          ports?: Array<{ name: string; pvid?: number; tagged?: number[] }>;
+        };
+      }
+    | undefined;
+  return runtime;
+});
 async function loadRecoveryDiagnostics() {
   recoveryDiagnostics.value = undefined;
   recoveryLoadError.value = "";
@@ -256,6 +271,51 @@ watch(
           {{ nodeNetworkDiagnostics.observed?.forward_ipv6 }}
         </div>
       </dl>
+      <div
+        v-if="vlanDiagnostics"
+        class="mt-3 overflow-x-auto rounded border border-border"
+        data-testid="vlan-diagnostics"
+      >
+        <p class="border-b border-border px-2 py-1 text-xs">
+          VLAN Filtering：{{
+            vlanDiagnostics.desired?.vlan_filtering ? "启用" : "关闭"
+          }}
+        </p>
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="text-muted-foreground">
+              <th class="px-2 py-1">端口</th>
+              <th class="px-2 py-1">期望 PVID / Tagged</th>
+              <th class="px-2 py-1">实际 PVID / Tagged</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="port in vlanDiagnostics.desired?.ports || []"
+              :key="port.name"
+              class="border-t border-border"
+            >
+              <td class="px-2 py-1">{{ port.name }}</td>
+              <td class="px-2 py-1">
+                {{ port.pvid || 0 }} / {{ port.tagged?.join(",") || "—" }}
+              </td>
+              <td class="px-2 py-1">
+                {{
+                  vlanDiagnostics.observed?.ports?.find(
+                    (item) => item.name === port.name,
+                  )?.pvid || 0
+                }}
+                /
+                {{
+                  vlanDiagnostics.observed?.ports
+                    ?.find((item) => item.name === port.name)
+                    ?.tagged?.join(",") || "—"
+                }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
       <ul
         v-if="
           networkObjectMismatches.length ||

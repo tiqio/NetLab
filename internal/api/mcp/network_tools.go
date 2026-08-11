@@ -24,7 +24,11 @@ func NetworkTools(service *reconcile.NetworkObjectService, operations *reconcile
 			if err != nil {
 				return nil, err
 			}
-			return map[string]any{"object_id": object.ID, "desired_state": object.DesiredState, "observed_state": object.ObservedState, "backing": backing}, nil
+			result := map[string]any{"object_id": object.ID, "desired_state": object.DesiredState, "observed_state": object.ObservedState, "backing": backing}
+			if runtime, diagnosticsErr := service.DiagnosticsObject(c, object.ID); diagnosticsErr == nil {
+				result["runtime"] = runtime
+			}
+			return result, nil
 		}},
 		{Name: "netlab.network_objects.reconcile", Description: "Retry network-object runtime reconciliation through a durable task.", InputSchema: mutationSchema(map[string]any{"object_id": stringProperty("Network object ID")}, "object_id", "expected_revision"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
 			if operations == nil {

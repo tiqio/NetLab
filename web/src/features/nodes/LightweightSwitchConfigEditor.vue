@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { Button, FormField, Input } from "@/components/ui";
 import {
   defaultLightweightSwitchConfig,
   splitList,
+  validateL2PortDrafts,
   type L2PortDraft,
   type L3InterfaceDraft,
   type L3RouteDraft,
@@ -24,6 +25,10 @@ const l3Routes = ref<L3RouteDraft[]>([]);
 const forwardIPv4 = ref(true);
 const forwardIPv6 = ref(true);
 let syncing = false;
+const l2Errors = computed(() => validateL2PortDrafts(l2Ports.value));
+const hasL2Errors = computed(() =>
+  l2Errors.value.some((errors) => errors.length),
+);
 
 function load(value: Record<string, unknown>) {
   syncing = true;
@@ -76,6 +81,7 @@ function load(value: Record<string, unknown>) {
 function publish() {
   if (syncing) return;
   if (props.kind === "switch_l2") {
+    if (hasL2Errors.value) return;
     emit("update:modelValue", {
       vlan_filtering: vlanFiltering.value,
       ports: l2Ports.value.map((port) => ({
@@ -149,6 +155,7 @@ watch(
             <Input
               v-model="port.name"
               placeholder="eth0"
+              :aria-invalid="Boolean(l2Errors[index]?.length)"
               @update:model-value="publishAfterUpdate"
             />
           </FormField>
@@ -158,6 +165,7 @@ watch(
               type="number"
               min="0"
               max="4094"
+              :aria-invalid="Boolean(l2Errors[index]?.length)"
               @update:model-value="publishAfterUpdate"
             />
           </FormField>
@@ -166,9 +174,17 @@ watch(
           <Input
             v-model="port.tagged"
             placeholder="10,20"
+            :aria-invalid="Boolean(l2Errors[index]?.length)"
             @update:model-value="publishAfterUpdate"
           />
         </FormField>
+        <ul
+          v-if="l2Errors[index]?.length"
+          role="alert"
+          class="list-disc pl-5 text-xs text-destructive"
+        >
+          <li v-for="error in l2Errors[index]" :key="error">{{ error }}</li>
+        </ul>
         <Button
           v-if="l2Ports.length > 1"
           type="button"

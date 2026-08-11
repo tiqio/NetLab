@@ -128,6 +128,45 @@ describe("DiagnosticsPanel", () => {
     expect(wrapper.emitted("reconcileNetworkObject")).toEqual([[object]]);
   });
 
+  it("shows desired and observed VLAN membership with mismatch guidance", async () => {
+    vi.spyOn(api, "getNetworkObjectDiagnostics").mockResolvedValue({
+      object_id: "switch-1",
+      desired_state: "active",
+      observed_state: "pending",
+      runtime: {
+        desired: {
+          vlan_filtering: true,
+          ports: [{ name: "trunk0", pvid: 10, tagged: [20] }],
+        },
+        observed: {
+          ports: [{ name: "trunk0", pvid: 1, tagged: [] }],
+        },
+        mismatches: ["trunk0: VLAN membership differs"],
+      },
+    });
+    const object = {
+      id: "switch-1",
+      laboratory_id: "lab-1",
+      name: "核心二层交换机",
+      kind: "switch_l2" as const,
+      revision: 4,
+      desired_state: "active",
+      observed_state: "pending",
+      config: {},
+    };
+    const wrapper = mount(DiagnosticsPanel, {
+      props: { networkObjectId: object.id, networkObjects: [object] },
+    });
+    await flushPromises();
+    expect(wrapper.get('[data-testid="vlan-diagnostics"]').text()).toContain(
+      "trunk0",
+    );
+    expect(wrapper.get('[data-testid="vlan-diagnostics"]').text()).toContain(
+      "10 / 20",
+    );
+    expect(wrapper.text()).toContain("trunk0: VLAN membership differs");
+  });
+
   it("offers retry and delete for a failed object link", async () => {
     const link = {
       id: "link-1",
