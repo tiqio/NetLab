@@ -81,6 +81,16 @@ type topologyTaskRepositoryFake struct {
 	linkEndpointsReady bool
 }
 
+type topologyPostStartReconciler struct {
+	calls int
+	err   error
+}
+
+func (r *topologyPostStartReconciler) Reconcile(context.Context) error {
+	r.calls++
+	return r.err
+}
+
 func (r *topologyTaskRepositoryFake) SetNodeObservedState(_ context.Context, id domain.ID, state domain.ObservedState, problem *domain.Problem) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -379,6 +389,49 @@ func TestTopologyTaskRecoveryResumesOriginalTask(t *testing.T) {
 	current := waitForTopologyTask(t, store, value.ID, func(current domain.OperationTask) bool { return current.State == domain.TaskSucceeded })
 	if current.ID != value.ID || current.Kind != value.Kind {
 		t.Fatalf("task identity changed: %+v", current)
+	}
+}
+
+func TestTopologyTaskReconcilesDataPlaneBeforeRunningTaskSucceeds(t *testing.T) {
+	store := newTopologyTaskStore()
+	repository := newTopologyTaskRepositoryFake()
+	repository.node.DesiredState = domain.DesiredRunning
+	repository.node.ObservedState = domain.ObservedRunning
+	runner := task.NewRunner(store, 1, 8)
+	defer runner.Close()
+	service := NewTopologyTaskService(repository, runner)
+	service.poll = 5 * time.Millisecond
+	service.timeout = time.Second
+	reconciler := &topologyPostStartReconciler{}
+	service.SetPostStartReconciler(reconciler)
+	value, err := service.SetNodeState(context.Background(), "node", 1, domain.DesiredRunning, "post-start-reconcile")
+	if err != nil {
+		t.Fatal(err)
+	}
+	waitForTopologyTask(t, store, value.ID, func(current domain.OperationTask) bool { return current.State == domain.TaskSucceeded })
+	if reconciler.calls != 1 {
+		t.Fatalf("post-start reconcile calls=%d", reconciler.calls)
+	}
+}
+
+func TestTopologyTaskReportsPostStartDataPlaneFailure(t *testing.T) {
+	store := newTopologyTaskStore()
+	repository := newTopologyTaskRepositoryFake()
+	repository.node.DesiredState = domain.DesiredRunning
+	repository.node.ObservedState = domain.ObservedRunning
+	runner := task.NewRunner(store, 1, 8)
+	defer runner.Close()
+	service := NewTopologyTaskService(repository, runner)
+	service.poll = 5 * time.Millisecond
+	service.timeout = time.Second
+	service.SetPostStartReconciler(&topologyPostStartReconciler{err: errors.New("attach failed")})
+	value, err := service.SetNodeState(context.Background(), "node", 1, domain.DesiredRunning, "post-start-failure")
+	if err != nil {
+		t.Fatal(err)
+	}
+	failed := waitForTopologyTask(t, store, value.ID, func(current domain.OperationTask) bool { return current.State == domain.TaskFailed })
+	if failed.Error == nil || failed.Error.Code != "node_post_start_reconcile_failed" || failed.Error.Phase != "post_start_data_plane" {
+		t.Fatalf("task=%+v", failed)
 	}
 }
 

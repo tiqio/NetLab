@@ -40,6 +40,9 @@ type TopologyTaskService struct {
 	deleteLinks interface {
 		DeleteLink(context.Context, domain.ID) error
 	}
+	postStartReconciler interface {
+		Reconcile(context.Context) error
+	}
 }
 
 func NewTopologyTaskService(repository TopologyTaskRepository, runner *task.Runner) *TopologyTaskService {
@@ -68,6 +71,12 @@ func (s *TopologyTaskService) SetNodeDeletionLinkRuntime(runtime interface {
 	DeleteLink(context.Context, domain.ID) error
 }) {
 	s.deleteLinks = runtime
+}
+
+func (s *TopologyTaskService) SetPostStartReconciler(reconciler interface {
+	Reconcile(context.Context) error
+}) {
+	s.postStartReconciler = reconciler
 }
 
 func (s *TopologyTaskService) SetNodeState(ctx context.Context, id domain.ID, revision domain.Revision, state domain.DesiredState, idempotencyKey string) (domain.OperationTask, error) {
@@ -157,6 +166,11 @@ func (s *TopologyTaskService) handleNodeState(ctx context.Context, value *domain
 				return nil, domain.Problem{Code: "node_failed", Message: "node entered failed state", Retryable: true, TaskID: value.ID, ResourceType: "node", ResourceID: id, Phase: "lifecycle_convergence", Cleanup: "desired state remains durable for reconciliation", OperatorHint: "inspect node diagnostics and retry", RetryAfterSeconds: 3}
 			}
 			if observedMatchesDesired(node.ObservedState, desired) {
+				if desired == domain.DesiredRunning && s.postStartReconciler != nil {
+					if err = s.postStartReconciler.Reconcile(ctx); err != nil {
+						return nil, domain.Problem{Code: "node_post_start_reconcile_failed", Message: err.Error(), Retryable: true, TaskID: value.ID, ResourceType: "node", ResourceID: id, Phase: "post_start_data_plane", Cleanup: "node remains running and desired attachments remain authoritative", OperatorHint: "inspect attachment diagnostics and retry node reconciliation", RetryAfterSeconds: 2}
+					}
+				}
 				value.ProgressCurrent = value.ProgressTotal
 				return map[string]any{"node": node}, nil
 			}

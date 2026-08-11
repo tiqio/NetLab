@@ -320,6 +320,7 @@ func main() {
 			linkReconnectTasks.SetRuntime(reconcile.NewTopologyOperations(dataPlane))
 			dataPlaneReconciler = reconcile.NewDataPlaneReconciler(topologyRepository, dataPlane)
 			dataPlaneReconciler.SetNetworkObjectReconciler(networkService)
+			topologyTasks.SetPostStartReconciler(dataPlaneReconciler)
 			reconcilers = append(reconcilers, dataPlaneReconciler)
 			reconcilers = append(reconcilers, reconcile.NewLaboratoryDeletionReconciler(topologyRepository, reconcile.RuntimeDispatch{QEMU: qemuAdapter, Docker: dockerAdapter, Lightweight: endpointRuntime}, networkService, dataPlane, captureManager, portMapper, resourceManager, linkRuntime))
 		} else {
