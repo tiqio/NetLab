@@ -51,3 +51,16 @@ Target validation result: PASS — 27 Playwright, 30 acceptance-unit, 20-cycle l
 Previous artifact: unified-link-009-20260810T162640Z-r8, sha256:3d3511d1ee4c77baffa0386ab6a136b04654c8fc40c43543447faccda5f6efae
 Rollback directory: /var/lib/netlab/rollback/topology-visual-010-20260811T013126Z-predeploy
 ```
+
+## Post-Acceptance r2
+
+```text
+Candidate ID: topology-visual-010-20260811T021524Z-r2
+Commit SHA: f509048c832f8644534077de0c64e8321c1bc0a7
+Artifact digest: sha256:e776eed9b0ef5193137c7f6baec29ac74121d6ff36c43e93a3332286006584f3
+Deployment time: 2026-08-11T02:16:14Z
+Result: PASS — default unaddressed L3 active, L3↔L2 connected, invalid CIDR rejected before persistence
+Three-backing recovery: 3 passed across desktop, standard and minimum viewports
+Cleanup: baseline_restored=true, remaining_count=0
+Previous candidate rollback: /var/lib/netlab/rollback/topology-visual-010-20260811T021524Z-r2-predeploy
+```

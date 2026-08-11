@@ -101,3 +101,32 @@ systemctl daemon-reload
 systemctl restart netlab
 curl -fsS http://127.0.0.1:18082/healthz
 ```
+
+## Post-Acceptance Correction — r2
+
+Investigation of two user-laboratory connections found that the node link was correctly waiting on an
+Ubuntu endpoint whose desired and observed state were both `stopped`. The network-object link was
+waiting because its lightweight L3 endpoint had been created with the feature-defined default four
+unaddressed interfaces, while the Linux runtime incorrectly required every L3 interface to already
+have an address. The same create path also persisted explicitly malformed CIDR configuration before
+the runtime rejected it.
+
+Commit `f509048c832f8644534077de0c64e8321c1bc0a7` aligns creation and runtime behavior: unaddressed L3
+ports remain active and connectable until configured, while malformed explicit addresses and routes
+are rejected before persistence across SPA, HTTP and MCP command paths.
+
+```text
+Candidate ID: topology-visual-010-20260811T021524Z-r2
+Source commit SHA: f509048c832f8644534077de0c64e8321c1bc0a7
+Artifact SHA-256: e776eed9b0ef5193137c7f6baec29ac74121d6ff36c43e93a3332286006584f3
+Contract digest: sha256:2e1a4279f16d7e6c282b741f06c52e75f1db210e91dbf4b99180bea5c9da808b
+Build time: 2026-08-11T02:15:24Z
+Deployment time: 2026-08-11T02:16:14Z
+Migration: 14 (unchanged)
+Previous candidate: topology-visual-010-20260811T013126Z
+Rollback directory: /var/lib/netlab/rollback/topology-visual-010-20260811T021524Z-r2-predeploy
+```
+
+The r2 rollback directory contains the previous binary, release configuration, template readiness,
+service unit and affected-resource snapshots. No database migration or direct database edit was
+performed. Restoring those files with the rollback command above returns to the first 010 candidate.

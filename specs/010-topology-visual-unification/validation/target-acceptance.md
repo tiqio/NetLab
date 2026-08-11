@@ -119,3 +119,55 @@ The previous 009 r8 binary and its database/configuration state remain at:
 
 The 1.6G SQLite online backup passes `pragma integrity_check`, and all recorded rollback file hashes
 pass `sha256sum -c`. Rollback instructions are recorded in `validation/deployment.md`.
+
+## Pending Connection Investigation and r2 Verification
+
+On 2026-08-11, the two non-terminal connections in user laboratory `ddtest` were inspected without
+editing the database or changing user coordinates:
+
+```text
+Node link 019fea54196f-2f873dbbf65e064032d7:
+  Nginx:eth0 running ↔ Ubuntu:ens0 stopped
+  desired_state=connected, observed_state=pending
+  conclusion=expected while the user endpoint remains intentionally stopped
+
+Object link 019fdb166900-c8df00aa592a31491d7d:
+  Lightweight L3:eth0 ↔ Lightweight L2:eth3
+  L3 error=layer-3 interface "eth0" requires an address
+  conclusion=runtime/default-configuration mismatch
+```
+
+The L3 mismatch was fixed in commit `f509048`. Focused Go domain, application, HTTP, MCP and Linux
+runtime tests passed, together with 23 focused Vitest tests, ESLint, Prettier and the production build.
+Candidate `topology-visual-010-20260811T021524Z-r2` was deployed at `2026-08-11T02:16:14Z` with binary
+SHA-256 `e776eed9b0ef5193137c7f6baec29ac74121d6ff36c43e93a3332286006584f3` and migration `14`.
+
+After startup reconciliation:
+
+```text
+Lightweight L3 object: active
+L3 ↔ L2 object link: connected
+Stopped Ubuntu node link: pending, as expected
+L3 last_error: cleared
+```
+
+A temporary target-host API scenario then proved that malformed CIDR input returns HTTP 400 without
+persisting a network object, a default four-port unaddressed L3 reaches `active`, and its L3 ↔ L2 link
+reaches `connected`; laboratory cascade cleanup completed successfully.
+
+The three-backing runtime test was repeated on r2 for node link, network attachment and network-object
+link at 1920×1080, 1366×768 and 1024×768. All three projects passed service restart recovery and
+ownership cleanup:
+
+```text
+Run ID: topology-visual-010-20260811T021524Z-r2-three-backing
+Result: 3 passed
+Cleanup baseline_restored: true
+Cleanup remaining_count: 0
+Evidence: web/test-results/acceptance/010-r2-three-backing/topology-visual-010-20260811T021524Z-r2-three-backing/evidence.json
+Log: /tmp/netlab-topology-visual-010-20260811T021524Z-r2-three-backing.log
+```
+
+The target finished healthy with only the two original user laboratories, zero captures and zero
+Traffic Filters. The Ubuntu node was not started because doing so would alter user-owned desired state;
+its connection will reconcile when the user starts that endpoint.
