@@ -104,3 +104,40 @@ func TestL3AllowsAnInitiallyEmptyFIBTable(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestL3DiagnosticsReportsRequestedVersusObservedMismatch(t *testing.T) {
+	executor := &scriptExecutor{outputFor: func(_ string, args ...string) []byte {
+		command := strings.Join(args, " ")
+		switch {
+		case strings.Contains(command, "-j address show"):
+			return []byte(`[{"ifname":"eth0","addr_info":[{"local":"192.0.2.99","prefixlen":24,"scope":"global"}]}]`)
+		case strings.Contains(command, "-j route show"):
+			return []byte(`[{"dst":"198.51.100.0/24","gateway":"192.0.2.2","metric":20}]`)
+		case strings.Contains(command, "net.ipv4.ip_forward"):
+			return []byte("0\n")
+		case strings.Contains(command, "net.ipv6.conf.all.forwarding"):
+			return []byte("1\n")
+		default:
+			return nil
+		}
+	}}
+	runtime, _ := NewSwitchL3Runtime(executor)
+	object := domain.NetworkObject{ID: "diagnostic-router", Config: map[string]any{
+		"interfaces":   []any{map[string]any{"name": "eth0", "addresses": []any{"192.0.2.1/24"}}},
+		"routes":       []any{map[string]any{"destination": "198.51.100.0/24", "gateway": "192.0.2.2", "metric": 20}},
+		"forward_ipv4": true,
+		"forward_ipv6": true,
+	}}
+	diagnostics, err := runtime.DiagnosticsObject(context.Background(), object)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mismatches := diagnostics["mismatches"].([]string)
+	joined := strings.Join(mismatches, "\n")
+	if !strings.Contains(joined, "forward_ipv4 desired=true observed=false") || !strings.Contains(joined, "interface eth0 addresses") {
+		t.Fatalf("mismatches=%v", mismatches)
+	}
+	if strings.Contains(joined, "forward_ipv6") || strings.Contains(joined, "routes desired") {
+		t.Fatalf("unexpected mismatch=%v", mismatches)
+	}
+}

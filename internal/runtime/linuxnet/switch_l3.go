@@ -32,6 +32,102 @@ func (r *SwitchL3Runtime) Diagnostics(ctx context.Context, id domain.ID) (map[st
 	return map[string]any{"routes": json.RawMessage(strings.TrimSpace(string(routes))), "forward_ipv4": strings.TrimSpace(string(forward4)) == "1", "forward_ipv6": strings.TrimSpace(string(forward6)) == "1"}, nil
 }
 
+func (r *SwitchL3Runtime) DiagnosticsObject(ctx context.Context, object domain.NetworkObject) (map[string]any, error) {
+	var desired domain.SwitchL3Config
+	if err := decodeConfig(object.Config, &desired); err != nil {
+		return nil, err
+	}
+	namespace := SwitchL3NamespaceName(object.ID)
+	addressesBody, err := r.executor.Output(ctx, r.ip, "-n", namespace, "-j", "address", "show")
+	if err != nil {
+		return nil, err
+	}
+	routesBody, err := r.executor.Output(ctx, r.ip, "-n", namespace, "-j", "route", "show", "table", "all")
+	if err != nil {
+		return nil, err
+	}
+	forward4, err := r.executor.Output(ctx, r.ip, "netns", "exec", namespace, "sysctl", "-n", "net.ipv4.ip_forward")
+	if err != nil {
+		return nil, err
+	}
+	forward6, err := r.executor.Output(ctx, r.ip, "netns", "exec", namespace, "sysctl", "-n", "net.ipv6.conf.all.forwarding")
+	if err != nil {
+		return nil, err
+	}
+	observedInterfaces := observedL3Interfaces(addressesBody)
+	observedRoutes := observedL3Routes(routesBody)
+	observedForward4 := strings.TrimSpace(string(forward4)) == "1"
+	observedForward6 := strings.TrimSpace(string(forward6)) == "1"
+	mismatches := make([]string, 0)
+	if desired.ForwardIPv4 != observedForward4 {
+		mismatches = append(mismatches, fmt.Sprintf("forward_ipv4 desired=%t observed=%t", desired.ForwardIPv4, observedForward4))
+	}
+	if desired.ForwardIPv6 != observedForward6 {
+		mismatches = append(mismatches, fmt.Sprintf("forward_ipv6 desired=%t observed=%t", desired.ForwardIPv6, observedForward6))
+	}
+	for _, iface := range desired.Interfaces {
+		if strings.Join(iface.Addresses, ",") != strings.Join(observedInterfaces[iface.Name], ",") {
+			mismatches = append(mismatches, fmt.Sprintf("interface %s addresses desired=%v observed=%v", iface.Name, iface.Addresses, observedInterfaces[iface.Name]))
+		}
+	}
+	desiredRoutes := routeKeys(desired.Routes)
+	if strings.Join(desiredRoutes, ",") != strings.Join(observedRoutes, ",") {
+		mismatches = append(mismatches, fmt.Sprintf("routes desired=%v observed=%v", desiredRoutes, observedRoutes))
+	}
+	return map[string]any{
+		"desired":    map[string]any{"forward_ipv4": desired.ForwardIPv4, "forward_ipv6": desired.ForwardIPv6, "interfaces": desired.Interfaces, "routes": desired.Routes},
+		"observed":   map[string]any{"forward_ipv4": observedForward4, "forward_ipv6": observedForward6, "interfaces": observedInterfaces, "routes": observedRoutes},
+		"mismatches": mismatches,
+	}, nil
+}
+
+func observedL3Interfaces(body []byte) map[string][]string {
+	var links []struct {
+		Name      string `json:"ifname"`
+		Addresses []struct {
+			Local     string `json:"local"`
+			PrefixLen int    `json:"prefixlen"`
+			Scope     string `json:"scope"`
+		} `json:"addr_info"`
+	}
+	_ = json.Unmarshal(body, &links)
+	result := make(map[string][]string, len(links))
+	for _, link := range links {
+		for _, address := range link.Addresses {
+			if address.Scope == "link" || address.Local == "" {
+				continue
+			}
+			result[link.Name] = append(result[link.Name], fmt.Sprintf("%s/%d", address.Local, address.PrefixLen))
+		}
+	}
+	return result
+}
+
+func observedL3Routes(body []byte) []string {
+	var routes []struct {
+		Destination string `json:"dst"`
+		Gateway     string `json:"gateway"`
+		Metric      int    `json:"metric"`
+	}
+	_ = json.Unmarshal(body, &routes)
+	values := make([]domain.RouteConfig, 0, len(routes))
+	for _, route := range routes {
+		if route.Destination == "" || route.Destination == "default" {
+			continue
+		}
+		values = append(values, domain.RouteConfig{Destination: route.Destination, Gateway: route.Gateway, Metric: route.Metric})
+	}
+	return routeKeys(values)
+}
+
+func routeKeys(routes []domain.RouteConfig) []string {
+	result := make([]string, 0, len(routes))
+	for _, route := range routes {
+		result = append(result, fmt.Sprintf("%s|%s|%d", route.Destination, route.Gateway, route.Metric))
+	}
+	return result
+}
+
 func NewSwitchL3Runtime(executor CommandExecutor) (*SwitchL3Runtime, error) {
 	if executor != nil {
 		return &SwitchL3Runtime{executor: executor, ip: "ip"}, nil

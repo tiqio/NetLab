@@ -45,11 +45,15 @@ const emit = defineEmits<{
   reconcileNetworkObject: [NetworkObject];
   reconcileNetworkObjectLink: [NetworkObjectLink];
   deleteNetworkObjectLink: [NetworkObjectLink];
+  setNodeForwarding: [Node, boolean, boolean];
 }>();
 const value = computed({
   get: () => props.modelValue,
   set: (item) => emit("update:modelValue", item as BottomTab),
 });
+function setNodeForwarding(node: Node, ipv4: boolean, ipv6: boolean) {
+  emit("setNodeForwarding", node, ipv4, ipv6);
+}
 </script>
 <template>
   <Tabs
@@ -102,6 +106,7 @@ const value = computed({
             $emit('reconcileNetworkObjectLink', $event)
           "
           @delete-network-object-link="$emit('deleteNetworkObjectLink', $event)"
+          @set-node-forwarding="setNodeForwarding"
         />
       </div>
     </template>

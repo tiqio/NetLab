@@ -352,3 +352,13 @@ func PrefixesOverlap(left, right string) bool {
 	}
 	return a.Contains(b.Addr()) || b.Contains(a.Addr())
 }
+
+func ValidateNodeForwardingSettings(kind string, forwardIPv4, forwardIPv6 *bool) error {
+	if forwardIPv4 == nil && forwardIPv6 == nil {
+		return nil
+	}
+	if kind != string(RuntimeDocker) {
+		return networkConfigError("forwarding_unsupported", "IP forwarding settings are supported only for Docker nodes")
+	}
+	return nil
+}

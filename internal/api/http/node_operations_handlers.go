@@ -33,12 +33,21 @@ type NodeOperationsHandlers struct {
 	nodeCredentials interface {
 		CredentialsForNode(context.Context, domain.Node) (qemuRuntime.BootstrapCredentials, error)
 	}
+	networkDiagnostics interface {
+		NetworkDiagnostics(context.Context, domain.Node) (map[string]any, error)
+	}
 }
 
 func (h *NodeOperationsHandlers) SetNodeCredentialReader(reader interface {
 	CredentialsForNode(context.Context, domain.Node) (qemuRuntime.BootstrapCredentials, error)
 }) {
 	h.nodeCredentials = reader
+}
+
+func (h *NodeOperationsHandlers) SetNetworkDiagnostics(reader interface {
+	NetworkDiagnostics(context.Context, domain.Node) (map[string]any, error)
+}) {
+	h.networkDiagnostics = reader
 }
 
 func NewNodeOperationsHandlers(interfaces *command.InterfaceService, guest *command.GuestCommandService, mappings *command.PortMappingService, nodes interface {
@@ -70,6 +79,29 @@ func (h *NodeOperationsHandlers) Register(engine *gin.Engine) {
 	api.PUT("/nodes/:nodeId/resources", h.updateResources)
 	api.PUT("/nodes/:nodeId/settings", h.updateSettings)
 	api.GET("/nodes/:nodeId/resources", h.getResources)
+	api.GET("/nodes/:nodeId/network-diagnostics", h.getNetworkDiagnostics)
+}
+
+func (h *NodeOperationsHandlers) getNetworkDiagnostics(c *gin.Context) {
+	if h.networkDiagnostics == nil {
+		writeProblem(c, http.StatusConflict, domain.Problem{Code: "capability_unsupported", Message: "node network diagnostics are unavailable"})
+		return
+	}
+	node, err := h.nodes.GetNode(c, domain.ID(c.Param("nodeId")))
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+	if node.Kind != string(domain.RuntimeDocker) {
+		writeProblem(c, http.StatusConflict, domain.Problem{Code: "capability_unsupported", Message: "forwarding diagnostics are supported only for Docker nodes", ResourceType: "node", ResourceID: node.ID})
+		return
+	}
+	diagnostics, err := h.networkDiagnostics.NetworkDiagnostics(c, node)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, diagnostics)
 }
 
 func (h *NodeOperationsHandlers) listMappings(c *gin.Context) {
@@ -146,6 +178,10 @@ func (h *NodeOperationsHandlers) updateSettings(c *gin.Context) {
 			return
 		}
 	}
+	if err = validateNodeForwardingSettings(current, body); err != nil {
+		handleError(c, err)
+		return
+	}
 	var prepared *qemuRuntime.PreparedSeedUpdate
 	if len(body.NetworkInterfaces) > 0 {
 		interfaces, rawNetwork, validationErr := validateNetworkSettings(current, body.NetworkInterfaces)
@@ -191,6 +227,13 @@ func (h *NodeOperationsHandlers) updateSettings(c *gin.Context) {
 		}
 	}
 	c.JSON(http.StatusOK, updated)
+}
+
+func validateNodeForwardingSettings(node domain.Node, settings domain.NodeSettings) error {
+	if err := domain.ValidateNodeForwardingSettings(node.Kind, settings.ForwardIPv4, settings.ForwardIPv6); err != nil {
+		return domain.Problem{Code: "invalid_node_network", Message: err.Error(), ResourceType: "node", ResourceID: node.ID}
+	}
+	return nil
 }
 
 func validateNetworkSettings(node domain.Node, values []domain.NodeNetworkInterfaceSettings) ([]domain.Interface, []map[string]any, error) {

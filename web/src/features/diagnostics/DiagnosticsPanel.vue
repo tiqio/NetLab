@@ -10,6 +10,7 @@ import type {
   NodeInterface,
   TrafficObservation,
   NetworkObjectDiagnostics,
+  NodeNetworkDiagnostics,
   Problem,
 } from "@/api";
 import { api } from "@/api";
@@ -51,6 +52,7 @@ const emit = defineEmits<{
   reconcileNetworkObject: [NetworkObject];
   reconcileNetworkObjectLink: [NetworkObjectLink];
   deleteNetworkObjectLink: [NetworkObjectLink];
+  setNodeForwarding: [Node, boolean, boolean];
 }>();
 const section = computed(() =>
   props.initialSection === "captures"
@@ -64,6 +66,11 @@ const trafficActivated = ref(false);
 const recoveryDiagnostics = ref<NetworkObjectDiagnostics>();
 const recoveryLoading = ref(false);
 const recoveryLoadError = ref("");
+const nodeNetworkDiagnostics = ref<NodeNetworkDiagnostics>();
+const nodeDiagnosticsLoading = ref(false);
+const selectedNode = computed(() =>
+  props.nodes?.find((item) => item.id === props.nodeId),
+);
 const recoveryObject = computed(() =>
   props.networkObjects?.find((item) => item.id === props.networkObjectId),
 );
@@ -76,6 +83,11 @@ const recoveryProblem = computed<Problem | undefined>(
     recoveryObject.value?.last_error ||
     recoveryObjectLink.value?.last_error,
 );
+const networkObjectMismatches = computed(() => {
+  const runtime = recoveryDiagnostics.value?.runtime as
+    { mismatches?: string[] } | undefined;
+  return runtime?.mismatches || [];
+});
 async function loadRecoveryDiagnostics() {
   recoveryDiagnostics.value = undefined;
   recoveryLoadError.value = "";
@@ -90,6 +102,20 @@ async function loadRecoveryDiagnostics() {
       error instanceof Error ? error.message : String(error);
   } finally {
     recoveryLoading.value = false;
+  }
+}
+async function loadNodeNetworkDiagnostics() {
+  nodeNetworkDiagnostics.value = undefined;
+  if (!props.nodeId || selectedNode.value?.kind !== "docker") return;
+  nodeDiagnosticsLoading.value = true;
+  try {
+    nodeNetworkDiagnostics.value = await api.getNodeNetworkDiagnostics(
+      props.nodeId,
+    );
+  } catch {
+    nodeNetworkDiagnostics.value = undefined;
+  } finally {
+    nodeDiagnosticsLoading.value = false;
   }
 }
 const resourceLabels = computed(() => {
@@ -127,19 +153,28 @@ watch(
   loadRecoveryDiagnostics,
   { immediate: true },
 );
+watch(
+  () => [props.nodeId, selectedNode.value?.observed_state],
+  loadNodeNetworkDiagnostics,
+  { immediate: true },
+);
 </script>
 <template>
   <section class="h-full min-h-[180px]" aria-labelledby="diagnostics-title">
     <h2 id="diagnostics-title" class="sr-only">诊断</h2>
     <section
-      v-if="recoveryObject || recoveryObjectLink"
+      v-if="
+        recoveryObject || recoveryObjectLink || selectedNode?.kind === 'docker'
+      "
       data-testid="recovery-diagnostics"
       class="m-3 rounded-lg border border-border bg-card p-3 text-sm"
       aria-label="恢复诊断"
     >
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <strong>{{ recoveryObject?.name || "对象链路" }}</strong>
+          <strong>{{
+            recoveryObject?.name || selectedNode?.name || "对象链路"
+          }}</strong>
           <p class="text-xs text-muted-foreground">
             期望：{{
               recoveryObject?.desired_state || recoveryObjectLink?.desired_state
@@ -173,6 +208,28 @@ watch(
             @click="emit('deleteNetworkObjectLink', recoveryObjectLink)"
             >删除连线</Button
           >
+          <Button
+            v-if="selectedNode?.kind === 'docker'"
+            size="sm"
+            variant="secondary"
+            :disabled="
+              nodeDiagnosticsLoading ||
+              selectedNode.observed_state !== 'stopped'
+            "
+            @click="emit('setNodeForwarding', selectedNode, true, true)"
+            >启用双栈转发</Button
+          >
+          <Button
+            v-if="selectedNode?.kind === 'docker'"
+            size="sm"
+            variant="ghost"
+            :disabled="
+              nodeDiagnosticsLoading ||
+              selectedNode.observed_state !== 'stopped'
+            "
+            @click="emit('setNodeForwarding', selectedNode, false, false)"
+            >关闭转发</Button
+          >
         </div>
       </div>
       <dl
@@ -186,6 +243,37 @@ watch(
         </div>
         <div>可用：{{ recoveryDiagnostics.backing.usable ? "是" : "否" }}</div>
       </dl>
+      <dl
+        v-if="nodeNetworkDiagnostics"
+        class="mt-3 grid gap-1 text-xs sm:grid-cols-2"
+      >
+        <div>
+          IPv4 转发：{{ nodeNetworkDiagnostics.desired?.forward_ipv4 }} /
+          {{ nodeNetworkDiagnostics.observed?.forward_ipv4 }}
+        </div>
+        <div>
+          IPv6 转发：{{ nodeNetworkDiagnostics.desired?.forward_ipv6 }} /
+          {{ nodeNetworkDiagnostics.observed?.forward_ipv6 }}
+        </div>
+      </dl>
+      <ul
+        v-if="
+          networkObjectMismatches.length ||
+          nodeNetworkDiagnostics?.mismatches?.length
+        "
+        role="alert"
+        class="mt-3 list-disc pl-5 text-xs text-destructive"
+      >
+        <li
+          v-for="item in [
+            ...networkObjectMismatches,
+            ...(nodeNetworkDiagnostics?.mismatches || []),
+          ]"
+          :key="item"
+        >
+          {{ item }}
+        </li>
+      </ul>
       <div
         v-if="recoveryProblem"
         role="alert"

@@ -51,6 +51,11 @@ type DockerEndpointRuntime struct {
 	pollInterval        time.Duration
 }
 
+type DockerForwardingObservation struct {
+	IPv4 bool `json:"forward_ipv4"`
+	IPv6 bool `json:"forward_ipv6"`
+}
+
 func NewDockerEndpointRuntime(executor CommandExecutor) (*DockerEndpointRuntime, error) {
 	if executor != nil {
 		return &DockerEndpointRuntime{executor: executor, ip: "ip", nsenter: "nsenter", dhclient: "dhclient", helperRoot: "/run/netlab/docker", routes: &procManagedDockerRouteStore{root: "/proc"}, addressReadyTimeout: 5 * time.Second, pollInterval: 50 * time.Millisecond}, nil
@@ -119,6 +124,9 @@ func (r *DockerEndpointRuntime) Ensure(ctx context.Context, node domain.Node, pi
 	if pid <= 0 {
 		return fmt.Errorf("container PID is unavailable")
 	}
+	if err := r.applyForwarding(ctx, node, pid); err != nil {
+		return err
+	}
 	created := make([]string, 0)
 	for _, iface := range InterfaceDescriptors(node) {
 		host, peer := HostInterfaceName(iface.ID), PeerInterfaceName(iface.ID)
@@ -152,6 +160,52 @@ func (r *DockerEndpointRuntime) Ensure(ctx context.Context, node domain.Node, pi
 		}
 	}
 	return r.executor.Run(ctx, r.nsenter, "-t", strconv.Itoa(pid), "-n", r.ip, "link", "set", "lo", "up")
+}
+
+func (r *DockerEndpointRuntime) applyForwarding(ctx context.Context, node domain.Node, pid int) error {
+	for _, setting := range []struct {
+		key    string
+		sysctl string
+	}{
+		{key: "forward_ipv4", sysctl: "net.ipv4.ip_forward"},
+		{key: "forward_ipv6", sysctl: "net.ipv6.conf.all.forwarding"},
+	} {
+		value, configured := node.Config[setting.key]
+		if !configured {
+			continue
+		}
+		enabled, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("%s must be boolean", setting.key)
+		}
+		desired := "0"
+		if enabled {
+			desired = "1"
+		}
+		if err := r.executor.Run(ctx, r.nsenter, "-t", strconv.Itoa(pid), "-n", "sysctl", "-w", setting.sysctl+"="+desired); err != nil {
+			return fmt.Errorf("apply Docker %s: %w", setting.key, err)
+		}
+	}
+	return nil
+}
+
+func (r *DockerEndpointRuntime) InspectForwarding(ctx context.Context, pid int) (DockerForwardingObservation, error) {
+	read := func(sysctl string) (bool, error) {
+		body, err := r.executor.Output(ctx, r.nsenter, "-t", strconv.Itoa(pid), "-n", "sysctl", "-n", sysctl)
+		if err != nil {
+			return false, err
+		}
+		return strings.TrimSpace(string(body)) == "1", nil
+	}
+	ipv4, err := read("net.ipv4.ip_forward")
+	if err != nil {
+		return DockerForwardingObservation{}, err
+	}
+	ipv6, err := read("net.ipv6.conf.all.forwarding")
+	if err != nil {
+		return DockerForwardingObservation{}, err
+	}
+	return DockerForwardingObservation{IPv4: ipv4, IPv6: ipv6}, nil
 }
 
 func dockerInterfaceConfigs(node domain.Node) map[string]dockerInterfaceConfig {

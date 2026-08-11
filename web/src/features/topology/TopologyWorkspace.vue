@@ -359,6 +359,58 @@ async function reconcileNetworkObjectLink(link: NetworkObjectLink) {
   }
 }
 
+async function setNodeForwarding(
+  node: Node,
+  forwardIPv4: boolean,
+  forwardIPv6: boolean,
+) {
+  if (!store.active) return;
+  const configured = Array.isArray(node.config?.network_interfaces)
+    ? (node.config.network_interfaces as Array<Record<string, unknown>>)
+    : [];
+  const byName = Object.fromEntries(
+    configured.map((value) => [String(value.name || ""), value]),
+  );
+  const networkInterfaces = store.active.interfaces
+    .filter((item) => item.node_id === node.id)
+    .map((item) => {
+      const value = byName[item.name] || {};
+      return {
+        id: item.id,
+        name: item.name,
+        driver: item.driver || "",
+        modes: Array.isArray(value.modes) ? value.modes.map(String) : [],
+        addresses: Array.isArray(value.addresses)
+          ? value.addresses.map(String)
+          : [],
+        routes: Array.isArray(value.routes)
+          ? (value.routes as Array<{
+              destination: string;
+              gateway?: string;
+              metric?: number;
+            }>)
+          : [],
+      };
+    });
+  try {
+    await api.updateNodeSettings(node, {
+      name: node.name,
+      cpu_count: node.cpu_count,
+      cpu_quota_micros: node.cpu_quota_micros,
+      memory_mib: node.memory_mib,
+      interface_limit: node.interface_limit,
+      process_limit: node.process_limit,
+      network_interfaces: networkInterfaces,
+      forward_ipv4: forwardIPv4,
+      forward_ipv6: forwardIPv6,
+    });
+    canvasStatus.value = `已保存 ${node.name} 的 IPv4/IPv6 转发设置。`;
+    await refreshActive();
+  } catch (error) {
+    showRecoveryFailure(error);
+  }
+}
+
 async function confirmRecoveryObjectLinkDelete() {
   const link = recoveryDeleteObjectLink.value;
   recoveryDeleteObjectLink.value = undefined;
@@ -2027,6 +2079,7 @@ onBeforeUnmount(() => {
           @reconcile-network-object="reconcileNetworkObject"
           @reconcile-network-object-link="reconcileNetworkObjectLink"
           @delete-network-object-link="recoveryDeleteObjectLink = $event"
+          @set-node-forwarding="setNodeForwarding"
         />
       </template>
     </LaboratoryShell>

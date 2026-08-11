@@ -17,6 +17,7 @@ type recordingExecutor struct {
 	commands       []string
 	failOn         string
 	addressOutputs [][]byte
+	outputs        map[string][]byte
 }
 
 type memoryManagedRouteStore struct {
@@ -70,6 +71,10 @@ func (e *recordingExecutor) Run(_ context.Context, name string, args ...string) 
 
 func (e *recordingExecutor) Output(ctx context.Context, name string, args ...string) ([]byte, error) {
 	command := strings.Join(append([]string{name}, args...), " ")
+	if body, ok := e.outputs[command]; ok {
+		e.commands = append(e.commands, command)
+		return body, nil
+	}
 	if strings.Contains(command, "-j address show") {
 		if len(e.addressOutputs) > 0 {
 			body := e.addressOutputs[0]
@@ -79,6 +84,32 @@ func (e *recordingExecutor) Output(ctx context.Context, name string, args ...str
 		return []byte(`[{"addr_info":[{"family":"inet","scope":"global","dynamic":true},{"family":"inet6","scope":"global","dynamic":true,"tentative":false}]}]`), nil
 	}
 	return nil, e.Run(ctx, name, args...)
+}
+
+func TestDockerEndpointAppliesAndObservesDualStackForwarding(t *testing.T) {
+	node := domain.Node{ID: "router", Config: map[string]any{
+		"interfaces":   []map[string]any{{"id": "if-1", "name": "eth0"}},
+		"forward_ipv4": true,
+		"forward_ipv6": true,
+	}}
+	executor := &recordingExecutor{outputs: map[string][]byte{
+		"nsenter -t 42 -n sysctl -n net.ipv4.ip_forward":          []byte("1\n"),
+		"nsenter -t 42 -n sysctl -n net.ipv6.conf.all.forwarding": []byte("1\n"),
+	}}
+	runtime := newTestDockerEndpointRuntime(t, executor, nil)
+	if err := runtime.Ensure(context.Background(), node, 42); err != nil {
+		t.Fatal(err)
+	}
+	joined := strings.Join(executor.commands, "\n")
+	for _, expected := range []string{"nsenter -t 42 -n sysctl -w net.ipv4.ip_forward=1", "nsenter -t 42 -n sysctl -w net.ipv6.conf.all.forwarding=1"} {
+		if !strings.Contains(joined, expected) {
+			t.Fatalf("missing %q in %s", expected, joined)
+		}
+	}
+	observation, err := runtime.InspectForwarding(context.Background(), 42)
+	if err != nil || !observation.IPv4 || !observation.IPv6 {
+		t.Fatalf("observation=%+v err=%v", observation, err)
+	}
 }
 
 func TestDockerEndpointWaitsForIPv6DADBeforeRoutes(t *testing.T) {

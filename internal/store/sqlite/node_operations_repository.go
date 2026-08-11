@@ -307,6 +307,12 @@ func (r *TopologyRepository) UpdateNodeSettings(ctx context.Context, id domain.I
 		if config == nil {
 			config = map[string]any{}
 		}
+		if settings.ForwardIPv4 != nil {
+			config["forward_ipv4"] = *settings.ForwardIPv4
+		}
+		if settings.ForwardIPv6 != nil {
+			config["forward_ipv6"] = *settings.ForwardIPv6
+		}
 		if len(settings.NetworkInterfaces) > 0 {
 			rows, queryErr := tx.QueryContext(ctx, `SELECT id,slot,name,COALESCE(driver,''),mac_address FROM interfaces WHERE node_id=? ORDER BY slot`, id)
 			if queryErr != nil {

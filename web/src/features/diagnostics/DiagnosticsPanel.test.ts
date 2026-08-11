@@ -1,6 +1,6 @@
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { api } from "@/api";
+import { api, type Node } from "@/api";
 import DiagnosticsPanel from "./DiagnosticsPanel.vue";
 
 describe("DiagnosticsPanel", () => {
@@ -158,5 +158,44 @@ describe("DiagnosticsPanel", () => {
     await buttons[1].trigger("click");
     expect(wrapper.emitted("reconcileNetworkObjectLink")).toEqual([[link]]);
     expect(wrapper.emitted("deleteNetworkObjectLink")).toEqual([[link]]);
+  });
+
+  it("shows Docker forwarding mismatch and emits a revisioned control intent", async () => {
+    vi.spyOn(api, "getNodeNetworkDiagnostics").mockResolvedValue({
+      desired: { forward_ipv4: true, forward_ipv6: true },
+      observed: {
+        available: true,
+        forward_ipv4: false,
+        forward_ipv6: true,
+        pid: 42,
+      },
+      mismatches: ["forward_ipv4 desired=true observed=false"],
+    });
+    const node: Node = {
+      id: "router",
+      laboratory_id: "lab-1",
+      name: "服务路由器",
+      kind: "docker" as const,
+      revision: 4,
+      desired_state: "stopped",
+      observed_state: "stopped",
+      cpu_count: 1,
+      cpu_quota_micros: 0,
+      memory_mib: 128,
+      storage_gib: 0,
+      interface_limit: 4,
+      process_limit: 32,
+      config: {},
+    };
+    const wrapper = mount(DiagnosticsPanel, {
+      props: { nodeId: node.id, nodes: [node] },
+    });
+    await flushPromises();
+    expect(wrapper.text()).toContain("IPv4 转发：true / false");
+    expect(wrapper.text()).toContain(
+      "forward_ipv4 desired=true observed=false",
+    );
+    await wrapper.findAll("button")[0].trigger("click");
+    expect(wrapper.emitted("setNodeForwarding")).toEqual([[node, true, true]]);
   });
 });

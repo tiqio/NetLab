@@ -279,6 +279,7 @@ func main() {
 		if dockerAdapter != nil {
 			topologyTasks.SetNodeDeletionRuntime("docker", dockerAdapter)
 			consoleHandlers.SetDockerConsole(dockerAdapter)
+			nodeOperationHandlers.SetNetworkDiagnostics(dockerAdapter)
 		}
 		topologyTasks.SetNodeDeletionRuntime("pc", endpointRuntime)
 		topologyTasks.SetNodeDeletionRuntime("switch_l2", endpointRuntime)
@@ -318,6 +319,7 @@ func main() {
 			topologyTasks.SetNodeDeletionLinkRuntime(dataPlane)
 			linkReconnectTasks.SetRuntime(reconcile.NewTopologyOperations(dataPlane))
 			dataPlaneReconciler = reconcile.NewDataPlaneReconciler(topologyRepository, dataPlane)
+			dataPlaneReconciler.SetNetworkObjectReconciler(networkService)
 			reconcilers = append(reconcilers, dataPlaneReconciler)
 			reconcilers = append(reconcilers, reconcile.NewLaboratoryDeletionReconciler(topologyRepository, reconcile.RuntimeDispatch{QEMU: qemuAdapter, Docker: dockerAdapter, Lightweight: endpointRuntime}, networkService, dataPlane, captureManager, portMapper, resourceManager, linkRuntime))
 		} else {

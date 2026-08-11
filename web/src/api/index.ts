@@ -11,6 +11,7 @@ import type {
   Link,
   NetworkObject,
   NetworkObjectDiagnostics,
+  NodeNetworkDiagnostics,
   NetworkObjectLink,
   NetworkObjectLinkTaskEnvelope,
   Node,
@@ -337,6 +338,8 @@ export const generatedApi = {
   downloadArtifact: (artifactId: string) => `/api/v1/artifacts/${artifactId}`,
   getNodeResources: (nodeId: string) =>
     request<Record<string, unknown>>(`/nodes/${nodeId}/resources`),
+  getNodeNetworkDiagnostics: (nodeId: string) =>
+    request<NodeNetworkDiagnostics>(`/nodes/${nodeId}/network-diagnostics`),
   updateNodeResources: (
     node: Pick<Node, "id" | "revision">,
     body: Pick<Node, "cpu_count" | "cpu_quota_micros" | "memory_mib">,

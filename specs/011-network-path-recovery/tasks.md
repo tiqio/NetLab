@@ -87,24 +87,24 @@
 
 ### Tests for User Story 2
 
-- [ ] T038 [P] [US2] Write failing node-network validation tests for explicit IPv4/IPv6 forwarding settings in `internal/domain/node_network_test.go`
-- [ ] T039 [P] [US2] Write failing Docker endpoint tests for applying and observing forwarding in the container network namespace in `internal/runtime/linuxnet/docker_endpoint_test.go`
-- [ ] T040 [P] [US2] Write failing L3 runtime tests for late interfaces, dual-stack forwarding, route replacement and diagnostics mismatch in `internal/runtime/linuxnet/switch_l3_test.go`
-- [ ] T041 [P] [US2] Write failing dataplane tests that rerun L3 configuration after attachments and object links appear in `internal/app/reconcile/dataplane_test.go`
-- [ ] T042 [P] [US2] Write failing HTTP tests for Docker forwarding settings and requested-versus-observed diagnostics in `internal/api/http/node_operations_network_test.go`
-- [ ] T043 [P] [US2] Write a failing dual-stack component-matrix path test covering BusyBox, service router, Ubuntu, VyOS, core, DMZ and management endpoints in `tests/integration/dual_stack_network_path_test.go`
-- [ ] T044 [P] [US2] Write a failing node/service restart persistence test for transit addresses, forwarding and return routes in `tests/recovery/dual_stack_path_recovery_test.go`
+- [X] T038 [P] [US2] Write failing node-network validation tests for explicit IPv4/IPv6 forwarding settings in `internal/domain/node_network_test.go`
+- [X] T039 [P] [US2] Write failing Docker endpoint tests for applying and observing forwarding in the container network namespace in `internal/runtime/linuxnet/docker_endpoint_test.go`
+- [X] T040 [P] [US2] Write failing L3 runtime tests for late interfaces, dual-stack forwarding, route replacement and diagnostics mismatch in `internal/runtime/linuxnet/switch_l3_test.go`
+- [X] T041 [P] [US2] Write failing dataplane tests that rerun L3 configuration after attachments and object links appear in `internal/app/reconcile/dataplane_test.go`
+- [X] T042 [P] [US2] Write failing HTTP tests for Docker forwarding settings and requested-versus-observed diagnostics in `internal/api/http/node_operations_network_test.go`
+- [X] T043 [P] [US2] Write a failing dual-stack component-matrix path test covering BusyBox, service router, Ubuntu, VyOS, core, DMZ and management endpoints in `tests/integration/dual_stack_network_path_test.go`
+- [X] T044 [P] [US2] Write a failing node/service restart persistence test for transit addresses, forwarding and return routes in `tests/recovery/dual_stack_path_recovery_test.go`
 
 ### Implementation for User Story 2
 
-- [ ] T045 [US2] Add validated optional IPv4/IPv6 forwarding fields to Docker node network settings in `internal/domain/models.go`
-- [ ] T046 [US2] Persist forwarding settings through existing node settings commands and revisions in `internal/app/command/node_settings.go`
-- [ ] T047 [US2] Apply and inspect Docker namespace forwarding through argv-based host execution in `internal/runtime/linuxnet/docker_endpoint.go`
-- [ ] T048 [US2] Make L3 configuration converge after each relevant port attachment and object-link transition in `internal/app/reconcile/dataplane.go`
-- [ ] T049 [US2] Reconcile desired IPv4/IPv6 forwarding, addresses and routes and return exact observed mismatches in `internal/runtime/linuxnet/switch_l3.go`
-- [ ] T050 [US2] Extend network-object diagnostics with desired/observed forwarding, interfaces and routes in `internal/api/http/network_handlers.go`
-- [ ] T051 [US2] Add forwarding controls and mismatch display to node/network diagnostics in `web/src/features/diagnostics/DiagnosticsPanel.vue`
-- [ ] T052 [US2] Add an isolated dual-stack acceptance fixture builder without proprietary configuration in `tests/testsupport/dual_stack_path_fixture.go`
+- [X] T045 [US2] Add validated optional IPv4/IPv6 forwarding fields to Docker node network settings in `internal/domain/models.go`
+- [X] T046 [US2] Persist forwarding settings through existing node settings commands and revisions in `internal/app/command/node_settings.go`
+- [X] T047 [US2] Apply and inspect Docker namespace forwarding through argv-based host execution in `internal/runtime/linuxnet/docker_endpoint.go`
+- [X] T048 [US2] Make L3 configuration converge after each relevant port attachment and object-link transition in `internal/app/reconcile/dataplane.go`
+- [X] T049 [US2] Reconcile desired IPv4/IPv6 forwarding, addresses and routes and return exact observed mismatches in `internal/runtime/linuxnet/switch_l3.go`
+- [X] T050 [US2] Extend network-object diagnostics with desired/observed forwarding, interfaces and routes in `internal/api/http/network_handlers.go`
+- [X] T051 [US2] Add forwarding controls and mismatch display to node/network diagnostics in `web/src/features/diagnostics/DiagnosticsPanel.vue`
+- [X] T052 [US2] Add an isolated dual-stack acceptance fixture builder without proprietary configuration in `tests/testsupport/dual_stack_path_fixture.go`
 - [ ] T053 [US2] Repair the BusyBox, service router, Ubuntu and VyOS desired topology through revisioned API operations documented in `specs/011-network-path-recovery/validation/component-matrix-repair.md`
 - [ ] T054 [US2] Verify QGA-visible Ubuntu routes and operator-authorized VyOS interface/route state without storing credentials in `specs/011-network-path-recovery/validation/vyos-path.md`
 - [ ] T055 [US2] Run US2 unit, contract, dual-stack and restart gates, record results in `specs/011-network-path-recovery/validation/us2-dual-stack.md`, and commit the milestone with a focused Git commit

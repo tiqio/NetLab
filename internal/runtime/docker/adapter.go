@@ -31,6 +31,10 @@ type EndpointRuntime interface {
 	Cleanup(context.Context, domain.Node) error
 }
 
+type forwardingInspector interface {
+	InspectForwarding(context.Context, int) (linuxnet.DockerForwardingObservation, error)
+}
+
 type execEngine interface {
 	ExecCreate(context.Context, string, dockerclient.ExecCreateOptions) (dockerclient.ExecCreateResult, error)
 	ExecAttach(context.Context, string, dockerclient.ExecAttachOptions) (dockerclient.ExecAttachResult, error)
@@ -171,6 +175,50 @@ func (a *Adapter) Inspect(ctx context.Context, node domain.Node) (ports.ActualNo
 		}
 	}
 	return ports.ActualNode{State: state, Owner: owner}, nil
+}
+
+func (a *Adapter) NetworkDiagnostics(ctx context.Context, node domain.Node) (map[string]any, error) {
+	desiredIPv4, _ := node.Config["forward_ipv4"].(bool)
+	desiredIPv6, _ := node.Config["forward_ipv6"].(bool)
+	result := map[string]any{
+		"desired":    map[string]any{"forward_ipv4": desiredIPv4, "forward_ipv6": desiredIPv6},
+		"observed":   map[string]any{"available": false},
+		"mismatches": []string{},
+	}
+	id, running, err := a.find(ctx, node)
+	if err != nil {
+		return nil, err
+	}
+	if id == "" || !running {
+		result["mismatches"] = []string{"runtime namespace is not running"}
+		return result, nil
+	}
+	inspection, err := a.engine.ContainerInspect(ctx, id, dockerclient.ContainerInspectOptions{})
+	if err != nil {
+		return nil, err
+	}
+	if inspection.Container.State == nil || inspection.Container.State.Pid <= 0 {
+		result["mismatches"] = []string{"runtime namespace PID is unavailable"}
+		return result, nil
+	}
+	inspector, ok := a.endpoints.(forwardingInspector)
+	if !ok {
+		return nil, fmt.Errorf("Docker forwarding inspection is unavailable")
+	}
+	observed, err := inspector.InspectForwarding(ctx, inspection.Container.State.Pid)
+	if err != nil {
+		return nil, err
+	}
+	mismatches := make([]string, 0, 2)
+	if desiredIPv4 != observed.IPv4 {
+		mismatches = append(mismatches, fmt.Sprintf("forward_ipv4 desired=%t observed=%t", desiredIPv4, observed.IPv4))
+	}
+	if desiredIPv6 != observed.IPv6 {
+		mismatches = append(mismatches, fmt.Sprintf("forward_ipv6 desired=%t observed=%t", desiredIPv6, observed.IPv6))
+	}
+	result["observed"] = map[string]any{"available": true, "forward_ipv4": observed.IPv4, "forward_ipv6": observed.IPv6, "pid": inspection.Container.State.Pid}
+	result["mismatches"] = mismatches
+	return result, nil
 }
 func (a *Adapter) Start(ctx context.Context, node domain.Node) error {
 	id, running, err := a.find(ctx, node)

@@ -70,6 +70,8 @@ type NodeSettings struct {
 	InterfaceLimit    int                            `json:"interface_limit"`
 	ProcessLimit      int                            `json:"process_limit"`
 	NetworkInterfaces []NodeNetworkInterfaceSettings `json:"network_interfaces,omitempty"`
+	ForwardIPv4       *bool                          `json:"forward_ipv4,omitempty"`
+	ForwardIPv6       *bool                          `json:"forward_ipv6,omitempty"`
 }
 
 type Link struct {

@@ -29,8 +29,25 @@ type DataPlaneRuntime interface {
 }
 
 type DataPlaneReconciler struct {
-	store   DataPlaneStore
-	runtime DataPlaneRuntime
+	store          DataPlaneStore
+	runtime        DataPlaneRuntime
+	networkObjects interface {
+		ReconcileObject(context.Context, domain.ID, domain.Revision) (domain.NetworkObject, error)
+	}
+}
+
+func (r *DataPlaneReconciler) SetNetworkObjectReconciler(reconciler interface {
+	ReconcileObject(context.Context, domain.ID, domain.Revision) (domain.NetworkObject, error)
+}) {
+	r.networkObjects = reconciler
+}
+
+func (r *DataPlaneReconciler) reconcileL3Object(ctx context.Context, object domain.NetworkObject) error {
+	if object.Kind != domain.NetworkSwitchL3 || r.networkObjects == nil {
+		return nil
+	}
+	_, err := r.networkObjects.ReconcileObject(ctx, object.ID, object.Revision)
+	return err
 }
 
 func NewDataPlaneReconciler(store DataPlaneStore, runtime DataPlaneRuntime) *DataPlaneReconciler {
@@ -128,6 +145,10 @@ func (r *DataPlaneReconciler) Reconcile(ctx context.Context) (err error) {
 				}
 				_ = r.store.SetNetworkAttachmentState(ctx, attachment.ID, "active", nil)
 				_ = r.store.SetInterfaceOperationalState(ctx, attachment.InterfaceID, "up")
+				if err = r.reconcileL3Object(ctx, object); err != nil {
+					problem := structuredProblem(err, domain.Problem{Code: "l3_post_attachment_reconcile_failed", Retryable: true, ResourceType: "network_attachment", ResourceID: attachment.ID, Phase: "post_attachment_l3_reconcile", Cleanup: "attachment remains connected for retry", OperatorHint: "inspect L3 addresses and routes then retry reconciliation", RetryAfterSeconds: 2})
+					_ = r.store.SetNetworkAttachmentState(ctx, attachment.ID, "failed", problem)
+				}
 			}
 		}
 		for _, link := range snapshot.NetworkObjectLinks {
@@ -163,6 +184,13 @@ func (r *DataPlaneReconciler) Reconcile(ctx context.Context) (err error) {
 				continue
 			}
 			_ = r.store.SetNetworkObjectLinkState(ctx, link.ID, "connected", nil)
+			for _, object := range []domain.NetworkObject{objectA, objectB} {
+				if err = r.reconcileL3Object(ctx, object); err != nil {
+					problem := structuredProblem(err, domain.Problem{Code: "l3_post_link_reconcile_failed", Retryable: true, ResourceType: "network_object_link", ResourceID: link.ID, Phase: "post_link_l3_reconcile", Cleanup: "link remains connected for retry", OperatorHint: "inspect L3 addresses and routes then retry reconciliation", RetryAfterSeconds: 2})
+					_ = r.store.SetNetworkObjectLinkState(ctx, link.ID, "failed", problem)
+					break
+				}
+			}
 		}
 	}
 	return nil

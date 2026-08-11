@@ -116,6 +116,17 @@ export interface NetworkObjectDiagnostics extends Record<string, unknown> {
   runtime?: Record<string, unknown>;
 }
 
+export interface NodeNetworkDiagnostics extends Record<string, unknown> {
+  desired?: { forward_ipv4?: boolean; forward_ipv6?: boolean };
+  observed?: {
+    available?: boolean;
+    forward_ipv4?: boolean;
+    forward_ipv6?: boolean;
+    pid?: number;
+  };
+  mismatches?: string[];
+}
+
 export interface NetworkObjectLink {
   id: string;
   laboratory_id: string;
@@ -560,6 +571,8 @@ export interface UpdateNodeSettingsRequest {
   interface_limit: number;
   process_limit: number;
   network_interfaces?: NodeNetworkInterfaceSettings[];
+  forward_ipv4?: boolean;
+  forward_ipv6?: boolean;
 }
 
 export interface StartCaptureRequest {

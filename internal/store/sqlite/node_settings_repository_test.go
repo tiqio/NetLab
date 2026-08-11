@@ -113,3 +113,29 @@ func TestUpdateNodeSettingsPersistsInterfaceDriverAndNetworkConfig(t *testing.T)
 		t.Fatalf("network_interfaces=%s", body)
 	}
 }
+
+func TestUpdateNodeSettingsPersistsDockerForwardingFlags(t *testing.T) {
+	ctx := context.Background()
+	database, err := Open(ctx, "file:"+string(domain.NewID())+"?mode=memory&cache=shared")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer database.Close()
+	repository := NewTopologyRepository(database)
+	lab, err := command.NewLaboratoryService(repository).Create(ctx, "docker-forwarding", "", domain.RecoveryRemainStopped)
+	if err != nil {
+		t.Fatal(err)
+	}
+	node, _, err := command.NewNodeService(repository).CreateConfigured(ctx, lab.ID, command.CreateNodeRequest{Name: "router", Kind: string(domain.RuntimeDocker), CPUCount: 1, MemoryMiB: 128, InterfaceLimit: 4, ProcessLimit: 32, InterfaceCount: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	enabled, disabled := true, false
+	updated, err := repository.UpdateNodeSettings(ctx, node.ID, node.Revision, domain.NodeSettings{Name: node.Name, CPUCount: 1, MemoryMiB: 128, InterfaceLimit: 4, ProcessLimit: 32, ForwardIPv4: &enabled, ForwardIPv6: &disabled})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updated.Config["forward_ipv4"] != true || updated.Config["forward_ipv6"] != false || updated.Revision != node.Revision+1 {
+		t.Fatalf("updated=%+v", updated)
+	}
+}

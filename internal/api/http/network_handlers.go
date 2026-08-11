@@ -264,7 +264,7 @@ func (h *NetworkHandlers) diagnostics(c *gin.Context) {
 		}
 	case domain.NetworkSwitchL3:
 		if h.switchL3 != nil {
-			diagnostics, err = h.switchL3.Diagnostics(c, value.ID)
+			diagnostics, err = h.switchL3.DiagnosticsObject(c, value)
 		}
 	}
 	if diagnostics == nil && err == nil {
