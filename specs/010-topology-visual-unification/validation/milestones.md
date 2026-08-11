@@ -39,14 +39,15 @@ Notes: Import/export preserves placements and fills only missing legacy coordina
 ## Deployment Candidate
 
 ```text
-Candidate ID:
-Commit SHA:
-Artifact digest:
-Migration state:
-Contract version:
-Build time:
-Deployment time:
-Target validation result:
-Previous artifact:
-Rollback command:
+Candidate ID: topology-visual-010-20260811T013126Z
+Product source SHA: 2a8a7961e1e3341d5c778f325f5a570272068506
+Final acceptance harness SHA: ce1eca0
+Artifact digest: sha256:ac275806eb8bbb9f06aa1cf0f9949c3ad5b908ec2ab996506a13ed338bd8c100
+Migration state: 14
+Contract version: sha256:2e1a4279f16d7e6c282b741f06c52e75f1db210e91dbf4b99180bea5c9da808b
+Build time: 2026-08-11T01:31:26Z
+Deployment time: 2026-08-11T01:42:02Z
+Target validation result: PASS — 27 Playwright, 30 acceptance-unit, 20-cycle leak gate, zero cleanup remainder
+Previous artifact: unified-link-009-20260810T162640Z-r8, sha256:3d3511d1ee4c77baffa0386ab6a136b04654c8fc40c43543447faccda5f6efae
+Rollback directory: /var/lib/netlab/rollback/topology-visual-010-20260811T013126Z-predeploy
 ```

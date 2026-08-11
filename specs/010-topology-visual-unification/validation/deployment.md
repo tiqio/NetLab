@@ -65,3 +65,39 @@ edited on the target.
 The feature's focused Go, Vitest, static, Playwright and real local restart gates are recorded in
 `validation/final-local.md`. Deployment proceeds only with the exact artifact recorded above; target
 results and cleanup evidence are recorded separately in `validation/target-acceptance.md`.
+
+## Installed Candidate
+
+```text
+Deployment time: 2026-08-11T01:42:02Z
+Installed binary SHA-256: ac275806eb8bbb9f06aa1cf0f9949c3ad5b908ec2ab996506a13ed338bd8c100
+Installed migration: 14
+Service state: active
+Health endpoint: ok
+Release identity: matched candidate
+Configuration release identity: matched candidate and installed digest
+Template readiness candidate: matched candidate
+Rollback directory: /var/lib/netlab/rollback/topology-visual-010-20260811T013126Z-predeploy
+Rollback database integrity: ok
+Rollback package size: 1.6G
+```
+
+The rollback directory contains the previous binary, SQLite online backup, service configuration,
+template readiness document, service unit, release identity, upgrade-before placement and connection
+summaries, and verified SHA-256 records. The database backup completed before any installed file was
+replaced. An initial summary query used historical link column names and stopped safely before
+installation; the query was corrected against the live schema, the backup passed `integrity_check`,
+and the recorded candidate was then installed without changing target source files.
+
+Rollback command:
+
+```bash
+rollback=/var/lib/netlab/rollback/topology-visual-010-20260811T013126Z-predeploy
+install -m0755 "$rollback/netlabd" /usr/local/bin/netlabd
+install -m0600 "$rollback/netlab.yaml" /etc/netlab/netlab.yaml
+install -m0644 "$rollback/template-readiness.json" /etc/netlab/template-readiness.json
+install -m0644 "$rollback/netlab.service" /etc/systemd/system/netlab.service
+systemctl daemon-reload
+systemctl restart netlab
+curl -fsS http://127.0.0.1:18082/healthz
+```

@@ -175,9 +175,9 @@
 - [X] T071 [P] 更新 `acceptance/README.md`，说明视觉统一、20 资源 placement、并发客户端、Traffic Filter 衰减、重启和清理验收方法
 - [X] T072 运行 `go test ./...` 及仓库规定的格式、静态分析、合同、恢复和资源泄漏测试，并把结果写入 `specs/010-topology-visual-unification/validation/final-local.md`
 - [X] T073 运行 `npm run format:check`、`npm run lint`、`npm run build`、`npm test`、`npm run test:acceptance-unit` 和本地 Playwright，并把结果写入 `specs/010-topology-visual-unification/validation/final-local.md`
-- [ ] T074 从干净 Git 提交构建部署候选，记录 commit SHA、制品摘要、迁移状态、合同版本和上一制品到 `specs/010-topology-visual-unification/validation/deployment.md`
-- [ ] T075 将已记录候选部署到 `10.72.1.7`，按 `specs/010-topology-visual-unification/quickstart.md` 验证混合连接、平行线、动态图例、20 资源、双客户端/API/MCP、Traffic Filter 衰减、重启恢复和实验室删除清理
-- [ ] T076 将目标机结果、证据路径和资源清理摘要写入 `specs/010-topology-visual-unification/validation/target-acceptance.md`；若失败则回滚上一制品并返回本地修复、测试和新提交
+- [X] T074 从干净 Git 提交构建部署候选，记录 commit SHA、制品摘要、迁移状态、合同版本和上一制品到 `specs/010-topology-visual-unification/validation/deployment.md`
+- [X] T075 将已记录候选部署到 `10.72.1.7`，按 `specs/010-topology-visual-unification/quickstart.md` 验证混合连接、平行线、动态图例、20 资源、双客户端/API/MCP、Traffic Filter 衰减、重启恢复和实验室删除清理
+- [X] T076 将目标机结果、证据路径和资源清理摘要写入 `specs/010-topology-visual-unification/validation/target-acceptance.md`；若失败则回滚上一制品并返回本地修复、测试和新提交
 
 ---
 
