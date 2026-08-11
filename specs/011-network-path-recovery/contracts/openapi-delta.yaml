@@ -1,0 +1,188 @@
+openapi: 3.1.0
+info:
+  title: NetLab Network Path Recovery Delta
+  version: 0.11.0
+paths:
+  /api/v1/network-objects/{objectId}/diagnostics:
+    get:
+      summary: Return desired-versus-observed runtime, forwarding, routes, ports and VLAN membership
+      parameters:
+        - $ref: '#/components/parameters/ObjectId'
+      responses:
+        '200':
+          description: Runtime diagnostics
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NetworkObjectDiagnostics' }
+  /api/v1/network-objects/{objectId}/reconcile:
+    post:
+      summary: Request idempotent reconciliation of a network object and dependent connections
+      parameters:
+        - $ref: '#/components/parameters/ObjectId'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '202': { $ref: '#/components/responses/AcceptedTask' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /api/v1/network-object-links/{linkId}/reconcile:
+    post:
+      summary: Retry a failed or pending object-link reconciliation
+      parameters:
+        - $ref: '#/components/parameters/LinkId'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '202': { $ref: '#/components/responses/AcceptedTask' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /api/v1/labs/{labId}/traffic-workloads:
+    get:
+      summary: List durable traffic workloads and aggregate outcomes
+      parameters: [{ $ref: '#/components/parameters/LabId' }]
+      responses:
+        '200':
+          description: Workloads
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/TrafficWorkload' }
+    post:
+      summary: Create a traffic workload
+      parameters:
+        - $ref: '#/components/parameters/LabId'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TrafficWorkloadCreate' }
+      responses:
+        '202':
+          description: Durable workload and task
+        '422': { $ref: '#/components/responses/Problem' }
+  /api/v1/traffic-workloads/{workloadId}/state:
+    put:
+      summary: Start or stop a workload
+      parameters:
+        - $ref: '#/components/parameters/WorkloadId'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [desired_state]
+              properties:
+                desired_state: { enum: [running, stopped] }
+      responses:
+        '202': { $ref: '#/components/responses/AcceptedTask' }
+  /api/v1/traffic-workloads/{workloadId}:
+    get:
+      summary: Read current workload aggregates
+      parameters: [{ $ref: '#/components/parameters/WorkloadId' }]
+      responses:
+        '200':
+          description: Workload
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TrafficWorkload' }
+    delete:
+      summary: Stop and delete a workload idempotently
+      parameters:
+        - $ref: '#/components/parameters/WorkloadId'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '202': { $ref: '#/components/responses/AcceptedTask' }
+components:
+  parameters:
+    ObjectId: { name: objectId, in: path, required: true, schema: { type: string } }
+    LinkId: { name: linkId, in: path, required: true, schema: { type: string } }
+    LabId: { name: labId, in: path, required: true, schema: { type: string } }
+    WorkloadId: { name: workloadId, in: path, required: true, schema: { type: string } }
+    IfMatch: { name: If-Match, in: header, required: true, schema: { type: integer } }
+    IdempotencyKey: { name: Idempotency-Key, in: header, required: true, schema: { type: string } }
+  schemas:
+    StructuredProblem:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        retryable: { type: boolean }
+        resource_type: { type: string }
+        resource_id: { type: string }
+        phase: { type: string }
+        cleanup: { type: string }
+        operator_hint: { type: string }
+        details: { type: object, additionalProperties: true }
+    RuntimeBackingObservation:
+      type: object
+      required: [backing_kind, owned, usable, observed_at]
+      properties:
+        backing_kind: { enum: [namespace, host_bridge, qemu_tap, docker_veth] }
+        runtime_name: { type: string }
+        owned: { type: boolean }
+        usable: { type: boolean }
+        adoptable: { type: boolean }
+        recreatable: { type: boolean }
+        observed_at: { type: string, format: date-time }
+        problem: { $ref: '#/components/schemas/StructuredProblem' }
+    VLANObservation:
+      type: object
+      required: [port_name, desired, observed, matches_desired]
+      properties:
+        port_name: { type: string }
+        desired: { type: object, additionalProperties: true }
+        observed: { type: object, additionalProperties: true }
+        matches_desired: { type: boolean }
+    NetworkObjectDiagnostics:
+      type: object
+      required: [object_id, desired_state, observed_state, backing]
+      properties:
+        object_id: { type: string }
+        desired_state: { type: string }
+        observed_state: { type: string }
+        backing: { $ref: '#/components/schemas/RuntimeBackingObservation' }
+        forward_ipv4: { type: object, additionalProperties: true }
+        forward_ipv6: { type: object, additionalProperties: true }
+        routes: { type: array, items: { type: object, additionalProperties: true } }
+        vlans: { type: array, items: { $ref: '#/components/schemas/VLANObservation' } }
+    TrafficWorkloadCreate:
+      type: object
+      required: [name, source, protocol, destination, interval_seconds]
+      properties:
+        name: { type: string }
+        source: { type: object, additionalProperties: true }
+        protocol: { enum: [icmp, http, dns] }
+        address_family: { enum: [ipv4, ipv6, auto] }
+        destination: { type: object, additionalProperties: true }
+        interval_seconds: { type: integer, minimum: 1, maximum: 3600 }
+        timeout_seconds: { type: integer, minimum: 1, maximum: 60 }
+    TrafficWorkload:
+      allOf:
+        - $ref: '#/components/schemas/TrafficWorkloadCreate'
+        - type: object
+          required: [id, revision, desired_state, observed_state, attempts, successes, failures]
+          properties:
+            id: { type: string }
+            revision: { type: integer }
+            desired_state: { enum: [running, stopped] }
+            observed_state: { enum: [queued, starting, running, stopping, stopped, failed] }
+            attempts: { type: integer }
+            successes: { type: integer }
+            failures: { type: integer }
+            matched_bytes: { type: integer }
+            last_success_at: { type: string, format: date-time }
+            last_error: { $ref: '#/components/schemas/StructuredProblem' }
+  responses:
+    AcceptedTask:
+      description: Durable operation accepted
+    Problem:
+      description: Structured problem
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/StructuredProblem' }

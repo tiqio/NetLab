@@ -2,12 +2,13 @@
 
 ## Active Feature
 
-- Specification: `specs/009-unified-link-interaction/spec.md`
-- Plan: `specs/009-unified-link-interaction/plan.md`
+- Specification: `specs/011-network-path-recovery/spec.md`
+- Plan: `specs/011-network-path-recovery/plan.md`
 - Constitution: `.specify/memory/constitution.md`
-- Contracts: `specs/009-unified-link-interaction/contracts/`
+- Contracts: `specs/011-network-path-recovery/contracts/`
 - Topology visual compatibility specification: `specs/010-topology-visual-unification/spec.md`
 - Topology visual compatibility plan: `specs/010-topology-visual-unification/plan.md`
+- Unified link interaction dependency: `specs/009-unified-link-interaction/spec.md`
 - Previous visual overlap specification: `specs/008-ui-overlap-remediation/spec.md`
 - Previous visual overlap plan: `specs/008-ui-overlap-remediation/plan.md`
 - Previous UI localization specification: `specs/007-ui-localization-theme/spec.md`
@@ -38,6 +39,10 @@
 - Keep connection drafts, pointer positions, and port choosers local to the initiating browser until submission.
 - Serialize node-interface and network-object-port occupancy in durable SQLite state across all connection categories.
 - Default only newly created lightweight L2/L3 resources to `eth0` through `eth3`; never auto-expand existing objects.
+- Report namespace-backed objects healthy only after their owned runtime backing is usable and matches desired state.
+- Dispatch connection create, compensation, inspection, and deletion by explicit endpoint backing kind.
+- Reconcile L2 PVID and tagged VLAN membership after ports appear and compare desired membership with runtime observation.
+- Keep traffic-workload success/failure aggregates durable and separate from Traffic Filter counters and visual decay.
 
 ## Safety and Testing
 
