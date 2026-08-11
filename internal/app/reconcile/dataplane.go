@@ -134,13 +134,12 @@ func (r *DataPlaneReconciler) Reconcile(ctx context.Context) (err error) {
 				}
 				if attachErr != nil {
 					cleanupErr := r.runtime.DeleteAttachment(ctx, attachment)
-					if cleanupErr == nil {
-						cleanupErr = r.store.DeleteTopologyNetworkAttachment(ctx, attachment.ID, attachment.Revision, "")
-					}
+					cleanup := "owned partial runtime removed; attachment remains authoritative"
 					if cleanupErr != nil {
-						problem := structuredProblem(attachErr, domain.Problem{Code: "attachment_failed", Retryable: true, ResourceType: "network_attachment", ResourceID: attachment.ID, Phase: "attachment_reconcile", Cleanup: "partial runtime cleanup failed; attachment remains authoritative", OperatorHint: "inspect the interface and network object then retry", RetryAfterSeconds: 2})
-						_ = r.store.SetNetworkAttachmentState(ctx, attachment.ID, "failed", problem)
+						cleanup = "partial runtime cleanup failed; attachment remains authoritative: " + cleanupErr.Error()
 					}
+					problem := structuredProblem(attachErr, domain.Problem{Code: "attachment_failed", Retryable: true, ResourceType: "network_attachment", ResourceID: attachment.ID, Phase: "attachment_reconcile", Cleanup: cleanup, OperatorHint: "inspect the interface and network object then retry", RetryAfterSeconds: 2})
+					_ = r.store.SetNetworkAttachmentState(ctx, attachment.ID, "failed", problem)
 					continue
 				}
 				_ = r.store.SetNetworkAttachmentState(ctx, attachment.ID, "active", nil)

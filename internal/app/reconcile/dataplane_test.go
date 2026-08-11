@@ -170,8 +170,11 @@ func TestDataPlaneCompensatesPartialConnectionCreationFailures(t *testing.T) {
 			},
 			runtime: &dataPlaneRuntimeFake{attachmentError: domain.ErrNotFound},
 			assert: func(t *testing.T, store *dataPlaneStoreFake, runtime *dataPlaneRuntimeFake) {
-				if !runtime.attachmentDeleted || !store.attachmentDeleted {
-					t.Fatal("attachment partial resources were not compensated")
+				if !runtime.attachmentDeleted || store.attachmentDeleted {
+					t.Fatalf("runtime_deleted=%t authoritative_deleted=%t", runtime.attachmentDeleted, store.attachmentDeleted)
+				}
+				if store.attachmentState != "failed" || store.attachmentError == nil || !store.attachmentError.Retryable {
+					t.Fatalf("attachment state=%s problem=%+v", store.attachmentState, store.attachmentError)
 				}
 			},
 		},
