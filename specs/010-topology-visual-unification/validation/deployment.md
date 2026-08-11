@@ -130,3 +130,40 @@ Rollback directory: /var/lib/netlab/rollback/topology-visual-010-20260811T021524
 The r2 rollback directory contains the previous binary, release configuration, template readiness,
 service unit and affected-resource snapshots. No database migration or direct database edit was
 performed. Restoring those files with the rollback command above returns to the first 010 candidate.
+
+## Post-Acceptance Correction — r3
+
+Commits `90fbea8` and `0e3c528` separate durable Traffic Filter session statistics from the short
+topology-animation window and add a hold-to-pan Ctrl shortcut. The candidate keeps the existing
+click-to-toggle hand tool while treating Ctrl as a temporary hand-tool press; releasing Ctrl,
+changing page visibility or losing window focus releases the temporary mode.
+
+```text
+Candidate ID: topology-visual-010-20260811T024306Z-r3
+Source commit SHA: 0e3c528951186bee8a3cb59c38ffd864cb29499a
+Artifact SHA-256: 03c4cf394b57a59098afa29b5a1c9f281127d73c4001e150556c85f8d031120f
+Contract digest: sha256:2e1a4279f16d7e6c282b741f06c52e75f1db210e91dbf4b99180bea5c9da808b
+Build time: 2026-08-11T02:43:06Z
+Deployment time: 2026-08-11T02:53:19Z
+Migration: 15
+Previous candidate: topology-visual-010-20260811T021524Z-r2
+Rollback directory: /var/lib/netlab/rollback/topology-visual-010-20260811T024306Z-r3-predeploy
+Rollback package size: 1.6G
+Rollback database integrity: ok
+```
+
+The candidate was built after `main` was pushed to `origin`. The production build, 37 focused
+topology tests, ESLint and Prettier passed locally. Before replacement, the live r2 binary,
+configuration, template readiness document, service unit and a SQLite online backup were stored in
+the rollback directory. Every rollback file passed `sha256sum -c`, and the database backup passed
+`PRAGMA integrity_check` before installation.
+
+Startup installed `0015_traffic_filter_statistics.sql`. The service, health endpoint, release
+identity, configuration identity and template-readiness identity all matched r3. A real Chromium
+session against `http://10.72.1.7:18082` observed the hand-tool button changing from
+`aria-pressed=false` to `true` while Ctrl was held and returning to `false` after release. Deployment
+did not change the two user laboratories, six nodes, two links or zero existing Traffic Filters.
+
+Rollback for r3 stops the service, restores `netlabd`, `netlab.yaml`, `template-readiness.json` and
+`netlab.service` from the recorded directory, replaces `/var/lib/netlab/netlab.db` with the online
+backup after removing its WAL/SHM files, reloads systemd and restarts the service.

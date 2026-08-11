@@ -171,3 +171,26 @@ Log: /tmp/netlab-topology-visual-010-20260811T021524Z-r2-three-backing.log
 The target finished healthy with only the two original user laboratories, zero captures and zero
 Traffic Filters. The Ubuntu node was not started because doing so would alter user-owned desired state;
 its connection will reconcile when the user starts that endpoint.
+
+## Post-Acceptance r3 Deployment
+
+Candidate `topology-visual-010-20260811T024306Z-r3` was deployed from commit `0e3c528` at
+`2026-08-11T02:53:19Z`. The installed binary SHA-256 is
+`03c4cf394b57a59098afa29b5a1c9f281127d73c4001e150556c85f8d031120f`, and SQLite advanced from
+migration `14` to `15` with all five Traffic Filter statistics columns present.
+
+Target checks passed:
+
+```text
+netlab.service: active
+/healthz: ok
+release/config/readiness candidate: topology-visual-010-20260811T024306Z-r3
+database integrity: ok
+recent netlab error-level journal entries: none
+Ctrl browser check: false -> true (正在平移) -> false (平移视图)
+resource counts before/after: 2 laboratories, 6 nodes, 2 links, 0 Traffic Filters
+rollback package: 1.6G, database integrity ok, all SHA-256 checks passed
+```
+
+The host still reports the pre-existing failed `cpulimit.service` and `netlab-preview.service`; the
+authoritative `netlab.service` is healthy and neither failed unit was modified by this deployment.

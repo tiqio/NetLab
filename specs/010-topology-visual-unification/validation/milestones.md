@@ -64,3 +64,17 @@ Three-backing recovery: 3 passed across desktop, standard and minimum viewports
 Cleanup: baseline_restored=true, remaining_count=0
 Previous candidate rollback: /var/lib/netlab/rollback/topology-visual-010-20260811T021524Z-r2-predeploy
 ```
+
+## Post-Acceptance r3
+
+```text
+Candidate ID: topology-visual-010-20260811T024306Z-r3
+Commit SHA: 0e3c528951186bee8a3cb59c38ffd864cb29499a
+Artifact digest: sha256:03c4cf394b57a59098afa29b5a1c9f281127d73c4001e150556c85f8d031120f
+Deployment time: 2026-08-11T02:53:19Z
+Migration state: 15
+Result: PASS — durable Traffic Filter statistics schema installed and Ctrl hold-to-pan verified in target Chromium
+Target state: netlab active, health ok, no NetLab error-level journal entries, user resource counts unchanged
+Rollback: 1.6G online SQLite backup integrity ok and all recorded SHA-256 checks passed
+Previous candidate rollback: /var/lib/netlab/rollback/topology-visual-010-20260811T024306Z-r3-predeploy
+```
