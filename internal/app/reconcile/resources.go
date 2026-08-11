@@ -25,9 +25,10 @@ type NodeInspector interface {
 }
 
 type ResourceManager struct {
-	inspectors map[string]NodeInspector
-	stateDir   string
-	cgroups    interface {
+	inspectors     map[string]NodeInspector
+	stateDir       string
+	maxRunningQEMU int
+	cgroups        interface {
 		Apply(context.Context, domain.Node, int) error
 	}
 }
@@ -70,15 +71,15 @@ func (m *ResourceManager) Admit(_ context.Context, node domain.Node, nodes []dom
 	if interfaces > limit || limit > maximum {
 		return domain.Problem{Code: "resource_exhausted", Message: fmt.Sprintf("interface limit exceeds runtime capacity of %d", maximum), ResourceType: "node", ResourceID: node.ID, Phase: "resource_admission", Cleanup: "no runtime resources created", OperatorHint: "reduce the interface limit or configured interface count", Details: map[string]any{"interface_limit": limit, "interface_count": interfaces, "runtime_capacity": maximum}}
 	}
-	if node.Kind == "qemu" {
+	if node.Kind == "qemu" && m.maxRunningQEMU > 0 {
 		running := 0
 		for _, value := range nodes {
 			if value.Kind == "qemu" && (value.ID == node.ID || value.ObservedState == domain.ObservedProvisioning || value.ObservedState == domain.ObservedStarting || value.ObservedState == domain.ObservedRunning) {
 				running++
 			}
 		}
-		if running > 4 {
-			return domain.Problem{Code: "resource_exhausted", Message: "first-release limit is four running QEMU nodes", ResourceType: "node", ResourceID: node.ID}
+		if running > m.maxRunningQEMU {
+			return domain.Problem{Code: "resource_exhausted", Message: fmt.Sprintf("running QEMU node limit of %d reached", m.maxRunningQEMU), ResourceType: "node", ResourceID: node.ID, Phase: "resource_admission", Cleanup: "no runtime resources created", OperatorHint: "stop another QEMU node or increase resources.max_running_qemu; set it to 0 for unlimited", Details: map[string]any{"max_running_qemu": m.maxRunningQEMU, "running_or_starting_qemu": running - 1}}
 		}
 	}
 	if available, ok := availableMemoryBytes(); ok && node.MemoryMiB > 0 {
@@ -181,6 +182,10 @@ func (m *ResourceManager) RegisterInspector(kind string, inspector NodeInspector
 	if inspector != nil {
 		m.inspectors[kind] = inspector
 	}
+}
+
+func (m *ResourceManager) SetMaxRunningQEMU(limit int) {
+	m.maxRunningQEMU = limit
 }
 
 func (m *ResourceManager) Cleanup(id domain.ID) error {

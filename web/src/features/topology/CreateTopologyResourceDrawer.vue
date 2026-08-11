@@ -10,15 +10,18 @@ import {
   type Node,
   type NodeInterface,
   type NetworkObject,
+  type Problem,
 } from "@/api";
 import {
   Button,
+  Dialog,
   FormField,
   Input,
   Select,
   Sheet,
   Textarea,
 } from "@/components/ui";
+import StructuredProblem from "@/components/common/StructuredProblem.vue";
 import LightweightSwitchConfigEditor from "@/features/nodes/LightweightSwitchConfigEditor.vue";
 import { type LightweightSwitchKind } from "@/features/nodes/lightweightSwitchConfig";
 import TopologyResourceCatalog, {
@@ -63,6 +66,8 @@ const emit = defineEmits<{
   selectionChanged: [PaletteSelection | undefined];
 }>();
 const name = ref("");
+const creationFailureOpen = ref(false);
+const creationFailure = ref<Problem>();
 const templateId = ref("");
 const templateSelectKey = ref(0);
 const versionId = ref("");
@@ -539,6 +544,8 @@ async function submit() {
   } catch (value) {
     if (value instanceof ApiError) {
       error.value = value.problem.message;
+      creationFailure.value = value.problem;
+      creationFailureOpen.value = true;
       const fields = value.problem.details?.fields;
       if (fields && typeof fields === "object")
         fieldErrors.value = Object.fromEntries(
@@ -1001,4 +1008,16 @@ async function submit() {
       </Button>
     </template>
   </Sheet>
+  <Dialog
+    v-model="creationFailureOpen"
+    title="资源创建失败"
+    description="服务器拒绝了本次创建请求，草稿内容仍然保留。"
+  >
+    <StructuredProblem v-if="creationFailure" :problem="creationFailure" />
+    <template #footer>
+      <Button variant="secondary" @click="creationFailureOpen = false">
+        返回修改
+      </Button>
+    </template>
+  </Dialog>
 </template>

@@ -261,6 +261,7 @@ func main() {
 		logger.Warn("cgroup resource enforcement unavailable until retry", "error", prepareErr)
 	}
 	resourceManager := reconcile.NewResourceManager(qemuAdapter, cgroupManager, cfg.StateDir)
+	resourceManager.SetMaxRunningQEMU(cfg.Resources.MaxRunningQEMU)
 	if linkRuntime != nil {
 		topologyTasks.SetNodeDeletionCleanup(resourceManager, linkRuntime)
 	} else {

@@ -62,6 +62,7 @@ func TestResourceAdmissionRejectsQEMUInterfaceLimitAboveHotplugCapacity(t *testi
 
 func TestResourceAdmissionIgnoresStaleFailedQEMUDesiredState(t *testing.T) {
 	manager := NewResourceManager(nil, nil, t.TempDir())
+	manager.SetMaxRunningQEMU(4)
 	node := domain.Node{ID: "candidate", Kind: "qemu", CPUCount: 1, MemoryMiB: 256, StorageGiB: 1, InterfaceLimit: 4, ProcessLimit: 64, DesiredState: domain.DesiredRunning, ObservedState: domain.ObservedStopped, Config: map[string]any{"interfaces": []any{}}}
 	nodes := []domain.Node{node}
 	for index := 0; index < 4; index++ {
@@ -69,6 +70,28 @@ func TestResourceAdmissionIgnoresStaleFailedQEMUDesiredState(t *testing.T) {
 	}
 	if err := manager.Admit(context.Background(), node, nodes); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestResourceAdmissionAllowsUnlimitedRunningQEMU(t *testing.T) {
+	manager := NewResourceManager(nil, nil, t.TempDir())
+	node := domain.Node{ID: "candidate", Kind: "qemu", CPUCount: 1, MemoryMiB: 256, StorageGiB: 1, InterfaceLimit: 4, ProcessLimit: 64, Config: map[string]any{"interfaces": []any{}}}
+	nodes := []domain.Node{node}
+	for index := 0; index < 12; index++ {
+		nodes = append(nodes, domain.Node{ID: domain.ID(fmt.Sprintf("running-%d", index)), Kind: "qemu", ObservedState: domain.ObservedRunning})
+	}
+	if err := manager.Admit(context.Background(), node, nodes); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestResourceAdmissionUsesConfiguredQEMULimit(t *testing.T) {
+	manager := NewResourceManager(nil, nil, t.TempDir())
+	manager.SetMaxRunningQEMU(2)
+	node := domain.Node{ID: "candidate", Kind: "qemu", CPUCount: 1, MemoryMiB: 256, StorageGiB: 1, InterfaceLimit: 4, ProcessLimit: 64, Config: map[string]any{"interfaces": []any{}}}
+	nodes := []domain.Node{node, {ID: "running-a", Kind: "qemu", ObservedState: domain.ObservedRunning}, {ID: "running-b", Kind: "qemu", ObservedState: domain.ObservedRunning}}
+	if err := manager.Admit(context.Background(), node, nodes); err == nil {
+		t.Fatal("configured QEMU limit was not enforced")
 	}
 }
 

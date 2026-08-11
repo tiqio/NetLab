@@ -6,6 +6,8 @@ template_dir: templates
 startup_concurrency:
   qemu: 2
   other: 4
+resources:
+  max_running_qemu: 0
 captures:
   concurrent: 2
   duration: 1m

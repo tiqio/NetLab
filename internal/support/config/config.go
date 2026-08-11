@@ -33,6 +33,9 @@ type Config struct {
 		QEMU  int `yaml:"qemu"`
 		Other int `yaml:"other"`
 	} `yaml:"startup_concurrency"`
+	Resources struct {
+		MaxRunningQEMU int `yaml:"max_running_qemu"`
+	} `yaml:"resources"`
 	Captures struct {
 		Concurrent     int           `yaml:"concurrent"`
 		Duration       time.Duration `yaml:"-"`
@@ -58,6 +61,7 @@ func Defaults() Config {
 	c.Deployment.Role = "development"
 	c.StartupConcurrency.QEMU = 2
 	c.StartupConcurrency.Other = 4
+	c.Resources.MaxRunningQEMU = 0
 	c.Captures.Concurrent = 16
 	c.Captures.Duration = 15 * time.Minute
 	c.Captures.MaxBytes = 256 << 20
@@ -134,6 +138,9 @@ func (c Config) Validate() error {
 	}
 	if c.StartupConcurrency.QEMU < 1 || c.StartupConcurrency.Other < 1 {
 		return errors.New("startup concurrency must be positive")
+	}
+	if c.Resources.MaxRunningQEMU < 0 {
+		return errors.New("maximum running QEMU nodes must be zero or positive")
 	}
 	if c.Captures.Concurrent < 1 || c.Captures.MaxBytes < 1 || c.Captures.GlobalMaxBytes < c.Captures.MaxBytes {
 		return errors.New("invalid capture limits")

@@ -28,8 +28,9 @@ import {
   XCircle,
 } from "lucide-vue-next";
 import { api } from "@/api";
-import { Button } from "@/components/ui";
+import { Button, Dialog } from "@/components/ui";
 import ConfirmationDialog from "@/components/common/ConfirmationDialog.vue";
+import StructuredProblem from "@/components/common/StructuredProblem.vue";
 import CommandPalette from "@/components/shell/CommandPalette.vue";
 import LaboratoryShell from "@/components/shell/LaboratoryShell.vue";
 import OperationsDrawer from "@/components/shell/OperationsDrawer.vue";
@@ -110,6 +111,8 @@ const trafficOverlayColor = ref("#f59e0b");
 const consoleRequestNodeId = ref("");
 const consoleRequestNetworkObjectId = ref("");
 const consoleRequestKey = ref(0);
+const nodeOperationFailureOpen = ref(false);
+const nodeOperationFailureTask = ref<OperationTask>();
 const activeId = computed(() => store.active?.laboratory.id);
 const {
   preferences,
@@ -359,8 +362,28 @@ function openNetworkObjectTerminal(object: NetworkObject) {
 async function setContextNodeState(node: Node) {
   const desired = node.desired_state === "running" ? "stopped" : "running";
   closeResourceContext();
-  await api.setNodeState(node, desired);
+  const envelope = await api.setNodeState(node, desired);
+  const index = store.tasks.findIndex((item) => item.id === envelope.task.id);
+  if (index >= 0) store.tasks[index] = envelope.task;
+  else store.tasks.unshift(envelope.task);
+  void monitorNodeOperation(envelope.task);
   await refreshActive();
+}
+
+async function monitorNodeOperation(initial: OperationTask) {
+  let task = initial;
+  for (let attempt = 0; attempt < 300; attempt += 1) {
+    if (["succeeded", "failed", "cancelled"].includes(task.state)) break;
+    await new Promise((resolve) => window.setTimeout(resolve, 500));
+    task = await api.getTask(task.id);
+    const index = store.tasks.findIndex((item) => item.id === task.id);
+    if (index >= 0) store.tasks[index] = task;
+    else store.tasks.unshift(task);
+  }
+  if (task.state === "failed" && task.error) {
+    nodeOperationFailureTask.value = task;
+    nodeOperationFailureOpen.value = true;
+  }
 }
 function requestContextNodeDelete(node: Node) {
   contextDeleteNode.value = node;
@@ -2106,6 +2129,25 @@ onBeforeUnmount(() => {
       @update:model-value="!$event && (contextDeleteNode = undefined)"
       @confirm="confirmContextNodeDelete"
     />
+    <Dialog
+      v-model="nodeOperationFailureOpen"
+      title="节点操作失败"
+      :description="
+        nodeOperationFailureTask
+          ? `任务 ${nodeOperationFailureTask.id} 未能完成。`
+          : undefined
+      "
+    >
+      <StructuredProblem
+        v-if="nodeOperationFailureTask?.error"
+        :problem="nodeOperationFailureTask.error"
+      />
+      <template #footer>
+        <Button variant="secondary" @click="nodeOperationFailureOpen = false">
+          知道了
+        </Button>
+      </template>
+    </Dialog>
     <ConfirmationDialog
       :model-value="Boolean(contextDeleteObject)"
       title="删除网络对象"

@@ -29,6 +29,20 @@ func TestInvalidCaptureLimits(t *testing.T) {
 	}
 }
 
+func TestQEMUCountLimitAllowsZeroForUnlimited(t *testing.T) {
+	c := Defaults()
+	if c.Resources.MaxRunningQEMU != 0 {
+		t.Fatalf("default max running QEMU=%d", c.Resources.MaxRunningQEMU)
+	}
+	if err := c.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	c.Resources.MaxRunningQEMU = -1
+	if c.Validate() == nil {
+		t.Fatal("negative QEMU limit accepted")
+	}
+}
+
 func TestReleaseIdentityRequired(t *testing.T) {
 	c := Defaults()
 	c.Release.CandidateID = ""

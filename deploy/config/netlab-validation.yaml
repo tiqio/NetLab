@@ -13,6 +13,8 @@ release:
 startup_concurrency:
   qemu: 1
   other: 2
+resources:
+  max_running_qemu: 0
 captures:
   concurrent: 2
   duration: "5m"

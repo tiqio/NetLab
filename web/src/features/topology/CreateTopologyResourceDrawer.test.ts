@@ -937,6 +937,7 @@ describe("CreateTopologyResourceDrawer", () => {
       .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
     await flushPromises();
     expect(document.body.textContent).toContain("vCPU 超过当前配额");
+    expect(document.body.textContent).toContain("资源创建失败");
     expect(document.activeElement).toBe(
       document.body.querySelector('[data-field="cpuCount"] input'),
     );
