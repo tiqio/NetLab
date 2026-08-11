@@ -270,6 +270,22 @@ func (d *DataPlane) AttachNamespace(ctx context.Context, attachment domain.Netwo
 	bridge := ownership.Name("nla", attachment.ID, 15)
 	host := ownership.Name("nah", attachment.ID, 15)
 	peer := ownership.Name("nap", attachment.ID, 15)
+	portName := attachment.PortName
+	if portName == "" {
+		portName = "eth0"
+	}
+	_, hostErr := d.executor.Output(ctx, d.ip, "link", "show", host)
+	_, portErr := d.executor.Output(ctx, d.ip, "-n", namespace, "link", "show", portName)
+	if (hostErr == nil) != (portErr == nil) {
+		if hostErr == nil {
+			if err := d.executor.Run(ctx, d.ip, "link", "delete", host); err != nil && !missingLinkError(err) {
+				return err
+			}
+		} else if err := d.executor.Run(ctx, d.ip, "-n", namespace, "link", "delete", portName); err != nil && !missingLinkError(err) {
+			return err
+		}
+		hostErr, portErr = errors.New("missing"), errors.New("missing")
+	}
 	if err := d.executor.Run(ctx, d.ip, "link", "add", bridge, "type", "bridge"); err != nil {
 		if _, inspectErr := d.executor.Output(ctx, d.ip, "link", "show", bridge); inspectErr != nil {
 			return err
@@ -279,10 +295,12 @@ func (d *DataPlane) AttachNamespace(ctx context.Context, attachment domain.Netwo
 	if err := d.executor.Run(ctx, d.ip, "link", "set", bridge, "up"); err != nil {
 		return err
 	}
-	if err := d.executor.Run(ctx, d.ip, "link", "add", host, "type", "veth", "peer", "name", peer); err != nil {
-		if _, inspectErr := d.executor.Output(ctx, d.ip, "link", "show", host); inspectErr != nil {
-			_ = d.executor.Run(ctx, d.ip, "link", "delete", bridge)
-			return err
+	if hostErr != nil {
+		if err := d.executor.Run(ctx, d.ip, "link", "add", host, "type", "veth", "peer", "name", peer); err != nil {
+			if _, inspectErr := d.executor.Output(ctx, d.ip, "link", "show", host); inspectErr != nil {
+				_ = d.executor.Run(ctx, d.ip, "link", "delete", bridge)
+				return err
+			}
 		}
 	}
 	_ = d.executor.Run(ctx, d.ip, "link", "set", "dev", host, "alias", ownership.Marker("netlab", string(attachment.ID)))
@@ -296,14 +314,14 @@ func (d *DataPlane) AttachNamespace(ctx context.Context, attachment domain.Netwo
 	if err := d.executor.Run(ctx, d.ip, "link", "set", host, "up"); err != nil {
 		return err
 	}
-	if err := d.executor.Run(ctx, d.ip, "link", "set", peer, "netns", namespace); err != nil && !strings.Contains(err.Error(), "Cannot find device") {
-		return err
+	if portErr != nil {
+		if err := d.executor.Run(ctx, d.ip, "link", "set", peer, "netns", namespace); err != nil {
+			return err
+		}
+		if err := d.executor.Run(ctx, d.ip, "-n", namespace, "link", "set", peer, "name", portName); err != nil {
+			return err
+		}
 	}
-	portName := attachment.PortName
-	if portName == "" {
-		portName = "eth0"
-	}
-	_ = d.executor.Run(ctx, d.ip, "-n", namespace, "link", "set", peer, "name", portName)
 	if object.Kind == domain.NetworkSwitchL2 {
 		if err := d.executor.Run(ctx, d.ip, "-n", namespace, "link", "set", portName, "master", "br0"); err != nil {
 			return err
@@ -416,11 +434,13 @@ func (d *DataPlane) configureNamespacePort(ctx context.Context, namespace, portN
 }
 
 func (d *DataPlane) DeleteAttachment(ctx context.Context, attachment domain.NetworkAttachment) error {
-	err := d.executor.Run(ctx, d.ip, "link", "delete", ownership.Name("nla", attachment.ID, 15))
-	if err != nil && (strings.Contains(err.Error(), "Cannot find device") || strings.Contains(err.Error(), "does not exist")) {
-		return nil
+	var cleanupErrors []error
+	for _, name := range []string{ownership.Name("nah", attachment.ID, 15), ownership.Name("nla", attachment.ID, 15)} {
+		if err := d.executor.Run(ctx, d.ip, "link", "delete", name); err != nil && !missingLinkError(err) {
+			cleanupErrors = append(cleanupErrors, err)
+		}
 	}
-	return err
+	return errors.Join(cleanupErrors...)
 }
 
 func attachmentVLAN(config map[string]any, key string) int {
