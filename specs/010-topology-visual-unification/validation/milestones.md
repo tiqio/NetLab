@@ -100,7 +100,7 @@ Candidate ID: qemu-unlimited-20260811T071624Z-r2
 Commit SHA: 3b7f4121f1cf3faf270f957b2fdd7834837f4fe5
 Feature commit: efe2fbf6489c4d94cc05494d5b3e14f7cd3c6c92
 Artifact digest: sha256:d2bfd22b133dde62677f94b9013f282ff0907a43aafa66e25eac6eeb75575b1d
-Deployment date: 2026-08-11
+Deployment time: 2026-08-11T07:25:14Z
 Migration state: 15 (unchanged)
 Result: PASS — max_running_qemu=0 accepted six simultaneous QEMU nodes without errors
 Target state: netlab active, health ok, three tested QEMU links connected

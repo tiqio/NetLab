@@ -237,6 +237,7 @@ netlab.service: active
 candidate: qemu-unlimited-20260811T071624Z-r2
 commit: 3b7f4121f1cf3faf270f957b2fdd7834837f4fe5
 artifact SHA-256: d2bfd22b133dde62677f94b9013f282ff0907a43aafa66e25eac6eeb75575b1d
+deployment time: 2026-08-11T07:25:14Z
 migration: 15
 configured max_running_qemu: 0
 simultaneous running QEMU nodes: 6
