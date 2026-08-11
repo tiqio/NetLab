@@ -61,36 +61,36 @@ func (d *DataPlane) EnsureNetworkObjectLink(ctx context.Context, link domain.Net
 	if link.ObjectAID == "" || link.ObjectBID == "" || link.PortAName == "" || link.PortBName == "" {
 		return fmt.Errorf("network object link endpoints are incomplete")
 	}
-	namespaceA, err := networkObjectNamespace(objectA)
-	if err != nil {
-		return err
-	}
-	namespaceB, err := networkObjectNamespace(objectB)
-	if err != nil {
-		return err
-	}
 	endA := ownership.Name("nva", link.ID, 15)
 	endB := ownership.Name("nvb", link.ID, 15)
-	_, errA := d.executor.Output(ctx, d.ip, "-n", namespaceA, "link", "show", link.PortAName)
-	_, errB := d.executor.Output(ctx, d.ip, "-n", namespaceB, "link", "show", link.PortBName)
+	endpointA, err := networkObjectLinkEndpoint(objectA, link.PortAName, endA)
+	if err != nil {
+		return err
+	}
+	endpointB, err := networkObjectLinkEndpoint(objectB, link.PortBName, endB)
+	if err != nil {
+		return err
+	}
+	_, errA := d.executor.Output(ctx, d.ip, endpointA.inspectArgs()...)
+	_, errB := d.executor.Output(ctx, d.ip, endpointB.inspectArgs()...)
 	if errA == nil && errB == nil {
-		if err := d.prepareNetworkObjectLinkPort(ctx, namespaceA, link.PortAName, objectA); err != nil {
+		if err := d.prepareNetworkObjectLinkEndpoint(ctx, endpointA); err != nil {
 			return err
 		}
-		if err := d.prepareNetworkObjectLinkPort(ctx, namespaceB, link.PortBName, objectB); err != nil {
+		if err := d.prepareNetworkObjectLinkEndpoint(ctx, endpointB); err != nil {
 			return err
 		}
-		if err := d.configureNamespacePort(ctx, namespaceA, link.PortAName, objectA); err != nil {
+		if err := d.configureNetworkObjectLinkEndpoint(ctx, endpointA); err != nil {
 			return err
 		}
-		return d.configureNamespacePort(ctx, namespaceB, link.PortBName, objectB)
+		return d.configureNetworkObjectLinkEndpoint(ctx, endpointB)
 	}
 	if errA == nil {
-		if err := d.executor.Run(ctx, d.ip, "-n", namespaceA, "link", "delete", link.PortAName); err != nil && !missingLinkError(err) {
+		if err := d.executor.Run(ctx, d.ip, endpointA.deleteArgs()...); err != nil && !missingLinkError(err) {
 			return err
 		}
 	} else if errB == nil {
-		if err := d.executor.Run(ctx, d.ip, "-n", namespaceB, "link", "delete", link.PortBName); err != nil && !missingLinkError(err) {
+		if err := d.executor.Run(ctx, d.ip, endpointB.deleteArgs()...); err != nil && !missingLinkError(err) {
 			return err
 		}
 	}
@@ -112,28 +112,90 @@ func (d *DataPlane) EnsureNetworkObjectLink(ctx context.Context, link domain.Net
 	}
 	_ = d.executor.Run(ctx, d.ip, "link", "set", "dev", endA, "alias", ownership.Marker("netlab", string(link.ID)+":a"))
 	_ = d.executor.Run(ctx, d.ip, "link", "set", "dev", endB, "alias", ownership.Marker("netlab", string(link.ID)+":b"))
-	if err = d.executor.Run(ctx, d.ip, "link", "set", endA, "netns", namespaceA); err != nil {
+	if err = d.placeNetworkObjectLinkEndpoint(ctx, endpointA); err != nil {
 		return err
 	}
-	if err = d.executor.Run(ctx, d.ip, "link", "set", endB, "netns", namespaceB); err != nil {
+	if err = d.placeNetworkObjectLinkEndpoint(ctx, endpointB); err != nil {
 		return err
 	}
-	if err = d.executor.Run(ctx, d.ip, "-n", namespaceA, "link", "set", endA, "name", link.PortAName); err != nil {
+	if err = d.prepareNetworkObjectLinkEndpoint(ctx, endpointA); err != nil {
 		return err
 	}
-	if err = d.executor.Run(ctx, d.ip, "-n", namespaceB, "link", "set", endB, "name", link.PortBName); err != nil {
+	if err = d.prepareNetworkObjectLinkEndpoint(ctx, endpointB); err != nil {
 		return err
 	}
-	if err = d.prepareNetworkObjectLinkPort(ctx, namespaceA, link.PortAName, objectA); err != nil {
+	if err = d.configureNetworkObjectLinkEndpoint(ctx, endpointA); err != nil {
 		return err
 	}
-	if err = d.prepareNetworkObjectLinkPort(ctx, namespaceB, link.PortBName, objectB); err != nil {
+	return d.configureNetworkObjectLinkEndpoint(ctx, endpointB)
+}
+
+type networkObjectLinkEndpointSpec struct {
+	object      domain.NetworkObject
+	portName    string
+	runtimeName string
+	namespace   string
+	hostBridge  string
+}
+
+func networkObjectLinkEndpoint(object domain.NetworkObject, portName, runtimeName string) (networkObjectLinkEndpointSpec, error) {
+	value := networkObjectLinkEndpointSpec{object: object, portName: portName, runtimeName: runtimeName}
+	switch object.Kind {
+	case domain.NetworkBridge, domain.NetworkNAT:
+		bridge, err := NetworkBridgeName(object)
+		if err != nil {
+			return networkObjectLinkEndpointSpec{}, err
+		}
+		value.hostBridge = bridge
+	default:
+		namespace, err := networkObjectNamespace(object)
+		if err != nil {
+			return networkObjectLinkEndpointSpec{}, err
+		}
+		value.namespace = namespace
+	}
+	return value, nil
+}
+
+func (e networkObjectLinkEndpointSpec) inspectArgs() []string {
+	if e.namespace == "" {
+		return []string{"link", "show", e.runtimeName}
+	}
+	return []string{"-n", e.namespace, "link", "show", e.portName}
+}
+
+func (e networkObjectLinkEndpointSpec) deleteArgs() []string {
+	if e.namespace == "" {
+		return []string{"link", "delete", e.runtimeName}
+	}
+	return []string{"-n", e.namespace, "link", "delete", e.portName}
+}
+
+func (d *DataPlane) placeNetworkObjectLinkEndpoint(ctx context.Context, endpoint networkObjectLinkEndpointSpec) error {
+	if endpoint.namespace == "" {
+		return nil
+	}
+	if err := d.executor.Run(ctx, d.ip, "link", "set", endpoint.runtimeName, "netns", endpoint.namespace); err != nil {
 		return err
 	}
-	if err = d.configureNamespacePort(ctx, namespaceA, link.PortAName, objectA); err != nil {
-		return err
+	return d.executor.Run(ctx, d.ip, "-n", endpoint.namespace, "link", "set", endpoint.runtimeName, "name", endpoint.portName)
+}
+
+func (d *DataPlane) prepareNetworkObjectLinkEndpoint(ctx context.Context, endpoint networkObjectLinkEndpointSpec) error {
+	if endpoint.namespace == "" {
+		if err := d.executor.Run(ctx, d.ip, "link", "set", endpoint.runtimeName, "master", endpoint.hostBridge); err != nil {
+			return err
+		}
+		return d.executor.Run(ctx, d.ip, "link", "set", endpoint.runtimeName, "up")
 	}
-	return d.configureNamespacePort(ctx, namespaceB, link.PortBName, objectB)
+	return d.prepareNetworkObjectLinkPort(ctx, endpoint.namespace, endpoint.portName, endpoint.object)
+}
+
+func (d *DataPlane) configureNetworkObjectLinkEndpoint(ctx context.Context, endpoint networkObjectLinkEndpointSpec) error {
+	if endpoint.namespace == "" {
+		return nil
+	}
+	return d.configureNamespacePort(ctx, endpoint.namespace, endpoint.portName, endpoint.object)
 }
 
 func (d *DataPlane) prepareNetworkObjectLinkPort(ctx context.Context, namespace, portName string, object domain.NetworkObject) error {
@@ -265,15 +327,22 @@ func (d *DataPlane) AttachNamespace(ctx context.Context, attachment domain.Netwo
 
 func (d *DataPlane) DeleteNetworkObjectLink(ctx context.Context, link domain.NetworkObjectLink, objectA, objectB domain.NetworkObject) error {
 	type endpoint struct {
-		object domain.NetworkObject
-		port   string
+		object      domain.NetworkObject
+		port        string
+		runtimeName string
 	}
 	var cleanupErrors []error
 	attempted := false
-	for _, value := range []endpoint{{object: objectA, port: link.PortAName}, {object: objectB, port: link.PortBName}} {
+	for _, value := range []endpoint{{object: objectA, port: link.PortAName, runtimeName: ownership.Name("nva", link.ID, 15)}, {object: objectB, port: link.PortBName, runtimeName: ownership.Name("nvb", link.ID, 15)}} {
 		namespace, err := networkObjectNamespace(value.object)
 		if err != nil {
 			if value.object.Kind == domain.NetworkBridge || value.object.Kind == domain.NetworkNAT {
+				attempted = true
+				if err = d.executor.Run(ctx, d.ip, "link", "delete", value.runtimeName); err == nil {
+					return nil
+				} else if !missingLinkError(err) {
+					cleanupErrors = append(cleanupErrors, err)
+				}
 				continue
 			}
 			cleanupErrors = append(cleanupErrors, err)

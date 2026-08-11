@@ -8,6 +8,7 @@ import (
 
 	"github.com/netlab/netlab/internal/domain"
 	"github.com/netlab/netlab/internal/runtime/linuxnet"
+	"github.com/netlab/netlab/internal/runtime/ownership"
 )
 
 type bridgeL3CleanupExecutor struct {
@@ -36,14 +37,15 @@ func TestBridgeToL3CleanupCompletesTwentyCyclesWithoutNamespaceLeak(t *testing.T
 		if err = runtime.DeleteNetworkObjectLink(context.Background(), link, bridge, l3); err != nil {
 			t.Fatalf("cycle %d: %v", cycle, err)
 		}
+		want := "ip link delete " + ownership.Name("nva", link.ID, 15)
+		if executor.commands[len(executor.commands)-1] != want {
+			t.Fatalf("cycle %d cleanup=%q want=%q", cycle, executor.commands[len(executor.commands)-1], want)
+		}
 	}
 	if len(executor.commands) != 20 {
 		t.Fatalf("cleanup commands=%d want=20: %v", len(executor.commands), executor.commands)
 	}
 	for _, command := range executor.commands {
-		if !strings.Contains(command, "-n "+linuxnet.SwitchL3NamespaceName(l3.ID)+" link delete eth0") {
-			t.Fatalf("unexpected cleanup command: %s", command)
-		}
 		if strings.Contains(command, "plain-bridge") || strings.Contains(command, "netns delete") {
 			t.Fatalf("plain bridge entered namespace cleanup: %s", command)
 		}

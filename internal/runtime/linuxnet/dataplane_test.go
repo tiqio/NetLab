@@ -178,6 +178,39 @@ func TestNetworkObjectLinkCreatesDirectNamespaceVethPair(t *testing.T) {
 	}
 }
 
+func TestNetworkObjectLinkConnectsHostBridgeToNamespace(t *testing.T) {
+	executor := &dataPlaneExecutor{}
+	runtime, _ := NewDataPlane(executor)
+	link := domain.NetworkObjectLink{ID: "bridge-l3", ObjectAID: "bridge", PortAName: "uplink0", ObjectBID: "l3", PortBName: "eth2"}
+	bridge := domain.NetworkObject{ID: "bridge", Kind: domain.NetworkBridge}
+	bridgeName, err := NetworkBridgeName(bridge)
+	if err != nil {
+		t.Fatal(err)
+	}
+	l3 := domain.NetworkObject{ID: "l3", Kind: domain.NetworkSwitchL3, Config: map[string]any{
+		"interfaces": []any{map[string]any{"name": "eth2", "addresses": []any{}}},
+	}}
+	if err := runtime.EnsureNetworkObjectLink(context.Background(), link, bridge, l3); err != nil {
+		t.Fatal(err)
+	}
+	commands := strings.Join(executor.commands, "\n")
+	hostEnd := ownership.Name("nva", link.ID, 15)
+	for _, expected := range []string{
+		"type veth peer name",
+		hostEnd + " master " + bridgeName,
+		hostEnd + " up",
+		"netns " + SwitchL3NamespaceName(l3.ID),
+		"name " + link.PortBName,
+	} {
+		if !strings.Contains(commands, expected) {
+			t.Fatalf("missing %q in %s", expected, commands)
+		}
+	}
+	if strings.Contains(commands, "-n "+bridgeName) {
+		t.Fatalf("host bridge was treated as a namespace: %s", commands)
+	}
+}
+
 func TestNetworkObjectLinkPreparesBothEndsBeforeApplyingPCConfiguration(t *testing.T) {
 	executor := &dataPlaneExecutor{}
 	runtime, _ := NewDataPlane(executor)
@@ -261,7 +294,10 @@ func TestDeleteNetworkObjectLinkSkipsNamespaceCleanupForPlainBridge(t *testing.T
 	if strings.Contains(commands, "nlbr") {
 		t.Fatalf("plain bridge was treated as namespace-backed: %s", commands)
 	}
-	if !strings.Contains(commands, "ip -n "+SwitchL3NamespaceName(l3.ID)+" link delete eth2") {
-		t.Fatalf("namespace endpoint was not cleaned: %s", commands)
+	if !strings.Contains(commands, "ip link delete "+ownership.Name("nva", link.ID, 15)) {
+		t.Fatalf("owned host bridge endpoint was not cleaned: %s", commands)
+	}
+	if strings.Contains(commands, "ip -n "+SwitchL3NamespaceName(l3.ID)+" link delete eth2") {
+		t.Fatalf("peer cleanup continued after deleting the host veth endpoint: %s", commands)
 	}
 }
