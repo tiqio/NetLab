@@ -286,6 +286,13 @@ func (d *DataPlane) AttachNamespace(ctx context.Context, attachment domain.Netwo
 		}
 		hostErr, portErr = errors.New("missing"), errors.New("missing")
 	}
+	if hostErr == nil && portErr == nil {
+		hostState, _ := d.executor.Output(ctx, d.ip, "-d", "link", "show", host)
+		interfaceState, _ := d.executor.Output(ctx, d.ip, "-d", "link", "show", HostInterfaceName(iface.ID))
+		if strings.Contains(string(hostState), "LOWER_UP") && strings.Contains(string(hostState), "master "+bridge) && strings.Contains(string(interfaceState), "master "+bridge) {
+			return nil
+		}
+	}
 	if err := d.executor.Run(ctx, d.ip, "link", "add", bridge, "type", "bridge"); err != nil {
 		if _, inspectErr := d.executor.Output(ctx, d.ip, "link", "show", bridge); inspectErr != nil {
 			return err
