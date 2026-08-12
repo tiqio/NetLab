@@ -89,9 +89,39 @@ func TestNetworkObjectLinkDoesNotReattachHealthyEndpoints(t *testing.T) {
 		hostEndpoint + " master " + bridgeName,
 		"link set uplink0 up",
 		"link set " + hostEndpoint + " up",
+		"address replace",
+		"sysctl",
 	} {
 		if strings.Contains(commands, disruptive) {
 			t.Fatalf("healthy endpoint was reattached with %q in %s", disruptive, commands)
+		}
+	}
+}
+
+func TestHealthyL3ObjectLinkDoesNotReplayAddresses(t *testing.T) {
+	link := domain.NetworkObjectLink{ID: "healthy-l3-link", ObjectAID: "l3", PortAName: "eth0", ObjectBID: "pc", PortBName: "eth0"}
+	l3 := domain.NetworkObject{ID: "l3", Kind: domain.NetworkSwitchL3, Config: map[string]any{
+		"interfaces": []any{map[string]any{"name": "eth0", "addresses": []any{"192.0.2.1/24"}}},
+	}}
+	pc := domain.NetworkObject{ID: "pc", Kind: domain.NetworkPC, Config: map[string]any{
+		"interfaces": []any{map[string]any{"name": "eth0", "modes": []any{"static"}, "addresses": []any{"192.0.2.2/24"}}},
+	}}
+	l3Namespace := SwitchL3NamespaceName(l3.ID)
+	pcNamespace := ownership.Name("nlpc", pc.ID, 15)
+	executor := &dataPlaneExecutor{outputs: map[string]string{
+		"ip -n " + l3Namespace + " link show eth0":    "exists",
+		"ip -n " + pcNamespace + " link show eth0":    "exists",
+		"ip -n " + l3Namespace + " -d link show eth0": "1: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP>",
+		"ip -n " + pcNamespace + " -d link show eth0": "2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP>",
+	}}
+	runtime, _ := NewDataPlane(executor)
+	if err := runtime.EnsureNetworkObjectLink(context.Background(), link, l3, pc); err != nil {
+		t.Fatal(err)
+	}
+	commands := strings.Join(executor.commands, "\n")
+	for _, disruptive := range []string{"address replace", "address flush", "route replace", "route flush", "sysctl", "link set eth0 up"} {
+		if strings.Contains(commands, disruptive) {
+			t.Fatalf("healthy endpoints replayed %q in %s", disruptive, commands)
 		}
 	}
 }

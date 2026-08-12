@@ -151,8 +151,12 @@ func (r *DataPlaneReconciler) Reconcile(ctx context.Context) (err error) {
 				}
 				_ = r.store.SetNetworkAttachmentState(ctx, attachment.ID, "active", nil)
 				_ = r.store.SetInterfaceOperationalState(ctx, attachment.InterfaceID, "up")
-				if err = r.reconcileDependentObject(ctx, object); err != nil {
-					problem := structuredProblem(err, domain.Problem{Code: "l3_post_attachment_reconcile_failed", Retryable: true, ResourceType: "network_attachment", ResourceID: attachment.ID, Phase: "post_attachment_l3_reconcile", Cleanup: "attachment remains connected for retry", OperatorHint: "inspect L3 addresses and routes then retry reconciliation", RetryAfterSeconds: 2})
+				var dependentErr error
+				if attachment.ObservedState != "active" || object.ObservedState == "pending" {
+					dependentErr = r.reconcileDependentObject(ctx, object)
+				}
+				if dependentErr != nil {
+					problem := structuredProblem(dependentErr, domain.Problem{Code: "l3_post_attachment_reconcile_failed", Retryable: true, ResourceType: "network_attachment", ResourceID: attachment.ID, Phase: "post_attachment_l3_reconcile", Cleanup: "attachment remains connected for retry", OperatorHint: "inspect L3 addresses and routes then retry reconciliation", RetryAfterSeconds: 2})
 					_ = r.store.SetNetworkAttachmentState(ctx, attachment.ID, "failed", problem)
 				}
 			}
@@ -190,6 +194,9 @@ func (r *DataPlaneReconciler) Reconcile(ctx context.Context) (err error) {
 				continue
 			}
 			_ = r.store.SetNetworkObjectLinkState(ctx, link.ID, "connected", nil)
+			if link.ObservedState == "connected" && objectA.ObservedState != "pending" && objectB.ObservedState != "pending" {
+				continue
+			}
 			for _, object := range []domain.NetworkObject{objectA, objectB} {
 				if err = r.reconcileDependentObject(ctx, object); err != nil {
 					problem := structuredProblem(err, domain.Problem{Code: "l3_post_link_reconcile_failed", Retryable: true, ResourceType: "network_object_link", ResourceID: link.ID, Phase: "post_link_l3_reconcile", Cleanup: "link remains connected for retry", OperatorHint: "inspect L3 addresses and routes then retry reconciliation", RetryAfterSeconds: 2})

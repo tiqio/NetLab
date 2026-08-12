@@ -74,6 +74,17 @@ func (d *DataPlane) EnsureNetworkObjectLink(ctx context.Context, link domain.Net
 	_, errA := d.executor.Output(ctx, d.ip, endpointA.inspectArgs()...)
 	_, errB := d.executor.Output(ctx, d.ip, endpointB.inspectArgs()...)
 	if errA == nil && errB == nil {
+		preparedA, err := d.networkObjectLinkEndpointPrepared(ctx, endpointA)
+		if err != nil {
+			return err
+		}
+		preparedB, err := d.networkObjectLinkEndpointPrepared(ctx, endpointB)
+		if err != nil {
+			return err
+		}
+		if preparedA && preparedB {
+			return nil
+		}
 		if err := d.prepareNetworkObjectLinkEndpoint(ctx, endpointA); err != nil {
 			return err
 		}
@@ -128,6 +139,27 @@ func (d *DataPlane) EnsureNetworkObjectLink(ctx context.Context, link domain.Net
 		return err
 	}
 	return d.configureNetworkObjectLinkEndpoint(ctx, endpointB)
+}
+
+func (d *DataPlane) networkObjectLinkEndpointPrepared(ctx context.Context, endpoint networkObjectLinkEndpointSpec) (bool, error) {
+	args := []string{"-d", "link", "show", endpoint.runtimeName}
+	master := endpoint.hostBridge
+	if endpoint.namespace != "" {
+		args = []string{"-n", endpoint.namespace, "-d", "link", "show", endpoint.portName}
+		if endpoint.object.Kind == domain.NetworkSwitchL2 {
+			master = "br0"
+		} else {
+			master = ""
+		}
+	}
+	state, err := d.executor.Output(ctx, d.ip, args...)
+	if err != nil {
+		return false, err
+	}
+	if !linkIsUp(state) {
+		return false, nil
+	}
+	return master == "" || strings.Contains(string(state), "master "+master), nil
 }
 
 type networkObjectLinkEndpointSpec struct {

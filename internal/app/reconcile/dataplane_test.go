@@ -104,14 +104,14 @@ func TestDataPlaneReconcilesL3AfterLateAttachmentAndObjectLink(t *testing.T) {
 	store := &dataPlaneStoreFake{
 		lab:             domain.Laboratory{ID: "lab", LifecycleState: "active"},
 		interfaceStates: map[domain.ID]string{},
-		attachments:     []domain.NetworkAttachment{{ID: "attachment", InterfaceID: "if-1", NetworkObjectID: "l3-a", PortName: "eth0", Revision: 1}},
+		attachments:     []domain.NetworkAttachment{{ID: "attachment", InterfaceID: "if-1", NetworkObjectID: "l3-a", PortName: "eth0", Revision: 1, ObservedState: "pending"}},
 		snapshot: domain.TopologySnapshot{
 			Interfaces: []domain.Interface{{ID: "if-1", NodeID: "node"}},
 			NetworkObjects: []domain.NetworkObject{
 				{ID: "l3-a", Kind: domain.NetworkSwitchL3, Revision: 2, ObservedState: "active"},
 				{ID: "l3-b", Kind: domain.NetworkSwitchL3, Revision: 3, ObservedState: "active"},
 			},
-			NetworkObjectLinks: []domain.NetworkObjectLink{{ID: "object-link", ObjectAID: "l3-a", PortAName: "eth1", ObjectBID: "l3-b", PortBName: "eth0", DesiredState: "connected"}},
+			NetworkObjectLinks: []domain.NetworkObjectLink{{ID: "object-link", ObjectAID: "l3-a", PortAName: "eth1", ObjectBID: "l3-b", PortBName: "eth0", DesiredState: "connected", ObservedState: "pending"}},
 		},
 	}
 	runtime := &dataPlaneRuntimeFake{}
@@ -129,6 +129,35 @@ func TestDataPlaneReconcilesL3AfterLateAttachmentAndObjectLink(t *testing.T) {
 		if objects.ids[index] != want[index] {
 			t.Fatalf("reconciled=%v want=%v", objects.ids, want)
 		}
+	}
+}
+
+func TestDataPlaneDoesNotReconfigureHealthyDependentObjects(t *testing.T) {
+	store := &dataPlaneStoreFake{
+		lab:             domain.Laboratory{ID: "lab", LifecycleState: "active"},
+		interfaceStates: map[domain.ID]string{},
+		attachments:     []domain.NetworkAttachment{{ID: "attachment", InterfaceID: "if-1", NetworkObjectID: "l3-a", PortName: "eth0", Revision: 1, ObservedState: "active"}},
+		snapshot: domain.TopologySnapshot{
+			Interfaces: []domain.Interface{{ID: "if-1", NodeID: "node"}},
+			NetworkObjects: []domain.NetworkObject{
+				{ID: "l3-a", Kind: domain.NetworkSwitchL3, Revision: 2, ObservedState: "active"},
+				{ID: "l3-b", Kind: domain.NetworkSwitchL3, Revision: 3, ObservedState: "active"},
+			},
+			NetworkObjectLinks: []domain.NetworkObjectLink{{ID: "object-link", ObjectAID: "l3-a", PortAName: "eth1", ObjectBID: "l3-b", PortBName: "eth0", DesiredState: "connected", ObservedState: "connected"}},
+		},
+	}
+	runtime := &dataPlaneRuntimeFake{}
+	objects := &dependentObjectReconcilerFake{}
+	reconciler := NewDataPlaneReconciler(store, runtime)
+	reconciler.SetNetworkObjectReconciler(objects)
+	if err := reconciler.Reconcile(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if len(objects.ids) != 0 {
+		t.Fatalf("healthy dependent objects were reconfigured: %v", objects.ids)
+	}
+	if runtime.objectLinkEnsureCalls != 1 {
+		t.Fatalf("healthy link was not inspected: %d", runtime.objectLinkEnsureCalls)
 	}
 }
 
