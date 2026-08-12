@@ -228,13 +228,13 @@
 - [X] T116 Add a complete temporary-lab acceptance journey covering US1–US5 and automatic cleanup in `tests/e2e/network_path_recovery.spec.ts`
 - [X] T117 Run `go test ./...`, `go vet ./...`, frontend tests, production build, lint, formatting, privileged integration, recovery and leak gates and record exact results in `specs/011-network-path-recovery/validation/final-local.md`
 - [X] T118 Commit final cross-story validation and documentation as a focused Git commit and record the clean commit SHA in `specs/011-network-path-recovery/validation/milestones.md`
-- [ ] T119 Build the deployment artifact from the clean commit and record candidate ID, binary digest, contract digest and migration 16 state in `specs/011-network-path-recovery/validation/deployment.md`
-- [ ] T120 Create and verify the target rollback directory with previous binary, configuration, readiness identity and online SQLite backup and record it in `specs/011-network-path-recovery/validation/deployment.md`
-- [ ] T121 Deploy the identified artifact to `10.72.1.7` without editing target source and verify service health, release identity and database integrity in `specs/011-network-path-recovery/validation/deployment.md`
-- [ ] T122 Remove the known stuck object link and repair the existing component-matrix desired topology through revisioned authoritative operations recorded in `specs/011-network-path-recovery/validation/target-repair.md`
-- [ ] T123 Run 10 service restarts, 20 cleanup cycles, six-QEMU health, BusyBox/VyOS dual-stack, VLAN trunk, vendor path and 10-minute traffic-filter acceptance on the target and record results in `specs/011-network-path-recovery/validation/target-acceptance.md`
-- [ ] T124 Run target Chromium validation for diagnostics, warnings, VLAN editor, workload panel, non-zero counters, fingerprints and highlight decay and record screenshots/evidence references in `specs/011-network-path-recovery/validation/target-browser.md`
-- [ ] T125 Verify final namespace/interface/bridge/route/rule/socket/process/capture/workload leak baselines and rollback integrity in `specs/011-network-path-recovery/validation/target-cleanup.md`
+- [X] T119 Build the deployment artifact from the clean commit and record candidate ID, binary digest, contract digest and migration 16 state in `specs/011-network-path-recovery/validation/deployment.md`
+- [X] T120 Create and verify the target rollback directory with previous binary, configuration, readiness identity and online SQLite backup and record it in `specs/011-network-path-recovery/validation/deployment.md`
+- [X] T121 Deploy the identified artifact to `10.72.1.7` without editing target source and verify service health, release identity and database integrity in `specs/011-network-path-recovery/validation/deployment.md`
+- [X] T122 Remove the known stuck object link and repair the existing component-matrix desired topology through revisioned authoritative operations recorded in `specs/011-network-path-recovery/validation/target-repair.md`
+- [X] T123 Run 10 service restarts, 20 cleanup cycles, six-QEMU health, BusyBox/VyOS dual-stack, VLAN trunk, vendor path and 10-minute traffic-filter acceptance on the target and record results in `specs/011-network-path-recovery/validation/target-acceptance.md`
+- [X] T124 Run target Chromium validation for diagnostics, warnings, VLAN editor, workload panel, non-zero counters, fingerprints and highlight decay and record screenshots/evidence references in `specs/011-network-path-recovery/validation/target-browser.md`
+- [X] T125 Verify final namespace/interface/bridge/route/rule/socket/process/capture/workload leak baselines and rollback integrity in `specs/011-network-path-recovery/validation/target-cleanup.md`
 - [ ] T126 Commit deployment and target-acceptance records, push `main`, and confirm the authoritative target reports the recorded clean candidate in `specs/011-network-path-recovery/validation/milestones.md`
 
 ---
