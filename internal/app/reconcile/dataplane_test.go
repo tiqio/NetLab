@@ -153,6 +153,54 @@ func TestDataPlaneReconcilesL2AfterLateAttachment(t *testing.T) {
 	}
 }
 
+func TestDataPlaneConnectsPendingL2ObjectSoLatePortsCanConverge(t *testing.T) {
+	store := &dataPlaneStoreFake{
+		lab:             domain.Laboratory{ID: "lab", LifecycleState: "active"},
+		interfaceStates: map[domain.ID]string{},
+		snapshot: domain.TopologySnapshot{
+			NetworkObjects: []domain.NetworkObject{
+				{ID: "l2", Kind: domain.NetworkSwitchL2, Revision: 2, ObservedState: "pending"},
+				{ID: "pc", Kind: domain.NetworkPC, Revision: 1, ObservedState: "active"},
+			},
+			NetworkObjectLinks: []domain.NetworkObjectLink{{ID: "late-port", ObjectAID: "l2", PortAName: "access0", ObjectBID: "pc", PortBName: "eth0", DesiredState: "connected"}},
+		},
+	}
+	runtime := &dataPlaneRuntimeFake{}
+	objects := &dependentObjectReconcilerFake{}
+	reconciler := NewDataPlaneReconciler(store, runtime)
+	reconciler.SetNetworkObjectReconciler(objects)
+	if err := reconciler.Reconcile(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if runtime.objectLinkEnsureCalls != 1 {
+		t.Fatalf("pending L2 link ensure calls=%d", runtime.objectLinkEnsureCalls)
+	}
+	if len(objects.ids) != 1 || objects.ids[0] != "l2" {
+		t.Fatalf("pending L2 was not reconciled after port arrival: %v", objects.ids)
+	}
+}
+
+func TestDataPlaneDoesNotConnectFailedL2Object(t *testing.T) {
+	store := &dataPlaneStoreFake{
+		lab:             domain.Laboratory{ID: "lab", LifecycleState: "active"},
+		interfaceStates: map[domain.ID]string{},
+		snapshot: domain.TopologySnapshot{
+			NetworkObjects: []domain.NetworkObject{
+				{ID: "l2", Kind: domain.NetworkSwitchL2, ObservedState: "failed"},
+				{ID: "pc", Kind: domain.NetworkPC, ObservedState: "active"},
+			},
+			NetworkObjectLinks: []domain.NetworkObjectLink{{ID: "blocked", ObjectAID: "l2", ObjectBID: "pc", DesiredState: "connected"}},
+		},
+	}
+	runtime := &dataPlaneRuntimeFake{}
+	if err := NewDataPlaneReconciler(store, runtime).Reconcile(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if runtime.objectLinkEnsureCalls != 0 {
+		t.Fatalf("failed L2 unexpectedly connected: %d", runtime.objectLinkEnsureCalls)
+	}
+}
+
 func TestDataPlaneCompensatesPartialConnectionCreationFailures(t *testing.T) {
 	tests := []struct {
 		name    string

@@ -54,6 +54,13 @@ func NewDataPlaneReconciler(store DataPlaneStore, runtime DataPlaneRuntime) *Dat
 	return &DataPlaneReconciler{store: store, runtime: runtime}
 }
 
+func networkObjectLinkEndpointReady(object domain.NetworkObject) bool {
+	if object.ObservedState == "active" {
+		return true
+	}
+	return object.Kind == domain.NetworkSwitchL2 && object.ObservedState == "pending"
+}
+
 func (r *DataPlaneReconciler) Name() string { return "data-plane" }
 
 func (r *DataPlaneReconciler) Reconcile(ctx context.Context) (err error) {
@@ -167,7 +174,7 @@ func (r *DataPlaneReconciler) Reconcile(ctx context.Context) (err error) {
 			}
 			objectA, aExists := objects[link.ObjectAID]
 			objectB, bExists := objects[link.ObjectBID]
-			if !aExists || !bExists || objectA.ObservedState != "active" || objectB.ObservedState != "active" {
+			if !aExists || !bExists || !networkObjectLinkEndpointReady(objectA) || !networkObjectLinkEndpointReady(objectB) {
 				_ = r.store.SetNetworkObjectLinkState(ctx, link.ID, "pending", nil)
 				continue
 			}
