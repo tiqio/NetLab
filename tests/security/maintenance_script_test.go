@@ -175,3 +175,30 @@ func TestMaintenanceBackupResetRestoreAndPrune(t *testing.T) {
 		t.Fatal("vacuum replacement failed integrity check")
 	}
 }
+
+func TestNetworkPathHostRestartScriptUsesArgvSafeGuestExec(t *testing.T) {
+	body, err := os.ReadFile("../../acceptance/network-path-host-restart.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(body)
+	for _, required := range []string{
+		"guest-exec",
+		"jq -nc --arg destination",
+		`argv:["ping"`,
+		"candidate changed across restart",
+	} {
+		if !strings.Contains(text, required) {
+			t.Fatalf("network path restart script missing %q", required)
+		}
+	}
+	for _, forbidden := range []string{"sh -c", "bash -c", "eval"} {
+		if strings.Contains(text, forbidden) {
+			t.Fatalf("network path restart script contains unsafe execution pattern %q", forbidden)
+		}
+	}
+	command := exec.Command("bash", "-n", "../../acceptance/network-path-host-restart.sh")
+	if output, err := command.CombinedOutput(); err != nil {
+		t.Fatalf("network path restart script syntax: %v: %s", err, output)
+	}
+}
