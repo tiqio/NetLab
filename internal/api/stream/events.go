@@ -22,6 +22,10 @@ const (
 	EventCaptureStateChanged               = events.EventCaptureStateChanged
 	EventCaptureCompleted                  = events.EventCaptureCompleted
 	EventTrafficFilterObservation          = events.EventTrafficFilterObservation
+	EventTrafficWorkloadCreated            = "traffic_workload.created"
+	EventTrafficWorkloadUpdated            = "traffic_workload.updated"
+	EventTrafficWorkloadOutcome            = "traffic_workload.outcome"
+	EventTrafficWorkloadDeleted            = "traffic_workload.deleted"
 )
 
 type EventHandler struct {

@@ -207,6 +207,7 @@ func (s *TrafficWorkloadService) handleDelete(ctx context.Context, operation *do
 }
 
 func trafficWorkloadFingerprint(workload domain.TrafficWorkload) string {
+	workload.ID = ""
 	workload.Revision = 0
 	workload.Attempts = 0
 	workload.Successes = 0

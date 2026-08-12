@@ -134,6 +134,24 @@ func TestTrafficWorkloadCreateIsDurableAndIdempotent(t *testing.T) {
 	}
 }
 
+func TestTrafficWorkloadCreateReplayWithoutClientSuppliedID(t *testing.T) {
+	repository := newTrafficWorkloadRepositoryFake()
+	store := newTopologyTaskStore()
+	runner := task.NewRunner(store, 1, 8)
+	defer runner.Close()
+	service := NewTrafficWorkloadService(repository, runner)
+	workload := testTrafficWorkload("")
+	first, err := service.Create(context.Background(), workload, "generated-id-key")
+	if err != nil {
+		t.Fatal(err)
+	}
+	waitTrafficTask(t, store, first.ID, domain.TaskSucceeded)
+	second, err := service.Create(context.Background(), workload, "generated-id-key")
+	if err != nil || second.ID != first.ID || second.ResourceID != first.ResourceID {
+		t.Fatalf("first=%+v second=%+v err=%v", first, second, err)
+	}
+}
+
 func TestTrafficWorkloadStateDeleteAndRevisionConflicts(t *testing.T) {
 	repository := newTrafficWorkloadRepositoryFake()
 	repository.workloads["workload"] = testTrafficWorkload("workload")

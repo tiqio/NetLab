@@ -159,6 +159,7 @@ func main() {
 	exportService := command.NewExportService(topologyRepository, artifactService)
 	importService := command.NewImportService(topologyRepository, templateRepository)
 	automationTasks := command.NewAutomationTaskService(exportService, importService, taskRunner)
+	trafficWorkloads := command.NewTrafficWorkloadService(repositories, taskRunner)
 	httpapi.NewArtifactHandlers(artifactService).Register(server.Engine())
 	httpapi.NewClientToolsHandlers(cfg.StateDir).Register(server.Engine())
 	automationHandlers := httpapi.NewAutomationHandlers(taskQueries, exportService, importService, automationTasks, auditService)
@@ -181,6 +182,7 @@ func main() {
 	captureTasks := reconcile.NewCaptureTaskService(captureManager, trafficFilterManager, taskRunner)
 	captureManager.SetObserver(trafficFilterManager.ObserveManagedCapture)
 	httpapi.NewCaptureHandlers(captureManager, trafficFilterManager, captureTasks).Register(server.Engine())
+	httpapi.NewTrafficWorkloadHandlers(trafficWorkloads).Register(server.Engine())
 	pcRuntime, pcRuntimeErr := linuxnet.NewPCRuntime(nil)
 	if pcRuntimeErr != nil {
 		logger.Warn("PC runtime unavailable", "error", pcRuntimeErr)
@@ -253,6 +255,7 @@ func main() {
 	}
 	deviceReadiness := query.NewDeviceReadinessService(topologyRepository, topologyRepository, repositories)
 	mcpTools := mcp.Tools(mcp.Services{Labs: labCommands, LabQueries: labQueries, Templates: templateQueries, Nodes: nodeCommands, NodeSettings: topologyRepository, Links: linkCommands, TopologyOps: topologyTasks, LabOps: laboratoryTasks, Interfaces: interfaceCommands, Guest: guestCommands, Mappings: portMappingCommands, Tasks: taskQueries, Exporter: exportService, Importer: importService, Automation: automationTasks, Captures: captureManager, Filters: trafficFilterManager, CaptureOps: captureTasks, Capabilities: capabilityQueries, DeviceReadiness: deviceReadiness, ConsoleIdle: consoleLimits.IdleTimeout})
+	mcpTools = append(mcpTools, mcp.TrafficWorkloadTools(trafficWorkloads)...)
 	mcpTools = append(mcpTools, mcp.NetworkTools(networkService, networkTasks)...)
 	mcpTools = append(mcpTools, mcp.TopologyConnectionTools(topologyConnections, repositories)...)
 	mcpTools = append(mcpTools, mcp.TopologyPlacementTools(placementCommands)...)
@@ -283,6 +286,15 @@ func main() {
 			consoleHandlers.SetDockerConsole(dockerAdapter)
 			nodeOperationHandlers.SetNetworkDiagnostics(dockerAdapter)
 		}
+		workloadRuntime := linuxnet.NewTrafficWorkloadRuntime(nil, nil, func(execCtx context.Context, node domain.Node, argv []string, timeout time.Duration, outputLimit int) (linuxnet.TrafficWorkloadGuestResult, error) {
+			if qemuAdapter == nil {
+				return linuxnet.TrafficWorkloadGuestResult{}, domain.Problem{Code: domain.ProblemCodeCapabilityUnavailable, Message: "QEMU guest execution is unavailable", Retryable: true, ResourceType: "node", ResourceID: node.ID}
+			}
+			result, execErr := qemuAdapter.GuestExec(execCtx, node, qemuruntime.GuestExecRequest{Argv: argv, Timeout: timeout, OutputLimit: outputLimit})
+			return linuxnet.TrafficWorkloadGuestResult{ExitCode: result.ExitCode, Stdout: result.Stdout, Stderr: result.Stderr, Truncated: result.Truncated}, execErr
+		})
+		workloadResolver := linuxnet.NewTrafficWorkloadTargetResolver(topologyRepository, repositories)
+		workloadReconciler := reconcile.NewTrafficWorkloadReconciler(repositories, workloadResolver, workloadRuntime, trafficFilterManager)
 		topologyTasks.SetNodeDeletionRuntime("pc", endpointRuntime)
 		topologyTasks.SetNodeDeletionRuntime("switch_l2", endpointRuntime)
 		topologyTasks.SetNodeDeletionRuntime("switch_l3", endpointRuntime)
@@ -349,6 +361,7 @@ func main() {
 		} else if _, adoptErr := recovery.Execute(ctx, "service_restart", nil); adoptErr != nil {
 			logger.Error("service restart adoption failed", "error", adoptErr)
 		}
+		workloadReconciler.Start(ctx)
 		coordinator := reconcile.NewCoordinator(2*time.Second, logger, reconcilers...)
 		coordinator.Start(ctx)
 		defer coordinator.Close()

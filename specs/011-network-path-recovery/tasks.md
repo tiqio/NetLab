@@ -189,8 +189,8 @@
 - [X] T089 [P] [US5] Write failing migration and repository tests for workload persistence, revisions and aggregate updates in `internal/store/sqlite/traffic_workload_repository_test.go`
 - [X] T090 [P] [US5] Write failing durable-task tests for create/start/stop/delete, cancellation, idempotency and recovery in `internal/app/command/traffic_workload_test.go`
 - [X] T091 [P] [US5] Write failing runtime adapter tests for namespace, Docker and QGA workload execution allowlists, timeouts and output bounds in `internal/runtime/linuxnet/traffic_workload_test.go`
-- [ ] T092 [P] [US5] Write failing HTTP contract tests for all workload endpoints and structured failures in `internal/api/http/traffic_workload_contract_test.go`
-- [ ] T093 [P] [US5] Write failing MCP parity tests for workload lifecycle and aggregate reads in `internal/api/mcp/traffic_workload_tools_test.go`
+- [X] T092 [P] [US5] Write failing HTTP contract tests for all workload endpoints and structured failures in `internal/api/http/traffic_workload_contract_test.go`
+- [X] T093 [P] [US5] Write failing MCP parity tests for workload lifecycle and aggregate reads in `internal/api/mcp/traffic_workload_tools_test.go`
 - [X] T094 [P] [US5] Write failing Traffic Filter correlation tests for successful versus failed workload attempts in `internal/app/reconcile/traffic_filters_test.go`
 - [X] T095 [P] [US5] Write failing workload restart and orphan-task recovery tests in `tests/recovery/traffic_workload_recovery_test.go`
 - [ ] T096 [P] [US5] Write failing 10-minute ICMP/HTTP/DNS privileged observation test in `tests/integration/traffic_workload_filter_test.go`
@@ -205,10 +205,10 @@
 - [X] T102 [US5] Implement capability-specific namespace, Docker and QGA workload execution with safe argv and bounded output in `internal/runtime/linuxnet/traffic_workload.go`
 - [X] T103 [US5] Implement workload scheduling, aggregate updates, cancellation and startup recovery in `internal/app/reconcile/traffic_workloads.go`
 - [X] T104 [US5] Correlate successful workload observations with existing filter resources without duplicating packet counters in `internal/app/reconcile/traffic_filters.go`
-- [ ] T105 [US5] Register workload repositories, tasks, reconciler and runtime adapters in `cmd/netlabd/main.go`
-- [ ] T106 [US5] Add workload list/create/get/state/delete HTTP handlers in `internal/api/http/traffic_workload_handlers.go`
-- [ ] T107 [US5] Add equivalent workload MCP tools and schemas in `internal/api/mcp/traffic_workload_tools.go`
-- [ ] T108 [US5] Publish ordered workload lifecycle and aggregate stream events in `internal/api/stream/events.go`
+- [X] T105 [US5] Register workload repositories, tasks, reconciler and runtime adapters in `cmd/netlabd/main.go`
+- [X] T106 [US5] Add workload list/create/get/state/delete HTTP handlers in `internal/api/http/traffic_workload_handlers.go`
+- [X] T107 [US5] Add equivalent workload MCP tools and schemas in `internal/api/mcp/traffic_workload_tools.go`
+- [X] T108 [US5] Publish ordered workload lifecycle and aggregate stream events in `internal/api/stream/events.go`
 - [ ] T109 [US5] Add workload API client and Pinia state convergence in `web/src/api/client.ts` and `web/src/stores/trafficWorkloads.ts`
 - [ ] T110 [US5] Implement localized workload creation, lifecycle, aggregates and degraded-state UI in `web/src/features/topology/TrafficWorkloadPanel.vue`
 - [ ] T111 [US5] Integrate workload statistics with Traffic Filter details and topology highlight overlays in `web/src/features/topology/TopologyWorkspace.vue`
