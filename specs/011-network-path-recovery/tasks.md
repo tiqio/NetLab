@@ -169,9 +169,9 @@
 - [X] T082 [US4] Expose device role and readiness diagnostics through existing node endpoints in `internal/api/http/node_operations_handlers.go`
 - [X] T083 [US4] Add equivalent MCP read/update behavior in `internal/api/mcp/node_tools.go`
 - [X] T084 [US4] Implement localized role editing and four-level readiness presentation in `web/src/features/diagnostics/DeviceReadinessPanel.vue`
-- [ ] T085 [US4] Attach FancyWAN/FortiGate management and LAN/WAN networks and record operator-authorized guest prerequisites in `specs/011-network-path-recovery/validation/fancywan-fortigate.md`
-- [ ] T086 [US4] Attach Ruijie Switch client and Ruijie Router routed paths and record operator-authorized guest prerequisites in `specs/011-network-path-recovery/validation/ruijie-path.md`
-- [ ] T087 [US4] Run US4 contract, UI, vendor path and restart gates, record results in `specs/011-network-path-recovery/validation/us4-vendor.md`, and commit the milestone with a focused Git commit
+- [X] T085 [US4] Attach FancyWAN/FortiGate management and LAN/WAN networks and record operator-authorized guest prerequisites in `specs/011-network-path-recovery/validation/fancywan-fortigate.md`
+- [X] T086 [US4] Attach Ruijie Switch client and Ruijie Router routed paths and record operator-authorized guest prerequisites in `specs/011-network-path-recovery/validation/ruijie-path.md`
+- [X] T087 [US4] Run US4 contract, UI, vendor path and restart gates, record results in `specs/011-network-path-recovery/validation/us4-vendor.md`, and commit the milestone with a focused Git commit
 
 **Checkpoint**: User Story 4 independently distinguishes physical attachment from usable appliance behavior.
 
