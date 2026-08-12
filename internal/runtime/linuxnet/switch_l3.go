@@ -71,7 +71,7 @@ func (r *SwitchL3Runtime) DiagnosticsObject(ctx context.Context, object domain.N
 		}
 	}
 	desiredRoutes := routeKeys(desired.Routes)
-	if strings.Join(desiredRoutes, ",") != strings.Join(observedRoutes, ",") {
+	if !containsAllRouteKeys(observedRoutes, desiredRoutes) {
 		mismatches = append(mismatches, fmt.Sprintf("routes desired=%v observed=%v", desiredRoutes, observedRoutes))
 	}
 	return map[string]any{
@@ -79,6 +79,15 @@ func (r *SwitchL3Runtime) DiagnosticsObject(ctx context.Context, object domain.N
 		"observed":   map[string]any{"forward_ipv4": observedForward4, "forward_ipv6": observedForward6, "interfaces": observedInterfaces, "routes": observedRoutes},
 		"mismatches": mismatches,
 	}, nil
+}
+
+func (r *SwitchL3Runtime) ConfigurationConverged(ctx context.Context, object domain.NetworkObject) (bool, map[string]any, error) {
+	diagnostics, err := r.DiagnosticsObject(ctx, object)
+	if err != nil {
+		return false, nil, err
+	}
+	mismatches, _ := diagnostics["mismatches"].([]string)
+	return len(mismatches) == 0, diagnostics, nil
 }
 
 func observedL3Interfaces(body []byte) map[string][]string {
@@ -128,6 +137,19 @@ func routeKeys(routes []domain.RouteConfig) []string {
 	return result
 }
 
+func containsAllRouteKeys(observed, desired []string) bool {
+	values := make(map[string]struct{}, len(observed))
+	for _, route := range observed {
+		values[route] = struct{}{}
+	}
+	for _, route := range desired {
+		if _, ok := values[route]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
 func NewSwitchL3Runtime(executor CommandExecutor) (*SwitchL3Runtime, error) {
 	if executor != nil {
 		return &SwitchL3Runtime{executor: executor, ip: "ip"}, nil
@@ -150,17 +172,27 @@ func (r *SwitchL3Runtime) Configure(ctx context.Context, object domain.NetworkOb
 	if err := ensureNamespace(ctx, r.executor, r.ip, namespace); err != nil {
 		return err
 	}
-	if err := r.executor.Run(ctx, r.ip, "-n", namespace, "route", "flush", "table", "main"); err != nil && !missingFIBTable(err) {
-		return err
-	}
-	if err := r.executor.Run(ctx, r.ip, "-n", namespace, "-6", "route", "flush", "table", "main"); err != nil && !missingFIBTable(err) {
-		return err
-	}
+	availableInterfaces := make(map[string]bool, len(config.Interfaces))
 	for _, iface := range config.Interfaces {
 		if !hostObjectName.MatchString(iface.Name) {
 			return fmt.Errorf("invalid L3 interface")
 		}
 		if _, err := r.executor.Output(ctx, r.ip, "-n", namespace, "link", "show", iface.Name); err != nil {
+			continue
+		}
+		availableInterfaces[iface.Name] = true
+	}
+	allInterfacesAvailable := len(availableInterfaces) == len(config.Interfaces)
+	if allInterfacesAvailable {
+		if err := r.executor.Run(ctx, r.ip, "-n", namespace, "route", "flush", "table", "main"); err != nil && !missingFIBTable(err) {
+			return err
+		}
+		if err := r.executor.Run(ctx, r.ip, "-n", namespace, "-6", "route", "flush", "table", "main"); err != nil && !missingFIBTable(err) {
+			return err
+		}
+	}
+	for _, iface := range config.Interfaces {
+		if !availableInterfaces[iface.Name] {
 			continue
 		}
 		_ = r.executor.Run(ctx, r.ip, "-n", namespace, "link", "set", iface.Name, "up")
@@ -173,21 +205,23 @@ func (r *SwitchL3Runtime) Configure(ctx context.Context, object domain.NetworkOb
 			}
 		}
 	}
-	for _, route := range config.Routes {
-		args := []string{"-n", namespace, "route", "replace", route.Destination}
-		prefix, _ := netip.ParsePrefix(route.Destination)
-		if prefix.Addr().Is6() {
-			args = []string{"-n", namespace, "-6", "route", "replace", route.Destination}
-		}
-		if route.Gateway != "" {
-			args = append(args, "via", route.Gateway)
-		}
-		if route.Metric > 0 {
-			args = append(args, "metric", strconv.Itoa(route.Metric))
-		}
-		if err := r.executor.Run(ctx, r.ip, args...); err != nil {
-			if retryErr := r.executor.Run(ctx, r.ip, args...); retryErr != nil {
-				return retryErr
+	if allInterfacesAvailable {
+		for _, route := range config.Routes {
+			args := []string{"-n", namespace, "route", "replace", route.Destination}
+			prefix, _ := netip.ParsePrefix(route.Destination)
+			if prefix.Addr().Is6() {
+				args = []string{"-n", namespace, "-6", "route", "replace", route.Destination}
+			}
+			if route.Gateway != "" {
+				args = append(args, "via", route.Gateway)
+			}
+			if route.Metric > 0 {
+				args = append(args, "metric", strconv.Itoa(route.Metric))
+			}
+			if err := r.executor.Run(ctx, r.ip, args...); err != nil {
+				if retryErr := r.executor.Run(ctx, r.ip, args...); retryErr != nil {
+					return retryErr
+				}
 			}
 		}
 	}

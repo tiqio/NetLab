@@ -180,6 +180,33 @@ func TestDataPlaneConnectsPendingL2ObjectSoLatePortsCanConverge(t *testing.T) {
 	}
 }
 
+func TestDataPlaneConnectsPendingL3ObjectSoLatePortsCanConverge(t *testing.T) {
+	store := &dataPlaneStoreFake{
+		lab:             domain.Laboratory{ID: "lab", LifecycleState: "active"},
+		interfaceStates: map[domain.ID]string{},
+		snapshot: domain.TopologySnapshot{
+			NetworkObjects: []domain.NetworkObject{
+				{ID: "l3", Kind: domain.NetworkSwitchL3, Revision: 2, ObservedState: "pending"},
+				{ID: "pc", Kind: domain.NetworkPC, Revision: 1, ObservedState: "active"},
+			},
+			NetworkObjectLinks: []domain.NetworkObjectLink{{ID: "late-port", ObjectAID: "l3", PortAName: "eth0", ObjectBID: "pc", PortBName: "eth0", DesiredState: "connected"}},
+		},
+	}
+	runtime := &dataPlaneRuntimeFake{}
+	objects := &dependentObjectReconcilerFake{}
+	reconciler := NewDataPlaneReconciler(store, runtime)
+	reconciler.SetNetworkObjectReconciler(objects)
+	if err := reconciler.Reconcile(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if runtime.objectLinkEnsureCalls != 1 {
+		t.Fatalf("pending L3 link ensure calls=%d", runtime.objectLinkEnsureCalls)
+	}
+	if len(objects.ids) != 1 || objects.ids[0] != "l3" {
+		t.Fatalf("pending L3 was not reconciled after port arrival: %v", objects.ids)
+	}
+}
+
 func TestDataPlaneDoesNotConnectFailedL2Object(t *testing.T) {
 	store := &dataPlaneStoreFake{
 		lab:             domain.Laboratory{ID: "lab", LifecycleState: "active"},

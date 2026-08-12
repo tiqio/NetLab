@@ -58,7 +58,7 @@ func networkObjectLinkEndpointReady(object domain.NetworkObject) bool {
 	if object.ObservedState == "active" {
 		return true
 	}
-	return object.Kind == domain.NetworkSwitchL2 && object.ObservedState == "pending"
+	return (object.Kind == domain.NetworkSwitchL2 || object.Kind == domain.NetworkSwitchL3) && object.ObservedState == "pending"
 }
 
 func (r *DataPlaneReconciler) Name() string { return "data-plane" }
