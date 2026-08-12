@@ -59,11 +59,18 @@ func TestPrivilegedTenMinuteTrafficWorkloadObservation(t *testing.T) {
 	}
 	namespaceA, _ := linuxnet.NetworkObjectNamespaceName(objectA)
 	namespaceB, _ := linuxnet.NetworkObjectNamespaceName(objectB)
-	runObjectLinkCommand(t, ctx, "ip", "-n", namespaceA, "address", "add", "fd62::1/64", "dev", "a0")
-	runObjectLinkCommand(t, ctx, "ip", "-n", namespaceB, "address", "add", "fd62::2/64", "dev", "b0")
+	runObjectLinkCommand(t, ctx, "ip", "-n", namespaceA, "address", "add", "fd62::1/64", "dev", "a0", "nodad")
+	runObjectLinkCommand(t, ctx, "ip", "-n", namespaceB, "address", "add", "fd62::2/64", "dev", "b0", "nodad")
+	httpIPv6Script := filepath.Join(t.TempDir(), "http6.py")
+	if err = os.WriteFile(httpIPv6Script, []byte(`import http.server,socket
+class Server(http.server.ThreadingHTTPServer): address_family=socket.AF_INET6
+Server(('fd62::2',18081),http.server.SimpleHTTPRequestHandler).serve_forever()
+`), 0o600); err != nil {
+		t.Fatal(err)
+	}
 	servers := []*exec.Cmd{
 		exec.CommandContext(ctx, "ip", "netns", "exec", namespaceB, "python3", "-m", "http.server", "18080", "--bind", "10.62.0.2"),
-		exec.CommandContext(ctx, "ip", "netns", "exec", namespaceB, "python3", "-m", "http.server", "18081", "--bind", "fd62::2"),
+		exec.CommandContext(ctx, "ip", "netns", "exec", namespaceB, "python3", httpIPv6Script),
 	}
 	for _, server := range servers {
 		if err = server.Start(); err != nil {
@@ -111,8 +118,8 @@ while True:
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(resolverDirectory)
-	waitTrafficServiceReady(t, ctx, namespaceA, "curl", "--fail", "--silent", "--max-time", "1", "http://10.62.0.2:18080/")
-	waitTrafficServiceReady(t, ctx, namespaceA, "curl", "-6", "--fail", "--silent", "--max-time", "1", "http://[fd62::2]:18081/")
+	waitTrafficServiceReady(t, ctx, namespaceA, "curl", "--noproxy", "*", "--fail", "--silent", "--max-time", "1", "http://10.62.0.2:18080/")
+	waitTrafficServiceReady(t, ctx, namespaceA, "curl", "-6", "--noproxy", "*", "--fail", "--silent", "--max-time", "1", "http://[fd62::2]:18081/")
 	waitTrafficServiceReady(t, ctx, namespaceA, "getent", "ahostsv4", "netlab.test")
 	waitTrafficServiceReady(t, ctx, namespaceA, "getent", "ahostsv6", "netlab.test")
 	captures := reconcile.NewCaptureManager(t.TempDir(), 12, 768<<20, time.Hour)

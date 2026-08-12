@@ -74,6 +74,9 @@ func TestTrafficWorkloadDockerAndQGAUseAllowlists(t *testing.T) {
 	if err != nil || result.MatchedBytes != 128 || docker.name != "docker" || docker.args[0] != "exec" || docker.args[2] != "curl" {
 		t.Fatalf("docker args=%v result=%+v err=%v", docker.args, result, err)
 	}
+	if got := docker.args[3:]; len(got) < 3 || got[1] != "--noproxy" || got[2] != "*" {
+		t.Fatalf("HTTP workload did not bypass inherited proxies: %v", docker.args)
+	}
 	if _, err = runtime.Execute(context.Background(), runtimeWorkload("dns"), TrafficWorkloadTarget{Kind: "qga", Node: domain.Node{ID: "node"}}); err != nil {
 		t.Fatal(err)
 	}
