@@ -4,8 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"github.com/netlab/netlab/internal/domain"
 	"time"
+
+	"github.com/netlab/netlab/internal/domain"
 )
 
 func (r *Repositories) CreateTrafficWorkload(ctx context.Context, w domain.TrafficWorkload) error {
@@ -14,8 +15,12 @@ func (r *Repositories) CreateTrafficWorkload(ctx context.Context, w domain.Traff
 	}
 	s, _ := json.Marshal(w.Source)
 	d, _ := json.Marshal(w.Destination)
-	_, err := r.database.DB.ExecContext(ctx, `INSERT INTO traffic_workloads(id,laboratory_id,name,revision,source_json,protocol,address_family,destination_json,interval_seconds,timeout_seconds,desired_state,observed_state,attempts,successes,failures,matched_bytes,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, w.ID, w.LaboratoryID, w.Name, w.Revision, s, w.Protocol, w.AddressFamily, d, w.IntervalSeconds, w.TimeoutSeconds, w.DesiredState, w.ObservedState, w.Attempts, w.Successes, w.Failures, w.MatchedBytes, w.CreatedAt.Format(time.RFC3339Nano), w.UpdatedAt.Format(time.RFC3339Nano))
-	return err
+	return r.database.Write(ctx, func(tx *sql.Tx) error {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO traffic_workloads(id,laboratory_id,name,revision,source_json,protocol,address_family,destination_json,interval_seconds,timeout_seconds,desired_state,observed_state,attempts,successes,failures,matched_bytes,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, w.ID, w.LaboratoryID, w.Name, w.Revision, s, w.Protocol, w.AddressFamily, d, w.IntervalSeconds, w.TimeoutSeconds, w.DesiredState, w.ObservedState, w.Attempts, w.Successes, w.Failures, w.MatchedBytes, w.CreatedAt.Format(time.RFC3339Nano), w.UpdatedAt.Format(time.RFC3339Nano)); err != nil {
+			return err
+		}
+		return appendEvent(ctx, tx, "traffic_workload.created", w.LaboratoryID, "traffic_workload", w.ID, w.Revision, "", map[string]any{"desired_state": w.DesiredState, "observed_state": w.ObservedState})
+	})
 }
 func (r *Repositories) GetTrafficWorkload(ctx context.Context, id domain.ID) (domain.TrafficWorkload, error) {
 	var w domain.TrafficWorkload

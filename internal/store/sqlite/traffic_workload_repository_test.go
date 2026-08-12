@@ -2,9 +2,10 @@ package sqlite
 
 import (
 	"context"
-	"github.com/netlab/netlab/internal/domain"
 	"testing"
 	"time"
+
+	"github.com/netlab/netlab/internal/domain"
 )
 
 func TestTrafficWorkloadRepositoryPersists(t *testing.T) {
@@ -27,6 +28,10 @@ func TestTrafficWorkloadRepositoryPersists(t *testing.T) {
 	got, err := r.GetTrafficWorkload(ctx, "w")
 	if err != nil || got.Name != "ping" {
 		t.Fatalf("got=%+v err=%v", got, err)
+	}
+	var events int
+	if err = db.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_events WHERE event_type='traffic_workload.created' AND resource_id=?`, w.ID).Scan(&events); err != nil || events != 1 {
+		t.Fatalf("create event count=%d err=%v", events, err)
 	}
 }
 
