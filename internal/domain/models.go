@@ -72,6 +72,7 @@ type NodeSettings struct {
 	NetworkInterfaces []NodeNetworkInterfaceSettings `json:"network_interfaces,omitempty"`
 	ForwardIPv4       *bool                          `json:"forward_ipv4,omitempty"`
 	ForwardIPv6       *bool                          `json:"forward_ipv6,omitempty"`
+	DeviceRoles       []DeviceInterfaceRole          `json:"device_roles,omitempty"`
 }
 
 type Link struct {

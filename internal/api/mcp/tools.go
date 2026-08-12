@@ -22,26 +22,28 @@ type Services struct {
 		GetNode(context.Context, domain.ID) (domain.Node, error)
 		UpdateNodeSettings(context.Context, domain.ID, domain.Revision, domain.NodeSettings) (domain.Node, error)
 	}
-	Links        *command.LinkService
-	TopologyOps  *command.TopologyTaskService
-	LabOps       *command.LaboratoryTaskService
-	Interfaces   *command.InterfaceService
-	Guest        *command.GuestCommandService
-	Mappings     *command.PortMappingService
-	Tasks        *query.TaskService
-	Exporter     *command.ExportService
-	Importer     *command.ImportService
-	Automation   *command.AutomationTaskService
-	Captures     *reconcile.CaptureManager
-	Filters      *reconcile.TrafficFilterManager
-	CaptureOps   *reconcile.CaptureTaskService
-	Capabilities *query.RuntimeCapabilityService
-	ConsoleIdle  time.Duration
+	Links           *command.LinkService
+	TopologyOps     *command.TopologyTaskService
+	LabOps          *command.LaboratoryTaskService
+	Interfaces      *command.InterfaceService
+	Guest           *command.GuestCommandService
+	Mappings        *command.PortMappingService
+	Tasks           *query.TaskService
+	Exporter        *command.ExportService
+	Importer        *command.ImportService
+	Automation      *command.AutomationTaskService
+	Captures        *reconcile.CaptureManager
+	Filters         *reconcile.TrafficFilterManager
+	CaptureOps      *reconcile.CaptureTaskService
+	Capabilities    *query.RuntimeCapabilityService
+	DeviceReadiness *query.DeviceReadinessService
+	ConsoleIdle     time.Duration
 }
 
 func Tools(services Services) []Tool {
 	return []Tool{
 		NodeCapabilityTool(services.Capabilities),
+		DeviceReadinessTool(services.DeviceReadiness),
 		{Name: "netlab.capabilities", Description: "Discover NetLab capabilities and trusted-network deployment boundary.", InputSchema: requiredObject(map[string]any{}), Handler: func(_ *gin.Context, _ map[string]any) (any, error) {
 			return map[string]any{"single_host": true, "authentication": false, "runtimes": []string{"qemu", "docker", "namespace"}, "capture_returns": "opaque HTTP stream or artifact handle"}, nil
 		}},
@@ -161,7 +163,7 @@ func Tools(services Services) []Tool {
 			}
 			return map[string]any{"node": node, "interfaces": interfaces, "placement_assignment": placementResult.PlacementAssignment, "laboratory_revision": placementResult.LaboratoryRevision}, nil
 		}},
-		{Name: "netlab.nodes.update_settings", Description: "Update a stopped Docker node, including typed IPv4 and IPv6 static routes.", InputSchema: mutationSchema(map[string]any{"node_id": stringProperty("Node ID"), "name": stringProperty("Node name"), "cpu_count": integerProperty(1), "cpu_quota_micros": integerProperty(0), "memory_mib": integerProperty(64), "interface_limit": integerProperty(1), "process_limit": integerProperty(1), "network_interfaces": nodeNetworkInterfacesProperty()}, "node_id", "name", "cpu_count", "memory_mib", "interface_limit", "process_limit", "network_interfaces", "expected_revision"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
+		{Name: "netlab.nodes.update_settings", Description: "Update stopped node settings, network configuration and non-secret device role metadata.", InputSchema: mutationSchema(map[string]any{"node_id": stringProperty("Node ID"), "name": stringProperty("Node name"), "cpu_count": integerProperty(1), "cpu_quota_micros": integerProperty(0), "memory_mib": integerProperty(64), "interface_limit": integerProperty(1), "process_limit": integerProperty(1), "network_interfaces": nodeNetworkInterfacesProperty(), "device_roles": deviceRolesProperty()}, "node_id", "name", "cpu_count", "memory_mib", "interface_limit", "process_limit", "expected_revision"), Handler: func(c *gin.Context, args map[string]any) (any, error) {
 			if services.NodeSettings == nil {
 				return unavailable("node settings")
 			}
@@ -173,7 +175,8 @@ func Tools(services Services) []Tool {
 			if err != nil {
 				return nil, err
 			}
-			if current.Kind != string(domain.RuntimeDocker) {
+			_, rolesRequested := args["device_roles"]
+			if current.Kind != string(domain.RuntimeDocker) && !rolesRequested {
 				return nil, domain.Problem{Code: "capability_unsupported", Message: "MCP network settings currently support Docker nodes", ResourceType: "node", ResourceID: current.ID}
 			}
 			var settings domain.NodeSettings
@@ -508,6 +511,19 @@ func nodeNetworkInterfacesProperty() map[string]any {
 			"addresses": stringArrayProperty(),
 			"routes":    map[string]any{"type": "array", "items": dockerStaticRouteProperty()},
 		}, "name", "modes", "addresses", "routes"),
+	}
+}
+
+func deviceRolesProperty() map[string]any {
+	return map[string]any{
+		"type": "array",
+		"items": requiredObject(map[string]any{
+			"interface_id":   stringProperty("Interface ID"),
+			"role":           enumProperty("management", "lan", "wan", "trunk", "client-facing"),
+			"address_family": enumProperty("ipv4", "ipv6", "dual"),
+			"address":        stringProperty("Optional address prefix"),
+			"gateway":        stringProperty("Optional gateway address"),
+		}, "interface_id", "role"),
 	}
 }
 

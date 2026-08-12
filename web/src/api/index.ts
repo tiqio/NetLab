@@ -6,6 +6,7 @@ import type {
   CreateNodeRequest,
   CreateNetworkObjectResult,
   DeviceTemplate,
+  DeviceReadiness,
   ImageVersion,
   Laboratory,
   Link,
@@ -340,6 +341,8 @@ export const generatedApi = {
     request<Record<string, unknown>>(`/nodes/${nodeId}/resources`),
   getNodeNetworkDiagnostics: (nodeId: string) =>
     request<NodeNetworkDiagnostics>(`/nodes/${nodeId}/network-diagnostics`),
+  getDeviceReadiness: (nodeId: string) =>
+    request<DeviceReadiness>(`/nodes/${nodeId}/device-readiness`),
   updateNodeResources: (
     node: Pick<Node, "id" | "revision">,
     body: Pick<Node, "cpu_count" | "cpu_quota_micros" | "memory_mib">,

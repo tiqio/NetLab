@@ -154,21 +154,21 @@
 
 ### Tests for User Story 4
 
-- [ ] T073 [P] [US4] Write failing domain tests for management, LAN, WAN, trunk and client-facing interface-role validation in `internal/domain/device_role_test.go`
-- [ ] T074 [P] [US4] Write failing node settings contract tests for role metadata persistence and secret rejection in `internal/api/http/device_role_contract_test.go`
-- [ ] T075 [P] [US4] Write failing MCP parity tests for role metadata and readiness diagnostics in `internal/api/mcp/device_role_tools_test.go`
-- [ ] T076 [P] [US4] Write failing frontend tests separating cable, guest, management and data-path states in `web/src/features/diagnostics/DeviceReadinessPanel.test.ts`
-- [ ] T077 [P] [US4] Write a vendor path fixture test using stubs or authorized target images without embedding proprietary assets in `tests/integration/vendor_device_path_test.go`
-- [ ] T078 [P] [US4] Write a restart test proving NetLab-owned vendor attachments and role metadata recover without guest credentials in `tests/recovery/vendor_attachment_recovery_test.go`
+- [X] T073 [P] [US4] Write failing domain tests for management, LAN, WAN, trunk and client-facing interface-role validation in `internal/domain/device_role_test.go`
+- [X] T074 [P] [US4] Write failing node settings contract tests for role metadata persistence and secret rejection in `internal/api/http/device_role_contract_test.go`
+- [X] T075 [P] [US4] Write failing MCP parity tests for role metadata and readiness diagnostics in `internal/api/mcp/device_role_tools_test.go`
+- [X] T076 [P] [US4] Write failing frontend tests separating cable, guest, management and data-path states in `web/src/features/diagnostics/DeviceReadinessPanel.test.ts`
+- [X] T077 [P] [US4] Write a vendor path fixture test using stubs or authorized target images without embedding proprietary assets in `tests/integration/vendor_device_path_test.go`
+- [X] T078 [P] [US4] Write a restart test proving NetLab-owned vendor attachments and role metadata recover without guest credentials in `tests/recovery/vendor_attachment_recovery_test.go`
 
 ### Implementation for User Story 4
 
-- [ ] T079 [US4] Define validated device interface role metadata in `internal/domain/device_role.go`
-- [ ] T080 [US4] Persist role metadata through node settings and topology export/import without exposing credentials in `internal/app/command/node_settings.go` and `internal/app/command/lab_export.go`
-- [ ] T081 [US4] Derive cable, guest readiness, management reachability and data-path evidence independently in `internal/app/query/device_readiness.go`
-- [ ] T082 [US4] Expose device role and readiness diagnostics through existing node endpoints in `internal/api/http/node_operations_handlers.go`
-- [ ] T083 [US4] Add equivalent MCP read/update behavior in `internal/api/mcp/node_tools.go`
-- [ ] T084 [US4] Implement localized role editing and four-level readiness presentation in `web/src/features/diagnostics/DeviceReadinessPanel.vue`
+- [X] T079 [US4] Define validated device interface role metadata in `internal/domain/device_role.go`
+- [X] T080 [US4] Persist role metadata through node settings and topology export/import without exposing credentials in `internal/app/command/node_settings.go` and `internal/app/command/lab_export.go`
+- [X] T081 [US4] Derive cable, guest readiness, management reachability and data-path evidence independently in `internal/app/query/device_readiness.go`
+- [X] T082 [US4] Expose device role and readiness diagnostics through existing node endpoints in `internal/api/http/node_operations_handlers.go`
+- [X] T083 [US4] Add equivalent MCP read/update behavior in `internal/api/mcp/node_tools.go`
+- [X] T084 [US4] Implement localized role editing and four-level readiness presentation in `web/src/features/diagnostics/DeviceReadinessPanel.vue`
 - [ ] T085 [US4] Attach FancyWAN/FortiGate management and LAN/WAN networks and record operator-authorized guest prerequisites in `specs/011-network-path-recovery/validation/fancywan-fortigate.md`
 - [ ] T086 [US4] Attach Ruijie Switch client and Ruijie Router routed paths and record operator-authorized guest prerequisites in `specs/011-network-path-recovery/validation/ruijie-path.md`
 - [ ] T087 [US4] Run US4 contract, UI, vendor path and restart gates, record results in `specs/011-network-path-recovery/validation/us4-vendor.md`, and commit the milestone with a focused Git commit

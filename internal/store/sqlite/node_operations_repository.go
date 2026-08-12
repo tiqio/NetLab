@@ -269,6 +269,9 @@ func (r *TopologyRepository) UpdateNodeSettings(ctx context.Context, id domain.I
 	if err := domain.ValidateNodeNetworkInterfaces(settings.NetworkInterfaces); err != nil {
 		return domain.Node{}, domain.Problem{Code: "invalid_node_network", Message: err.Error(), ResourceType: "node", ResourceID: id}
 	}
+	if err := domain.ValidateDeviceInterfaceRoles(settings.DeviceRoles); err != nil {
+		return domain.Node{}, domain.Problem{Code: "invalid_device_roles", Message: err.Error(), ResourceType: "node", ResourceID: id}
+	}
 	var updated domain.Node
 	err := r.database.Write(ctx, func(tx *sql.Tx) error {
 		var laboratoryID domain.ID
@@ -312,6 +315,28 @@ func (r *TopologyRepository) UpdateNodeSettings(ctx context.Context, id domain.I
 		}
 		if settings.ForwardIPv6 != nil {
 			config["forward_ipv6"] = *settings.ForwardIPv6
+		}
+		if settings.DeviceRoles != nil {
+			known := map[domain.ID]bool{}
+			rows, queryErr := tx.QueryContext(ctx, `SELECT id FROM interfaces WHERE node_id=?`, id)
+			if queryErr != nil {
+				return queryErr
+			}
+			for rows.Next() {
+				var interfaceID domain.ID
+				if queryErr = rows.Scan(&interfaceID); queryErr != nil {
+					rows.Close()
+					return queryErr
+				}
+				known[interfaceID] = true
+			}
+			rows.Close()
+			for _, role := range settings.DeviceRoles {
+				if !known[role.InterfaceID] {
+					return domain.Problem{Code: "invalid_device_roles", Message: "device role interface does not belong to node", ResourceType: "interface", ResourceID: role.InterfaceID}
+				}
+			}
+			config["device_roles"] = settings.DeviceRoles
 		}
 		if len(settings.NetworkInterfaces) > 0 {
 			rows, queryErr := tx.QueryContext(ctx, `SELECT id,slot,name,COALESCE(driver,''),mac_address FROM interfaces WHERE node_id=? ORDER BY slot`, id)

@@ -573,6 +573,29 @@ export interface UpdateNodeSettingsRequest {
   network_interfaces?: NodeNetworkInterfaceSettings[];
   forward_ipv4?: boolean;
   forward_ipv6?: boolean;
+  device_roles?: DeviceInterfaceRole[];
+}
+
+export interface DeviceInterfaceRole {
+  interface_id: string;
+  role: "management" | "lan" | "wan" | "trunk" | "client-facing";
+  address_family?: "ipv4" | "ipv6" | "dual";
+  address?: string;
+  gateway?: string;
+}
+
+export interface DeviceReadinessLevel {
+  state: string;
+  details?: string[];
+}
+
+export interface DeviceReadiness {
+  node_id: string;
+  roles: DeviceInterfaceRole[];
+  cable: DeviceReadinessLevel;
+  guest: DeviceReadinessLevel;
+  management: DeviceReadinessLevel;
+  data_path: DeviceReadinessLevel;
 }
 
 export interface StartCaptureRequest {

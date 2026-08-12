@@ -17,6 +17,7 @@ import { api } from "@/api";
 import { Button } from "@/components/ui";
 import GlobalCaptureWorkspace from "./GlobalCaptureWorkspace.vue";
 import TrafficFilterPanel from "./TrafficFilterPanel.vue";
+import DeviceReadinessPanel from "./DeviceReadinessPanel.vue";
 import { linkDisplayName } from "@/features/topology/linkPresentation";
 const props = withDefaults(
   defineProps<{
@@ -177,6 +178,7 @@ watch(
 <template>
   <section class="h-full min-h-[180px]" aria-labelledby="diagnostics-title">
     <h2 id="diagnostics-title" class="sr-only">诊断</h2>
+    <DeviceReadinessPanel v-if="selectedNode && selectedNode.kind === 'qemu'" :node="selectedNode" :interfaces="interfaces" />
     <section
       v-if="
         recoveryObject || recoveryObjectLink || selectedNode?.kind === 'docker'

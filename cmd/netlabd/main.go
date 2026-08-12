@@ -251,7 +251,8 @@ func main() {
 			portMappingCommands.SetAutoResolver(topologyRepository, nodeAddressResolver)
 		}
 	}
-	mcpTools := mcp.Tools(mcp.Services{Labs: labCommands, LabQueries: labQueries, Templates: templateQueries, Nodes: nodeCommands, NodeSettings: topologyRepository, Links: linkCommands, TopologyOps: topologyTasks, LabOps: laboratoryTasks, Interfaces: interfaceCommands, Guest: guestCommands, Mappings: portMappingCommands, Tasks: taskQueries, Exporter: exportService, Importer: importService, Automation: automationTasks, Captures: captureManager, Filters: trafficFilterManager, CaptureOps: captureTasks, Capabilities: capabilityQueries, ConsoleIdle: consoleLimits.IdleTimeout})
+	deviceReadiness := query.NewDeviceReadinessService(topologyRepository, topologyRepository, repositories)
+	mcpTools := mcp.Tools(mcp.Services{Labs: labCommands, LabQueries: labQueries, Templates: templateQueries, Nodes: nodeCommands, NodeSettings: topologyRepository, Links: linkCommands, TopologyOps: topologyTasks, LabOps: laboratoryTasks, Interfaces: interfaceCommands, Guest: guestCommands, Mappings: portMappingCommands, Tasks: taskQueries, Exporter: exportService, Importer: importService, Automation: automationTasks, Captures: captureManager, Filters: trafficFilterManager, CaptureOps: captureTasks, Capabilities: capabilityQueries, DeviceReadiness: deviceReadiness, ConsoleIdle: consoleLimits.IdleTimeout})
 	mcpTools = append(mcpTools, mcp.NetworkTools(networkService, networkTasks)...)
 	mcpTools = append(mcpTools, mcp.TopologyConnectionTools(topologyConnections, repositories)...)
 	mcpTools = append(mcpTools, mcp.TopologyPlacementTools(placementCommands)...)
@@ -270,6 +271,7 @@ func main() {
 	}
 	nodeOperationHandlers := httpapi.NewNodeOperationsHandlers(interfaceCommands, guestCommands, portMappingCommands, topologyRepository, resourceManager, seedManager)
 	nodeOperationHandlers.SetNodeCredentialReader(consoleCredentials)
+	nodeOperationHandlers.SetDeviceReadiness(deviceReadiness)
 	nodeOperationHandlers.Register(server.Engine())
 	if endpointRuntime, runtimeErr := linuxnet.NewEndpointRuntime(); runtimeErr == nil {
 		var dockerAdapter *dockerruntime.Adapter

@@ -36,6 +36,9 @@ type NodeOperationsHandlers struct {
 	networkDiagnostics interface {
 		NetworkDiagnostics(context.Context, domain.Node) (map[string]any, error)
 	}
+	deviceReadiness interface {
+		Get(context.Context, domain.ID) (domain.DeviceReadiness, error)
+	}
 }
 
 func (h *NodeOperationsHandlers) SetNodeCredentialReader(reader interface {
@@ -48,6 +51,12 @@ func (h *NodeOperationsHandlers) SetNetworkDiagnostics(reader interface {
 	NetworkDiagnostics(context.Context, domain.Node) (map[string]any, error)
 }) {
 	h.networkDiagnostics = reader
+}
+
+func (h *NodeOperationsHandlers) SetDeviceReadiness(reader interface {
+	Get(context.Context, domain.ID) (domain.DeviceReadiness, error)
+}) {
+	h.deviceReadiness = reader
 }
 
 func NewNodeOperationsHandlers(interfaces *command.InterfaceService, guest *command.GuestCommandService, mappings *command.PortMappingService, nodes interface {
@@ -80,6 +89,20 @@ func (h *NodeOperationsHandlers) Register(engine *gin.Engine) {
 	api.PUT("/nodes/:nodeId/settings", h.updateSettings)
 	api.GET("/nodes/:nodeId/resources", h.getResources)
 	api.GET("/nodes/:nodeId/network-diagnostics", h.getNetworkDiagnostics)
+	api.GET("/nodes/:nodeId/device-readiness", h.getDeviceReadiness)
+}
+
+func (h *NodeOperationsHandlers) getDeviceReadiness(c *gin.Context) {
+	if h.deviceReadiness == nil {
+		writeProblem(c, http.StatusConflict, domain.Problem{Code: "capability_unsupported", Message: "device readiness diagnostics are unavailable"})
+		return
+	}
+	value, err := h.deviceReadiness.Get(c, domain.ID(c.Param("nodeId")))
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, value)
 }
 
 func (h *NodeOperationsHandlers) getNetworkDiagnostics(c *gin.Context) {
