@@ -235,7 +235,7 @@
 - [X] T123 Run 10 service restarts, 20 cleanup cycles, six-QEMU health, BusyBox/VyOS dual-stack, VLAN trunk, vendor path and 10-minute traffic-filter acceptance on the target and record results in `specs/011-network-path-recovery/validation/target-acceptance.md`
 - [X] T124 Run target Chromium validation for diagnostics, warnings, VLAN editor, workload panel, non-zero counters, fingerprints and highlight decay and record screenshots/evidence references in `specs/011-network-path-recovery/validation/target-browser.md`
 - [X] T125 Verify final namespace/interface/bridge/route/rule/socket/process/capture/workload leak baselines and rollback integrity in `specs/011-network-path-recovery/validation/target-cleanup.md`
-- [ ] T126 Commit deployment and target-acceptance records, push `main`, and confirm the authoritative target reports the recorded clean candidate in `specs/011-network-path-recovery/validation/milestones.md`
+- [X] T126 Commit deployment and target-acceptance records, push `main`, and confirm the authoritative target reports the recorded clean candidate in `specs/011-network-path-recovery/validation/milestones.md`
 
 ---
 
