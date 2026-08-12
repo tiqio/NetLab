@@ -108,6 +108,27 @@ const vlanDiagnostics = computed(() => {
     | undefined;
   return runtime;
 });
+const ipv6PathDiagnostics = computed(() => {
+  if (recoveryObject.value?.kind !== "switch_l3") return undefined;
+  return recoveryDiagnostics.value?.runtime as
+    | {
+        observed?: {
+          ipv6_neighbor_status?: string;
+          ipv6_neighbors?: Array<{
+            address: string;
+            device?: string;
+            state?: string[];
+          }>;
+        };
+        path_checks?: Array<{
+          destination: string;
+          gateway?: string;
+          status: string;
+          stop_at?: string;
+        }>;
+      }
+    | undefined;
+});
 async function loadRecoveryDiagnostics() {
   recoveryDiagnostics.value = undefined;
   recoveryLoadError.value = "";
@@ -322,6 +343,39 @@ watch(
                     ?.find((item) => item.name === port.name)
                     ?.tagged?.join(",") || "—"
                 }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div
+        v-if="ipv6PathDiagnostics"
+        class="mt-3 overflow-x-auto rounded border border-border"
+        data-testid="ipv6-path-diagnostics"
+      >
+        <p class="border-b border-border px-2 py-1 text-xs">
+          IPv6 邻居诊断：{{
+            ipv6PathDiagnostics.observed?.ipv6_neighbor_status || "available"
+          }}
+        </p>
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="text-muted-foreground">
+              <th class="px-2 py-1">目的网段</th>
+              <th class="px-2 py-1">下一跳</th>
+              <th class="px-2 py-1">状态 / 停止点</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="path in ipv6PathDiagnostics.path_checks || []"
+              :key="`${path.destination}:${path.gateway || ''}`"
+              class="border-t border-border"
+            >
+              <td class="px-2 py-1">{{ path.destination }}</td>
+              <td class="px-2 py-1">{{ path.gateway || "直连" }}</td>
+              <td class="px-2 py-1">
+                {{ path.status }} / {{ path.stop_at || "end_to_end" }}
               </td>
             </tr>
           </tbody>

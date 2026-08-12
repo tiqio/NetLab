@@ -167,6 +167,53 @@ describe("DiagnosticsPanel", () => {
     expect(wrapper.text()).toContain("trunk0: VLAN membership differs");
   });
 
+  it("shows IPv6 neighbor discovery as the failed path stop", async () => {
+    vi.spyOn(api, "getNetworkObjectDiagnostics").mockResolvedValue({
+      object_id: "router-1",
+      desired_state: "active",
+      observed_state: "active",
+      runtime: {
+        observed: {
+          ipv6_neighbor_status: "available",
+          ipv6_neighbors: [
+            { address: "fd10::fe", device: "eth0", state: ["FAILED"] },
+          ],
+        },
+        path_checks: [
+          {
+            destination: "fd20::/64",
+            gateway: "fd10::fe",
+            status: "unverified",
+            stop_at: "neighbor_discovery",
+          },
+        ],
+        mismatches: [],
+      },
+    });
+    const wrapper = mount(DiagnosticsPanel, {
+      props: {
+        networkObjectId: "router-1",
+        networkObjects: [
+          {
+            id: "router-1",
+            laboratory_id: "lab-1",
+            name: "三层交换机",
+            kind: "switch_l3" as const,
+            revision: 1,
+            desired_state: "active",
+            observed_state: "active",
+            config: {},
+          },
+        ],
+      },
+    });
+    await flushPromises();
+    const diagnostics = wrapper.get('[data-testid="ipv6-path-diagnostics"]');
+    expect(diagnostics.text()).toContain("fd20::/64");
+    expect(diagnostics.text()).toContain("fd10::fe");
+    expect(diagnostics.text()).toContain("neighbor_discovery");
+  });
+
   it("offers retry and delete for a failed object link", async () => {
     const link = {
       id: "link-1",

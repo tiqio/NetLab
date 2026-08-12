@@ -22,9 +22,10 @@ func (vlanMCPRuntime) InspectNetworkObject(context.Context, domain.NetworkObject
 }
 func (vlanMCPRuntime) DiagnosticsObject(context.Context, domain.NetworkObject) (map[string]any, error) {
 	return map[string]any{
-		"desired":    map[string]any{"ports": []any{map[string]any{"name": "eth0", "pvid": 10, "tagged": []any{20}}}},
-		"observed":   map[string]any{"ports": []any{map[string]any{"name": "eth0", "pvid": 1, "tagged": []any{}}}},
-		"mismatches": []string{"eth0: VLAN membership differs"},
+		"desired":     map[string]any{"ports": []any{map[string]any{"name": "eth0", "pvid": 10, "tagged": []any{20}}}},
+		"observed":    map[string]any{"ports": []any{map[string]any{"name": "eth0", "pvid": 1, "tagged": []any{}}}, "ipv6_neighbors": []any{map[string]any{"address": "fd10::fe", "state": []any{"FAILED"}}}},
+		"path_checks": []any{map[string]any{"destination": "fd20::/64", "gateway": "fd10::fe", "status": "unverified", "stop_at": "neighbor_discovery"}},
+		"mismatches":  []string{"eth0: VLAN membership differs"},
 	}, nil
 }
 func (v vlanMCPRuntime) ConfigurationConverged(ctx context.Context, object domain.NetworkObject) (bool, map[string]any, error) {
@@ -85,6 +86,10 @@ func TestNetworkVLANMCPUpdateAndDiagnosticsUseSharedServices(t *testing.T) {
 	}
 	runtime := diagnostics.(map[string]any)["runtime"].(map[string]any)
 	if len(runtime["mismatches"].([]string)) != 1 {
+		t.Fatalf("runtime=%+v", runtime)
+	}
+	checks := runtime["path_checks"].([]any)
+	if len(checks) != 1 || checks[0].(map[string]any)["stop_at"] != "neighbor_discovery" {
 		t.Fatalf("runtime=%+v", runtime)
 	}
 }

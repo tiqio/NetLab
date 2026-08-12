@@ -17,6 +17,19 @@ type SwitchL3Runtime struct {
 	ip       string
 }
 
+type IPv6NeighborObservation struct {
+	Address string   `json:"address"`
+	Device  string   `json:"device,omitempty"`
+	State   []string `json:"state,omitempty"`
+}
+
+type IPv6PathCheck struct {
+	Destination string `json:"destination"`
+	Gateway     string `json:"gateway,omitempty"`
+	Status      string `json:"status"`
+	StopAt      string `json:"stop_at,omitempty"`
+}
+
 func (r *SwitchL3Runtime) InspectNetworkObject(ctx context.Context, object domain.NetworkObject) (domain.RuntimeBackingObservation, error) {
 	return inspectNamespaceBacking(ctx, r.executor, r.ip, SwitchL3NamespaceName(object.ID)), nil
 }
@@ -54,8 +67,10 @@ func (r *SwitchL3Runtime) DiagnosticsObject(ctx context.Context, object domain.N
 	if err != nil {
 		return nil, err
 	}
+	neighborsBody, neighborsErr := r.executor.Output(ctx, r.ip, "-n", namespace, "-j", "neigh", "show")
 	observedInterfaces := observedL3Interfaces(addressesBody)
 	observedRoutes := observedL3Routes(routesBody)
+	neighbors := observedIPv6Neighbors(neighborsBody)
 	observedForward4 := strings.TrimSpace(string(forward4)) == "1"
 	observedForward6 := strings.TrimSpace(string(forward6)) == "1"
 	mismatches := make([]string, 0)
@@ -75,11 +90,79 @@ func (r *SwitchL3Runtime) DiagnosticsObject(ctx context.Context, object domain.N
 	if !containsAllRoutes(observedRoutes, desired.Routes) {
 		mismatches = append(mismatches, fmt.Sprintf("routes desired=%v observed=%v", desiredRouteKeys, observedRouteKeys))
 	}
+	pathChecks := ipv6PathChecks(desired.Routes, observedRoutes, neighbors)
+	neighborStatus := "available"
+	if neighborsErr != nil {
+		neighborStatus = "unavailable"
+		neighbors = []IPv6NeighborObservation{}
+		pathChecks = ipv6PathChecks(desired.Routes, observedRoutes, nil)
+	}
 	return map[string]any{
-		"desired":    map[string]any{"forward_ipv4": desired.ForwardIPv4, "forward_ipv6": desired.ForwardIPv6, "interfaces": desired.Interfaces, "routes": desired.Routes},
-		"observed":   map[string]any{"forward_ipv4": observedForward4, "forward_ipv6": observedForward6, "interfaces": observedInterfaces, "routes": observedRouteKeys},
-		"mismatches": mismatches,
+		"desired":     map[string]any{"forward_ipv4": desired.ForwardIPv4, "forward_ipv6": desired.ForwardIPv6, "interfaces": desired.Interfaces, "routes": desired.Routes},
+		"observed":    map[string]any{"forward_ipv4": observedForward4, "forward_ipv6": observedForward6, "interfaces": observedInterfaces, "routes": observedRouteKeys, "ipv6_neighbors": neighbors, "ipv6_neighbor_status": neighborStatus},
+		"path_checks": pathChecks,
+		"mismatches":  mismatches,
 	}, nil
+}
+
+func observedIPv6Neighbors(body []byte) []IPv6NeighborObservation {
+	var values []struct {
+		Destination string   `json:"dst"`
+		Device      string   `json:"dev"`
+		State       []string `json:"state"`
+	}
+	if err := json.Unmarshal(body, &values); err != nil {
+		return []IPv6NeighborObservation{}
+	}
+	result := make([]IPv6NeighborObservation, 0, len(values))
+	for _, value := range values {
+		address, err := netip.ParseAddr(value.Destination)
+		if err != nil || !address.Is6() {
+			continue
+		}
+		result = append(result, IPv6NeighborObservation{Address: address.String(), Device: value.Device, State: value.State})
+	}
+	return result
+}
+
+func ipv6PathChecks(desired, observed []domain.RouteConfig, neighbors []IPv6NeighborObservation) []IPv6PathCheck {
+	result := make([]IPv6PathCheck, 0)
+	for _, route := range desired {
+		prefix, err := netip.ParsePrefix(route.Destination)
+		if err != nil || !prefix.Addr().Is6() {
+			continue
+		}
+		check := IPv6PathCheck{Destination: prefix.Masked().String(), Gateway: route.Gateway, Status: "ready"}
+		if !containsAllRoutes(observed, []domain.RouteConfig{route}) {
+			check.Status = "failed"
+			check.StopAt = "route"
+		} else if route.Gateway != "" && !hasUsableIPv6Neighbor(neighbors, route.Gateway) {
+			check.Status = "unverified"
+			check.StopAt = "neighbor_discovery"
+		}
+		result = append(result, check)
+	}
+	return result
+}
+
+func hasUsableIPv6Neighbor(values []IPv6NeighborObservation, gateway string) bool {
+	address, err := netip.ParseAddr(gateway)
+	if err != nil {
+		return false
+	}
+	for _, value := range values {
+		candidate, parseErr := netip.ParseAddr(value.Address)
+		if parseErr != nil || candidate != address {
+			continue
+		}
+		for _, state := range value.State {
+			switch strings.ToLower(state) {
+			case "reachable", "stale", "delay", "probe", "permanent", "noarp":
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (r *SwitchL3Runtime) ConfigurationConverged(ctx context.Context, object domain.NetworkObject) (bool, map[string]any, error) {

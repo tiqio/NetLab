@@ -251,3 +251,53 @@ func TestL3ConfigurationConvergenceRequiresExplicitMetric(t *testing.T) {
 		t.Fatal("explicit metric mismatch unexpectedly converged")
 	}
 }
+
+func TestL3DiagnosticsExposeIPv6NeighborAndPathStop(t *testing.T) {
+	executor := &scriptExecutor{outputFor: func(_ string, args ...string) []byte {
+		command := strings.Join(args, " ")
+		switch {
+		case strings.Contains(command, "-j address show"):
+			return []byte(`[{"ifname":"eth0","addr_info":[{"local":"fd10::1","prefixlen":64,"scope":"global"}]}]`)
+		case strings.Contains(command, "-j route show"):
+			return []byte(`[{"dst":"fd20::/64","gateway":"fd10::fe"}]`)
+		case strings.Contains(command, "-j neigh show"):
+			return []byte(`[{"dst":"fd10::fe","dev":"eth0","state":["FAILED"]}]`)
+		case strings.Contains(command, "net.ipv4.ip_forward"):
+			return []byte("0\n")
+		case strings.Contains(command, "net.ipv6.conf.all.forwarding"):
+			return []byte("1\n")
+		default:
+			return nil
+		}
+	}}
+	runtime, _ := NewSwitchL3Runtime(executor)
+	object := domain.NetworkObject{ID: "ipv6-diagnostic-router", Config: map[string]any{
+		"interfaces":   []any{map[string]any{"name": "eth0", "addresses": []any{"fd10::1/64"}}},
+		"routes":       []any{map[string]any{"destination": "fd20::/64", "gateway": "fd10::fe"}},
+		"forward_ipv6": true,
+	}}
+	diagnostics, err := runtime.DiagnosticsObject(context.Background(), object)
+	if err != nil {
+		t.Fatal(err)
+	}
+	checks := diagnostics["path_checks"].([]IPv6PathCheck)
+	if len(checks) != 1 || checks[0].Status != "unverified" || checks[0].StopAt != "neighbor_discovery" {
+		t.Fatalf("checks=%+v", checks)
+	}
+	observed := diagnostics["observed"].(map[string]any)
+	neighbors := observed["ipv6_neighbors"].([]IPv6NeighborObservation)
+	if len(neighbors) != 1 || neighbors[0].Address != "fd10::fe" || neighbors[0].Device != "eth0" {
+		t.Fatalf("neighbors=%+v", neighbors)
+	}
+}
+
+func TestL3DiagnosticsIdentifyMissingIPv6RouteBeforeNeighborDiscovery(t *testing.T) {
+	checks := ipv6PathChecks(
+		[]domain.RouteConfig{{Destination: "fd30::/64", Gateway: "fd10::fe"}},
+		nil,
+		[]IPv6NeighborObservation{{Address: "fd10::fe", State: []string{"REACHABLE"}}},
+	)
+	if len(checks) != 1 || checks[0].Status != "failed" || checks[0].StopAt != "route" {
+		t.Fatalf("checks=%+v", checks)
+	}
+}
