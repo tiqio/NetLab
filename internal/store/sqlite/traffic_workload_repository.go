@@ -68,6 +68,27 @@ func (r *Repositories) ListTrafficWorkloads(ctx context.Context, lab domain.ID) 
 	return out, rows.Err()
 }
 
+func (r *Repositories) ListAllTrafficWorkloads(ctx context.Context) ([]domain.TrafficWorkload, error) {
+	rows, err := r.database.DB.QueryContext(ctx, `SELECT id FROM traffic_workloads ORDER BY created_at,id`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	values := []domain.TrafficWorkload{}
+	for rows.Next() {
+		var id domain.ID
+		if err = rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		value, getErr := r.GetTrafficWorkload(ctx, id)
+		if getErr != nil {
+			return nil, getErr
+		}
+		values = append(values, value)
+	}
+	return values, rows.Err()
+}
+
 func (r *Repositories) UpdateTrafficWorkloadState(ctx context.Context, id domain.ID, expected domain.Revision, desired, observed string, problem *domain.Problem, taskID domain.ID) (domain.TrafficWorkload, error) {
 	var updated domain.TrafficWorkload
 	err := r.database.Write(ctx, func(tx *sql.Tx) error {

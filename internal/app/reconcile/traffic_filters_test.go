@@ -79,6 +79,32 @@ func TestTrafficFilterListIsNewestFirst(t *testing.T) {
 	}
 }
 
+func TestTrafficFilterCorrelatesOnlySuccessfulWorkloadWindow(t *testing.T) {
+	manager := NewTrafficFilterManager()
+	filter, err := manager.StartScoped("lab", captureRuntime.Match{Protocol: "icmp"}, 100, []domain.ID{"if-a"}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	workload := domain.TrafficWorkload{ID: "workload", LaboratoryID: "lab", Protocol: "icmp"}
+	started := time.Now().UTC()
+	if matched := manager.CorrelateSuccessfulWorkload(workload, started); len(matched) != 0 {
+		t.Fatalf("matched without packets: %v", matched)
+	}
+	if err = manager.Observe(filter.ID, "icmp:ipv4", "if-a", "", "egress", 64, started.Add(time.Millisecond)); err != nil {
+		t.Fatal(err)
+	}
+	matched := manager.CorrelateSuccessfulWorkload(workload, started)
+	if len(matched) != 1 || matched[0] != filter.ID {
+		t.Fatalf("matched=%v", matched)
+	}
+	before, _, _ := manager.Get(filter.ID)
+	manager.CorrelateSuccessfulWorkload(workload, time.Now().Add(time.Hour))
+	after, _, _ := manager.Get(filter.ID)
+	if before.MatchedPackets != after.MatchedPackets || before.MatchedBytes != after.MatchedBytes {
+		t.Fatal("correlation duplicated packet counters")
+	}
+}
+
 func TestTrafficFilterHistoryDeleteRequiresStoppedSession(t *testing.T) {
 	manager := NewTrafficFilterManager()
 	filter, err := manager.StartScoped("lab", captureRuntime.Match{Protocol: "icmp"}, 100, []domain.ID{"if-a"}, nil)

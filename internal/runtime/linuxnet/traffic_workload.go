@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/netlab/netlab/internal/app/ports"
 	"github.com/netlab/netlab/internal/domain"
 )
 
@@ -50,6 +51,11 @@ func NewTrafficWorkloadRuntime(executor, docker CommandExecutor, guest TrafficWo
 		docker = SystemExecutor{}
 	}
 	return &TrafficWorkloadRuntime{executor: executor, docker: docker, guest: guest}
+}
+
+func (r *TrafficWorkloadRuntime) ExecuteTrafficWorkload(ctx context.Context, workload domain.TrafficWorkload, target ports.TrafficWorkloadTarget) (ports.TrafficWorkloadExecution, error) {
+	result, err := r.Execute(ctx, workload, TrafficWorkloadTarget(target))
+	return ports.TrafficWorkloadExecution{ExitCode: result.ExitCode, MatchedBytes: result.MatchedBytes, Truncated: result.Truncated}, err
 }
 
 func (r *TrafficWorkloadRuntime) Execute(ctx context.Context, workload domain.TrafficWorkload, target TrafficWorkloadTarget) (TrafficWorkloadResult, error) {

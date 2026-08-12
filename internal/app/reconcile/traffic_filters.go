@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -291,6 +292,22 @@ func (m *TrafficFilterManager) List(laboratoryID domain.ID) []domain.TrafficFilt
 	}
 	sort.Slice(result, func(i, j int) bool { return result[i].CreatedAt.After(result[j].CreatedAt) })
 	return result
+}
+
+func (m *TrafficFilterManager) CorrelateSuccessfulWorkload(workload domain.TrafficWorkload, startedAt time.Time) []domain.ID {
+	filters := m.List(workload.LaboratoryID)
+	matched := make([]domain.ID, 0)
+	for _, filter := range filters {
+		if filter.State != "running" || filter.LastMatchAt == nil || filter.LastMatchAt.Before(startedAt) {
+			continue
+		}
+		expression := strings.ToLower(filter.Expression)
+		if !strings.Contains(expression, workload.Protocol) {
+			continue
+		}
+		matched = append(matched, filter.ID)
+	}
+	return matched
 }
 
 func uniqueTrafficFilterIDs(values []domain.ID) []domain.ID {
