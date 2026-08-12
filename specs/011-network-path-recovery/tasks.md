@@ -306,3 +306,13 @@ Run T088–T097 in parallel. Migration/repository T099–T100, runtime adapter T
 ### Task Completion Rule
 
 Every task must leave its named files buildable and reviewable. Every user-story phase ends with focused tests, recorded evidence and a focused Git commit before dependent deployment work begins.
+
+## Phase 9: Convergence
+
+- [ ] T127 **CRITICAL** Fix L2 convergence so declared but unattached logical ports do not keep an otherwise usable owned switch permanently `pending`, add recovery/diagnostic regressions, and prove every valid acceptance object and connection converges within 30 seconds across 10 service restarts per US1/AC1, FR-002 and SC-001 (contradicts)
+- [ ] T128 Complete bidirectional IPv4 and IPv6 BusyBox acceptance against both the service router and the continuous traffic generator, including valid return paths and at least 100 probes per destination at 99% success, and record target evidence per FR-013 and SC-005 (partial)
+- [ ] T129 Configure and validate a real FancyWAN/FortiGate LAN-to-WAN or equivalent client path through the appliances, preserve honest readiness separation, complete at least 20 consecutive successful client exchanges, and record repeatable authorized target evidence per US4/AC2, FR-022 and SC-008 (partial)
+- [ ] T130 Attach and configure a Ruijie client-facing endpoint and routed-side path, independently prove switching and routing through the vendor devices with at least 20 consecutive successful exchanges, and record repeatable authorized target evidence per US4/AC3, FR-023 and SC-008 (partial)
+- [ ] T131 Add IPv6 neighbor-discovery and path-stop diagnostics with structured HTTP, MCP and UI parity plus unit, contract and privileged failure-path tests so operators can locate a failed multi-hop IPv6 path without database inspection per FR-026 (missing)
+- [ ] T132 Extend the 10-minute workload acceptance to declared IPv4 and IPv6 ICMP, HTTP and DNS paths, assert successful exchanges at least every 5 seconds, verify matching counters increase in every 10-second observation window, and validate address-family/protocol fingerprints and highlight decay without counter reset per FR-027, SC-010 and SC-011 (partial)
+- [ ] T133 Add an authoritative host-restart recovery gate for Ubuntu QEMU and VyOS that verifies stable dual-stack transit/downstream addressing, routes and bidirectional reply paths after host recovery, then record target evidence per FR-014 and US2/AC3 (partial)
