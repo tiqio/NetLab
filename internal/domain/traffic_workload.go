@@ -74,6 +74,15 @@ func (w *TrafficWorkload) Validate() error {
 		if strings.TrimSpace(w.Destination.Name) == "" {
 			return fmt.Errorf("DNS name is required")
 		}
+		if strings.TrimSpace(w.Destination.Address) != "" {
+			address, err := netip.ParseAddr(w.Destination.Address)
+			if err != nil {
+				return fmt.Errorf("invalid DNS server address")
+			}
+			if (w.AddressFamily == "ipv4" && !address.Is4()) || (w.AddressFamily == "ipv6" && !address.Is6()) {
+				return fmt.Errorf("DNS server address does not match address family")
+			}
+		}
 	}
 	if w.Attempts < 0 || w.Successes < 0 || w.Failures < 0 || w.Successes+w.Failures > w.Attempts || w.MatchedBytes < 0 {
 		return fmt.Errorf("invalid workload aggregates")

@@ -29,7 +29,7 @@ func TestPrivilegedTenMinuteTrafficWorkloadObservation(t *testing.T) {
 	if os.Geteuid() != 0 {
 		t.Skip("privileged traffic observation requires root")
 	}
-	for _, tool := range []string{"ip", "ping", "curl", "getent", "tcpdump", "python3"} {
+	for _, tool := range []string{"ip", "ping", "curl", "nslookup", "tcpdump", "python3"} {
 		if _, err := exec.LookPath(tool); err != nil {
 			t.Skipf("acceptance host missing %s: %v", tool, err)
 		}
@@ -120,8 +120,8 @@ while True:
 	defer os.RemoveAll(resolverDirectory)
 	waitTrafficServiceReady(t, ctx, namespaceA, "curl", "--noproxy", "*", "--fail", "--silent", "--max-time", "1", "http://10.62.0.2:18080/")
 	waitTrafficServiceReady(t, ctx, namespaceA, "curl", "-6", "--noproxy", "*", "--fail", "--silent", "--max-time", "1", "http://[fd62::2]:18081/")
-	waitTrafficServiceReady(t, ctx, namespaceA, "getent", "ahostsv4", "netlab.test")
-	waitTrafficServiceReady(t, ctx, namespaceA, "getent", "ahostsv6", "netlab.test")
+	waitTrafficServiceReady(t, ctx, namespaceA, "nslookup", "netlab.test", "10.62.0.2")
+	waitTrafficServiceReady(t, ctx, namespaceA, "nslookup", "netlab.test", "fd62::2")
 	captures := reconcile.NewCaptureManager(t.TempDir(), 12, 768<<20, time.Hour)
 	captures.SetNetworkObjectRepository(objectLinkObservationRepository{links: map[domain.ID]domain.NetworkObjectLink{link.ID: link}, objects: map[domain.ID]domain.NetworkObject{objectA.ID: objectA, objectB.ID: objectB}})
 	filters := reconcile.NewTrafficFilterManager(captures)
@@ -136,10 +136,10 @@ while True:
 	}{
 		{"icmp-ipv4", "icmp", "ipv4", captureRuntime.Match{Protocol: "icmp", DestinationAddress: "10.62.0.2"}, domain.TrafficWorkloadDestination{Address: "10.62.0.2"}},
 		{"http-ipv4", "http", "ipv4", captureRuntime.Match{Protocol: "tcp", DestinationAddress: "10.62.0.2", DestinationPort: 18080}, domain.TrafficWorkloadDestination{URL: "http://10.62.0.2:18080/"}},
-		{"dns-ipv4", "dns", "ipv4", captureRuntime.Match{Protocol: "udp", DestinationAddress: "10.62.0.2", DestinationPort: 53}, domain.TrafficWorkloadDestination{Name: "netlab.test"}},
+		{"dns-ipv4", "dns", "ipv4", captureRuntime.Match{Protocol: "udp", DestinationAddress: "10.62.0.2", DestinationPort: 53}, domain.TrafficWorkloadDestination{Name: "netlab.test", Address: "10.62.0.2"}},
 		{"icmp-ipv6", "icmp", "ipv6", captureRuntime.Match{Protocol: "icmp6", DestinationAddress: "fd62::2"}, domain.TrafficWorkloadDestination{Address: "fd62::2"}},
 		{"http-ipv6", "http", "ipv6", captureRuntime.Match{Protocol: "tcp", DestinationAddress: "fd62::2", DestinationPort: 18081}, domain.TrafficWorkloadDestination{URL: "http://[fd62::2]:18081/"}},
-		{"dns-ipv6", "dns", "ipv6", captureRuntime.Match{Protocol: "udp", DestinationAddress: "fd62::2", DestinationPort: 53}, domain.TrafficWorkloadDestination{Name: "netlab.test"}},
+		{"dns-ipv6", "dns", "ipv6", captureRuntime.Match{Protocol: "udp", DestinationAddress: "fd62::2", DestinationPort: 53}, domain.TrafficWorkloadDestination{Name: "netlab.test", Address: "fd62::2"}},
 	}
 	runtime := linuxnet.NewTrafficWorkloadRuntime(nil, nil, nil)
 	target := ports.TrafficWorkloadTarget{Kind: "namespace", Namespace: namespaceA}

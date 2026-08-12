@@ -85,6 +85,21 @@ func TestTrafficWorkloadDockerAndQGAUseAllowlists(t *testing.T) {
 	}
 }
 
+func TestTrafficWorkloadDNSCanSelectResolverAddressFamily(t *testing.T) {
+	executor := &trafficExecutorFake{output: []byte("Name: netlab.test\nAddress: fd62::2\n")}
+	runtime := NewTrafficWorkloadRuntime(executor, nil, nil)
+	workload := runtimeWorkload("dns")
+	workload.AddressFamily = "ipv6"
+	workload.Destination.Address = "fd62::2"
+	if _, err := runtime.Execute(context.Background(), workload, TrafficWorkloadTarget{Kind: "namespace", Namespace: "safe"}); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"netns", "exec", "safe", "nslookup", "example.test", "fd62::2"}
+	if executor.name != "ip" || !reflect.DeepEqual(executor.args, want) {
+		t.Fatalf("name=%s args=%v", executor.name, executor.args)
+	}
+}
+
 func TestTrafficWorkloadRejectsUnsafeDefinitionsAndBoundsOutput(t *testing.T) {
 	executor := &trafficExecutorFake{output: []byte(strings.Repeat("x", TrafficWorkloadOutputLimit+10))}
 	runtime := NewTrafficWorkloadRuntime(executor, nil, nil)

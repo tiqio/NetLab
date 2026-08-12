@@ -131,6 +131,9 @@ func trafficWorkloadArgv(workload domain.TrafficWorkload) ([]string, error) {
 	case "http":
 		return append([]string{"curl"}, append(family, "--noproxy", "*", "--fail", "--silent", "--show-error", "--max-time", timeout, "--output", "/dev/null", "--write-out", "%{size_download}", workload.Destination.URL)...), nil
 	case "dns":
+		if strings.TrimSpace(workload.Destination.Address) != "" {
+			return []string{"nslookup", workload.Destination.Name, workload.Destination.Address}, nil
+		}
 		database := "ahosts"
 		if workload.AddressFamily == "ipv4" {
 			database = "ahostsv4"
