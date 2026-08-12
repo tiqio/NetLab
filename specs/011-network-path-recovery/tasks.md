@@ -227,7 +227,7 @@
 - [X] T115 [P] Add full laboratory export/import and duplicate compatibility tests for forwarding, VLAN, role and workload configuration in `tests/integration/network_path_export_import_test.go`
 - [X] T116 Add a complete temporary-lab acceptance journey covering US1–US5 and automatic cleanup in `tests/e2e/network_path_recovery.spec.ts`
 - [X] T117 Run `go test ./...`, `go vet ./...`, frontend tests, production build, lint, formatting, privileged integration, recovery and leak gates and record exact results in `specs/011-network-path-recovery/validation/final-local.md`
-- [ ] T118 Commit final cross-story validation and documentation as a focused Git commit and record the clean commit SHA in `specs/011-network-path-recovery/validation/milestones.md`
+- [X] T118 Commit final cross-story validation and documentation as a focused Git commit and record the clean commit SHA in `specs/011-network-path-recovery/validation/milestones.md`
 - [ ] T119 Build the deployment artifact from the clean commit and record candidate ID, binary digest, contract digest and migration 16 state in `specs/011-network-path-recovery/validation/deployment.md`
 - [ ] T120 Create and verify the target rollback directory with previous binary, configuration, readiness identity and online SQLite backup and record it in `specs/011-network-path-recovery/validation/deployment.md`
 - [ ] T121 Deploy the identified artifact to `10.72.1.7` without editing target source and verify service health, release identity and database integrity in `specs/011-network-path-recovery/validation/deployment.md`
