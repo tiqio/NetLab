@@ -148,7 +148,13 @@ func (r *DockerEndpointRuntime) Ensure(ctx context.Context, node domain.Node, pi
 			return err
 		}
 		if iface.MACAddress != "" {
-			_ = r.executor.Run(ctx, r.nsenter, "-t", strconv.Itoa(pid), "-n", r.ip, "link", "set", iface.Name, "address", iface.MACAddress)
+			currentMAC, inspectErr := r.interfaceMAC(ctx, pid, iface.Name)
+			if inspectErr != nil || !strings.EqualFold(currentMAC, iface.MACAddress) {
+				if err := r.executor.Run(ctx, r.nsenter, "-t", strconv.Itoa(pid), "-n", r.ip, "link", "set", iface.Name, "address", iface.MACAddress); err != nil {
+					r.rollback(ctx, created)
+					return err
+				}
+			}
 		}
 		if err := r.executor.Run(ctx, r.nsenter, "-t", strconv.Itoa(pid), "-n", r.ip, "link", "set", iface.Name, "up"); err != nil {
 			r.rollback(ctx, created)
@@ -160,6 +166,23 @@ func (r *DockerEndpointRuntime) Ensure(ctx context.Context, node domain.Node, pi
 		}
 	}
 	return r.executor.Run(ctx, r.nsenter, "-t", strconv.Itoa(pid), "-n", r.ip, "link", "set", "lo", "up")
+}
+
+func (r *DockerEndpointRuntime) interfaceMAC(ctx context.Context, pid int, interfaceName string) (string, error) {
+	body, err := r.executor.Output(ctx, r.nsenter, "-t", strconv.Itoa(pid), "-n", r.ip, "-j", "link", "show", "dev", interfaceName)
+	if err != nil {
+		return "", err
+	}
+	var links []struct {
+		Address string `json:"address"`
+	}
+	if err = json.Unmarshal(body, &links); err != nil {
+		return "", err
+	}
+	if len(links) == 0 || links[0].Address == "" {
+		return "", fmt.Errorf("MAC address unavailable for %s", interfaceName)
+	}
+	return links[0].Address, nil
 }
 
 func (r *DockerEndpointRuntime) applyForwarding(ctx context.Context, node domain.Node, pid int) error {

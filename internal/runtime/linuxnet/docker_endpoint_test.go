@@ -194,6 +194,42 @@ func TestDockerEndpointDoesNotReplaceExistingStaticAddresses(t *testing.T) {
 	}
 }
 
+func TestDockerEndpointDoesNotResetExistingMACAddress(t *testing.T) {
+	node := domain.Node{ID: "node", Config: map[string]any{
+		"interfaces": []map[string]any{{"id": "if-1", "name": "eth0", "mac_address": "02:00:00:00:00:01"}},
+	}}
+	executor := &recordingExecutor{outputs: map[string][]byte{
+		"nsenter -t 42 -n ip -j link show dev eth0":    []byte(`[{"ifname":"eth0","address":"02:00:00:00:00:01"}]`),
+		"nsenter -t 42 -n ip -j address show dev eth0": []byte(`[{"addr_info":[]}]`),
+	}}
+	runtime := newTestDockerEndpointRuntime(t, executor, nil)
+	if err := runtime.Ensure(context.Background(), node, 42); err != nil {
+		t.Fatal(err)
+	}
+	joined := strings.Join(executor.commands, "\n")
+	if strings.Contains(joined, "link set eth0 address") {
+		t.Fatalf("existing MAC address was reset:\n%s", joined)
+	}
+}
+
+func TestDockerEndpointRepairsMismatchedMACAddress(t *testing.T) {
+	node := domain.Node{ID: "node", Config: map[string]any{
+		"interfaces": []map[string]any{{"id": "if-1", "name": "eth0", "mac_address": "02:00:00:00:00:01"}},
+	}}
+	executor := &recordingExecutor{outputs: map[string][]byte{
+		"nsenter -t 42 -n ip -j link show dev eth0":    []byte(`[{"ifname":"eth0","address":"02:00:00:00:00:02"}]`),
+		"nsenter -t 42 -n ip -j address show dev eth0": []byte(`[{"addr_info":[]}]`),
+	}}
+	runtime := newTestDockerEndpointRuntime(t, executor, nil)
+	if err := runtime.Ensure(context.Background(), node, 42); err != nil {
+		t.Fatal(err)
+	}
+	joined := strings.Join(executor.commands, "\n")
+	if !strings.Contains(joined, "link set eth0 address 02:00:00:00:00:01") {
+		t.Fatalf("mismatched MAC address was not repaired:\n%s", joined)
+	}
+}
+
 func TestDockerAddressObservationUsesExactPrefixes(t *testing.T) {
 	observed := dockerInterfaceAddresses([]byte(`[{"addr_info":[{"local":"192.0.2.10","prefixlen":24},{"local":"2001:db8::10","prefixlen":64}]}]`))
 	if !observed["192.0.2.10/24"] || !observed["2001:db8::10/64"] || observed["192.0.2.10/25"] {
