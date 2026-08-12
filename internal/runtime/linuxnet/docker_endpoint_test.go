@@ -139,6 +139,7 @@ func TestDockerEndpointRejectsIPv6DADFailure(t *testing.T) {
 	}}
 	executor := &recordingExecutor{addressOutputs: [][]byte{
 		[]byte(`[{"addr_info":[{"family":"inet6","scope":"global","dadfailed":true}]}]`),
+		[]byte(`[{"addr_info":[{"family":"inet6","scope":"global","dadfailed":true}]}]`),
 	}}
 	runtime := newTestDockerEndpointRuntime(t, executor, nil)
 	if err := runtime.Ensure(context.Background(), node, 42); err == nil || !strings.Contains(err.Error(), "duplicate address detection failed") {
@@ -169,6 +170,34 @@ func TestDockerEndpointEnsureAndRollback(t *testing.T) {
 	}
 	if !strings.Contains(strings.Join(failing.commands, "\n"), "link delete "+HostInterfaceName("if-1")) {
 		t.Fatal("rollback did not delete host endpoint")
+	}
+}
+
+func TestDockerEndpointDoesNotReplaceExistingStaticAddresses(t *testing.T) {
+	node := domain.Node{ID: "node", Config: map[string]any{
+		"interfaces": []map[string]any{{"id": "if-1", "name": "eth0"}},
+		"network_interfaces": []map[string]any{{
+			"name": "eth0", "addresses": []any{"192.0.2.10/24", "2001:db8::10/64"},
+		}},
+	}}
+	executor := &recordingExecutor{addressOutputs: [][]byte{
+		[]byte(`[{"addr_info":[{"family":"inet","local":"192.0.2.10","prefixlen":24,"scope":"global"},{"family":"inet6","local":"2001:db8::10","prefixlen":64,"scope":"global","tentative":false}]}]`),
+		[]byte(`[{"addr_info":[{"family":"inet","local":"192.0.2.10","prefixlen":24,"scope":"global"},{"family":"inet6","local":"2001:db8::10","prefixlen":64,"scope":"global","tentative":false}]}]`),
+	}}
+	runtime := newTestDockerEndpointRuntime(t, executor, nil)
+	if err := runtime.Ensure(context.Background(), node, 42); err != nil {
+		t.Fatal(err)
+	}
+	joined := strings.Join(executor.commands, "\n")
+	if strings.Contains(joined, "address replace") {
+		t.Fatalf("existing static addresses were replaced:\n%s", joined)
+	}
+}
+
+func TestDockerAddressObservationUsesExactPrefixes(t *testing.T) {
+	observed := dockerInterfaceAddresses([]byte(`[{"addr_info":[{"local":"192.0.2.10","prefixlen":24},{"local":"2001:db8::10","prefixlen":64}]}]`))
+	if !observed["192.0.2.10/24"] || !observed["2001:db8::10/64"] || observed["192.0.2.10/25"] {
+		t.Fatalf("observed=%v", observed)
 	}
 }
 
@@ -271,8 +300,8 @@ func TestDockerEndpointReconcilesExactManagedRouteSet(t *testing.T) {
 		t.Fatal(err)
 	}
 	joined = strings.Join(executor.commands, "\n")
-	if strings.Contains(joined, "route delete") {
-		t.Fatalf("idempotent ensure deleted an owned route:\n%s", joined)
+	if strings.Contains(joined, "route delete") || strings.Contains(joined, "route replace") {
+		t.Fatalf("idempotent ensure changed an owned route:\n%s", joined)
 	}
 }
 

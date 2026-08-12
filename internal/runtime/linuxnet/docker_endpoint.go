@@ -287,14 +287,21 @@ func anyStrings(value any) []string {
 }
 
 func (r *DockerEndpointRuntime) configureInterface(ctx context.Context, ownerID domain.ID, pid int, interfaceName string, config dockerInterfaceConfig) error {
+	addressBody, err := r.executor.Output(ctx, r.nsenter, "-t", strconv.Itoa(pid), "-n", r.ip, "-j", "address", "show", "dev", interfaceName)
+	if err != nil {
+		return fmt.Errorf("inspect addresses for %s: %w", interfaceName, err)
+	}
+	observedAddresses := dockerInterfaceAddresses(addressBody)
 	hasIPv6 := false
 	for _, address := range config.Addresses {
 		ipAddress, _, err := net.ParseCIDR(address)
 		if err != nil {
 			return fmt.Errorf("invalid address %q for %s", address, interfaceName)
 		}
-		if err := r.executor.Run(ctx, r.nsenter, "-t", strconv.Itoa(pid), "-n", r.ip, "address", "replace", address, "dev", interfaceName); err != nil {
-			return err
+		if !observedAddresses[address] {
+			if err := r.executor.Run(ctx, r.nsenter, "-t", strconv.Itoa(pid), "-n", r.ip, "address", "replace", address, "dev", interfaceName); err != nil {
+				return err
+			}
 		}
 		hasIPv6 = hasIPv6 || ipAddress.To4() == nil
 	}
@@ -332,15 +339,16 @@ func (r *DockerEndpointRuntime) configureInterface(ctx context.Context, ownerID 
 	}
 	appliedRoutes := make([]dockerRoute, 0)
 	for _, route := range config.Routes {
+		if previousRouteKeys[dockerRouteKey(route)] {
+			continue
+		}
 		if err := r.replaceManagedRoute(ctx, pid, interfaceName, route); err != nil {
 			if rollbackErr := r.rollbackManagedRoutes(ctx, pid, interfaceName, appliedRoutes, deletedRoutes); rollbackErr != nil {
 				return fmt.Errorf("%w; rollback managed routes: %v", err, rollbackErr)
 			}
 			return err
 		}
-		if !previousRouteKeys[dockerRouteKey(route)] {
-			appliedRoutes = append(appliedRoutes, route)
-		}
+		appliedRoutes = append(appliedRoutes, route)
 	}
 	if err := r.routes.Save(pid, interfaceName, config.Routes); err != nil {
 		if rollbackErr := r.rollbackManagedRoutes(ctx, pid, interfaceName, appliedRoutes, deletedRoutes); rollbackErr != nil {
@@ -368,6 +376,27 @@ func (r *DockerEndpointRuntime) configureInterface(ctx context.Context, ownerID 
 		return err
 	}
 	return nil
+}
+
+func dockerInterfaceAddresses(body []byte) map[string]bool {
+	var links []struct {
+		AddressInfo []struct {
+			Local     string `json:"local"`
+			PrefixLen int    `json:"prefixlen"`
+		} `json:"addr_info"`
+	}
+	result := map[string]bool{}
+	if json.Unmarshal(body, &links) != nil {
+		return result
+	}
+	for _, link := range links {
+		for _, address := range link.AddressInfo {
+			if address.Local != "" && address.PrefixLen > 0 {
+				result[fmt.Sprintf("%s/%d", address.Local, address.PrefixLen)] = true
+			}
+		}
+	}
+	return result
 }
 
 func (r *DockerEndpointRuntime) waitForIPv6AddressReady(ctx context.Context, pid int, interfaceName string) error {
