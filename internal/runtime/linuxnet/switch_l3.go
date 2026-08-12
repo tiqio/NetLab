@@ -70,13 +70,14 @@ func (r *SwitchL3Runtime) DiagnosticsObject(ctx context.Context, object domain.N
 			mismatches = append(mismatches, fmt.Sprintf("interface %s addresses desired=%v observed=%v", iface.Name, iface.Addresses, observedInterfaces[iface.Name]))
 		}
 	}
-	desiredRoutes := routeKeys(desired.Routes)
-	if !containsAllRouteKeys(observedRoutes, desiredRoutes) {
-		mismatches = append(mismatches, fmt.Sprintf("routes desired=%v observed=%v", desiredRoutes, observedRoutes))
+	desiredRouteKeys := routeKeys(desired.Routes)
+	observedRouteKeys := routeKeys(observedRoutes)
+	if !containsAllRoutes(observedRoutes, desired.Routes) {
+		mismatches = append(mismatches, fmt.Sprintf("routes desired=%v observed=%v", desiredRouteKeys, observedRouteKeys))
 	}
 	return map[string]any{
 		"desired":    map[string]any{"forward_ipv4": desired.ForwardIPv4, "forward_ipv6": desired.ForwardIPv6, "interfaces": desired.Interfaces, "routes": desired.Routes},
-		"observed":   map[string]any{"forward_ipv4": observedForward4, "forward_ipv6": observedForward6, "interfaces": observedInterfaces, "routes": observedRoutes},
+		"observed":   map[string]any{"forward_ipv4": observedForward4, "forward_ipv6": observedForward6, "interfaces": observedInterfaces, "routes": observedRouteKeys},
 		"mismatches": mismatches,
 	}, nil
 }
@@ -112,7 +113,7 @@ func observedL3Interfaces(body []byte) map[string][]string {
 	return result
 }
 
-func observedL3Routes(body []byte) []string {
+func observedL3Routes(body []byte) []domain.RouteConfig {
 	var routes []struct {
 		Destination string `json:"dst"`
 		Gateway     string `json:"gateway"`
@@ -126,7 +127,7 @@ func observedL3Routes(body []byte) []string {
 		}
 		values = append(values, domain.RouteConfig{Destination: route.Destination, Gateway: route.Gateway, Metric: route.Metric})
 	}
-	return routeKeys(values)
+	return values
 }
 
 func routeKeys(routes []domain.RouteConfig) []string {
@@ -137,13 +138,16 @@ func routeKeys(routes []domain.RouteConfig) []string {
 	return result
 }
 
-func containsAllRouteKeys(observed, desired []string) bool {
-	values := make(map[string]struct{}, len(observed))
-	for _, route := range observed {
-		values[route] = struct{}{}
-	}
-	for _, route := range desired {
-		if _, ok := values[route]; !ok {
+func containsAllRoutes(observed, desired []domain.RouteConfig) bool {
+	for _, expected := range desired {
+		matched := false
+		for _, actual := range observed {
+			if actual.Destination == expected.Destination && actual.Gateway == expected.Gateway && (expected.Metric == 0 || actual.Metric == expected.Metric) {
+				matched = true
+				break
+			}
+		}
+		if !matched {
 			return false
 		}
 	}

@@ -212,3 +212,42 @@ func TestL3ConfigurationConvergenceAllowsAdditionalConnectedRoutes(t *testing.T)
 		t.Fatalf("diagnostics=%v", diagnostics)
 	}
 }
+
+func TestL3ConfigurationConvergenceAcceptsKernelIPv6DefaultMetric(t *testing.T) {
+	executor := &scriptExecutor{outputFor: func(_ string, args ...string) []byte {
+		command := strings.Join(args, " ")
+		switch {
+		case strings.Contains(command, "-j address show"):
+			return []byte(`[{"ifname":"eth0","addr_info":[{"local":"fd10::1","prefixlen":64,"scope":"global"}]}]`)
+		case strings.Contains(command, "-j route show"):
+			return []byte(`[{"dst":"fd40::/64","gateway":"fd10::fe","metric":1024}]`)
+		case strings.Contains(command, "net.ipv4.ip_forward"):
+			return []byte("0\n")
+		case strings.Contains(command, "net.ipv6.conf.all.forwarding"):
+			return []byte("1\n")
+		default:
+			return nil
+		}
+	}}
+	runtime, _ := NewSwitchL3Runtime(executor)
+	object := domain.NetworkObject{ID: "diagnostic-router", Config: map[string]any{
+		"interfaces":   []any{map[string]any{"name": "eth0", "addresses": []any{"fd10::1/64"}}},
+		"routes":       []any{map[string]any{"destination": "fd40::/64", "gateway": "fd10::fe"}},
+		"forward_ipv6": true,
+	}}
+	converged, diagnostics, err := runtime.ConfigurationConverged(context.Background(), object)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !converged {
+		t.Fatalf("diagnostics=%v", diagnostics)
+	}
+}
+
+func TestL3ConfigurationConvergenceRequiresExplicitMetric(t *testing.T) {
+	observed := []domain.RouteConfig{{Destination: "fd40::/64", Gateway: "fd10::fe", Metric: 1024}}
+	desired := []domain.RouteConfig{{Destination: "fd40::/64", Gateway: "fd10::fe", Metric: 20}}
+	if containsAllRoutes(observed, desired) {
+		t.Fatal("explicit metric mismatch unexpectedly converged")
+	}
+}
