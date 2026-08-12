@@ -185,8 +185,8 @@
 
 ### Tests for User Story 5
 
-- [ ] T088 [P] [US5] Write failing domain tests for traffic workload validation, lifecycle and bounded aggregates in `internal/domain/traffic_workload_test.go`
-- [ ] T089 [P] [US5] Write failing migration and repository tests for workload persistence, revisions and aggregate updates in `internal/store/sqlite/traffic_workload_repository_test.go`
+- [X] T088 [P] [US5] Write failing domain tests for traffic workload validation, lifecycle and bounded aggregates in `internal/domain/traffic_workload_test.go`
+- [X] T089 [P] [US5] Write failing migration and repository tests for workload persistence, revisions and aggregate updates in `internal/store/sqlite/traffic_workload_repository_test.go`
 - [ ] T090 [P] [US5] Write failing durable-task tests for create/start/stop/delete, cancellation, idempotency and recovery in `internal/app/command/traffic_workload_test.go`
 - [ ] T091 [P] [US5] Write failing runtime adapter tests for namespace, Docker and QGA workload execution allowlists, timeouts and output bounds in `internal/runtime/linuxnet/traffic_workload_test.go`
 - [ ] T092 [P] [US5] Write failing HTTP contract tests for all workload endpoints and structured failures in `internal/api/http/traffic_workload_contract_test.go`
@@ -198,8 +198,8 @@
 
 ### Implementation for User Story 5
 
-- [ ] T098 [US5] Define traffic workload, protocol aggregate and lifecycle validation in `internal/domain/traffic_workload.go`
-- [ ] T099 [US5] Add migration 0016 for durable traffic workloads and aggregate outcomes in `internal/store/sqlite/migrations/0016_traffic_workloads.sql`
+- [X] T098 [US5] Define traffic workload, protocol aggregate and lifecycle validation in `internal/domain/traffic_workload.go`
+- [X] T099 [US5] Add migration 0016 for durable traffic workloads and aggregate outcomes in `internal/store/sqlite/migrations/0016_traffic_workloads.sql`
 - [ ] T100 [US5] Implement workload repository transactions, revisions and outbox integration in `internal/store/sqlite/traffic_workload_repository.go`
 - [ ] T101 [US5] Implement durable workload create/start/stop/delete command handlers in `internal/app/command/traffic_workload.go`
 - [ ] T102 [US5] Implement capability-specific namespace, Docker and QGA workload execution with safe argv and bounded output in `internal/runtime/linuxnet/traffic_workload.go`
