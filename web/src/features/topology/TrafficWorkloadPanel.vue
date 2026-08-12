@@ -69,12 +69,17 @@ async function create() {
 async function highlight(value: TrafficWorkload) {
   if (!props.laboratoryId) return;
   const filters = await api.listTrafficFilters(props.laboratoryId);
+  const successTime = value.last_success_at
+    ? Date.parse(value.last_success_at)
+    : undefined;
+  const correlationWindowMs = Math.max(value.timeout_seconds * 1000, 2000);
   const matched = filters.filter(
     (item) =>
       item.traffic_filter.expression.toLowerCase().includes(value.protocol) &&
       item.traffic_filter.last_match_at &&
-      (!value.last_success_at ||
-        item.traffic_filter.last_match_at >= value.last_success_at),
+      (successTime === undefined ||
+        Date.parse(item.traffic_filter.last_match_at) >=
+          successTime - correlationWindowMs),
   );
   emit(
     "overlay",

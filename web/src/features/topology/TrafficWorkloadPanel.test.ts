@@ -109,4 +109,47 @@ describe("TrafficWorkloadPanel", () => {
     expect(wrapper.emitted("overlay")?.[0]?.[1]).toBe(true);
     expect(wrapper.emitted("overlay")?.[0]?.[2]).toBe("#22c55e");
   });
+
+  it("correlates packets captured immediately before workload success", async () => {
+    vi.mocked(api.listTrafficFilters).mockResolvedValue([
+      {
+        ambiguous: false,
+        traffic_filter: {
+          id: "filter",
+          laboratory_id: "lab",
+          expression: "icmp",
+          color: "#22c55e",
+          state: "running",
+          max_observations: 100,
+          observations: [
+            {
+              fingerprint: "icmp:ipv4",
+              interface_id: "if-1",
+              link_id: "link-1",
+              direction: "egress",
+              first_seen: "2026-08-11T23:59:59.990Z",
+              last_seen: "2026-08-11T23:59:59.990Z",
+              count: 1,
+              bytes: 64,
+            },
+          ],
+          matched_packets: 1,
+          matched_bytes: 64,
+          last_match_at: "2026-08-11T23:59:59.990Z",
+          created_at: "2026-08-11T23:59:00Z",
+        },
+      },
+    ]);
+    const wrapper = mount(TrafficWorkloadPanel, {
+      props: { laboratoryId: "lab" },
+      global: { plugins: [createPinia()] },
+    });
+    await flushPromises();
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("高亮匹配路径"))!
+      .trigger("click");
+    await flushPromises();
+    expect(wrapper.emitted("overlay")?.[0]?.[1]).toBe(true);
+  });
 });
