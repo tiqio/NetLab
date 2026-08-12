@@ -360,9 +360,13 @@ func (r *DockerEndpointRuntime) configureInterface(ctx context.Context, ownerID 
 	for _, route := range previousRoutes {
 		previousRouteKeys[dockerRouteKey(route)] = true
 	}
+	observedRoutes, err := r.observeManagedRoutes(ctx, pid, interfaceName)
+	if err != nil {
+		return err
+	}
 	appliedRoutes := make([]dockerRoute, 0)
 	for _, route := range config.Routes {
-		if previousRouteKeys[dockerRouteKey(route)] {
+		if dockerRouteObserved(observedRoutes, route) {
 			continue
 		}
 		if err := r.replaceManagedRoute(ctx, pid, interfaceName, route); err != nil {
@@ -399,6 +403,46 @@ func (r *DockerEndpointRuntime) configureInterface(ctx context.Context, ownerID 
 		return err
 	}
 	return nil
+}
+
+func (r *DockerEndpointRuntime) observeManagedRoutes(ctx context.Context, pid int, interfaceName string) ([]dockerRoute, error) {
+	result := make([]dockerRoute, 0)
+	for _, family := range []string{"-4", "-6"} {
+		body, err := r.executor.Output(ctx, r.nsenter, "-t", strconv.Itoa(pid), "-n", r.ip, "-j", family, "route", "show", "dev", interfaceName)
+		if err != nil {
+			return nil, fmt.Errorf("inspect %s routes for %s: %w", family, interfaceName, err)
+		}
+		var routes []struct {
+			Destination string `json:"dst"`
+			Gateway     string `json:"gateway"`
+			Metric      int    `json:"metric"`
+		}
+		if err = json.Unmarshal(body, &routes); err != nil {
+			return nil, fmt.Errorf("decode %s routes for %s: %w", family, interfaceName, err)
+		}
+		for _, route := range routes {
+			destination := route.Destination
+			if destination == "default" {
+				destination = "0.0.0.0/0"
+				if family == "-6" {
+					destination = "::/0"
+				}
+			}
+			if destination != "" {
+				result = append(result, dockerRoute{Destination: destination, Gateway: route.Gateway, Metric: route.Metric})
+			}
+		}
+	}
+	return result, nil
+}
+
+func dockerRouteObserved(observed []dockerRoute, desired dockerRoute) bool {
+	for _, route := range observed {
+		if route.Destination == desired.Destination && route.Gateway == desired.Gateway && (desired.Metric == 0 || route.Metric == desired.Metric) {
+			return true
+		}
+	}
+	return false
 }
 
 func dockerInterfaceAddresses(body []byte) map[string]bool {

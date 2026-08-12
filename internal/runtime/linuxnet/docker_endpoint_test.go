@@ -83,6 +83,9 @@ func (e *recordingExecutor) Output(ctx context.Context, name string, args ...str
 		}
 		return []byte(`[{"addr_info":[{"family":"inet","scope":"global","dynamic":true},{"family":"inet6","scope":"global","dynamic":true,"tentative":false}]}]`), nil
 	}
+	if strings.Contains(command, "-j -4 route show") || strings.Contains(command, "-j -6 route show") {
+		return []byte(`[]`), nil
+	}
 	return nil, e.Run(ctx, name, args...)
 }
 
@@ -307,7 +310,10 @@ func TestDockerEndpointReconcilesExactManagedRouteSet(t *testing.T) {
 			},
 		}},
 	}}
-	executor := &recordingExecutor{}
+	executor := &recordingExecutor{outputs: map[string][]byte{
+		"nsenter -t 42 -n ip -j -4 route show dev eth0": []byte(`[]`),
+		"nsenter -t 42 -n ip -j -6 route show dev eth0": []byte(`[]`),
+	}}
 	routes := &memoryManagedRouteStore{values: map[string][]dockerRoute{
 		"42/eth0": {{Destination: "203.0.113.0/24", Gateway: "192.0.2.254", Metric: 30}},
 	}}
@@ -332,12 +338,48 @@ func TestDockerEndpointReconcilesExactManagedRouteSet(t *testing.T) {
 		t.Fatalf("persisted routes=%+v", routes.values["42/eth0"])
 	}
 	executor.commands = nil
+	executor.outputs["nsenter -t 42 -n ip -j -4 route show dev eth0"] = []byte(`[{"dst":"198.51.100.0/24","gateway":"192.0.2.1","metric":20}]`)
+	executor.outputs["nsenter -t 42 -n ip -j -6 route show dev eth0"] = []byte(`[{"dst":"2001:db8:2::/64","gateway":"2001:db8::1","metric":1024}]`)
 	if err := runtime.Ensure(context.Background(), node, 42); err != nil {
 		t.Fatal(err)
 	}
 	joined = strings.Join(executor.commands, "\n")
 	if strings.Contains(joined, "route delete") || strings.Contains(joined, "route replace") {
 		t.Fatalf("idempotent ensure changed an owned route:\n%s", joined)
+	}
+}
+
+func TestDockerEndpointRepairsOwnedRouteMissingFromKernel(t *testing.T) {
+	node := domain.Node{ID: "node", Config: map[string]any{
+		"interfaces": []map[string]any{{"id": "if-1", "name": "eth0"}},
+		"network_interfaces": []map[string]any{{
+			"name": "eth0", "routes": []any{map[string]any{"destination": "::/0", "gateway": "2001:db8::1"}},
+		}},
+	}}
+	executor := &recordingExecutor{outputs: map[string][]byte{
+		"nsenter -t 42 -n ip -j -4 route show dev eth0": []byte(`[]`),
+		"nsenter -t 42 -n ip -j -6 route show dev eth0": []byte(`[]`),
+	}}
+	routes := &memoryManagedRouteStore{values: map[string][]dockerRoute{
+		"42/eth0": {{Destination: "::/0", Gateway: "2001:db8::1"}},
+	}}
+	runtime := newTestDockerEndpointRuntime(t, executor, routes)
+	if err := runtime.Ensure(context.Background(), node, 42); err != nil {
+		t.Fatal(err)
+	}
+	joined := strings.Join(executor.commands, "\n")
+	if !strings.Contains(joined, "-6 route replace ::/0 via 2001:db8::1 dev eth0") {
+		t.Fatalf("missing kernel route was not repaired:\n%s", joined)
+	}
+}
+
+func TestDockerRouteObservationNormalizesDefaultsAndMetrics(t *testing.T) {
+	observed := []dockerRoute{{Destination: "::/0", Gateway: "2001:db8::1", Metric: 1024}}
+	if !dockerRouteObserved(observed, dockerRoute{Destination: "::/0", Gateway: "2001:db8::1"}) {
+		t.Fatal("implicit metric did not match kernel default")
+	}
+	if dockerRouteObserved(observed, dockerRoute{Destination: "::/0", Gateway: "2001:db8::1", Metric: 20}) {
+		t.Fatal("explicit metric mismatch unexpectedly matched")
 	}
 }
 
