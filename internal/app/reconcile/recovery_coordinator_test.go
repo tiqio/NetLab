@@ -40,6 +40,64 @@ func TestNetworkRecoveryPreservesLegacySinglePortConfiguration(t *testing.T) {
 	}
 }
 
+type pendingRecoveryRuntime struct {
+	configured bool
+}
+
+func (r *pendingRecoveryRuntime) Configure(context.Context, domain.NetworkObject) error {
+	r.configured = true
+	return nil
+}
+
+func (*pendingRecoveryRuntime) Delete(context.Context, domain.ID) error { return nil }
+
+func (*pendingRecoveryRuntime) InspectNetworkObject(context.Context, domain.NetworkObject) (domain.RuntimeBackingObservation, error) {
+	return domain.RuntimeBackingObservation{Kind: "namespace", RuntimeName: "router", Owned: true, Usable: true}, nil
+}
+
+func (*pendingRecoveryRuntime) ConfigurationConverged(context.Context, domain.NetworkObject) (bool, map[string]any, error) {
+	return false, map[string]any{"mismatches": []string{"eth0 unavailable"}}, nil
+}
+
+func TestNetworkRecoveryKeepsUsableButUnconvergedObjectPending(t *testing.T) {
+	ctx := context.Background()
+	database, err := storesqlite.Open(ctx, "file:"+string(domain.NewID())+"?mode=memory&cache=shared")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer database.Close()
+	repositories := storesqlite.NewRepositories(database)
+	topology := storesqlite.NewTopologyRepository(database)
+	now := time.Now().UTC()
+	lab := domain.Laboratory{ID: domain.NewID(), Name: "pending recovery", Revision: 1, RecoveryPolicy: domain.RecoveryAutoRestore, LifecycleState: "active", CreatedAt: now, UpdatedAt: now}
+	if err = topology.CreateLaboratory(ctx, lab); err != nil {
+		t.Fatal(err)
+	}
+	object := domain.NetworkObject{ID: domain.NewID(), LaboratoryID: lab.ID, Name: "router", Kind: domain.NetworkSwitchL3, Revision: 1, DesiredState: "active", ObservedState: "active", Config: map[string]any{"interfaces": []any{map[string]any{"name": "eth0", "addresses": []any{"192.0.2.1/24"}}}}, CreatedAt: now, UpdatedAt: now}
+	if err = repositories.CreateNetworkObject(ctx, object); err != nil {
+		t.Fatal(err)
+	}
+	runtime := &pendingRecoveryRuntime{}
+	service := NewNetworkObjectService(repositories, NetworkRuntimeDispatch{SwitchL3: runtime})
+	var outcome RecoveryResourceOutcome
+	if err = service.RestoreLaboratoryWithCheckpoints(ctx, lab.ID, func(value RecoveryResourceOutcome) error {
+		outcome = value
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	restored, err := repositories.GetNetworkObject(ctx, object.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !runtime.configured || restored.ObservedState != "pending" {
+		t.Fatalf("runtime=%+v object=%+v", runtime, restored)
+	}
+	if outcome.State != "pending" || outcome.ResourceID != object.ID || !strings.Contains(outcome.Error, "waiting for runtime ports") {
+		t.Fatalf("outcome=%+v", outcome)
+	}
+}
+
 type recoveryTaskStoreFake struct {
 	created   []domain.OperationTask
 	updated   []domain.OperationTask

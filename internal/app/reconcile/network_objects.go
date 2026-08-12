@@ -660,6 +660,13 @@ func (s *NetworkObjectService) RestoreLaboratoryWithCheckpoints(ctx context.Cont
 			}
 			continue
 		}
+		if problem := inspectNetworkObjectConfiguration(ctx, runtime, value); problem != nil {
+			_ = s.repository.SetNetworkObjectState(ctx, value.ID, "pending", problem)
+			if checkpointErr := checkpoint(RecoveryResourceOutcome{ResourceType: "network_object", ResourceID: value.ID, State: "pending", Error: problem.Message}); checkpointErr != nil {
+				return checkpointErr
+			}
+			continue
+		}
 		_ = s.repository.SetNetworkObjectState(ctx, value.ID, "active", nil)
 		if err = checkpoint(RecoveryResourceOutcome{ResourceType: "network_object", ResourceID: value.ID, State: "recovered"}); err != nil {
 			return err
