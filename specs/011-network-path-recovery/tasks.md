@@ -200,7 +200,7 @@
 
 - [X] T098 [US5] Define traffic workload, protocol aggregate and lifecycle validation in `internal/domain/traffic_workload.go`
 - [X] T099 [US5] Add migration 0016 for durable traffic workloads and aggregate outcomes in `internal/store/sqlite/migrations/0016_traffic_workloads.sql`
-- [ ] T100 [US5] Implement workload repository transactions, revisions and outbox integration in `internal/store/sqlite/traffic_workload_repository.go`
+- [X] T100 [US5] Implement workload repository transactions, revisions and outbox integration in `internal/store/sqlite/traffic_workload_repository.go`
 - [ ] T101 [US5] Implement durable workload create/start/stop/delete command handlers in `internal/app/command/traffic_workload.go`
 - [ ] T102 [US5] Implement capability-specific namespace, Docker and QGA workload execution with safe argv and bounded output in `internal/runtime/linuxnet/traffic_workload.go`
 - [ ] T103 [US5] Implement workload scheduling, aggregate updates, cancellation and startup recovery in `internal/app/reconcile/traffic_workloads.go`
