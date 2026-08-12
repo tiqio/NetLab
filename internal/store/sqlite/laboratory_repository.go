@@ -703,9 +703,13 @@ func (r *TopologyRepository) Snapshot(ctx context.Context, id domain.ID) (domain
 	if err != nil {
 		return domain.TopologySnapshot{}, err
 	}
+	workloads, err := (&Repositories{database: r.database}).ListTrafficWorkloads(ctx, id)
+	if err != nil {
+		return domain.TopologySnapshot{}, err
+	}
 	var sequence int64
 	_ = r.database.DB.QueryRowContext(ctx, `SELECT COALESCE(MAX(sequence),0) FROM outbox_events`).Scan(&sequence)
-	return domain.TopologySnapshot{Laboratory: lab, Nodes: nodes, Interfaces: interfaces, Links: links, NetworkObjects: networkObjects, Attachments: attachments, NetworkObjectLinks: objectLinks, Placements: placements, Sequence: sequence}, nil
+	return domain.TopologySnapshot{Laboratory: lab, Nodes: nodes, Interfaces: interfaces, Links: links, NetworkObjects: networkObjects, Attachments: attachments, NetworkObjectLinks: objectLinks, Placements: placements, TrafficWorkloads: workloads, Sequence: sequence}, nil
 }
 
 type scanner interface{ Scan(...any) error }

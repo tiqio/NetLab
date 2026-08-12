@@ -81,7 +81,8 @@ describe("TopologyCanvas scale fixture", () => {
       samples.push(performance.now() - updateStart);
     }
     samples.sort((left, right) => left - right);
-    expect(samples[Math.floor(samples.length * 0.95)]).toBeLessThan(100);
+    const p95Index = Math.ceil(samples.length * 0.95) - 1;
+    expect(samples[p95Index]).toBeLessThan(100);
     wrapper.unmount();
   });
 

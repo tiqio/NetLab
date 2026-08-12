@@ -15,6 +15,10 @@ type ImportRepository interface {
 	ImportTopology(context.Context, domain.Laboratory, []domain.Node, []domain.Interface, []domain.Link, []domain.NetworkObject, []domain.NetworkObjectLink, []domain.TopologyPlacement) error
 }
 
+type WorkloadImportRepository interface {
+	ImportTopologyWithWorkloads(context.Context, domain.Laboratory, []domain.Node, []domain.Interface, []domain.Link, []domain.NetworkObject, []domain.NetworkObjectLink, []domain.TopologyPlacement, []domain.TrafficWorkload) error
+}
+
 type ImportLaboratoryReader interface {
 	GetLaboratory(context.Context, domain.ID) (domain.Laboratory, error)
 }
@@ -176,6 +180,43 @@ func (s *ImportService) ImportAs(ctx context.Context, laboratoryID domain.ID, bu
 	placements, err := resolveImportedPlacements(lab.ID, bundle.Placements, nodeIDs, networkObjectIDs)
 	if err != nil {
 		return domain.Laboratory{}, err
+	}
+	workloads := make([]domain.TrafficWorkload, 0, len(bundle.TrafficWorkloads))
+	for _, exported := range bundle.TrafficWorkloads {
+		source := exported.Source
+		switch source.Kind {
+		case "node":
+			source.ResourceID = nodeIDs[string(source.ResourceID)]
+			if source.InterfaceID != "" {
+				source.InterfaceID = interfaceIDs[string(source.InterfaceID)]
+				if source.InterfaceID == "" {
+					return domain.Laboratory{}, fmt.Errorf("workload %s references missing interface", exported.Name)
+				}
+			}
+		case "network_object":
+			source.ResourceID = networkObjectIDs[string(source.ResourceID)]
+		default:
+			return domain.Laboratory{}, fmt.Errorf("workload %s has unsupported source kind", exported.Name)
+		}
+		if source.ResourceID == "" {
+			return domain.Laboratory{}, fmt.Errorf("workload %s references missing source", exported.Name)
+		}
+		desired := exported.DesiredState
+		if desired != "running" {
+			desired = "stopped"
+		}
+		workload := domain.TrafficWorkload{ID: domain.NewID(), LaboratoryID: lab.ID, Name: exported.Name, Revision: 1, Source: source, Protocol: exported.Protocol, AddressFamily: exported.AddressFamily, Destination: exported.Destination, IntervalSeconds: exported.IntervalSeconds, TimeoutSeconds: exported.TimeoutSeconds, DesiredState: desired, ObservedState: "stopped", CreatedAt: now, UpdatedAt: now}
+		if err = workload.Validate(); err != nil {
+			return domain.Laboratory{}, fmt.Errorf("workload %s: %w", exported.Name, err)
+		}
+		workloads = append(workloads, workload)
+	}
+	if len(workloads) > 0 {
+		extended, ok := s.repository.(WorkloadImportRepository)
+		if !ok {
+			return domain.Laboratory{}, fmt.Errorf("repository does not support traffic workload import")
+		}
+		return lab, extended.ImportTopologyWithWorkloads(ctx, lab, nodes, interfaces, links, networkObjects, networkObjectLinks, placements, workloads)
 	}
 	return lab, s.repository.ImportTopology(ctx, lab, nodes, interfaces, links, networkObjects, networkObjectLinks, placements)
 }

@@ -52,20 +52,31 @@ func (r *Repositories) ListTrafficWorkloads(ctx context.Context, lab domain.ID) 
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	out := []domain.TrafficWorkload{}
+	ids := []domain.ID{}
 	for rows.Next() {
 		var id domain.ID
 		if err = rows.Scan(&id); err != nil {
+			rows.Close()
 			return nil, err
 		}
+		ids = append(ids, id)
+	}
+	if err = rows.Err(); err != nil {
+		rows.Close()
+		return nil, err
+	}
+	if err = rows.Close(); err != nil {
+		return nil, err
+	}
+	out := make([]domain.TrafficWorkload, 0, len(ids))
+	for _, id := range ids {
 		w, e := r.GetTrafficWorkload(ctx, id)
 		if e != nil {
 			return nil, e
 		}
 		out = append(out, w)
 	}
-	return out, rows.Err()
+	return out, nil
 }
 
 func (r *Repositories) ListAllTrafficWorkloads(ctx context.Context) ([]domain.TrafficWorkload, error) {
@@ -73,20 +84,31 @@ func (r *Repositories) ListAllTrafficWorkloads(ctx context.Context) ([]domain.Tr
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	values := []domain.TrafficWorkload{}
+	ids := []domain.ID{}
 	for rows.Next() {
 		var id domain.ID
 		if err = rows.Scan(&id); err != nil {
+			rows.Close()
 			return nil, err
 		}
+		ids = append(ids, id)
+	}
+	if err = rows.Err(); err != nil {
+		rows.Close()
+		return nil, err
+	}
+	if err = rows.Close(); err != nil {
+		return nil, err
+	}
+	values := make([]domain.TrafficWorkload, 0, len(ids))
+	for _, id := range ids {
 		value, getErr := r.GetTrafficWorkload(ctx, id)
 		if getErr != nil {
 			return nil, getErr
 		}
 		values = append(values, value)
 	}
-	return values, rows.Err()
+	return values, nil
 }
 
 func (r *Repositories) UpdateTrafficWorkloadState(ctx context.Context, id domain.ID, expected domain.Revision, desired, observed string, problem *domain.Problem, taskID domain.ID) (domain.TrafficWorkload, error) {

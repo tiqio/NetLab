@@ -193,7 +193,7 @@
 - [X] T093 [P] [US5] Write failing MCP parity tests for workload lifecycle and aggregate reads in `internal/api/mcp/traffic_workload_tools_test.go`
 - [X] T094 [P] [US5] Write failing Traffic Filter correlation tests for successful versus failed workload attempts in `internal/app/reconcile/traffic_filters_test.go`
 - [X] T095 [P] [US5] Write failing workload restart and orphan-task recovery tests in `tests/recovery/traffic_workload_recovery_test.go`
-- [ ] T096 [P] [US5] Write failing 10-minute ICMP/HTTP/DNS privileged observation test in `tests/integration/traffic_workload_filter_test.go`
+- [X] T096 [P] [US5] Write failing 10-minute ICMP/HTTP/DNS privileged observation test in `tests/integration/traffic_workload_filter_test.go`
 - [X] T097 [P] [US5] Write failing frontend panel tests for aggregates, degraded running state, filter counters and highlight decay in `web/src/features/topology/TrafficWorkloadPanel.test.ts`
 
 ### Implementation for User Story 5
@@ -212,7 +212,7 @@
 - [X] T109 [US5] Add workload API client and Pinia state convergence in `web/src/api/client.ts` and `web/src/stores/trafficWorkloads.ts`
 - [X] T110 [US5] Implement localized workload creation, lifecycle, aggregates and degraded-state UI in `web/src/features/topology/TrafficWorkloadPanel.vue`
 - [X] T111 [US5] Integrate workload statistics with Traffic Filter details and topology highlight overlays in `web/src/features/topology/TopologyWorkspace.vue`
-- [ ] T112 [US5] Run US5 migration, domain, task, runtime, contract, UI, 10-minute observation and restart gates, record results in `specs/011-network-path-recovery/validation/us5-traffic.md`, and commit the milestone with a focused Git commit
+- [X] T112 [US5] Run US5 migration, domain, task, runtime, contract, UI, 10-minute observation and restart gates, record results in `specs/011-network-path-recovery/validation/us5-traffic.md`, and commit the milestone with a focused Git commit
 
 **Checkpoint**: All user stories are independently functional and the component-matrix laboratory can generate meaningful observable traffic.
 
@@ -222,11 +222,11 @@
 
 **Purpose**: Validate cross-story behavior, security, cleanup, documentation, immutable deployment and rollback.
 
-- [ ] T113 [P] Add cross-story two-browser/API/MCP concurrency acceptance for reconcile, VLAN update and workload lifecycle in `tests/e2e/network_path_recovery_concurrency.spec.ts`
-- [ ] T114 [P] Add host-command injection, ownership-boundary, secret-redaction and workload allowlist tests in `tests/security/network_path_recovery_security_test.go`
-- [ ] T115 [P] Add full laboratory export/import and duplicate compatibility tests for forwarding, VLAN, role and workload configuration in `tests/integration/network_path_export_import_test.go`
-- [ ] T116 Add a complete temporary-lab acceptance journey covering US1–US5 and automatic cleanup in `tests/e2e/network_path_recovery.spec.ts`
-- [ ] T117 Run `go test ./...`, `go vet ./...`, frontend tests, production build, lint, formatting, privileged integration, recovery and leak gates and record exact results in `specs/011-network-path-recovery/validation/final-local.md`
+- [X] T113 [P] Add cross-story two-browser/API/MCP concurrency acceptance for reconcile, VLAN update and workload lifecycle in `tests/e2e/network_path_recovery_concurrency.spec.ts`
+- [X] T114 [P] Add host-command injection, ownership-boundary, secret-redaction and workload allowlist tests in `tests/security/network_path_recovery_security_test.go`
+- [X] T115 [P] Add full laboratory export/import and duplicate compatibility tests for forwarding, VLAN, role and workload configuration in `tests/integration/network_path_export_import_test.go`
+- [X] T116 Add a complete temporary-lab acceptance journey covering US1–US5 and automatic cleanup in `tests/e2e/network_path_recovery.spec.ts`
+- [X] T117 Run `go test ./...`, `go vet ./...`, frontend tests, production build, lint, formatting, privileged integration, recovery and leak gates and record exact results in `specs/011-network-path-recovery/validation/final-local.md`
 - [ ] T118 Commit final cross-story validation and documentation as a focused Git commit and record the clean commit SHA in `specs/011-network-path-recovery/validation/milestones.md`
 - [ ] T119 Build the deployment artifact from the clean commit and record candidate ID, binary digest, contract digest and migration 16 state in `specs/011-network-path-recovery/validation/deployment.md`
 - [ ] T120 Create and verify the target rollback directory with previous binary, configuration, readiness identity and online SQLite backup and record it in `specs/011-network-path-recovery/validation/deployment.md`

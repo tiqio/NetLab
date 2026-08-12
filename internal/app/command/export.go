@@ -65,6 +65,18 @@ type ExportPlacement struct {
 	Revision         domain.Revision              `json:"revision,omitempty"`
 }
 
+type ExportTrafficWorkload struct {
+	ExportID        string                            `json:"export_id"`
+	Name            string                            `json:"name"`
+	Source          domain.TrafficWorkloadEndpoint    `json:"source"`
+	Protocol        string                            `json:"protocol"`
+	AddressFamily   string                            `json:"address_family"`
+	Destination     domain.TrafficWorkloadDestination `json:"destination"`
+	IntervalSeconds int                               `json:"interval_seconds"`
+	TimeoutSeconds  int                               `json:"timeout_seconds"`
+	DesiredState    string                            `json:"desired_state"`
+}
+
 type LaboratoryExport struct {
 	SchemaVersion      int                       `json:"schema_version"`
 	ExportedAt         time.Time                 `json:"exported_at"`
@@ -75,6 +87,7 @@ type LaboratoryExport struct {
 	NetworkObjects     []map[string]any          `json:"network_objects"`
 	NetworkObjectLinks []ExportNetworkObjectLink `json:"network_object_links,omitempty"`
 	Placements         []ExportPlacement         `json:"placements,omitempty"`
+	TrafficWorkloads   []ExportTrafficWorkload   `json:"traffic_workloads,omitempty"`
 	Redaction          ExportRedaction           `json:"redaction"`
 }
 
@@ -112,10 +125,12 @@ func (s *ExportService) Build(ctx context.Context, labID domain.ID) (LaboratoryE
 		Redaction:      ExportRedaction{ImagesExcluded: true, CredentialsExcluded: true, BootstrapSecretsExcluded: true, CapturesExcluded: true},
 	}
 	interfaces := make(map[domain.ID]domain.Interface, len(snapshot.Interfaces))
+	interfaceExportIDs := make(map[domain.ID]domain.ID, len(snapshot.Interfaces))
 	nodes := make(map[domain.ID]domain.Node, len(snapshot.Nodes))
 	dependencies := map[string]ExportTemplateVersion{}
 	for _, iface := range snapshot.Interfaces {
 		interfaces[iface.ID] = iface
+		interfaceExportIDs[iface.ID] = domain.ID(fmt.Sprintf("%s:%d", iface.NodeID, iface.Slot))
 	}
 	for _, node := range snapshot.Nodes {
 		nodes[node.ID] = node
@@ -155,6 +170,22 @@ func (s *ExportService) Build(ctx context.Context, labID domain.ID) (LaboratoryE
 	}
 	for _, placement := range snapshot.Placements {
 		value.Placements = append(value.Placements, ExportPlacement{ResourceExportID: string(placement.ResourceID), ResourceType: placement.ResourceType, X: placement.X, Y: placement.Y, Revision: placement.Revision})
+	}
+	for _, workload := range snapshot.TrafficWorkloads {
+		source := workload.Source
+		if source.Kind == "node" {
+			if _, ok := nodes[source.ResourceID]; !ok {
+				return LaboratoryExport{}, fmt.Errorf("workload %s references missing node", workload.Name)
+			}
+			if source.InterfaceID != "" {
+				exportedInterfaceID := interfaceExportIDs[source.InterfaceID]
+				if exportedInterfaceID == "" {
+					return LaboratoryExport{}, fmt.Errorf("workload %s references missing interface", workload.Name)
+				}
+				source.InterfaceID = exportedInterfaceID
+			}
+		}
+		value.TrafficWorkloads = append(value.TrafficWorkloads, ExportTrafficWorkload{ExportID: string(workload.ID), Name: workload.Name, Source: source, Protocol: workload.Protocol, AddressFamily: workload.AddressFamily, Destination: workload.Destination, IntervalSeconds: workload.IntervalSeconds, TimeoutSeconds: workload.TimeoutSeconds, DesiredState: workload.DesiredState})
 	}
 	sort.Slice(value.Placements, func(i, j int) bool {
 		return value.Placements[i].ResourceExportID < value.Placements[j].ResourceExportID

@@ -151,5 +151,6 @@ type TopologySnapshot struct {
 	Attachments        []NetworkAttachment `json:"network_attachments"`
 	NetworkObjectLinks []NetworkObjectLink `json:"network_object_links"`
 	Placements         []TopologyPlacement `json:"placements"`
+	TrafficWorkloads   []TrafficWorkload   `json:"traffic_workloads,omitempty"`
 	Sequence           int64               `json:"event_sequence"`
 }
