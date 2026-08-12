@@ -46,3 +46,17 @@
 - Each rollback directory contains the previous `netlabd`, `netlab.yaml`, `template-readiness.json`, `release.json`, an online `netlab.db.gz` backup and `SHA256SUMS`.
 - `sha256sum -c SHA256SUMS` passed for every recorded file in both rollback directories.
 - The R21 rollback preserves the preceding R20 release and pre-migration database state; the R22 rollback preserves R21 and schema version 16.
+
+## R25 Convergence Candidate
+
+| Field | Value |
+|-------|-------|
+| Candidate | `network-path-011-20260812T093618Z-convergence-r25` |
+| Source commit | `0d5016ca5972ab5860c4a7cbe9b3c83b4ed1530a` |
+| Artifact digest | `sha256:dbb286ce4ec2d22e1eab25adde46c02bafaf8189685b29d26eeca9aeb6cd8842` |
+| Contract digest | `sha256:a61b993c5a9a96443705cb912115eb8ee357824d3c4e39273e30524ae59a5901` |
+| Built at | `2026-08-12T09:36:18Z` |
+| Migration | no new migration; SQLite user version `0` |
+| Rollback | `/var/lib/netlab/rollback/network-path-011-20260812T093618Z-convergence-r25-predeploy` |
+
+R25 passed authority, readiness, release identity, database integrity and ten service-restart recovery checks. Phase 9 residual findings are recorded in `validation/convergence.md`.
