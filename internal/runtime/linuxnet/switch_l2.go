@@ -17,9 +17,10 @@ type SwitchL2Runtime struct {
 }
 
 type SwitchL2PortObservation struct {
-	Name   string `json:"name"`
-	PVID   int    `json:"pvid,omitempty"`
-	Tagged []int  `json:"tagged,omitempty"`
+	Name     string `json:"name"`
+	Attached bool   `json:"attached"`
+	PVID     int    `json:"pvid,omitempty"`
+	Tagged   []int  `json:"tagged,omitempty"`
 }
 
 func (r *SwitchL2Runtime) InspectNetworkObject(ctx context.Context, object domain.NetworkObject) (domain.RuntimeBackingObservation, error) {
@@ -150,7 +151,7 @@ func (r *SwitchL2Runtime) observePort(ctx context.Context, namespace, portName s
 	if err = json.Unmarshal(body, &values); err != nil {
 		return SwitchL2PortObservation{Name: portName}, err
 	}
-	observation := SwitchL2PortObservation{Name: portName}
+	observation := SwitchL2PortObservation{Name: portName, Attached: true}
 	for _, value := range values {
 		if value.Name != "" && value.Name != portName {
 			continue
@@ -194,6 +195,14 @@ func (r *SwitchL2Runtime) DiagnosticsObject(ctx context.Context, object domain.N
 	observed := make([]SwitchL2PortObservation, 0, len(desired.Ports))
 	mismatches := make([]string, 0)
 	for _, port := range desired.Ports {
+		if _, inspectErr := r.executor.Output(ctx, r.ip, "-n", namespace, "link", "show", port.Name); inspectErr != nil {
+			value := SwitchL2PortObservation{Name: port.Name}
+			observed = append(observed, value)
+			if !missingVLANMembership(inspectErr) {
+				mismatches = append(mismatches, port.Name+": unavailable")
+			}
+			continue
+		}
 		value, observeErr := r.observePort(ctx, namespace, port.Name)
 		if observeErr != nil {
 			mismatches = append(mismatches, port.Name+": unavailable")

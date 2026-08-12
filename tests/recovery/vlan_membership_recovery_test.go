@@ -36,6 +36,7 @@ func TestVLANMembershipPersistsAcrossTenRuntimeRestarts(t *testing.T) {
 		"ports": []any{
 			map[string]any{"name": "access10", "pvid": 10, "tagged": []any{}},
 			map[string]any{"name": "trunk0", "pvid": 0, "tagged": []any{10, 20}},
+			map[string]any{"name": "unused0", "pvid": 30, "tagged": []any{}},
 		},
 	}}
 	namespace := linuxnet.SwitchL2NamespaceName(object.ID)
@@ -64,6 +65,10 @@ func TestVLANMembershipPersistsAcrossTenRuntimeRestarts(t *testing.T) {
 		converged, diagnostics, diagnosticsErr := runtime.ConfigurationConverged(ctx, object)
 		if diagnosticsErr != nil || !converged {
 			t.Fatalf("restart cycle %d membership=%+v err=%v", cycle, diagnostics, diagnosticsErr)
+		}
+		ports := diagnostics["observed"].(map[string]any)["ports"].([]linuxnet.SwitchL2PortObservation)
+		if len(ports) != 3 || ports[2].Name != "unused0" || ports[2].Attached {
+			t.Fatalf("restart cycle %d logical port observation=%+v", cycle, ports)
 		}
 	}
 }

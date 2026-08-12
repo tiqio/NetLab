@@ -110,6 +110,7 @@ func TestL2ConfigurePropagatesVLANApplyFailure(t *testing.T) {
 func TestL2DiagnosticsReportsObservedMembershipMismatch(t *testing.T) {
 	namespace := SwitchL2NamespaceName("sw-diag")
 	executor := &vlanRuntimeExecutor{outputs: map[string][]byte{
+		"ip -n " + namespace + " link show eth0":            []byte("3: eth0: <UP> master br0"),
 		"bridge -j -n " + namespace + " vlan show dev eth0": []byte(`[{"ifname":"eth0","vlans":[{"vlan":1,"flags":["PVID","Egress Untagged"]}]}]`),
 	}}
 	runtime, _ := NewSwitchL2Runtime(executor)
@@ -121,5 +122,35 @@ func TestL2DiagnosticsReportsObservedMembershipMismatch(t *testing.T) {
 	mismatches := diagnostics["mismatches"].([]string)
 	if len(mismatches) != 1 || !strings.Contains(mismatches[0], "eth0") {
 		t.Fatalf("unexpected mismatches: %+v", mismatches)
+	}
+}
+
+func TestL2DiagnosticsTreatsUnattachedLogicalPortsAsConverged(t *testing.T) {
+	namespace := SwitchL2NamespaceName("sw-logical")
+	executor := &vlanRuntimeExecutor{
+		outputs: map[string][]byte{
+			"ip -n " + namespace + " link show eth0":            []byte("3: eth0: <UP> master br0"),
+			"bridge -j -n " + namespace + " vlan show dev eth0": []byte(`[{"ifname":"eth0","vlans":[{"vlan":30,"flags":["PVID","Egress Untagged"]}]}]`),
+		},
+		errors: map[string]error{
+			"ip -n " + namespace + " link show eth1": errors.New("Device eth1 does not exist"),
+		},
+	}
+	runtime, _ := NewSwitchL2Runtime(executor)
+	object := domain.NetworkObject{ID: "sw-logical", Config: map[string]any{"vlan_filtering": true, "ports": []any{
+		map[string]any{"name": "eth0", "pvid": 30},
+		map[string]any{"name": "eth1", "pvid": 30},
+	}}}
+
+	converged, diagnostics, err := runtime.ConfigurationConverged(context.Background(), object)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !converged {
+		t.Fatalf("logical unattached port prevented convergence: %+v", diagnostics)
+	}
+	observed := diagnostics["observed"].(map[string]any)["ports"].([]SwitchL2PortObservation)
+	if len(observed) != 2 || !observed[0].Attached || observed[1].Attached {
+		t.Fatalf("unexpected observations: %+v", observed)
 	}
 }
