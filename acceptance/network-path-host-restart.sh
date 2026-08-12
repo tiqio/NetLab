@@ -21,34 +21,31 @@ probe() {
   else
     body=$(jq -nc --arg destination "$destination" '{argv:["ping","-c","5","-W","2",$destination],timeout_seconds:20,output_limit:8192}')
   fi
-  response=""
-  for _ in $(seq 1 100); do
-    if response=$(curl -fsS -X POST "$BASE_URL/api/v1/nodes/$UBUNTU_NODE_ID/guest-exec" -H 'Content-Type: application/json' --data "$body"); then
-      task=$(jq -er '.task.id | select(length>0)' <<<"$response")
-      break
+  for _ in $(seq 1 20); do
+    response=$(curl -sS -X POST "$BASE_URL/api/v1/nodes/$UBUNTU_NODE_ID/guest-exec" -H 'Content-Type: application/json' --data "$body" || true)
+    task=$(jq -er '.task.id | select(length>0)' <<<"$response" 2>/dev/null || true)
+    if [[ -n $task ]]; then
+      for _ in $(seq 1 100); do
+        value=$(api "/tasks/$task")
+        state=$(jq -r '.state' <<<"$value")
+        case "$state" in
+          succeeded)
+            [[ $(jq -r '.result.exit_code' <<<"$value") == 0 ]] || break
+            stdout=$(jq -r '.result.stdout_base64' <<<"$value" | base64 -d)
+            if grep -Eq '5 (packets transmitted|transmitted), 5 (packets received|received)' <<<"$stdout"; then
+              jq -nc --arg family "$family" --arg destination "$destination" --arg task_id "$task" '{family:$family,destination:$destination,task_id:$task_id,result:"passed"}'
+              return
+            fi
+            break
+            ;;
+          failed|cancelled) break ;;
+        esac
+        sleep .2
+      done
     fi
-    sleep .2
+    sleep .5
   done
-  [[ -n ${task:-} ]] || { echo "guest-exec remained unavailable for $destination" >&2; return 1; }
-  for _ in $(seq 1 100); do
-    value=$(api "/tasks/$task")
-    state=$(jq -r '.state' <<<"$value")
-    case "$state" in
-      succeeded)
-        [[ $(jq -r '.result.exit_code' <<<"$value") == 0 ]] || return 1
-        stdout=$(jq -r '.result.stdout_base64' <<<"$value" | base64 -d)
-        grep -Eq '5 (packets transmitted|transmitted), 5 (packets received|received)' <<<"$stdout"
-        jq -nc --arg family "$family" --arg destination "$destination" --arg task_id "$task" '{family:$family,destination:$destination,task_id:$task_id,result:"passed"}'
-        return
-        ;;
-      failed|cancelled)
-        jq -c . <<<"$value" >&2
-        return 1
-        ;;
-    esac
-    sleep .2
-  done
-  echo "guest-exec task timed out: $task" >&2
+  echo "guest-exec remained unavailable or unstable for $destination" >&2
   return 1
 }
 
