@@ -21,8 +21,15 @@ probe() {
   else
     body=$(jq -nc --arg destination "$destination" '{argv:["ping","-c","5","-W","2",$destination],timeout_seconds:20,output_limit:8192}')
   fi
-  response=$(curl -fsS -X POST "$BASE_URL/api/v1/nodes/$UBUNTU_NODE_ID/guest-exec" -H 'Content-Type: application/json' --data "$body")
-  task=$(jq -r '.task.id' <<<"$response")
+  response=""
+  for _ in $(seq 1 100); do
+    if response=$(curl -fsS -X POST "$BASE_URL/api/v1/nodes/$UBUNTU_NODE_ID/guest-exec" -H 'Content-Type: application/json' --data "$body"); then
+      task=$(jq -er '.task.id | select(length>0)' <<<"$response")
+      break
+    fi
+    sleep .2
+  done
+  [[ -n ${task:-} ]] || { echo "guest-exec remained unavailable for $destination" >&2; return 1; }
   for _ in $(seq 1 100); do
     value=$(api "/tasks/$task")
     state=$(jq -r '.state' <<<"$value")
