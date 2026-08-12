@@ -105,9 +105,9 @@
 - [X] T050 [US2] Extend network-object diagnostics with desired/observed forwarding, interfaces and routes in `internal/api/http/network_handlers.go`
 - [X] T051 [US2] Add forwarding controls and mismatch display to node/network diagnostics in `web/src/features/diagnostics/DiagnosticsPanel.vue`
 - [X] T052 [US2] Add an isolated dual-stack acceptance fixture builder without proprietary configuration in `tests/testsupport/dual_stack_path_fixture.go`
-- [ ] T053 [US2] Repair the BusyBox, service router, Ubuntu and VyOS desired topology through revisioned API operations documented in `specs/011-network-path-recovery/validation/component-matrix-repair.md`
-- [ ] T054 [US2] Verify QGA-visible Ubuntu routes and operator-authorized VyOS interface/route state without storing credentials in `specs/011-network-path-recovery/validation/vyos-path.md`
-- [ ] T055 [US2] Run US2 unit, contract, dual-stack and restart gates, record results in `specs/011-network-path-recovery/validation/us2-dual-stack.md`, and commit the milestone with a focused Git commit
+- [X] T053 [US2] Repair the BusyBox, service router, Ubuntu and VyOS desired topology through revisioned API operations documented in `specs/011-network-path-recovery/validation/component-matrix-repair.md`
+- [X] T054 [US2] Verify QGA-visible Ubuntu routes and operator-authorized VyOS interface/route state without storing credentials in `specs/011-network-path-recovery/validation/vyos-path.md`
+- [X] T055 [US2] Run US2 unit, contract, dual-stack and restart gates, record results in `specs/011-network-path-recovery/validation/us2-dual-stack.md`, and commit the milestone with a focused Git commit
 
 **Checkpoint**: User Story 2 proves real bidirectional routed paths rather than router-interface-only reachability.
 
@@ -139,8 +139,8 @@
 - [X] T068 [US3] Extend diagnostics and OpenAPI response mapping with per-port VLAN observations in `internal/api/http/network_handlers.go`
 - [X] T069 [US3] Add PVID and tagged VLAN editing with client-side validation to `web/src/features/topology/NetworkObjectEditor.vue`
 - [X] T070 [US3] Display desired/observed VLAN membership and mismatch guidance in `web/src/features/diagnostics/DiagnosticsPanel.vue`
-- [ ] T071 [US3] Configure the component-matrix VLAN 10/20 access ports and a two-VLAN tagged trunk through revisioned operations documented in `specs/011-network-path-recovery/validation/vlan-topology.md`
-- [ ] T072 [US3] Run US3 domain, runtime, contract, UI, privileged VLAN and restart gates, record results in `specs/011-network-path-recovery/validation/us3-vlan.md`, and commit the milestone with a focused Git commit
+- [X] T071 [US3] Configure the component-matrix VLAN 10/20 access ports and a two-VLAN tagged trunk through revisioned operations documented in `specs/011-network-path-recovery/validation/vlan-topology.md`
+- [X] T072 [US3] Run US3 domain, runtime, contract, UI, privileged VLAN and restart gates, record results in `specs/011-network-path-recovery/validation/us3-vlan.md`, and commit the milestone with a focused Git commit
 
 **Checkpoint**: User Story 3 independently proves runtime VLAN behavior matches displayed configuration.
 
