@@ -127,8 +127,8 @@
 - [X] T059 [P] [US3] Write failing HTTP contract tests for VLAN validation and observed diagnostics in `internal/api/http/network_vlan_contract_test.go`
 - [X] T060 [P] [US3] Write failing MCP parity tests for L2 updates and VLAN diagnostics in `internal/api/mcp/network_vlan_tools_test.go`
 - [X] T061 [P] [US3] Write failing frontend tests for PVID/tagged editing, preserved invalid drafts and pending/mismatch states in `web/src/features/topology/NetworkObjectEditor.test.ts`
-- [ ] T062 [P] [US3] Write a failing privileged VLAN access/trunk/isolation test in `tests/integration/vlan_trunk_path_test.go`
-- [ ] T063 [P] [US3] Write a failing VLAN restart persistence test in `tests/recovery/vlan_membership_recovery_test.go`
+- [X] T062 [P] [US3] Write a failing privileged VLAN access/trunk/isolation test in `tests/integration/vlan_trunk_path_test.go`
+- [X] T063 [P] [US3] Write a failing VLAN restart persistence test in `tests/recovery/vlan_membership_recovery_test.go`
 
 ### Implementation for User Story 3
 
