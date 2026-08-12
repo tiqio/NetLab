@@ -42,6 +42,10 @@ func TestRuntimeObservationRepositoryPersistsObjectLinkAttribution(t *testing.T)
 	if loadedFilter.Color != filter.Color || len(loadedFilter.NetworkObjectLinkIDs) != 2 || len(loadedFilter.Observations) != 2 || loadedFilter.Observations[0].ResourceType != "network_object_link" || loadedFilter.FingerprintCount != 2 || loadedFilter.MatchedPackets != 3 || loadedFilter.MatchedBytes != 192 || loadedFilter.FirstMatchAt == nil || loadedFilter.LastMatchAt == nil {
 		t.Fatalf("filter=%+v", loadedFilter)
 	}
+	listed, err := repositories.ListTrafficFilterObservations(ctx, "lab-1")
+	if err != nil || len(listed) != 1 || listed[0].ID != filter.ID || len(listed[0].Observations) != 2 {
+		t.Fatalf("listed=%+v err=%v", listed, err)
+	}
 }
 
 func TestCompleteLinkDeletedObservationCommitsTaskAuditAndOutbox(t *testing.T) {

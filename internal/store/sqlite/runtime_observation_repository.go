@@ -141,3 +141,31 @@ func (r *Repositories) GetTrafficFilterObservation(ctx context.Context, id domai
 	}
 	return filter, rows.Err()
 }
+
+func (r *Repositories) ListTrafficFilterObservations(ctx context.Context, laboratoryID domain.ID) ([]domain.TrafficFilter, error) {
+	rows, err := r.database.DB.QueryContext(ctx, `SELECT id FROM traffic_filters WHERE laboratory_id=? AND matched_packets>0 ORDER BY created_at`, laboratoryID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	ids := make([]domain.ID, 0)
+	for rows.Next() {
+		var id domain.ID
+		if err = rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	values := make([]domain.TrafficFilter, 0, len(ids))
+	for _, id := range ids {
+		value, getErr := r.GetTrafficFilterObservation(ctx, id)
+		if getErr != nil {
+			return nil, getErr
+		}
+		values = append(values, value)
+	}
+	return values, nil
+}
