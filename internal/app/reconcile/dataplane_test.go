@@ -161,6 +161,29 @@ func TestDataPlaneDoesNotReconfigureHealthyDependentObjects(t *testing.T) {
 	}
 }
 
+func TestDataPlaneReconfiguresOnlyPendingEndpointOnHealthyLink(t *testing.T) {
+	store := &dataPlaneStoreFake{
+		lab:             domain.Laboratory{ID: "lab", LifecycleState: "active"},
+		interfaceStates: map[domain.ID]string{},
+		snapshot: domain.TopologySnapshot{
+			NetworkObjects: []domain.NetworkObject{
+				{ID: "l2", Kind: domain.NetworkSwitchL2, Revision: 2, ObservedState: "pending"},
+				{ID: "l3", Kind: domain.NetworkSwitchL3, Revision: 3, ObservedState: "active"},
+			},
+			NetworkObjectLinks: []domain.NetworkObjectLink{{ID: "object-link", ObjectAID: "l2", PortAName: "eth0", ObjectBID: "l3", PortBName: "eth0", DesiredState: "connected", ObservedState: "connected"}},
+		},
+	}
+	objects := &dependentObjectReconcilerFake{}
+	reconciler := NewDataPlaneReconciler(store, &dataPlaneRuntimeFake{})
+	reconciler.SetNetworkObjectReconciler(objects)
+	if err := reconciler.Reconcile(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if len(objects.ids) != 1 || objects.ids[0] != "l2" {
+		t.Fatalf("reconfigured endpoints=%v", objects.ids)
+	}
+}
+
 func TestDataPlaneReconcilesL2AfterLateAttachment(t *testing.T) {
 	store := &dataPlaneStoreFake{
 		lab:             domain.Laboratory{ID: "lab", LifecycleState: "active"},

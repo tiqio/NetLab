@@ -194,10 +194,10 @@ func (r *DataPlaneReconciler) Reconcile(ctx context.Context) (err error) {
 				continue
 			}
 			_ = r.store.SetNetworkObjectLinkState(ctx, link.ID, "connected", nil)
-			if link.ObservedState == "connected" && objectA.ObservedState != "pending" && objectB.ObservedState != "pending" {
-				continue
-			}
 			for _, object := range []domain.NetworkObject{objectA, objectB} {
+				if link.ObservedState == "connected" && object.ObservedState != "pending" {
+					continue
+				}
 				if err = r.reconcileDependentObject(ctx, object); err != nil {
 					problem := structuredProblem(err, domain.Problem{Code: "l3_post_link_reconcile_failed", Retryable: true, ResourceType: "network_object_link", ResourceID: link.ID, Phase: "post_link_l3_reconcile", Cleanup: "link remains connected for retry", OperatorHint: "inspect L3 addresses and routes then retry reconciliation", RetryAfterSeconds: 2})
 					_ = r.store.SetNetworkObjectLinkState(ctx, link.ID, "failed", problem)
