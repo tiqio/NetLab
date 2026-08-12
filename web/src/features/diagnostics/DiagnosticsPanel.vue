@@ -18,6 +18,7 @@ import { Button } from "@/components/ui";
 import GlobalCaptureWorkspace from "./GlobalCaptureWorkspace.vue";
 import TrafficFilterPanel from "./TrafficFilterPanel.vue";
 import DeviceReadinessPanel from "./DeviceReadinessPanel.vue";
+import TrafficWorkloadPanel from "@/features/topology/TrafficWorkloadPanel.vue";
 import { linkDisplayName } from "@/features/topology/linkPresentation";
 const props = withDefaults(
   defineProps<{
@@ -60,10 +61,13 @@ const section = computed(() =>
     ? "capture"
     : props.initialSection === "traffic-filter"
       ? "traffic-filter"
-      : "console",
+      : props.initialSection === "traffic-workloads"
+        ? "traffic-workloads"
+        : "console",
 );
 const captureActivated = ref(false);
 const trafficActivated = ref(false);
+const workloadsActivated = ref(false);
 const recoveryDiagnostics = ref<NetworkObjectDiagnostics>();
 const recoveryLoading = ref(false);
 const recoveryLoadError = ref("");
@@ -161,6 +165,7 @@ watch(
   (value) => {
     if (value === "capture") captureActivated.value = true;
     if (value === "traffic-filter") trafficActivated.value = true;
+    if (value === "traffic-workloads") workloadsActivated.value = true;
   },
   { immediate: true },
 );
@@ -178,7 +183,11 @@ watch(
 <template>
   <section class="h-full min-h-[180px]" aria-labelledby="diagnostics-title">
     <h2 id="diagnostics-title" class="sr-only">诊断</h2>
-    <DeviceReadinessPanel v-if="selectedNode && selectedNode.kind === 'qemu'" :node="selectedNode" :interfaces="interfaces" />
+    <DeviceReadinessPanel
+      v-if="selectedNode && selectedNode.kind === 'qemu'"
+      :node="selectedNode"
+      :interfaces="interfaces"
+    />
     <section
       v-if="
         recoveryObject || recoveryObjectLink || selectedNode?.kind === 'docker'
@@ -396,6 +405,13 @@ watch(
       :interface-owners="interfaceOwners"
       :coordinates="coordinates"
       :resource-labels="resourceLabels"
+      @overlay="(...args) => $emit('trafficOverlay', ...args)"
+    /><TrafficWorkloadPanel
+      v-if="workloadsActivated"
+      v-show="section === 'traffic-workloads'"
+      :laboratory-id="laboratoryId"
+      :nodes="nodes || []"
+      :network-objects="networkObjects || []"
       @overlay="(...args) => $emit('trafficOverlay', ...args)"
     />
   </section>

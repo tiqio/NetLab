@@ -33,6 +33,8 @@ import type {
   TopologyConnectionTaskEnvelope,
   UnifiedConnectionEndpoint,
   TrafficFilter,
+  TrafficWorkload,
+  CreateTrafficWorkloadRequest,
   UpdateNodeSettingsRequest,
 } from "./generated";
 import { randomUUID } from "@/lib/uuid";
@@ -318,6 +320,38 @@ export const generatedApi = {
     request<{ traffic_filter: TrafficFilter }>(
       `/traffic-filters/${filterId}/history`,
       "DELETE",
+    ),
+  listTrafficWorkloads: (laboratoryId: string) =>
+    request<TrafficWorkload[]>(
+      `/traffic-workloads?laboratory_id=${encodeURIComponent(laboratoryId)}`,
+    ),
+  getTrafficWorkload: (workloadId: string) =>
+    request<TrafficWorkload>(`/traffic-workloads/${workloadId}`),
+  createTrafficWorkload: (body: CreateTrafficWorkloadRequest) =>
+    request<{ workload_id: string; task: OperationTask }>(
+      "/traffic-workloads",
+      "POST",
+      { body },
+    ),
+  startTrafficWorkload: (workloadId: string, revision: number) =>
+    request<{ task: OperationTask }>(
+      `/traffic-workloads/${workloadId}/start`,
+      "POST",
+      { revision },
+    ),
+  stopTrafficWorkload: (workloadId: string, revision: number) =>
+    request<{ task: OperationTask }>(
+      `/traffic-workloads/${workloadId}/stop`,
+      "POST",
+      { revision },
+    ),
+  deleteTrafficWorkload: (workloadId: string, revision: number) =>
+    request<{ task: OperationTask }>(
+      `/traffic-workloads/${workloadId}`,
+      "DELETE",
+      {
+        revision,
+      },
     ),
   listTasks: (limit = 100) =>
     request<OperationTask[]>(`/tasks?limit=${encodeURIComponent(limit)}`),

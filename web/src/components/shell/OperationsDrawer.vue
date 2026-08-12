@@ -63,6 +63,7 @@ function setNodeForwarding(node: Node, ipv4: boolean, ipv6: boolean) {
       { value: 'console', label: '终端' },
       { value: 'captures', label: '抓包' },
       { value: 'traffic-filter', label: '流量过滤' },
+      { value: 'traffic-workloads', label: '稳定流量' },
     ]"
     class="flex h-full min-h-0 flex-col overflow-hidden"
     data-layout-region="operations-drawer"

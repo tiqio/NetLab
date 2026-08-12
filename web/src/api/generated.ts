@@ -514,6 +514,57 @@ export interface TrafficFilter {
   last_error?: Problem;
 }
 
+export interface TrafficWorkloadEndpoint {
+  kind: "node" | "network_object" | string;
+  resource_id: string;
+  interface_id?: string;
+}
+
+export interface TrafficWorkloadDestination {
+  address?: string;
+  url?: string;
+  name?: string;
+}
+
+export interface TrafficWorkload {
+  id: string;
+  laboratory_id: string;
+  name: string;
+  revision: number;
+  source: TrafficWorkloadEndpoint;
+  protocol: "icmp" | "http" | "dns";
+  address_family: "auto" | "ipv4" | "ipv6";
+  destination: TrafficWorkloadDestination;
+  interval_seconds: number;
+  timeout_seconds: number;
+  desired_state: "running" | "stopped";
+  observed_state: "queued" | "running" | "stopped" | "degraded" | string;
+  attempts: number;
+  successes: number;
+  failures: number;
+  matched_bytes: number;
+  last_success_at?: string;
+  last_error?: Problem;
+  created_at: string;
+  updated_at: string;
+}
+
+export type CreateTrafficWorkloadRequest = Omit<
+  TrafficWorkload,
+  | "id"
+  | "revision"
+  | "desired_state"
+  | "observed_state"
+  | "attempts"
+  | "successes"
+  | "failures"
+  | "matched_bytes"
+  | "last_success_at"
+  | "last_error"
+  | "created_at"
+  | "updated_at"
+>;
+
 export interface StateEvent {
   sequence: number;
   type: string;

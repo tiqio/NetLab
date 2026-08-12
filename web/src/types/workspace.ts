@@ -2,7 +2,8 @@ import type { OperationTask, Problem } from "@/api/generated";
 
 export type SyncState =
   "initializing" | "live" | "reconnecting" | "refreshing" | "degraded";
-export type BottomTab = "tasks" | "console" | "captures" | "traffic-filter";
+export type BottomTab =
+  "tasks" | "console" | "captures" | "traffic-filter" | "traffic-workloads";
 export type TopologyLabelDensity = "comfortable" | "compact" | "minimal";
 
 export interface PanelPreference {

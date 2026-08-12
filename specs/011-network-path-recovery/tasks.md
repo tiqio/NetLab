@@ -194,7 +194,7 @@
 - [X] T094 [P] [US5] Write failing Traffic Filter correlation tests for successful versus failed workload attempts in `internal/app/reconcile/traffic_filters_test.go`
 - [X] T095 [P] [US5] Write failing workload restart and orphan-task recovery tests in `tests/recovery/traffic_workload_recovery_test.go`
 - [ ] T096 [P] [US5] Write failing 10-minute ICMP/HTTP/DNS privileged observation test in `tests/integration/traffic_workload_filter_test.go`
-- [ ] T097 [P] [US5] Write failing frontend panel tests for aggregates, degraded running state, filter counters and highlight decay in `web/src/features/topology/TrafficWorkloadPanel.test.ts`
+- [X] T097 [P] [US5] Write failing frontend panel tests for aggregates, degraded running state, filter counters and highlight decay in `web/src/features/topology/TrafficWorkloadPanel.test.ts`
 
 ### Implementation for User Story 5
 
@@ -209,9 +209,9 @@
 - [X] T106 [US5] Add workload list/create/get/state/delete HTTP handlers in `internal/api/http/traffic_workload_handlers.go`
 - [X] T107 [US5] Add equivalent workload MCP tools and schemas in `internal/api/mcp/traffic_workload_tools.go`
 - [X] T108 [US5] Publish ordered workload lifecycle and aggregate stream events in `internal/api/stream/events.go`
-- [ ] T109 [US5] Add workload API client and Pinia state convergence in `web/src/api/client.ts` and `web/src/stores/trafficWorkloads.ts`
-- [ ] T110 [US5] Implement localized workload creation, lifecycle, aggregates and degraded-state UI in `web/src/features/topology/TrafficWorkloadPanel.vue`
-- [ ] T111 [US5] Integrate workload statistics with Traffic Filter details and topology highlight overlays in `web/src/features/topology/TopologyWorkspace.vue`
+- [X] T109 [US5] Add workload API client and Pinia state convergence in `web/src/api/client.ts` and `web/src/stores/trafficWorkloads.ts`
+- [X] T110 [US5] Implement localized workload creation, lifecycle, aggregates and degraded-state UI in `web/src/features/topology/TrafficWorkloadPanel.vue`
+- [X] T111 [US5] Integrate workload statistics with Traffic Filter details and topology highlight overlays in `web/src/features/topology/TopologyWorkspace.vue`
 - [ ] T112 [US5] Run US5 migration, domain, task, runtime, contract, UI, 10-minute observation and restart gates, record results in `specs/011-network-path-recovery/validation/us5-traffic.md`, and commit the milestone with a focused Git commit
 
 **Checkpoint**: All user stories are independently functional and the component-matrix laboratory can generate meaningful observable traffic.
