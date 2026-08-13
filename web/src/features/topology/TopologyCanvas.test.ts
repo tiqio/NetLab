@@ -121,6 +121,25 @@ describe("TopologyCanvas", () => {
     });
     expect(wrapper.emitted("boxSelect")?.[0]?.[1]).toBe(false);
   });
+  it("renders persistent halos and a count for selected resources", async () => {
+    const wrapper = mount(TopologyCanvas, {
+      props: {
+        nodes: [nodeFactory()],
+        interfaces: [],
+        links: [],
+        networkObjects: [],
+        preferences: defaultWorkspacePreferences("lab"),
+        selectedIds: ["node-1"],
+      },
+    });
+    await nextTick();
+    expect(
+      wrapper
+        .get('[data-selected-resource-id="node-1"]')
+        .attributes("data-selected-resource-id"),
+    ).toBe("node-1");
+    expect(wrapper.get("[data-selection-count]").text()).toContain("已选 1 项");
+  });
   it("stops an active pan gesture when temporary pan mode is released", async () => {
     const wrapper = mount(TopologyCanvas, {
       props: {

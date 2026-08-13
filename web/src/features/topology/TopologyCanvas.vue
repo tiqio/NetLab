@@ -178,6 +178,9 @@ const connectorOverlay = ref<{
   x: number;
   y: number;
 }>();
+const selectedResourceOverlays = ref<
+  Array<{ id: string; x: number; y: number }>
+>([]);
 const draggingResource = ref(false);
 const selectionRectangle = ref<{
   left: number;
@@ -390,14 +393,14 @@ function resourceLabel(
 }
 function showPortDetails(nodeId: string) {
   return (
-    selected.value.has(nodeId) ||
+    (selected.value.size === 1 && selected.value.has(nodeId)) ||
     hoveredResourceId.value === nodeId ||
     Boolean(props.connectionSourceInterfaceId || connectionGesture.value)
   );
 }
 function showObjectPortDetails(objectId: string) {
   return (
-    selected.value.has(objectId) ||
+    (selected.value.size === 1 && selected.value.has(objectId)) ||
     hoveredResourceId.value === objectId ||
     Boolean(props.connectionSourceObjectPortId || connectionGesture.value)
   );
@@ -1057,12 +1060,19 @@ function handleRoam(event: unknown) {
 }
 function refreshOverlays() {
   if (draggingResource.value) {
+    selectedResourceOverlays.value = [];
     portOverlays.value = [];
     connectorOverlay.value = undefined;
     connectionPreview.value = undefined;
     trafficPathOverlays.value = [];
     return;
   }
+  selectedResourceOverlays.value = [...props.nodes, ...props.networkObjects]
+    .filter((resource) => selected.value.has(resource.id))
+    .flatMap((resource) => {
+      const point = chart.value?.graphItemPixel?.(resource.id);
+      return point ? [{ id: resource.id, x: point.x, y: point.y }] : [];
+    });
   const nextPorts: typeof portOverlays.value = [];
   for (const node of props.nodes.filter((item) => showPortDetails(item.id))) {
     const ownerPixel = chart.value?.graphItemPixel?.(node.id);
@@ -1785,7 +1795,7 @@ defineExpose({
     :data-traffic-lingering="lingeringTraffic.length"
     data-traffic-pulse="false"
     tabindex="0"
-    aria-label="拓扑画布键盘操作区。拖动空白区域框选资源，按住 Ctrl 可追加选择或临时平移；使用方向键浏览资源，按 Shift 扩展选择，按 Enter 打开操作，按 Escape 清除选择。"
+    aria-label="拓扑画布键盘操作区。拖动空白区域框选资源，按住 Shift 可追加选择，按住 Ctrl 可临时平移；使用方向键浏览资源，按 Enter 打开操作，按 Escape 清除选择。"
     @keydown="handleKeyboard"
     @dblclick="$emit('background')"
     @pointerdown.capture="handleSurfacePointerDown"
@@ -1833,6 +1843,25 @@ defineExpose({
           <path d="M 0 0 L 10 5 L 0 10 z" :fill="trafficColor" />
         </marker>
       </defs>
+      <g
+        v-for="resource in selectedResourceOverlays"
+        :key="`selected:${resource.id}`"
+        class="topology-selection-halo"
+        :data-selected-resource-id="resource.id"
+      >
+        <circle
+          class="topology-selection-halo-outer"
+          :cx="resource.x"
+          :cy="resource.y"
+          r="43"
+        />
+        <circle
+          class="topology-selection-halo-inner"
+          :cx="resource.x"
+          :cy="resource.y"
+          r="36"
+        />
+      </g>
       <g
         v-if="trafficActive"
         data-traffic-path-overlay
@@ -2029,7 +2058,7 @@ defineExpose({
     <div
       v-if="selectionRectangle"
       data-selection-rectangle
-      class="pointer-events-none absolute border border-[color:var(--info)] bg-[color:var(--info)]/10"
+      class="topology-selection-rectangle pointer-events-none absolute"
       :style="{
         left: `${selectionRectangle.left}px`,
         top: `${selectionRectangle.top}px`,
@@ -2037,6 +2066,13 @@ defineExpose({
         height: `${selectionRectangle.bottom - selectionRectangle.top}px`,
       }"
     />
+    <div
+      v-if="selectedIds?.length"
+      data-selection-count
+      class="pointer-events-none absolute bottom-3 right-3 rounded-full border-2 border-[color:var(--topology-emphasis)] bg-card/95 px-3 py-1 text-xs font-semibold text-foreground shadow-lg"
+    >
+      已选 {{ selectedIds.length }} 项
+    </div>
     <p class="sr-only" role="status" aria-live="polite">
       {{ keyboardAnnouncement }}
     </p>
@@ -2110,6 +2146,28 @@ defineExpose({
     linear-gradient(var(--topology-grid) 1px, transparent 1px),
     linear-gradient(90deg, var(--topology-grid) 1px, transparent 1px);
   background-size: 24px 24px;
+}
+.topology-selection-halo {
+  pointer-events: none;
+}
+.topology-selection-halo-outer {
+  fill: color-mix(in srgb, var(--topology-emphasis) 14%, transparent);
+  stroke: color-mix(in srgb, var(--topology-emphasis) 55%, transparent);
+  stroke-width: 7;
+}
+.topology-selection-halo-inner {
+  fill: none;
+  stroke: var(--topology-emphasis);
+  stroke-width: 3;
+  stroke-dasharray: 7 4;
+  filter: drop-shadow(0 0 4px var(--topology-emphasis));
+}
+.topology-selection-rectangle {
+  border: 2px solid var(--topology-emphasis);
+  background: color-mix(in srgb, var(--topology-emphasis) 18%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--topology-selected) 75%, transparent),
+    0 0 18px color-mix(in srgb, var(--topology-emphasis) 35%, transparent);
 }
 .traffic-flow-glow {
   fill: none;
