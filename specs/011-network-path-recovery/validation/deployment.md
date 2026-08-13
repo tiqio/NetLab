@@ -207,3 +207,22 @@ R25 passed authority, readiness, release identity, database integrity and ten se
 - Focused connection, canvas and interaction coverage passed 36 tests. Additional chart stability coverage passed after graph-coordinate reads were made tolerant of transient ECharts pipeline rebuilds, and the production frontend plus embedded Go build passed.
 - Target Chromium clicked the real midpoint of attachment 019ff9d3ed51-cb1baa6c1cebea640c17. The line entered selected state, displayed 已选 1 项, opened the 网络附件 inspector with 删除附件 available, and emitted no page or console errors.
 - The integrated laboratory remains healthy with 11 running nodes, 10 active network objects, 21 placements and 25 connections. Database integrity remained ok and no error-priority service journal entries appeared after deployment.
+
+### Grouped Drag and Endpoint Label Correction — r9
+
+| Field           | Value                                                                      |
+| --------------- | -------------------------------------------------------------------------- |
+| Candidate       | `topology-organize-20260813T090555Z-r9`                                    |
+| Source commit   | `b8dc88f418c3877a473a5e3fe8d9698f25791548`                                 |
+| Artifact digest | `sha256:f75b9ca72c34f7b3ac8cc563b61576bf7ef71c9b65389df7f4738b56ef3a9083`  |
+| Contract digest | `sha256:71d5721ac41dd2d55ccdd7934d4ab0a77c7c77ecd602df43f24af89e1699668a`  |
+| Built at        | `2026-08-13T09:05:55Z`                                                     |
+| Migration       | no database migration; schema migration version remains `16`               |
+| Rollback        | `/var/lib/netlab/rollback/topology-organize-20260813T090555Z-r9-predeploy` |
+
+- R9 keeps every selected topology resource moving in real time while one member is dragged. The ECharts graph adapter updates the complete selected group and refreshes connected edge layouts without changing the existing batch placement commit contract.
+- Every connection adjacent to any resource in the active drag group receives a dedicated focus-colored glow during the drag. This adjacency is calculated from normalized connection endpoints and does not depend on the box-selection rectangle.
+- The previous centered combined edge label is replaced by source and target endpoint labels positioned along their respective ends of each connection. Target Chromium rendered 50 endpoint labels for 25 connections, preserving the correct resource ID and port name at each end.
+- Focused canvas and chart coverage passed 31 tests, including grouped graph movement, drag adjacency, and endpoint-label ownership. The production frontend and embedded Go build passed, along with Prettier checks for changed files and `git diff --check`.
+- Target Chromium box-selected two existing network objects and dragged one by 90 horizontal and 45 vertical pixels. Both resources moved by exactly the same delta during the interaction, eight adjacent connections were highlighted, and no page or console errors occurred. The two placement coordinates were restored through the authoritative batch placement API after validation.
+- The integrated laboratory remains healthy with 11 running nodes, 10 active network objects, 21 placements and 25 connections. `/readyz`, `/healthz`, database integrity, migration version 16, error-priority service journal checks, and rollback package checksum verification all passed.
