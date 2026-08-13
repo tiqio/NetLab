@@ -1658,14 +1658,14 @@ function handleSurfacePointerUp(event: PointerEvent) {
     )
     .find((item) => item.type === "box_commit");
   if (action?.type === "box_commit") {
-    const start = screenToWorld(
-      { x: action.left, y: action.top },
-      props.preferences.viewport,
-    );
-    const end = screenToWorld(
-      { x: action.right, y: action.bottom },
-      props.preferences.viewport,
-    );
+    const startPoint = { x: action.left, y: action.top };
+    const endPoint = { x: action.right, y: action.bottom };
+    const start =
+      chart.value?.dataPointAtCanvasPoint?.(startPoint) ||
+      screenToWorld(startPoint, props.preferences.viewport);
+    const end =
+      chart.value?.dataPointAtCanvasPoint?.(endPoint) ||
+      screenToWorld(endPoint, props.preferences.viewport);
     emit(
       "boxSelect",
       { left: start.x, top: start.y, right: end.x, bottom: end.y },

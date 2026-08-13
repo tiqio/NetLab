@@ -360,6 +360,8 @@ defineExpose({
     root.value
       ? graphPointAt([root.value.clientWidth / 2, root.value.clientHeight / 2])
       : undefined,
+  dataPointAtCanvasPoint: (point: { x: number; y: number }) =>
+    graphPointAt([point.x, point.y]),
 });
 </script>
 <template>

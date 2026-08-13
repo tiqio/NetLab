@@ -26,6 +26,10 @@ vi.mock("@/components/charts/EChart.vue", () => ({
         graphItemPixel: (id: string) =>
           id === "node-2" ? { x: 260, y: 80 } : { x: 100, y: 80 },
         dataPointAtCanvasCenter: () => ({ x: 0, y: 0 }),
+        dataPointAtCanvasPoint: (point: { x: number; y: number }) => ({
+          x: point.x - 40,
+          y: point.y - 20,
+        }),
       });
     },
     template: `<div>
@@ -119,7 +123,10 @@ describe("TopologyCanvas", () => {
       clientX: 180,
       clientY: 140,
     });
-    expect(wrapper.emitted("boxSelect")?.[0]?.[1]).toBe(false);
+    expect(wrapper.emitted("boxSelect")?.[0]).toEqual([
+      { left: -30, top: -10, right: 140, bottom: 120 },
+      false,
+    ]);
   });
   it("renders persistent halos and a count for selected resources", async () => {
     const wrapper = mount(TopologyCanvas, {
