@@ -214,6 +214,7 @@ const pendingDragSelection = ref<{
   id: string;
   resourceType: "node" | "network_object";
 }>();
+const suppressedChartClickId = ref("");
 const selectionRectangle = ref<{
   left: number;
   top: number;
@@ -1077,6 +1078,10 @@ function handleClick(event: unknown) {
     emit("background");
     return;
   }
+  if (suppressedChartClickId.value === value.data.id) {
+    suppressedChartClickId.value = "";
+    return;
+  }
   if (value.data.resourceType === "connector") {
     if (value.data.ownerId) emit("connector", value.data.ownerId);
     return;
@@ -1753,6 +1758,15 @@ function handleDrag(event: unknown) {
       );
     if (actions.some((action) => action.type === "drag_commit"))
       emit("move", value.data.id, point.x, point.y);
+    const clickSelection = actions.find((action) => action.type === "select");
+    if (clickSelection?.type === "select") {
+      suppressedChartClickId.value = value.data.id;
+      window.setTimeout(() => {
+        if (suppressedChartClickId.value === value.data?.id)
+          suppressedChartClickId.value = "";
+      }, 0);
+      emit("select", clickSelection.id, clickSelection.resourceType, false);
+    }
   }
   draggingResource.value = false;
   draggingResourceIds.value = [];
