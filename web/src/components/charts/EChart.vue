@@ -79,33 +79,39 @@ function canvasPointAt(point: { x: number; y: number }, seriesIndex = 0) {
   return { x: value[0], y: value[1] };
 }
 function graphItemCanvasPoint(id: string, seriesIndex = 0) {
-  const series = (
-    chart.value as unknown as {
-      getModel: () => {
-        getSeriesByIndex: (index: number) => {
-          getData: () => {
-            count: () => number;
-            getId: (index: number) => string;
-            getItemGraphicEl: (index: number) => {
-              transformCoordToGlobal?: (x: number, y: number) => number[];
+  try {
+    const series = (
+      chart.value as unknown as {
+        getModel: () => {
+          getSeriesByIndex: (index: number) => {
+            getData: () => {
+              count: () => number;
+              getId: (index: number) => string;
+              getItemGraphicEl: (index: number) => {
+                transformCoordToGlobal?: (x: number, y: number) => number[];
+              };
             };
           };
         };
-      };
+      }
+    )
+      .getModel?.()
+      .getSeriesByIndex(seriesIndex);
+    const data = series?.getData();
+    if (!data) return undefined;
+    for (let index = 0; index < data.count(); index += 1) {
+      if (data.getId(index) !== id) continue;
+      const point = data
+        .getItemGraphicEl(index)
+        ?.transformCoordToGlobal?.(0, 0);
+      if (!point || !Number.isFinite(point[0]) || !Number.isFinite(point[1]))
+        return undefined;
+      return { x: point[0], y: point[1] };
     }
-  )
-    .getModel?.()
-    .getSeriesByIndex(seriesIndex);
-  const data = series?.getData();
-  if (!data) return undefined;
-  for (let index = 0; index < data.count(); index += 1) {
-    if (data.getId(index) !== id) continue;
-    const point = data.getItemGraphicEl(index)?.transformCoordToGlobal?.(0, 0);
-    if (!point || !Number.isFinite(point[0]) || !Number.isFinite(point[1]))
-      return undefined;
-    return { x: point[0], y: point[1] };
+    return undefined;
+  } catch {
+    return undefined;
   }
-  return undefined;
 }
 
 function graphDragEvent(event: unknown, phase: "start" | "move" | "end") {
