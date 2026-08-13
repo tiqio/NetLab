@@ -77,6 +77,7 @@ import {
   cleanSelection,
   rangeSelect,
   selectOne,
+  toggleSingleSelected,
   toggleSelected,
   restoreSelection,
 } from "./topologySelection";
@@ -1015,10 +1016,22 @@ async function selectResource(
   }
   selectedIds.value = additive
     ? toggleSelected(selectedIds.value, id)
-    : selectOne(id);
-  if (!additive) selectionAnchor.value = id;
-  focusedResourceId.value = id;
-  selectedType.value = type;
+    : toggleSingleSelected(selectedIds.value, id);
+  if (!selectedIds.value.length) {
+    clearSelection();
+    focusedResourceId.value = "";
+    return;
+  }
+  const selectedResource = keyboardResources.value.find(
+    (item) => item.id === selectedIds.value.at(-1),
+  );
+  if (!additive) selectionAnchor.value = selectedResource?.id || "";
+  focusedResourceId.value = selectedResource?.id || id;
+  selectedType.value = selectedResource?.type || type;
+  if (!selectedIds.value.includes(id)) {
+    selectedInterfaceId.value = "";
+    return;
+  }
   if (type === "network_attachment") {
     selectedInterfaceId.value =
       store.active?.network_attachments?.find((item) => item.id === id)

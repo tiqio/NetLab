@@ -37,6 +37,15 @@ export function selectOne(id: string): string[] {
   return id ? [id] : [];
 }
 
+export function toggleSingleSelected(
+  selected: readonly string[],
+  id: string,
+): string[] {
+  return selected.includes(id)
+    ? selected.filter((item) => item !== id)
+    : selectOne(id);
+}
+
 export function selectAll(ids: readonly string[]): string[] {
   return [...new Set(ids.filter(Boolean))];
 }

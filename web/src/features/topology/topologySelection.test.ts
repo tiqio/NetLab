@@ -5,6 +5,7 @@ import {
   rangeSelect,
   selectAll,
   selectOne,
+  toggleSingleSelected,
   toggleSelected,
   captureSelection,
   restoreSelection,
@@ -26,6 +27,11 @@ describe("topology selection", () => {
     expect(toggleSelected(original, "b")).toEqual(["a"]);
     expect(toggleSelected(original, "c")).toEqual(["a", "b", "c"]);
     expect(original).toEqual(["a", "b"]);
+  });
+  it("toggles a normal single click while preserving other selected items", () => {
+    expect(toggleSingleSelected(["a"], "a")).toEqual([]);
+    expect(toggleSingleSelected(["a", "b"], "a")).toEqual(["b"]);
+    expect(toggleSingleSelected(["a", "b"], "c")).toEqual(["c"]);
   });
 
   it("selects ordered ranges and intersecting boxes", () => {
