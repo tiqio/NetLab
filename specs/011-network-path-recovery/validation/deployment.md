@@ -244,3 +244,21 @@ R25 passed authority, readiness, release identity, database integrity and ten se
 - Focused canvas and chart coverage passed 32 tests. The new regression covers all three persisted connection kinds and verifies both the ECharts line style and the independent selected-adjacency overlay. The production frontend and embedded Go build, changed-file Prettier check and `git diff --check` also passed.
 - Target Chromium selected two different connected network objects in the integrated laboratory. One displayed four adjacent highlighted connections and the other displayed five; no page or console errors occurred.
 - The target remains healthy with 11 running nodes, 10 active network objects, 21 placements and 25 connections. `/readyz`, `/healthz`, database integrity, migration version 16, error-priority service journal checks and rollback package checksum verification passed.
+
+### Single-Click Selection Toggle Correction — r13
+
+| Field           | Value                                                                       |
+| --------------- | --------------------------------------------------------------------------- |
+| Candidate       | `topology-organize-20260813T100011Z-r13`                                    |
+| Source commit   | `ca29a97ff5894599897900f8a32d2cfed926a672`                                  |
+| Artifact digest | `sha256:e0c31541e1e44f5425176e5a2780ed6c3301d519bf160a4f1cbcb1e69051a1b2`   |
+| Contract digest | `sha256:71d5721ac41dd2d55ccdd7934d4ab0a77c7c77ecd602df43f24af89e1699668a`   |
+| Built at        | `2026-08-13T10:00:11Z`                                                      |
+| Migration       | no database migration; schema migration version remains `16`                |
+| Rollback        | `/var/lib/netlab/rollback/topology-organize-20260813T100011Z-r13-predeploy` |
+
+- R13 makes an ordinary single click toggle the clicked topology item. An unselected item becomes the sole selection; clicking an already selected item removes it immediately, while Shift-click retains additive toggle behavior.
+- ECharts emits a drag-start/end sequence even for an unmoved draggable node and may not emit a reliable chart click. The canvas now finalizes no-movement selection on drag end, defers selection until movement for real drags, and suppresses the optional duplicate chart click. This prevents both the previous two-click deselection and the transient select-then-clear behavior found during target validation.
+- Focused selection, workspace, canvas and chart coverage passed 52 tests, including a physical node-click event sequence containing drag start, drag end and chart click. The production frontend, embedded Go build, changed-file Prettier checks and `git diff --check` passed.
+- Target Chromium found a selectable pixel on the visible campus switch node. The first click selected the object and highlighted five adjacent connections; the next single click cleared the selection and all five adjacency highlights. No page or console errors occurred.
+- The target remains healthy with 11 running nodes, 10 active network objects, 21 placements and 25 connections. `/readyz`, `/healthz`, database integrity, migration version 16, error-priority service journal checks and rollback package checksum verification passed.
