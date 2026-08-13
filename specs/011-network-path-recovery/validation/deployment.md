@@ -141,15 +141,15 @@ R25 passed authority, readiness, release identity, database integrity and ten se
 
 ### Selection Highlight Correction — r3
 
-| Field | Value |
-|-------|-------|
-| Candidate | `topology-organize-20260813T075645Z-r3` |
-| Source commit | `cc0d9cd3c62e67174db3d0d0d20dc571a0b55ee6` |
-| Artifact digest | `sha256:1933a0cb44bd93515f7957f71812e895ad05a19d015cf2d71809928eeabe6149` |
-| Contract digest | `sha256:71d5721ac41dd2d55ccdd7934d4ab0a77c7c77ecd602df43f24af89e1699668a` |
-| Built at | `2026-08-13T07:56:45Z` |
-| Migration | no database migration; schema migration version remains `16` |
-| Rollback | `/var/lib/netlab/rollback/topology-organize-20260813T075645Z-r3-predeploy` |
+| Field           | Value                                                                      |
+| --------------- | -------------------------------------------------------------------------- |
+| Candidate       | `topology-organize-20260813T075645Z-r3`                                    |
+| Source commit   | `cc0d9cd3c62e67174db3d0d0d20dc571a0b55ee6`                                 |
+| Artifact digest | `sha256:1933a0cb44bd93515f7957f71812e895ad05a19d015cf2d71809928eeabe6149`  |
+| Contract digest | `sha256:71d5721ac41dd2d55ccdd7934d4ab0a77c7c77ecd602df43f24af89e1699668a`  |
+| Built at        | `2026-08-13T07:56:45Z`                                                     |
+| Migration       | no database migration; schema migration version remains `16`               |
+| Rollback        | `/var/lib/netlab/rollback/topology-organize-20260813T075645Z-r3-predeploy` |
 
 - R3 adds persistent double-ring selection halos, a bottom-right `已选 N 项` indicator and a stronger box-selection rectangle. Multi-selection no longer opens every selected resource's port overlay, reducing visual noise while preserving single-resource port access.
 - Focused topology validation passed 32 tests and the production frontend plus embedded Go build. The target artifact, configuration identity and rollback hashes matched the recorded candidate.
@@ -158,17 +158,34 @@ R25 passed authority, readiness, release identity, database integrity and ten se
 
 ### NAT Bottom-Layer Correction — r4
 
-| Field | Value |
-|-------|-------|
-| Candidate | `topology-organize-20260813T080427Z-r4` |
-| Source commit | `275b6899037ce5d55a6756f243eae4cb5319341e` |
-| Artifact digest | `sha256:b03bc57bbea1e5a8620ecf359618e949622f6dc60f8d879ea995f90e4072abb3` |
-| Contract digest | `sha256:71d5721ac41dd2d55ccdd7934d4ab0a77c7c77ecd602df43f24af89e1699668a` |
-| Built at | `2026-08-13T08:04:27Z` |
-| Migration | no database migration; schema migration version remains `16` |
-| Rollback | `/var/lib/netlab/rollback/topology-organize-20260813T080427Z-r4-predeploy` |
+| Field           | Value                                                                      |
+| --------------- | -------------------------------------------------------------------------- |
+| Candidate       | `topology-organize-20260813T080427Z-r4`                                    |
+| Source commit   | `275b6899037ce5d55a6756f243eae4cb5319341e`                                 |
+| Artifact digest | `sha256:b03bc57bbea1e5a8620ecf359618e949622f6dc60f8d879ea995f90e4072abb3`  |
+| Contract digest | `sha256:71d5721ac41dd2d55ccdd7934d4ab0a77c7c77ecd602df43f24af89e1699668a`  |
+| Built at        | `2026-08-13T08:04:27Z`                                                     |
+| Migration       | no database migration; schema migration version remains `16`               |
+| Rollback        | `/var/lib/netlab/rollback/topology-organize-20260813T080427Z-r4-predeploy` |
 
 - R4 changes the organizer to five layers and gives NAT bridges an exclusive bottom layer below PC, QEMU and Docker endpoints. The target layout places the integrated laboratory NAT at `y=820`, while the lowest non-NAT endpoint layer remains at `y=500`.
 - Focused topology validation passed 32 tests, followed by the production frontend and embedded Go build. The candidate and rollback package hashes were verified before installation.
 - Target Chromium invoked `整理并适应`, persisted laboratory revision `45`, and confirmed every NAT placement was below every non-NAT placement without page or console errors.
 - The integrated laboratory remained healthy with 11 running nodes, 10 active network objects, 21 placements and 25 connections; database integrity remained `ok`.
+
+### Box-Selection Coordinate Correction — r5
+
+| Field           | Value                                                                    |
+| --------------- | ------------------------------------------------------------------------ |
+| Candidate       | topology-organize-20260813T081329Z-r5                                    |
+| Source commit   | cde2c78a174d5e688ede7c063adcc5b3b34e3a99                                 |
+| Artifact digest | sha256:1237d4fa95bd8b6819ba08ecd2b73c30e01b31755dba42ab6846ca9f64bb9cd0  |
+| Contract digest | sha256:71d5721ac41dd2d55ccdd7934d4ab0a77c7c77ecd602df43f24af89e1699668a  |
+| Built at        | 2026-08-13T08:13:29Z                                                     |
+| Migration       | no database migration; schema migration version remains 16               |
+| Rollback        | /var/lib/netlab/rollback/topology-organize-20260813T081329Z-r5-predeploy |
+
+- R5 replaces the simplified viewport arithmetic used by box selection with the authoritative ECharts convertFromPixel transformation. The visible rectangle and resource hit testing now share the same chart-local coordinate system, including canvas offsets, zoom and graph center.
+- Focused topology validation passed 32 tests, including a non-zero chart pixel-offset case. The production frontend and embedded Go build also passed.
+- Target Chromium reset the viewport, selected a visible resource at canvas pixel approximately (1054.8, 429.5), cleared selection, and drew a 130-pixel box centered on that visible resource. The resulting selected-resource halo matched the same resource ID, with no page or console errors.
+- The integrated laboratory remains healthy with 11 running nodes, 10 active network objects, 21 placements and 25 connections. Database integrity remained ok.
