@@ -67,7 +67,10 @@ function present(
   actualState: string,
 ): ConnectionPresentation {
   const statusVisual = connectionStatusVisual(actualState);
-  const label = connectionDisplayName(source, target);
+  const label =
+    persistedKind === "network_attachment"
+      ? `${source.portName} ↔ 端口 ${target.portName}`
+      : connectionDisplayName(source, target);
   const accessibilityLabel = `${source.resourceName}:${source.portName} ↔ ${target.resourceName}:${target.portName} · ${statusVisual.label}`;
   return {
     id,

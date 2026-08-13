@@ -181,6 +181,14 @@ const connectorOverlay = ref<{
 const selectedResourceOverlays = ref<
   Array<{ id: string; x: number; y: number }>
 >([]);
+const connectionHitOverlays = ref<
+  Array<{
+    id: string;
+    resourceType: "link" | "network_attachment" | "network_object_link";
+    pathData: string;
+    accessibilityLabel: string;
+  }>
+>([]);
 const draggingResource = ref(false);
 const selectionRectangle = ref<{
   left: number;
@@ -696,6 +704,26 @@ function curvedPathData(
     (source.y + target.y) / 2 + (dx / length) * length * curveness;
   return `M ${source.x} ${source.y} Q ${controlX} ${controlY} ${target.x} ${target.y}`;
 }
+function trimConnectionEndpoints(
+  source: { x: number; y: number },
+  target: { x: number; y: number },
+  padding = 38,
+) {
+  const dx = target.x - source.x;
+  const dy = target.y - source.y;
+  const length = Math.max(Math.hypot(dx, dy), 1);
+  const trim = Math.min(padding, length / 3);
+  return {
+    source: {
+      x: source.x + (dx / length) * trim,
+      y: source.y + (dy / length) * trim,
+    },
+    target: {
+      x: target.x - (dx / length) * trim,
+      y: target.y - (dy / length) * trim,
+    },
+  };
+}
 const option = computed(() => ({
   animation: false,
   backgroundColor: "transparent",
@@ -1061,6 +1089,7 @@ function handleRoam(event: unknown) {
 function refreshOverlays() {
   if (draggingResource.value) {
     selectedResourceOverlays.value = [];
+    connectionHitOverlays.value = [];
     portOverlays.value = [];
     connectorOverlay.value = undefined;
     connectionPreview.value = undefined;
@@ -1073,6 +1102,36 @@ function refreshOverlays() {
       const point = chart.value?.graphItemPixel?.(resource.id);
       return point ? [{ id: resource.id, x: point.x, y: point.y }] : [];
     });
+  connectionHitOverlays.value = connectionPresentations.value.flatMap(
+    (connection) => {
+      const source = chart.value?.graphItemPixel?.(
+        connection.source.resourceId,
+      );
+      const target = chart.value?.graphItemPixel?.(
+        connection.target.resourceId,
+      );
+      if (!source || !target) return [];
+      const nodeLink =
+        connection.persistedKind === "node_link"
+          ? props.links.find((item) => item.id === connection.id)
+          : undefined;
+      const curveness = nodeLink
+        ? routeCurveness(nodeLink)
+        : connection.curveness;
+      const trimmed = trimConnectionEndpoints(source, target);
+      return [
+        {
+          id: connection.id,
+          resourceType:
+            connection.persistedKind === "node_link"
+              ? ("link" as const)
+              : connection.persistedKind,
+          pathData: curvedPathData(trimmed.source, trimmed.target, curveness),
+          accessibilityLabel: connection.accessibilityLabel,
+        },
+      ];
+    },
+  );
   const nextPorts: typeof portOverlays.value = [];
   for (const node of props.nodes.filter((item) => showPortDetails(item.id))) {
     const ownerPixel = chart.value?.graphItemPixel?.(node.id);
@@ -1862,6 +1921,35 @@ defineExpose({
           r="36"
         />
       </g>
+      <path
+        v-for="connection in connectionHitOverlays"
+        :key="`hit:${connection.id}`"
+        class="topology-connection-hit"
+        :class="{
+          'topology-connection-hit-selected': selectedIds?.includes(
+            connection.id,
+          ),
+        }"
+        :d="connection.pathData"
+        :data-connection-hit-id="connection.id"
+        :aria-label="`选择连接：${connection.accessibilityLabel}`"
+        role="button"
+        tabindex="0"
+        @click.stop="
+          $emit(
+            'select',
+            connection.id,
+            connection.resourceType,
+            $event.shiftKey,
+          )
+        "
+        @keydown.enter.prevent="
+          $emit('select', connection.id, connection.resourceType, false)
+        "
+        @keydown.space.prevent="
+          $emit('select', connection.id, connection.resourceType, false)
+        "
+      />
       <g
         v-if="trafficActive"
         data-traffic-path-overlay
@@ -2168,6 +2256,19 @@ defineExpose({
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--topology-selected) 75%, transparent),
     0 0 18px color-mix(in srgb, var(--topology-emphasis) 35%, transparent);
+}
+.topology-connection-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 18;
+  stroke-linecap: round;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+.topology-connection-hit:focus-visible,
+.topology-connection-hit-selected {
+  stroke: color-mix(in srgb, var(--topology-emphasis) 32%, transparent);
+  outline: none;
 }
 .traffic-flow-glow {
   fill: none;

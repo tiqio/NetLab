@@ -2,7 +2,11 @@ import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick, watchEffect } from "vue";
 import { defaultWorkspacePreferences } from "@/composables/useWorkspacePreferences";
-import { networkObjectFactory, nodeFactory } from "@/test/factories";
+import {
+  interfaceFactory,
+  networkObjectFactory,
+  nodeFactory,
+} from "@/test/factories";
 let captured: unknown;
 vi.mock("@/components/charts/EChart.vue", () => ({
   default: {
@@ -146,6 +150,50 @@ describe("TopologyCanvas", () => {
         .attributes("data-selected-resource-id"),
     ).toBe("node-1");
     expect(wrapper.get("[data-selection-count]").text()).toContain("已选 1 项");
+  });
+  it("provides a wide selectable overlay for attachment connections", async () => {
+    const object = networkObjectFactory({
+      id: "switch-a",
+      name: "服务区交换机",
+      kind: "switch_l2",
+    });
+    const wrapper = mount(TopologyCanvas, {
+      props: {
+        nodes: [nodeFactory()],
+        interfaces: [
+          interfaceFactory({
+            id: "if-1",
+            node_id: "node-1",
+            name: "eth0",
+            desired_link_id: "attachment-1",
+          }),
+        ],
+        links: [],
+        networkObjects: [object],
+        networkAttachments: [
+          {
+            id: "attachment-1",
+            network_object_id: object.id,
+            interface_id: "if-1",
+            port_name: "busybox",
+            revision: 1,
+            observed_state: "active",
+          },
+        ],
+        preferences: defaultWorkspacePreferences("lab"),
+      },
+    });
+    await nextTick();
+    const hit = wrapper.get('[data-connection-hit-id="attachment-1"]');
+    expect(hit.attributes("aria-label")).toContain(
+      "Ubuntu:eth0 ↔ 服务区交换机:busybox",
+    );
+    await hit.trigger("click");
+    expect(wrapper.emitted("select")?.at(-1)).toEqual([
+      "attachment-1",
+      "network_attachment",
+      false,
+    ]);
   });
   it("stops an active pan gesture when temporary pan mode is released", async () => {
     const wrapper = mount(TopologyCanvas, {

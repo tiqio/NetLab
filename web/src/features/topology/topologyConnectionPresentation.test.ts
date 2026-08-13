@@ -47,7 +47,7 @@ describe("buildConnectionPresentations", () => {
     ).toBe(true);
     expect(result.map((item) => item.label)).toEqual([
       "eth0 ↔ ens0",
-      "eth1 ↔ port1",
+      "eth1 ↔ 端口 port1",
       "eth0 ↔ eth0",
     ]);
     expect(result[0].accessibilityLabel).toBe(
