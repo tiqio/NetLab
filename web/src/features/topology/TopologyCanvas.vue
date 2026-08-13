@@ -200,8 +200,13 @@ const connectionEndpointLabels = ref<
     textAnchor: "start" | "end";
   }>
 >([]);
-const dragAdjacentConnectionOverlays = ref<
-  Array<{ id: string; pathData: string }>
+const adjacentConnectionOverlays = ref<
+  Array<{
+    id: string;
+    pathData: string;
+    selectedAdjacent: boolean;
+    dragAdjacent: boolean;
+  }>
 >([]);
 const draggingResource = ref(false);
 const draggingResourceIds = ref<string[]>([]);
@@ -967,6 +972,9 @@ const option = computed(() => ({
               ? "single"
               : "bidirectional";
           const selectedConnection = selected.value.has(connection.id);
+          const selectedAdjacent =
+            selected.value.has(connection.source.resourceId) ||
+            selected.value.has(connection.target.resourceId);
           const legendHighlighted = legendHighlightedConnectionIds.value.has(
             connection.id,
           );
@@ -996,13 +1004,17 @@ const option = computed(() => ({
                 ? props.trafficColor
                 : captureHit
                   ? "var(--topology-connection-capture)"
-                  : selectedConnection || legendHighlighted || dragAdjacent
+                  : selectedConnection ||
+                      selectedAdjacent ||
+                      legendHighlighted ||
+                      dragAdjacent
                     ? "var(--topology-connection-focus)"
                     : connection.statusVisual.colorToken,
               width:
                 trafficHit ||
                 captureHit ||
                 selectedConnection ||
+                selectedAdjacent ||
                 legendHighlighted ||
                 dragAdjacent
                   ? 4
@@ -1012,13 +1024,17 @@ const option = computed(() => ({
                 ? props.trafficColor
                 : captureHit
                   ? "var(--topology-connection-capture)"
-                  : selectedConnection || legendHighlighted || dragAdjacent
+                  : selectedConnection ||
+                      selectedAdjacent ||
+                      legendHighlighted ||
+                      dragAdjacent
                     ? "var(--topology-connection-focus)"
                     : undefined,
               shadowBlur:
                 trafficHit ||
                 captureHit ||
                 selectedConnection ||
+                selectedAdjacent ||
                 legendHighlighted ||
                 dragAdjacent
                   ? 7
@@ -1189,18 +1205,26 @@ function refreshOverlays() {
           ];
         },
       );
-  dragAdjacentConnectionOverlays.value = draggingResource.value
-    ? connectionGeometry
-        .filter(
-          ({ connection }) =>
-            draggingIds.has(connection.source.resourceId) ||
-            draggingIds.has(connection.target.resourceId),
-        )
-        .map(({ connection, trimmed, curveness }) => ({
+  adjacentConnectionOverlays.value = connectionGeometry.flatMap(
+    ({ connection, trimmed, curveness }) => {
+      const selectedAdjacent =
+        selected.value.has(connection.source.resourceId) ||
+        selected.value.has(connection.target.resourceId);
+      const dragAdjacent =
+        draggingResource.value &&
+        (draggingIds.has(connection.source.resourceId) ||
+          draggingIds.has(connection.target.resourceId));
+      if (!selectedAdjacent && !dragAdjacent) return [];
+      return [
+        {
           id: connection.id,
           pathData: curvedPathData(trimmed.source, trimmed.target, curveness),
-        }))
-    : [];
+          selectedAdjacent,
+          dragAdjacent,
+        },
+      ];
+    },
+  );
   if (draggingResource.value) {
     selectedResourceOverlays.value = [];
     connectionHitOverlays.value = [];
@@ -2057,11 +2081,16 @@ defineExpose({
         />
       </g>
       <path
-        v-for="connection in dragAdjacentConnectionOverlays"
-        :key="`drag-adjacent:${connection.id}`"
-        class="topology-drag-adjacent-link"
+        v-for="connection in adjacentConnectionOverlays"
+        :key="`adjacent:${connection.id}`"
+        class="topology-adjacent-link"
         :d="connection.pathData"
-        :data-drag-adjacent-connection-id="connection.id"
+        :data-selected-adjacent-connection-id="
+          connection.selectedAdjacent ? connection.id : undefined
+        "
+        :data-drag-adjacent-connection-id="
+          connection.dragAdjacent ? connection.id : undefined
+        "
       />
       <text
         v-for="label in connectionEndpointLabels"
@@ -2419,7 +2448,7 @@ defineExpose({
   pointer-events: stroke;
   cursor: pointer;
 }
-.topology-drag-adjacent-link {
+.topology-adjacent-link {
   fill: none;
   stroke: var(--topology-connection-focus);
   stroke-width: 7;

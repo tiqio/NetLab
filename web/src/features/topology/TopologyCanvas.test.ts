@@ -4,6 +4,7 @@ import { nextTick, watchEffect } from "vue";
 import { defaultWorkspacePreferences } from "@/composables/useWorkspacePreferences";
 import {
   interfaceFactory,
+  networkAttachmentFactory,
   networkObjectFactory,
   nodeFactory,
 } from "@/test/factories";
@@ -138,6 +139,82 @@ describe("TopologyCanvas", () => {
     expect(
       wrapper.find('[data-drag-adjacent-connection-id="link-1"]').exists(),
     ).toBe(true);
+  });
+  it("keeps every connection kind adjacent to selected resources highlighted", async () => {
+    const bridge = networkObjectFactory({
+      id: "network-1",
+      name: "Bridge",
+      kind: "bridge",
+    });
+    const nat = networkObjectFactory({
+      id: "network-2",
+      name: "NAT",
+      kind: "nat_bridge",
+    });
+    const wrapper = mount(TopologyCanvas, {
+      props: {
+        nodes: [nodeFactory(), nodeFactory({ id: "node-2", name: "Peer" })],
+        interfaces: [
+          interfaceFactory({ id: "if-1", node_id: "node-1", name: "eth0" }),
+          interfaceFactory({ id: "if-2", node_id: "node-2", name: "ge0" }),
+          interfaceFactory({ id: "if-3", node_id: "node-1", name: "eth1" }),
+        ],
+        links: [
+          {
+            id: "link-1",
+            laboratory_id: "lab-1",
+            endpoint_a_id: "if-1",
+            endpoint_b_id: "if-2",
+            desired_state: "connected",
+            observed_state: "active",
+            revision: 1,
+          },
+        ],
+        networkObjects: [bridge, nat],
+        networkAttachments: [
+          networkAttachmentFactory({
+            id: "attachment-1",
+            network_object_id: bridge.id,
+            interface_id: "if-3",
+            port_name: "access1",
+          }),
+        ],
+        networkObjectLinks: [
+          {
+            id: "object-link-1",
+            laboratory_id: "lab-1",
+            object_a_id: bridge.id,
+            port_a_name: "uplink",
+            object_b_id: nat.id,
+            port_b_name: "lan",
+            desired_state: "connected",
+            observed_state: "active",
+            revision: 1,
+          },
+        ],
+        preferences: defaultWorkspacePreferences("lab"),
+        selectedIds: ["node-1", bridge.id],
+      },
+    });
+    await nextTick();
+    const option = captured as {
+      series: Array<{
+        links: Array<{
+          id: string;
+          lineStyle: { color: string; width: number };
+        }>;
+      }>;
+    };
+    for (const id of ["link-1", "attachment-1", "object-link-1"]) {
+      const connection = option.series[0].links.find((item) => item.id === id);
+      expect(connection?.lineStyle.color).toBe(
+        "var(--topology-connection-focus)",
+      );
+      expect(connection?.lineStyle.width).toBe(4);
+      expect(
+        wrapper.find(`[data-selected-adjacent-connection-id="${id}"]`).exists(),
+      ).toBe(true);
+    }
   });
   it("places each interface label beside its matching endpoint", async () => {
     const wrapper = mount(TopologyCanvas, {
