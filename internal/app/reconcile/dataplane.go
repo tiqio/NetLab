@@ -2,6 +2,8 @@ package reconcile
 
 import (
 	"context"
+	"errors"
+	"strings"
 
 	"github.com/netlab/netlab/internal/domain"
 )
@@ -61,6 +63,14 @@ func networkObjectLinkEndpointReady(object domain.NetworkObject) bool {
 	return (object.Kind == domain.NetworkSwitchL2 || object.Kind == domain.NetworkSwitchL3) && object.ObservedState == "pending"
 }
 
+func dataPlaneRuntimePending(err error) bool {
+	if errors.Is(err, domain.ErrNotFound) {
+		return true
+	}
+	message := strings.ToLower(err.Error())
+	return strings.Contains(message, "cannot find device") || strings.Contains(message, "no such device") || strings.Contains(message, "does not exist")
+}
+
 func (r *DataPlaneReconciler) Name() string { return "data-plane" }
 
 func (r *DataPlaneReconciler) Reconcile(ctx context.Context) (err error) {
@@ -104,6 +114,10 @@ func (r *DataPlaneReconciler) Reconcile(ctx context.Context) (err error) {
 				continue
 			}
 			if err = r.runtime.EnsureLink(ctx, link, endpointA, endpointB); err != nil {
+				if dataPlaneRuntimePending(err) {
+					_ = r.store.SetLinkObservedState(ctx, link.ID, "pending")
+					continue
+				}
 				cleanupErr := r.runtime.DeleteLink(ctx, link.ID)
 				if cleanupErr == nil {
 					cleanupErr = r.store.DeleteLink(ctx, link.ID)
@@ -146,6 +160,11 @@ func (r *DataPlaneReconciler) Reconcile(ctx context.Context) (err error) {
 					attachErr = domain.Problem{Code: "capability_unsupported", Message: "namespace attachment runtime unavailable"}
 				}
 				if attachErr != nil {
+					if dataPlaneRuntimePending(attachErr) {
+						problem := structuredProblem(attachErr, domain.Problem{Code: "attachment_runtime_pending", Retryable: true, ResourceType: "network_attachment", ResourceID: attachment.ID, Phase: "attachment_reconcile", Cleanup: "authoritative and runtime state retained for retry", OperatorHint: "wait for the node interface to appear or inspect runtime recovery", RetryAfterSeconds: 1})
+						_ = r.store.SetNetworkAttachmentState(ctx, attachment.ID, "pending", problem)
+						continue
+					}
 					cleanupErr := r.runtime.DeleteAttachment(ctx, attachment)
 					cleanup := "owned partial runtime removed; attachment remains authoritative"
 					if cleanupErr != nil {
