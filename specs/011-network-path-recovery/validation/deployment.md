@@ -226,3 +226,21 @@ R25 passed authority, readiness, release identity, database integrity and ten se
 - Focused canvas and chart coverage passed 31 tests, including grouped graph movement, drag adjacency, and endpoint-label ownership. The production frontend and embedded Go build passed, along with Prettier checks for changed files and `git diff --check`.
 - Target Chromium box-selected two existing network objects and dragged one by 90 horizontal and 45 vertical pixels. Both resources moved by exactly the same delta during the interaction, eight adjacent connections were highlighted, and no page or console errors occurred. The two placement coordinates were restored through the authoritative batch placement API after validation.
 - The integrated laboratory remains healthy with 11 running nodes, 10 active network objects, 21 placements and 25 connections. `/readyz`, `/healthz`, database integrity, migration version 16, error-priority service journal checks, and rollback package checksum verification all passed.
+
+### Selected Resource Adjacency Highlight Correction — r10
+
+| Field           | Value                                                                       |
+| --------------- | --------------------------------------------------------------------------- |
+| Candidate       | `topology-organize-20260813T092136Z-r10`                                    |
+| Source commit   | `e305e4441dc162c67ec2531c81a82624526bef46`                                  |
+| Artifact digest | `sha256:3224aa8d94bf83e0766cfa271dbf76a7884d134c77c3997291f47c168d605588`   |
+| Contract digest | `sha256:71d5721ac41dd2d55ccdd7934d4ab0a77c7c77ecd602df43f24af89e1699668a`   |
+| Built at        | `2026-08-13T09:21:36Z`                                                      |
+| Migration       | no database migration; schema migration version remains `16`                |
+| Rollback        | `/var/lib/netlab/rollback/topology-organize-20260813T092136Z-r10-predeploy` |
+
+- R10 unifies static selection and drag adjacency rules. Selecting a node or network object now highlights every normalized connection whose source or target endpoint belongs to that selected resource, including node links, network attachments and network-object links.
+- Selected-resource adjacency uses the same dedicated SVG focus overlay as dragging, so traffic, capture and observed-state line colors cannot hide the selection indication. Directly selected connections retain their existing selectable hit-area highlight.
+- Focused canvas and chart coverage passed 32 tests. The new regression covers all three persisted connection kinds and verifies both the ECharts line style and the independent selected-adjacency overlay. The production frontend and embedded Go build, changed-file Prettier check and `git diff --check` also passed.
+- Target Chromium selected two different connected network objects in the integrated laboratory. One displayed four adjacent highlighted connections and the other displayed five; no page or console errors occurred.
+- The target remains healthy with 11 running nodes, 10 active network objects, 21 placements and 25 connections. `/readyz`, `/healthz`, database integrity, migration version 16, error-priority service journal checks and rollback package checksum verification passed.
