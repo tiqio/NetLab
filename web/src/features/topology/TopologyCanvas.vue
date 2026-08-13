@@ -189,7 +189,22 @@ const connectionHitOverlays = ref<
     accessibilityLabel: string;
   }>
 >([]);
+const connectionEndpointLabels = ref<
+  Array<{
+    id: string;
+    endpoint: "source" | "target";
+    resourceId: string;
+    text: string;
+    x: number;
+    y: number;
+    textAnchor: "start" | "end";
+  }>
+>([]);
+const dragAdjacentConnectionOverlays = ref<
+  Array<{ id: string; pathData: string }>
+>([]);
 const draggingResource = ref(false);
+const draggingResourceIds = ref<string[]>([]);
 const selectionRectangle = ref<{
   left: number;
   top: number;
@@ -704,6 +719,36 @@ function curvedPathData(
     (source.y + target.y) / 2 + (dx / length) * length * curveness;
   return `M ${source.x} ${source.y} Q ${controlX} ${controlY} ${target.x} ${target.y}`;
 }
+function curvedPoint(
+  source: { x: number; y: number },
+  target: { x: number; y: number },
+  curveness: number,
+  progress: number,
+) {
+  if (!curveness)
+    return {
+      x: source.x + (target.x - source.x) * progress,
+      y: source.y + (target.y - source.y) * progress,
+    };
+  const dx = target.x - source.x;
+  const dy = target.y - source.y;
+  const length = Math.max(Math.hypot(dx, dy), 1);
+  const control = {
+    x: (source.x + target.x) / 2 + (-dy / length) * length * curveness,
+    y: (source.y + target.y) / 2 + (dx / length) * length * curveness,
+  };
+  const remaining = 1 - progress;
+  return {
+    x:
+      remaining * remaining * source.x +
+      2 * remaining * progress * control.x +
+      progress * progress * target.x,
+    y:
+      remaining * remaining * source.y +
+      2 * remaining * progress * control.y +
+      progress * progress * target.y,
+  };
+}
 function trimConnectionEndpoints(
   source: { x: number; y: number },
   target: { x: number; y: number },
@@ -764,7 +809,7 @@ const option = computed(() => ({
       animationDurationUpdate: 0,
       edgeSymbol: ["none", "none"],
       edgeLabel: {
-        show: !denseTopology.value,
+        show: false,
         color: "var(--muted-foreground)",
         fontSize: 9,
         formatter: (value: { data: { label?: string } }) =>
@@ -925,6 +970,10 @@ const option = computed(() => ({
           const legendHighlighted = legendHighlightedConnectionIds.value.has(
             connection.id,
           );
+          const dragAdjacent =
+            draggingResource.value &&
+            (draggingResourceIds.value.includes(connection.source.resourceId) ||
+              draggingResourceIds.value.includes(connection.target.resourceId));
           const nodeLink =
             connection.persistedKind === "node_link"
               ? props.links.find((item) => item.id === connection.id)
@@ -947,14 +996,15 @@ const option = computed(() => ({
                 ? props.trafficColor
                 : captureHit
                   ? "var(--topology-connection-capture)"
-                  : selectedConnection || legendHighlighted
+                  : selectedConnection || legendHighlighted || dragAdjacent
                     ? "var(--topology-connection-focus)"
                     : connection.statusVisual.colorToken,
               width:
                 trafficHit ||
                 captureHit ||
                 selectedConnection ||
-                legendHighlighted
+                legendHighlighted ||
+                dragAdjacent
                   ? 4
                   : connection.statusVisual.width,
               opacity: trafficHit ? 0.7 : 1,
@@ -962,14 +1012,15 @@ const option = computed(() => ({
                 ? props.trafficColor
                 : captureHit
                   ? "var(--topology-connection-capture)"
-                  : selectedConnection || legendHighlighted
+                  : selectedConnection || legendHighlighted || dragAdjacent
                     ? "var(--topology-connection-focus)"
                     : undefined,
               shadowBlur:
                 trafficHit ||
                 captureHit ||
                 selectedConnection ||
-                legendHighlighted
+                legendHighlighted ||
+                dragAdjacent
                   ? 7
                   : 0,
               type: connection.statusVisual.lineType,
@@ -1087,6 +1138,69 @@ function handleRoam(event: unknown) {
   if (connectionSourcePortId.value) void nextTick(updateConnectionPreview);
 }
 function refreshOverlays() {
+  const draggingIds = new Set(draggingResourceIds.value);
+  const connectionGeometry = connectionPresentations.value.flatMap(
+    (connection) => {
+      const source = chart.value?.graphItemPixel?.(
+        connection.source.resourceId,
+      );
+      const target = chart.value?.graphItemPixel?.(
+        connection.target.resourceId,
+      );
+      if (!source || !target) return [];
+      const nodeLink =
+        connection.persistedKind === "node_link"
+          ? props.links.find((item) => item.id === connection.id)
+          : undefined;
+      const curveness = nodeLink
+        ? routeCurveness(nodeLink)
+        : connection.curveness;
+      const trimmed = trimConnectionEndpoints(source, target);
+      return [{ connection, source, target, curveness, trimmed }];
+    },
+  );
+  connectionEndpointLabels.value = denseTopology.value
+    ? []
+    : connectionGeometry.flatMap(
+        ({ connection, source, target, curveness }) => {
+          const sourcePoint = curvedPoint(source, target, curveness, 0.22);
+          const targetPoint = curvedPoint(source, target, curveness, 0.78);
+          return [
+            {
+              id: connection.id,
+              endpoint: "source" as const,
+              resourceId: connection.source.resourceId,
+              text: connection.source.portName,
+              x: sourcePoint.x,
+              y: sourcePoint.y - 7,
+              textAnchor:
+                source.x <= target.x ? ("start" as const) : ("end" as const),
+            },
+            {
+              id: connection.id,
+              endpoint: "target" as const,
+              resourceId: connection.target.resourceId,
+              text: connection.target.portName,
+              x: targetPoint.x,
+              y: targetPoint.y - 7,
+              textAnchor:
+                source.x <= target.x ? ("end" as const) : ("start" as const),
+            },
+          ];
+        },
+      );
+  dragAdjacentConnectionOverlays.value = draggingResource.value
+    ? connectionGeometry
+        .filter(
+          ({ connection }) =>
+            draggingIds.has(connection.source.resourceId) ||
+            draggingIds.has(connection.target.resourceId),
+        )
+        .map(({ connection, trimmed, curveness }) => ({
+          id: connection.id,
+          pathData: curvedPathData(trimmed.source, trimmed.target, curveness),
+        }))
+    : [];
   if (draggingResource.value) {
     selectedResourceOverlays.value = [];
     connectionHitOverlays.value = [];
@@ -1549,6 +1663,13 @@ function handleDragStart(event: unknown) {
   if (!value.data?.id || !value.data.resourceType) return;
   if (!props.selectedIds?.includes(value.data.id))
     emit("select", value.data.id, value.data.resourceType, false);
+  const resourceIds = new Set([
+    ...props.nodes.map((item) => item.id),
+    ...props.networkObjects.map((item) => item.id),
+  ]);
+  draggingResourceIds.value = props.selectedIds?.includes(value.data.id)
+    ? props.selectedIds.filter((id) => resourceIds.has(id))
+    : [value.data.id];
   draggingResource.value = true;
   portOverlays.value = [];
   connectorOverlay.value = undefined;
@@ -1561,6 +1682,13 @@ function handleDragStart(event: unknown) {
     },
     props.selectedIds,
   );
+  chart.value?.setGraphDragGroup?.(draggingResourceIds.value);
+  scheduleOverlayRefresh();
+}
+function handleDragMove(event: unknown) {
+  const value = event as { event?: { offsetX?: number; offsetY?: number } };
+  interaction.pointerMove(pointerSample(value.event));
+  scheduleOverlayRefresh();
 }
 function handleDrag(event: unknown) {
   const value = event as {
@@ -1589,6 +1717,7 @@ function handleDrag(event: unknown) {
       emit("move", value.data.id, point.x, point.y);
   }
   draggingResource.value = false;
+  draggingResourceIds.value = [];
   scheduleOverlayRefresh();
 }
 function pointerSample(event?: {
@@ -1882,6 +2011,7 @@ defineExpose({
       @resized="handleChartGeometryChange"
       @canvas-pointer="handleConnectionPointer"
       @node-drag-start="handleDragStart"
+      @node-drag-move="handleDragMove"
       @node-drag="handleDrag"
       @graph-roam="handleRoam"
     />
@@ -1926,6 +2056,25 @@ defineExpose({
           r="36"
         />
       </g>
+      <path
+        v-for="connection in dragAdjacentConnectionOverlays"
+        :key="`drag-adjacent:${connection.id}`"
+        class="topology-drag-adjacent-link"
+        :d="connection.pathData"
+        :data-drag-adjacent-connection-id="connection.id"
+      />
+      <text
+        v-for="label in connectionEndpointLabels"
+        :key="`endpoint-label:${label.id}:${label.endpoint}`"
+        class="topology-connection-endpoint-label"
+        :x="label.x"
+        :y="label.y"
+        :text-anchor="label.textAnchor"
+        :data-connection-endpoint-label="`${label.id}:${label.endpoint}`"
+        :data-endpoint-resource-id="label.resourceId"
+      >
+        {{ label.text }}
+      </text>
       <path
         v-for="connection in connectionHitOverlays"
         :key="`hit:${connection.id}`"
@@ -2269,6 +2418,24 @@ defineExpose({
   stroke-linecap: round;
   pointer-events: stroke;
   cursor: pointer;
+}
+.topology-drag-adjacent-link {
+  fill: none;
+  stroke: var(--topology-connection-focus);
+  stroke-width: 7;
+  stroke-linecap: round;
+  opacity: 0.72;
+  filter: drop-shadow(0 0 5px var(--topology-connection-focus));
+  pointer-events: none;
+}
+.topology-connection-endpoint-label {
+  fill: var(--topology-label);
+  stroke: var(--topology-canvas);
+  stroke-width: 4;
+  paint-order: stroke fill;
+  font-size: 10px;
+  font-weight: 600;
+  pointer-events: none;
 }
 .topology-connection-hit:focus-visible,
 .topology-connection-hit-selected {

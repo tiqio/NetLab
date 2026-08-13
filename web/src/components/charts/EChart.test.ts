@@ -9,13 +9,23 @@ const off = vi.fn();
 const zrOn = vi.fn();
 const zrOff = vi.fn();
 const convertFromPixel = vi.fn();
-const graphicElement = { x: 0, y: 0 };
+const updateLayout = vi.fn();
+const graphicElement = { x: 0, y: 0, attr: vi.fn() };
+const peerGraphicElement = { x: 0, y: 0, attr: vi.fn() };
+let graphLayouts: Array<[number, number]> = [
+  [0, 0],
+  [40, 20],
+];
 const graphData = {
-  count: () => 1,
-  getId: () => "node-1",
+  count: () => 2,
+  getId: (index: number) => (index === 0 ? "node-1" : "node-2"),
   getRawDataItem: () => ({ resourceType: "node" }),
-  getItemGraphicEl: () => graphicElement,
-  getItemLayout: () => [0, 0],
+  getItemGraphicEl: (index: number) =>
+    index === 0 ? graphicElement : peerGraphicElement,
+  getItemLayout: (index: number) => graphLayouts[index],
+  setItemLayout: (index: number, layout: [number, number]) => {
+    graphLayouts[index] = layout;
+  },
 };
 vi.mock("echarts/core", () => ({
   init: () => ({
@@ -29,6 +39,7 @@ vi.mock("echarts/core", () => ({
     getModel: () => ({
       getSeriesByIndex: () => ({ getData: () => graphData }),
     }),
+    getViewOfSeriesModel: () => ({ updateLayout }),
     getZr: () => ({ on: zrOn, off: zrOff }),
   }),
   use: vi.fn(),
@@ -51,7 +62,13 @@ vi.mock("echarts/components", () => ({
 import EChart from "./EChart.vue";
 
 describe("EChart", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    graphLayouts = [
+      [0, 0],
+      [40, 20],
+    ];
+  });
   it("applies options and disposes resources", async () => {
     const wrapper = mount(EChart, { props: { option: { series: [] } } });
     expect(setOption).toHaveBeenCalled();
@@ -142,6 +159,25 @@ describe("EChart", () => {
       data: { id: "node-1" },
       graphPoint: { x: 100, y: 50 },
     });
+  });
+  it("moves every member of the active graph drag group", () => {
+    convertFromPixel.mockImplementation(
+      (_finder: unknown, point: [number, number]) => point,
+    );
+    const wrapper = mount(EChart, { props: { option: { series: [] } } });
+    const handler = (name: string) =>
+      zrOn.mock.calls.find(([event]) => event === name)?.[1] as (
+        event: unknown,
+      ) => void;
+    handler("dragstart")({ target: graphicElement, offsetX: 0, offsetY: 0 });
+    (
+      wrapper.vm as unknown as { setGraphDragGroup: (ids: string[]) => void }
+    ).setGraphDragGroup(["node-1", "node-2"]);
+    graphLayouts[0] = [20, 10];
+    handler("drag")({ target: graphicElement, offsetX: 20, offsetY: 10 });
+    expect(graphLayouts[1]).toEqual([60, 30]);
+    expect(peerGraphicElement.attr).toHaveBeenCalledWith({ x: 60, y: 30 });
+    expect(updateLayout).toHaveBeenCalled();
   });
 
   it("exposes chart readiness and reapplies options after resize", async () => {

@@ -59,8 +59,86 @@ const chart = shallowRef<ECharts>();
 let observer: ResizeObserver | undefined;
 let themeObserver: MutationObserver | undefined;
 let activeGraphDrag:
-  { id: string; offsetX: number; offsetY: number } | undefined;
+  | {
+      id: string;
+      offsetX: number;
+      offsetY: number;
+      groupOrigins?: Map<string, [number, number]>;
+    }
+  | undefined;
 let pendingApply = false;
+
+function graphSeries() {
+  return (
+    chart.value as unknown as {
+      getModel: () => {
+        getSeriesByIndex: (index: number) => {
+          getData: () => {
+            count: () => number;
+            getId: (index: number) => string;
+            getRawDataItem: (index: number) => Record<string, unknown>;
+            getItemGraphicEl: (index: number) => {
+              x?: number;
+              y?: number;
+              attr?: (value: { x: number; y: number }) => void;
+            };
+            getItemLayout: (index: number) => number[];
+            setItemLayout: (index: number, layout: number[]) => void;
+          };
+          getGraph: () => {
+            eachEdge: (
+              callback: (edge: { getModel: () => unknown }) => void,
+            ) => void;
+          };
+        };
+      };
+      getViewOfSeriesModel?: (series: unknown) => {
+        updateLayout?: (series: unknown) => void;
+      };
+    }
+  )
+    .getModel?.()
+    .getSeriesByIndex(0);
+}
+
+function setGraphDragGroup(ids: string[]) {
+  if (!activeGraphDrag) return;
+  const data = graphSeries()?.getData();
+  if (!data) return;
+  const origins = new Map<string, [number, number]>();
+  for (let index = 0; index < data.count(); index += 1) {
+    const id = data.getId(index);
+    if (!ids.includes(id)) continue;
+    const layout = data.getItemLayout(index);
+    if (layout && Number.isFinite(layout[0]) && Number.isFinite(layout[1]))
+      origins.set(id, [layout[0], layout[1]]);
+  }
+  activeGraphDrag.groupOrigins = origins;
+}
+
+function moveGraphDragGroup(anchorId: string, anchorLayout: number[]) {
+  const origins = activeGraphDrag?.groupOrigins;
+  const anchorOrigin = origins?.get(anchorId);
+  const series = graphSeries();
+  const data = series?.getData();
+  if (!origins || !anchorOrigin || !series || !data) return;
+  const dx = anchorLayout[0] - anchorOrigin[0];
+  const dy = anchorLayout[1] - anchorOrigin[1];
+  for (let index = 0; index < data.count(); index += 1) {
+    const id = data.getId(index);
+    const origin = origins.get(id);
+    if (!origin || id === anchorId) continue;
+    const next = [origin[0] + dx, origin[1] + dy];
+    data.setItemLayout(index, next);
+    data.getItemGraphicEl(index)?.attr?.({ x: next[0], y: next[1] });
+  }
+  const instance = chart.value as unknown as {
+    getViewOfSeriesModel?: (value: unknown) => {
+      updateLayout?: (value: unknown) => void;
+    };
+  };
+  instance.getViewOfSeriesModel?.(series)?.updateLayout?.(series);
+}
 
 function graphPointAt(point: [number, number], seriesIndex = 0) {
   const value = chart.value?.convertFromPixel({ seriesIndex }, point) as
@@ -179,6 +257,13 @@ function graphDragEvent(event: unknown, phase: "start" | "move" | "end") {
             : layout && Number.isFinite(layout[0]) && Number.isFinite(layout[1])
               ? { x: layout[0], y: layout[1] }
               : pointerPoint);
+        if (
+          phase === "move" &&
+          layout &&
+          Number.isFinite(layout[0]) &&
+          Number.isFinite(layout[1])
+        )
+          moveGraphDragGroup(id, layout);
         if (phase === "end") activeGraphDrag = undefined;
         return {
           data: {
@@ -358,6 +443,7 @@ defineExpose({
   getInstance: () => chart.value,
   dataPointToPixel: (point: { x: number; y: number }) => canvasPointAt(point),
   graphItemPixel: (id: string) => graphItemCanvasPoint(id),
+  setGraphDragGroup,
   canvasSize: () => ({
     width: root.value?.clientWidth || 0,
     height: root.value?.clientHeight || 0,

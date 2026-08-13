@@ -8,6 +8,7 @@ import {
   nodeFactory,
 } from "@/test/factories";
 let captured: unknown;
+let dragGroup: string[] = [];
 vi.mock("@/components/charts/EChart.vue", () => ({
   default: {
     props: ["option", "ariaLabel"],
@@ -16,6 +17,7 @@ vi.mock("@/components/charts/EChart.vue", () => ({
       "chartContext",
       "canvasWheel",
       "nodeDragStart",
+      "nodeDragMove",
       "nodeDrag",
       "graphRoam",
     ],
@@ -34,6 +36,9 @@ vi.mock("@/components/charts/EChart.vue", () => ({
           x: point.x - 40,
           y: point.y - 20,
         }),
+        setGraphDragGroup: (ids: string[]) => {
+          dragGroup = ids;
+        },
       });
     },
     template: `<div>
@@ -42,6 +47,7 @@ vi.mock("@/components/charts/EChart.vue", () => ({
       <button data-roam @click="$emit('graphRoam',{zoom:2,centerX:5,centerY:4})">roam</button>
       <button data-wheel @click="$emit('graphRoam',{zoom:2.2,centerX:-5,centerY:2})">wheel</button>
       <button data-drag @click="$emit('nodeDragStart',{data:{id:'node-1',resourceType:'node'},event:{offsetX:10,offsetY:10}});$emit('nodeDrag',{data:{id:'node-1'},event:{offsetX:30,offsetY:20},graphPoint:{x:12,y:34}})">drag</button>
+      <button data-drag-move @click="$emit('nodeDragStart',{data:{id:'node-1',resourceType:'node'},event:{offsetX:10,offsetY:10}});$emit('nodeDragMove',{data:{id:'node-1'},event:{offsetX:30,offsetY:20},graphPoint:{x:12,y:34}})">drag move</button>
       <button data-object-link-context @click="$emit('chartContext',{data:{id:'object-link-1',resourceType:'network_object_link'},event:{event:{clientX:45,clientY:55,preventDefault(){}}}})">context</button>
     </div>`,
   },
@@ -50,6 +56,7 @@ import TopologyCanvas from "./TopologyCanvas.vue";
 describe("TopologyCanvas", () => {
   beforeEach(() => {
     captured = undefined;
+    dragGroup = [];
   });
 
   it("builds stable graph IDs and emits selection", async () => {
@@ -99,6 +106,76 @@ describe("TopologyCanvas", () => {
     };
     expect(wheelViewport.zoom).toBeGreaterThan(1);
     expect(wheelViewport.centerX).toBeLessThan(0);
+  });
+  it("previews the selected drag group and highlights adjacent links", async () => {
+    const wrapper = mount(TopologyCanvas, {
+      props: {
+        nodes: [nodeFactory(), nodeFactory({ id: "node-2", name: "Peer" })],
+        interfaces: [
+          interfaceFactory({ id: "if-1", node_id: "node-1", name: "eth0" }),
+          interfaceFactory({ id: "if-2", node_id: "node-2", name: "ge0" }),
+        ],
+        links: [
+          {
+            id: "link-1",
+            laboratory_id: "lab-1",
+            endpoint_a_id: "if-1",
+            endpoint_b_id: "if-2",
+            desired_state: "connected",
+            observed_state: "active",
+            revision: 1,
+          },
+        ],
+        networkObjects: [],
+        preferences: defaultWorkspacePreferences("lab"),
+        selectedIds: ["node-1", "node-2"],
+      },
+    });
+    await nextTick();
+    await wrapper.get("[data-drag-move]").trigger("click");
+    await nextTick();
+    expect(dragGroup).toEqual(["node-1", "node-2"]);
+    expect(
+      wrapper.find('[data-drag-adjacent-connection-id="link-1"]').exists(),
+    ).toBe(true);
+  });
+  it("places each interface label beside its matching endpoint", async () => {
+    const wrapper = mount(TopologyCanvas, {
+      props: {
+        nodes: [nodeFactory(), nodeFactory({ id: "node-2", name: "Peer" })],
+        interfaces: [
+          interfaceFactory({ id: "if-1", node_id: "node-1", name: "eth0" }),
+          interfaceFactory({ id: "if-2", node_id: "node-2", name: "ge0" }),
+        ],
+        links: [
+          {
+            id: "link-1",
+            laboratory_id: "lab-1",
+            endpoint_a_id: "if-1",
+            endpoint_b_id: "if-2",
+            desired_state: "connected",
+            observed_state: "active",
+            revision: 1,
+          },
+        ],
+        networkObjects: [],
+        preferences: defaultWorkspacePreferences("lab"),
+      },
+    });
+    await nextTick();
+    const source = wrapper.get(
+      '[data-connection-endpoint-label="link-1:source"]',
+    );
+    const target = wrapper.get(
+      '[data-connection-endpoint-label="link-1:target"]',
+    );
+    expect(source.text()).toBe("eth0");
+    expect(source.attributes("data-endpoint-resource-id")).toBe("node-1");
+    expect(target.text()).toBe("ge0");
+    expect(target.attributes("data-endpoint-resource-id")).toBe("node-2");
+    expect(Number(source.attributes("x"))).toBeLessThan(
+      Number(target.attributes("x")),
+    );
   });
   it("box-selects by dragging blank canvas without a modifier", async () => {
     const wrapper = mount(TopologyCanvas, {
