@@ -1,4 +1,4 @@
-# Phase 9 Convergence Validation — 2026-08-12
+# Phase 9 Convergence Validation — 2026-08-13
 
 ## Candidate and Deployment
 
@@ -32,11 +32,18 @@
 - FortiGate performed first-login password initialization. The generated temporary password was memory-only and was not written to source, evidence or logs. The appliance is currently stopped to prevent its temporary `10.20.20.254` address from conflicting with VyOS.
 - Because repeatable bidirectional appliance exchange and readiness evidence are not both present, T129 remains incomplete.
 
-### Host-Restart Gate
+## R30 Host-Restart Closure
 
-- The new authoritative gate correctly refuses to reboot without ten successful pre-restart Ubuntu QGA probes and now retries transient HTTP and task-level guest-agent failures.
-- It exposed an existing runtime recovery defect: after service/node recovery, the DMZ switch required explicit authoritative reconcile to clear VLAN membership drift, and VyOS `eth1` retained its address but failed IPv4 neighbor resolution to `10.20.20.1`.
-- The gate never wrote a marker and the target host was not rebooted when preconditions failed. T133 remains incomplete rather than recording a false pass.
+- Candidate `network-path-011-20260813T025824Z-qemu-recovery-r30` was deployed to the authoritative target from binary source commit `d5cb0dbc70c7b47668c224c9041a86f8e043afdb`; the final acceptance script revision was `e6706a704186b6ecfd5fdf4e218bbeb3d84ec84f`.
+- Namespace attachment recovery now performs exact bridge/VLAN convergence even when the host-side path appears healthy. An empty attachment VLAN configuration inherits the matching switch port policy; explicit attachment fields remain overrides.
+- Data-plane reconciliation retains authoritative links and attachments as retryable `pending` when a running interface has not appeared yet. Attachments owned by intentionally stopped nodes remain `pending` with their interfaces down instead of becoming false failures.
+- QEMU inspection now validates that the PID in `launch.json` belongs to the expected `qemu-system` process and contains `guest=netlab:<node-id>`. A host-restart PID reuse can no longer leave a missing QEMU reported as `running`.
+- The first R30 deployment corrected the previously false-running Ubuntu node automatically: the QEMU process, both TAP interfaces, NAT attachment and Ubuntu-to-VyOS point-to-point link were recreated without direct database edits.
+- The final controlled restart changed boot ID from `6d459476-cda1-47b3-97ec-1bc4ece341b6` to `08262fae-edf5-4563-b691-01f45a8dd8bd`.
+- Before restart, all ten Ubuntu probes passed: IPv4 `172.16.0.1`, `10.20.20.1`, `10.20.20.10`, `10.30.30.1`, `10.30.30.10`; IPv6 `fd16::1`, `fd20::1`, `fd20::10`, `fd30::1`, `fd30::10`.
+- The single post-restart `verify` invocation observed one expected cold-guest/QGA retry, then passed all ten probes. The before/after topology states matched: two connected links plus one intentional pending vendor link, eleven active attachments plus two intentional pending FortiGate attachments.
+- The latest `system.recovery` task completed with `state=succeeded` and `mode=host_restart`; candidate identity remained unchanged, `netlab.service` remained active, `/readyz` returned `{"status":"ok"}`, `PRAGMA integrity_check` returned `ok`, and SQLite user version remained `0`.
+- T133 is complete. T129 remains open because repeatable FancyWAN/FortiGate credentials, persistent appliance configuration and bidirectional vendor-path evidence are still unavailable.
 
 ## Validation Commands
 
@@ -47,3 +54,6 @@
 - `cd web && npm run format:check` — PASS.
 - `cd web && npm run build` — PASS with the existing chunk-size warning.
 - `NETLAB_PRIVILEGED=1 NETLAB_TRAFFIC_OBSERVATION_10M=1 go test ./tests/integration -run '^TestPrivilegedTenMinuteTrafficWorkloadObservation$' -count=1 -v -timeout 12m` — PASS in 596.22 seconds.
+- `NETLAB_PRIVILEGED_TESTS=1 go test ./tests/recovery -run 'Test(VLANMembershipPersists|NamespaceAttachmentRestoresForwarding)AcrossTenRuntimeRestarts' -count=1 -v` — PASS; exact VLAN recovery and real IPv4 forwarding passed across ten corruption/recovery cycles.
+- `go test ./...` after commits `3d37179`, `81438e2`, `69ce19c`, `ea229b5`, `d5cb0db` and `e6706a7` — PASS.
+- `acceptance/network-path-host-restart.sh prepare`, controlled host reboot, then one `verify` invocation — PASS; the first cold-guest snapshot retry was absorbed by the bounded gate and the second snapshot passed 10/10.
