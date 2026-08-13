@@ -81,6 +81,7 @@ describe("TopologyCanvas", () => {
       zoom: 2,
     });
     await wrapper.get("[data-drag]").trigger("click");
+    expect(wrapper.emitted("select")?.[0]).toEqual(["node-1", "node", false]);
     expect(wrapper.emitted("move")?.[0]).toEqual(["node-1", 12, 34]);
     await wrapper.get("[data-wheel]").trigger("click");
     const wheelViewport = wrapper.emitted("viewport")?.[1]?.[0] as {
@@ -90,6 +91,35 @@ describe("TopologyCanvas", () => {
     };
     expect(wheelViewport.zoom).toBeGreaterThan(1);
     expect(wheelViewport.centerX).toBeLessThan(0);
+  });
+  it("box-selects by dragging blank canvas without a modifier", async () => {
+    const wrapper = mount(TopologyCanvas, {
+      props: {
+        nodes: [nodeFactory()],
+        interfaces: [],
+        links: [],
+        networkObjects: [],
+        preferences: defaultWorkspacePreferences("lab"),
+      },
+    });
+    const surface = wrapper.get(".topology-surface");
+    await surface.trigger("pointerdown", {
+      button: 0,
+      pointerId: 7,
+      clientX: 10,
+      clientY: 10,
+    });
+    await surface.trigger("pointermove", {
+      pointerId: 7,
+      clientX: 180,
+      clientY: 140,
+    });
+    await surface.trigger("pointerup", {
+      pointerId: 7,
+      clientX: 180,
+      clientY: 140,
+    });
+    expect(wrapper.emitted("boxSelect")?.[0]?.[1]).toBe(false);
   });
   it("stops an active pan gesture when temporary pan mode is released", async () => {
     const wrapper = mount(TopologyCanvas, {
@@ -460,8 +490,8 @@ describe("TopologyCanvas", () => {
       item.id.startsWith("ol-"),
     );
     expect(objectLinks.map((item) => item.label)).toEqual([
-      "Switch A:swp1 ↔ Switch B:swp1",
-      "Switch A:swp2 ↔ Switch B:swp2",
+      "swp1 ↔ swp1",
+      "swp2 ↔ swp2",
     ]);
     expect(objectLinks[0].lineStyle.curveness).not.toBe(
       objectLinks[1].lineStyle.curveness,

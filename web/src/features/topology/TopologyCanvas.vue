@@ -995,7 +995,7 @@ function handleClick(event: unknown) {
   );
   applyActions(
     interaction.pointerUp(pointer),
-    Boolean(value.event?.event?.ctrlKey || value.event?.event?.metaKey),
+    Boolean(value.event?.event?.shiftKey),
   );
 }
 function handleContext(event: unknown) {
@@ -1478,6 +1478,8 @@ function handleDragStart(event: unknown) {
     event?: { offsetX?: number; offsetY?: number };
   };
   if (!value.data?.id || !value.data.resourceType) return;
+  if (!props.selectedIds?.includes(value.data.id))
+    emit("select", value.data.id, value.data.resourceType, false);
   draggingResource.value = true;
   portOverlays.value = [];
   connectorOverlay.value = undefined;
@@ -1534,43 +1536,71 @@ function pointerSample(event?: {
     time: Date.now(),
   };
 }
+function surfacePointerPoint(event: PointerEvent) {
+  const bounds = (event.currentTarget as HTMLElement).getBoundingClientRect();
+  return {
+    x: event.clientX - bounds.left,
+    y: event.clientY - bounds.top,
+  };
+}
+function surfacePointerId(event: PointerEvent) {
+  return Number(event.pointerId || 1);
+}
 function handleSurfacePointerDown(event: PointerEvent) {
+  const pointerId = surfacePointerId(event);
   if (props.panEnabled && event.button === 0) {
     panGesture.value = {
-      pointerId: event.pointerId,
+      pointerId,
       startX: event.clientX,
       startY: event.clientY,
       centerX: props.preferences.viewport.centerX,
       centerY: props.preferences.viewport.centerY,
       zoom: props.preferences.viewport.zoom,
     };
-    (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
+    (event.currentTarget as HTMLElement).setPointerCapture?.(pointerId);
     event.preventDefault();
     event.stopPropagation();
     return;
   }
   if (boxPointerId.value !== undefined) return;
-  if (!event.shiftKey || event.button !== 0) return;
-  boxPointerId.value = event.pointerId;
+  if (event.button !== 0) return;
+  const point = surfacePointerPoint(event);
+  const resourceHit = resolveResourceBodyHit(
+    point,
+    [...props.nodes, ...props.networkObjects].flatMap((resource) => {
+      const center = chart.value?.graphItemPixel?.(resource.id);
+      return center
+        ? [{ id: resource.id, center, halfWidth: 48, halfHeight: 42 }]
+        : [];
+    }),
+  );
+  if (resourceHit) return;
+  boxPointerId.value = pointerId;
   interaction.pointerDown(
-    pointerSample(event),
+    pointerSample({
+      offsetX: point.x,
+      offsetY: point.y,
+      button: event.button,
+      pointerId,
+    }),
     { kind: "background" },
     props.selectedIds || [],
     true,
   );
   selectionRectangle.value = {
-    left: event.offsetX,
-    top: event.offsetY,
-    right: event.offsetX,
-    bottom: event.offsetY,
+    left: point.x,
+    top: point.y,
+    right: point.x,
+    bottom: point.y,
   };
-  (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
+  (event.currentTarget as HTMLElement).setPointerCapture?.(pointerId);
   event.preventDefault();
   event.stopPropagation();
 }
 function handleSurfacePointerMove(event: PointerEvent) {
+  const pointerId = surfacePointerId(event);
   const pan = panGesture.value;
-  if (pan?.pointerId === event.pointerId) {
+  if (pan?.pointerId === pointerId) {
     emit("viewport", {
       centerX: pan.centerX - (event.clientX - pan.startX) / pan.zoom,
       centerY: pan.centerY - (event.clientY - pan.startY) / pan.zoom,
@@ -1580,25 +1610,42 @@ function handleSurfacePointerMove(event: PointerEvent) {
     event.stopPropagation();
     return;
   }
-  if (boxPointerId.value !== event.pointerId) return;
+  if (boxPointerId.value !== pointerId) return;
+  const point = surfacePointerPoint(event);
   const action = interaction
-    .pointerMove(pointerSample(event))
+    .pointerMove(
+      pointerSample({
+        offsetX: point.x,
+        offsetY: point.y,
+        button: event.button,
+        pointerId,
+      }),
+    )
     .find((item) => item.type === "box_preview");
   if (action?.type === "box_preview") selectionRectangle.value = action;
 }
 function handleSurfacePointerUp(event: PointerEvent) {
-  if (panGesture.value?.pointerId === event.pointerId) {
+  const pointerId = surfacePointerId(event);
+  if (panGesture.value?.pointerId === pointerId) {
     panGesture.value = undefined;
     const surface = event.currentTarget as HTMLElement;
-    if (surface.hasPointerCapture?.(event.pointerId))
-      surface.releasePointerCapture?.(event.pointerId);
+    if (surface.hasPointerCapture?.(pointerId))
+      surface.releasePointerCapture?.(pointerId);
     event.preventDefault();
     event.stopPropagation();
     return;
   }
-  if (boxPointerId.value !== event.pointerId) return;
+  if (boxPointerId.value !== pointerId) return;
+  const point = surfacePointerPoint(event);
   const action = interaction
-    .pointerUp(pointerSample(event))
+    .pointerUp(
+      pointerSample({
+        offsetX: point.x,
+        offsetY: point.y,
+        button: event.button,
+        pointerId,
+      }),
+    )
     .find((item) => item.type === "box_commit");
   if (action?.type === "box_commit") {
     const start = screenToWorld(
@@ -1612,11 +1659,14 @@ function handleSurfacePointerUp(event: PointerEvent) {
     emit(
       "boxSelect",
       { left: start.x, top: start.y, right: end.x, bottom: end.y },
-      event.ctrlKey || event.metaKey,
+      Boolean(event.shiftKey),
     );
   }
   selectionRectangle.value = undefined;
   boxPointerId.value = undefined;
+  const surface = event.currentTarget as HTMLElement;
+  if (surface.hasPointerCapture?.(pointerId))
+    surface.releasePointerCapture?.(pointerId);
 }
 function cancelBoxSelection() {
   if (boxPointerId.value === undefined) return;
@@ -1735,7 +1785,7 @@ defineExpose({
     :data-traffic-lingering="lingeringTraffic.length"
     data-traffic-pulse="false"
     tabindex="0"
-    aria-label="拓扑画布键盘操作区。使用方向键浏览资源，按 Shift 扩展选择，按 Enter 打开操作，按 Escape 清除选择。"
+    aria-label="拓扑画布键盘操作区。拖动空白区域框选资源，按住 Ctrl 可追加选择或临时平移；使用方向键浏览资源，按 Shift 扩展选择，按 Enter 打开操作，按 Escape 清除选择。"
     @keydown="handleKeyboard"
     @dblclick="$emit('background')"
     @pointerdown.capture="handleSurfacePointerDown"

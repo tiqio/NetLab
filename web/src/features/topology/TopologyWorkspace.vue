@@ -58,6 +58,7 @@ import {
 } from "./topologyEndpointCompatibility";
 import { TopologyKeyboardController } from "./topologyKeyboardController";
 import { resolvePlacements } from "./topologyLayout";
+import { organizeTopology } from "./topologyOrganizer";
 import { buildPlacementBatch } from "./topologyPlacementBatch";
 import { runObjectLinkDeletion } from "./objectLinkDeletion";
 import { useTemporaryPanShortcut } from "./useTemporaryPanShortcut";
@@ -86,6 +87,7 @@ const shell = ref<InstanceType<typeof LaboratoryShell>>();
 const topologyCanvas = ref<InstanceType<typeof TopologyCanvas>>();
 const initialized = ref(false);
 const panEnabled = ref(false);
+const organizingTopology = ref(false);
 const {
   temporaryPanHeld,
   handleTemporaryPanKeyDown,
@@ -801,6 +803,70 @@ function fitResources(ids?: string[]) {
     .map(([, point]) => point);
   const size = canvasSize();
   setViewport(fitViewport(points, size.width, size.height));
+}
+
+async function organizeAndFitResources() {
+  if (!store.active || organizingTopology.value) return;
+  const laboratoryId = store.active.laboratory.id;
+  const organized = organizeTopology({
+    nodes: store.active.nodes,
+    interfaces: store.active.interfaces,
+    networkObjects: store.active.network_objects,
+    links: store.active.links,
+    networkAttachments: store.active.network_attachments || [],
+    networkObjectLinks: store.active.network_object_links || [],
+    current: coordinates.value,
+  });
+  const revisions = new Map(
+    store.active.placements.map((placement) => [
+      placement.resource_id,
+      placement.revision,
+    ]),
+  );
+  const placements = Object.entries(organized).map(([resourceId, point]) => ({
+    resource_id: resourceId,
+    resource_type: resourceTypes.value[resourceId],
+    x: point.x,
+    y: point.y,
+    revision: revisions.get(resourceId),
+  }));
+  if (!placements.length || placements.some((value) => !value.resource_type)) {
+    fitResources();
+    return;
+  }
+  organizingTopology.value = true;
+  canvasStatus.value = `正在整理 ${placements.length} 个拓扑资源…`;
+  try {
+    for (let offset = 0; offset < placements.length; offset += 100) {
+      if (!store.active || store.active.laboratory.id !== laboratoryId) return;
+      const result = await api.updateTopologyPlacements(
+        laboratoryId,
+        store.active.laboratory.revision,
+        placements.slice(offset, offset + 100),
+        randomUUID(),
+      );
+      store.active.laboratory.revision = result.laboratory_revision;
+      for (const placement of result.placements) {
+        const index = store.active.placements.findIndex(
+          (item) => item.resource_id === placement.resource_id,
+        );
+        if (index >= 0) store.active.placements[index] = placement;
+        else store.active.placements.push(placement);
+      }
+    }
+    const size = canvasSize();
+    setViewport(fitViewport(Object.values(organized), size.width, size.height));
+    canvasStatus.value = `已按网络层级整理 ${placements.length} 个资源，并尽量减少链路交叉。`;
+  } catch (error) {
+    if (store.active?.laboratory.id === laboratoryId)
+      await store.open(laboratoryId);
+    canvasStatus.value =
+      error instanceof Error
+        ? `拓扑整理失败：${error.message}`
+        : "拓扑整理失败。";
+  } finally {
+    organizingTopology.value = false;
+  }
 }
 
 function resetViewport() {
@@ -1862,11 +1928,13 @@ onBeforeUnmount(() => {
           <Button
             size="sm"
             variant="secondary"
-            title="适应全部资源"
+            title="按层级整理并适应全部资源"
             data-testid="fit-all"
-            @click="fitResources()"
+            :disabled="organizingTopology"
+            @click="organizeAndFitResources"
           >
-            <Maximize2 :size="13" /> 适应全部
+            <Maximize2 :size="13" />
+            {{ organizingTopology ? "正在整理" : "整理并适应" }}
           </Button>
           <Button
             size="sm"

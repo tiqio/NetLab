@@ -1011,7 +1011,7 @@
     {
       "id": "topology.viewport.fit-all",
       "area": "topology",
-      "label": "Fit all",
+      "label": "Organize and fit all",
       "locator": {
         "role": "button",
         "name": "Fit all"
@@ -1023,7 +1023,7 @@
         "pointer",
         "keyboard"
       ],
-      "outcome_class": "presentation",
+      "outcome_class": "mutation",
       "cleanup_effect": "none",
       "sensitive_evidence": []
     },

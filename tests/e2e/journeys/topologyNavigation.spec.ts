@@ -229,8 +229,52 @@ test("topology navigation persists shared coordinates across browser contexts", 
   const fitAll = page.getByTestId("fit-all");
   const fitSelection = page.getByTestId("fit-selection");
   const reset = page.getByTestId("reset-view");
+  await fitAll.click();
+  const organizedPlacement = await waitForCondition(
+    async () => {
+      const response = await automation.get(`/api/v1/labs/${laboratory.id}`);
+      const snapshot = await response.json();
+      return snapshot.placements?.find(
+        (item: { resource_id: string }) => item.resource_id === selectedId,
+      );
+    },
+    (value): value is { x: number; y: number; revision: number } =>
+      Boolean(value && value.revision > persistedPlacement.revision),
+    "organized placement",
+  );
+  interactionResults.push(
+    result(
+      "topology.viewport.fit-all",
+      testInfo.project.use.viewport!,
+      "pointer activation persisted a layered layout and fitted the viewport",
+      [selectedId!],
+      "pointer",
+    ),
+  );
+  await fitAll.focus();
+  await fitAll.press("Enter");
+  const keyboardOrganizedPlacement = await waitForCondition(
+    async () => {
+      const response = await automation.get(`/api/v1/labs/${laboratory.id}`);
+      const snapshot = await response.json();
+      return snapshot.placements?.find(
+        (item: { resource_id: string }) => item.resource_id === selectedId,
+      );
+    },
+    (value): value is { x: number; y: number; revision: number } =>
+      Boolean(value && value.revision > organizedPlacement.revision),
+    "keyboard organized placement",
+  );
+  interactionResults.push(
+    result(
+      "topology.viewport.fit-all",
+      testInfo.project.use.viewport!,
+      "keyboard activation persisted a layered layout and fitted the viewport",
+      [selectedId!],
+      "keyboard",
+    ),
+  );
   for (const [interactionId, control] of [
-    ["topology.viewport.fit-all", fitAll],
     ["topology.viewport.fit-selection", fitSelection],
     ["topology.viewport.reset", reset],
   ] as const) {
@@ -269,7 +313,10 @@ test("topology navigation persists shared coordinates across browser contexts", 
     snapshot.placements.find(
       (item: { resource_id: string }) => item.resource_id === selectedId,
     ),
-  ).toMatchObject({ x: persistedPlacement.x, y: persistedPlacement.y });
+  ).toMatchObject({
+    x: keyboardOrganizedPlacement.x,
+    y: keyboardOrganizedPlacement.y,
+  });
   await secondPage.close();
 
   for (const interactionId of [
