@@ -155,3 +155,20 @@ R25 passed authority, readiness, release identity, database integrity and ten se
 - Focused topology validation passed 32 tests and the production frontend plus embedded Go build. The target artifact, configuration identity and rollback hashes matched the recorded candidate.
 - Real Chromium mouse box selection selected 11 resources, rendered visible halos for the selected resources currently inside the viewport, displayed `已选 11 项`, and produced no page or console errors.
 - After deployment, the integrated laboratory retained 11 running nodes, 10 active network objects, 21 placements and 25 connections. Database integrity remained `ok`, and no error-priority service journal entries appeared after the R3 restart.
+
+### NAT Bottom-Layer Correction — r4
+
+| Field | Value |
+|-------|-------|
+| Candidate | `topology-organize-20260813T080427Z-r4` |
+| Source commit | `275b6899037ce5d55a6756f243eae4cb5319341e` |
+| Artifact digest | `sha256:b03bc57bbea1e5a8620ecf359618e949622f6dc60f8d879ea995f90e4072abb3` |
+| Contract digest | `sha256:71d5721ac41dd2d55ccdd7934d4ab0a77c7c77ecd602df43f24af89e1699668a` |
+| Built at | `2026-08-13T08:04:27Z` |
+| Migration | no database migration; schema migration version remains `16` |
+| Rollback | `/var/lib/netlab/rollback/topology-organize-20260813T080427Z-r4-predeploy` |
+
+- R4 changes the organizer to five layers and gives NAT bridges an exclusive bottom layer below PC, QEMU and Docker endpoints. The target layout places the integrated laboratory NAT at `y=820`, while the lowest non-NAT endpoint layer remains at `y=500`.
+- Focused topology validation passed 32 tests, followed by the production frontend and embedded Go build. The candidate and rollback package hashes were verified before installation.
+- Target Chromium invoked `整理并适应`, persisted laboratory revision `45`, and confirmed every NAT placement was below every non-NAT placement without page or console errors.
+- The integrated laboratory remained healthy with 11 running nodes, 10 active network objects, 21 placements and 25 connections; database integrity remained `ok`.
