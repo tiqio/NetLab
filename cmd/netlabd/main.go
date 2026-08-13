@@ -27,9 +27,11 @@ import (
 	cgroupRuntime "github.com/netlab/netlab/internal/runtime/cgroup"
 	consoleRuntime "github.com/netlab/netlab/internal/runtime/console"
 	dockerruntime "github.com/netlab/netlab/internal/runtime/docker"
+	fortigateRuntime "github.com/netlab/netlab/internal/runtime/fortigate"
 	imageRuntime "github.com/netlab/netlab/internal/runtime/image"
 	"github.com/netlab/netlab/internal/runtime/linuxnet"
 	qemuruntime "github.com/netlab/netlab/internal/runtime/qemu"
+	credentialstore "github.com/netlab/netlab/internal/store/credential"
 	storesqlite "github.com/netlab/netlab/internal/store/sqlite"
 	"github.com/netlab/netlab/internal/support/config"
 	"github.com/netlab/netlab/internal/support/observability"
@@ -119,6 +121,14 @@ func main() {
 		logger.Warn("cloud-init seed builder unavailable", "error", err)
 	}
 	consoleCredentials := consoleRuntime.NewCredentialStore(cfg.StateDir, seedManager)
+	var nodeCredentialStore *credentialstore.Store
+	var nodeCredentialStoreErr error
+	if nodeCredentialStore, nodeCredentialStoreErr = credentialstore.Open(cfg.Credentials.DatabasePath, cfg.Credentials.MasterKeyPath); nodeCredentialStoreErr != nil {
+		logger.Warn("FortiGate credential store unavailable", "error", nodeCredentialStoreErr)
+	} else {
+		defer nodeCredentialStore.Close()
+	}
+	fortiGateCredentials := command.NewFortiGateCredentialService(topologyRepository, nodeCredentialStore, nodeCredentialStoreErr, fortigateRuntime.NewConsole(cfg.RuntimeDir), taskRunner)
 	linkCommands := command.NewLinkService(topologyRepository)
 	placementCommands := command.NewTopologyPlacementService(topologyRepository)
 	topologyTasks := command.NewTopologyTaskService(topologyRepository, taskRunner)
@@ -128,6 +138,7 @@ func main() {
 	httpapi.NewTopologyHandlers(labCommands, labQueries, nodeCommands, linkCommands, repositories, idempotency, topologyTasks, laboratoryTasks).Register(server.Engine())
 	httpapi.NewTopologyPlacementHandlers(placementCommands).Register(server.Engine())
 	httpapi.NewLinkReconnectHandlers(linkReconnectTasks).Register(server.Engine())
+	httpapi.NewFortiGateCredentialHandlers(fortiGateCredentials, cfg.Deployment.ManagementScopes).Register(server.Engine())
 	templateQueries := query.NewTemplateService(templateRepository)
 	templateDirectory := cfg.TemplateDir
 	if _, statErr := os.Stat(templateDirectory); statErr != nil {

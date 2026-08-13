@@ -15,6 +15,9 @@ startup_concurrency:
   other: 2
 resources:
   max_running_qemu: 0
+credentials:
+  database_path: "/var/lib/netlab-validation/secrets/credentials.db"
+  master_key_path: "/etc/netlab/validation-credential-master.key"
 captures:
   concurrent: 2
   duration: "5m"

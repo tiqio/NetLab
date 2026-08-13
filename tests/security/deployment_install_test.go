@@ -85,6 +85,24 @@ func TestInstallerWaitsForAuthorityAndRetiresPreviewUnit(t *testing.T) {
 	}
 }
 
+func TestInstallerInitializesCredentialMasterKeyWithoutOverwrite(t *testing.T) {
+	installer, err := os.ReadFile("../../deploy/scripts/install.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(installer)
+	for _, required := range []string{
+		`if [[ ! -e /etc/netlab/credential-master.key ]]`,
+		`openssl rand -base64 32`,
+		`chmod 0600 "$key_file"`,
+		`mv -n "$key_file" /etc/netlab/credential-master.key`,
+	} {
+		if !strings.Contains(text, required) {
+			t.Fatalf("installer is missing credential key safeguard %q", required)
+		}
+	}
+}
+
 func TestSystemdAuthorityRequiresApplicationReadiness(t *testing.T) {
 	body, err := os.ReadFile("../../deploy/systemd/netlab.service")
 	if err != nil {

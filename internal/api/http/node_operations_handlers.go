@@ -152,12 +152,12 @@ func (h *NodeOperationsHandlers) getBootstrapCredentials(c *gin.Context) {
 		handleError(c, err)
 		return
 	}
-	credentials, err := h.nodeCredentials.CredentialsForNode(c, node)
+	_, err = h.nodeCredentials.CredentialsForNode(c, node)
 	if err != nil {
 		writeProblem(c, http.StatusNotFound, domain.Problem{Code: "bootstrap_credentials_unavailable", Message: err.Error(), ResourceType: "node", ResourceID: node.ID})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"username": credentials.Username, "password": credentials.Password, "source": "managed-console-credentials"})
+	c.JSON(http.StatusOK, gin.H{"configured": true, "source": "managed-console-credentials"})
 }
 
 func (h *NodeOperationsHandlers) updateSettings(c *gin.Context) {

@@ -8,6 +8,9 @@ startup_concurrency:
   other: 4
 resources:
   max_running_qemu: 0
+credentials:
+  database_path: /tmp/netlab-e2e/secrets/credentials.db
+  master_key_path: /tmp/netlab-e2e/credential-master.key
 captures:
   concurrent: 2
   duration: 1m

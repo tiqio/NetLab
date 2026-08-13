@@ -21,6 +21,9 @@ startup_concurrency:
 resources:
   # 0 disables the count ceiling; host memory and storage admission still apply.
   max_running_qemu: 0
+credentials:
+  database_path: "/var/lib/netlab/secrets/credentials.db"
+  master_key_path: "/etc/netlab/credential-master.key"
 captures:
   concurrent: 16
   duration: "15m"

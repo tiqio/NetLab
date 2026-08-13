@@ -27,6 +27,7 @@ import ResourceIdentity from "@/components/common/ResourceIdentity.vue";
 import StatusBadge from "@/components/common/StatusBadge.vue";
 import StructuredProblem from "@/components/common/StructuredProblem.vue";
 import NodeOperationsPanel from "@/features/nodes/NodeOperationsPanel.vue";
+import FortiGateCredentialPanel from "@/features/nodes/FortiGateCredentialPanel.vue";
 import { dockerRouteReadiness } from "@/features/nodes/dockerRouteReadiness";
 import RuijieConfigurationPanel from "@/features/nodes/RuijieConfigurationPanel.vue";
 import LightweightPCConfigurationPanel from "@/features/nodes/LightweightPCConfigurationPanel.vue";
@@ -504,6 +505,14 @@ async function deleteObjectLink() {
           :node="node"
           :interfaces="nodeInterfaces"
           @terminal="$emit('terminal', node)"
+          @changed="$emit('changed')"
+        />
+        <FortiGateCredentialPanel
+          v-if="
+            String(node.config?.template_key || '').toLowerCase() ===
+            'fortigate'
+          "
+          :node="node"
           @changed="$emit('changed')"
         />
         <div

@@ -161,6 +161,15 @@ func durableTaskMutation(method, path string) bool {
 	if method == http.MethodPut && len(parts) == 5 && parts[2] == "nodes" && parts[4] == "state" {
 		return true
 	}
+	if method == http.MethodPost && len(parts) == 6 && parts[2] == "nodes" && parts[4] == "credentials" && parts[5] == "console-admin" {
+		return false
+	}
+	if method == http.MethodPost && len(parts) == 7 && parts[2] == "nodes" && parts[4] == "credentials" && parts[5] == "console-admin" && parts[6] == "verify" {
+		return true
+	}
+	if method == http.MethodPost && len(parts) == 6 && parts[2] == "nodes" && parts[4] == "bootstrap" && parts[5] == "fortigate" {
+		return true
+	}
 	if method == http.MethodDelete && len(parts) == 4 && (parts[2] == "nodes" || parts[2] == "links" || parts[2] == "interfaces" || parts[2] == "port-mappings") {
 		return true
 	}

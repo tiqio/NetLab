@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from "vue";
-import { CheckCircle2, Copy, Plus, Trash2 } from "lucide-vue-next";
+import { computed, ref, watch } from "vue";
+import { Plus, Trash2 } from "lucide-vue-next";
 import {
   api,
   ApiError,
@@ -52,11 +52,9 @@ const initialValue = ref("");
 const busy = ref(false);
 const status = ref("");
 const problem = ref<Problem>();
-const credentials = ref<{ username: string; password: string }>();
+const credentials = ref<{ configured: boolean; source: string }>();
 const credentialsLoading = ref(false);
 const credentialsMessage = ref("");
-const copied = ref<"username" | "password">();
-let copiedTimer: ReturnType<typeof setTimeout> | undefined;
 
 const stopped = computed(
   () =>
@@ -188,41 +186,6 @@ async function loadCredentials() {
   }
 }
 
-async function writeClipboard(value: string) {
-  if (navigator.clipboard?.writeText) {
-    let copiedWithAPI = false;
-    try {
-      await navigator.clipboard.writeText(value);
-      copiedWithAPI = true;
-    } catch {
-      copiedWithAPI = false;
-    }
-    if (copiedWithAPI) return;
-  }
-  const textarea = document.createElement("textarea");
-  textarea.value = value;
-  textarea.setAttribute("readonly", "");
-  textarea.style.position = "fixed";
-  textarea.style.opacity = "0";
-  document.body.appendChild(textarea);
-  textarea.select();
-  const successful = document.execCommand?.("copy") === true;
-  textarea.remove();
-  if (!successful) throw new Error("clipboard unavailable");
-}
-
-async function copyCredential(field: "username" | "password", value: string) {
-  clearTimeout(copiedTimer);
-  try {
-    await writeClipboard(value);
-    copied.value = field;
-    status.value = field === "username" ? "用户名已复制。" : "密码已复制。";
-    copiedTimer = setTimeout(() => (copied.value = undefined), 2500);
-  } catch {
-    status.value = "复制失败，请选中文本后手动复制。";
-  }
-}
-
 async function save() {
   if (!stopped.value || busy.value || !dirty.value || routeErrors.value.length)
     return;
@@ -291,7 +254,6 @@ watch(
   },
   { immediate: true, deep: true },
 );
-onBeforeUnmount(() => clearTimeout(copiedTimer));
 </script>
 
 <template>
@@ -488,7 +450,7 @@ onBeforeUnmount(() => clearTimeout(copiedTimer));
       <div>
         <h3>登录信息</h3>
         <p class="text-xs text-muted-foreground">
-          来自 cloud-init 种子数据，仅供只读查看。
+          登录信息由服务端托管，不会通过浏览器接口回显明文。
         </p>
       </div>
       <p
@@ -505,48 +467,13 @@ onBeforeUnmount(() => clearTimeout(copiedTimer));
       >
         {{ credentialsMessage }}
       </p>
-      <template v-else-if="credentials">
-        <FormField label="用户名">
-          <div class="flex gap-2">
-            <Input
-              :model-value="credentials.username"
-              aria-label="初始用户名"
-              readonly
-            />
-            <Button
-              type="button"
-              variant="secondary"
-              :aria-label="
-                copied === 'username' ? '用户名已复制' : '复制用户名'
-              "
-              @click="copyCredential('username', credentials.username)"
-            >
-              <CheckCircle2 v-if="copied === 'username'" :size="14" />
-              <Copy v-else :size="14" />
-              {{ copied === "username" ? "已复制" : "复制" }}
-            </Button>
-          </div>
-        </FormField>
-        <FormField label="密码">
-          <div class="flex gap-2">
-            <Input
-              :model-value="credentials.password"
-              aria-label="初始密码"
-              readonly
-            />
-            <Button
-              type="button"
-              variant="secondary"
-              :aria-label="copied === 'password' ? '密码已复制' : '复制密码'"
-              @click="copyCredential('password', credentials.password)"
-            >
-              <CheckCircle2 v-if="copied === 'password'" :size="14" />
-              <Copy v-else :size="14" />
-              {{ copied === "password" ? "已复制" : "复制" }}
-            </Button>
-          </div>
-        </FormField>
-      </template>
+      <p
+        v-else-if="credentials?.configured"
+        role="status"
+        class="rounded-md border border-[color:var(--success)]/40 bg-[color:var(--success)]/10 p-2 text-xs text-[color:var(--success)]"
+      >
+        已配置托管登录信息；终端自动登录可在服务端使用。
+      </p>
     </div>
 
     <div class="flex items-center gap-2">

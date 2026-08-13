@@ -168,13 +168,10 @@ describe("NodeConfigurationPanel", () => {
     expect(wrapper.get('[role="status"]').text()).toContain("节点配置已保存");
   });
 
-  it("shows read-only Ubuntu credentials and copies them", async () => {
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    vi.stubGlobal("navigator", { clipboard: { writeText } });
+  it("shows Ubuntu credential availability without exposing plaintext", async () => {
     vi.spyOn(api, "getNodeBootstrapCredentials").mockResolvedValue({
-      username: "ubuntu",
-      password: "secret",
-      source: "cloud-init-seed",
+      configured: true,
+      source: "managed-console-credentials",
     });
     const wrapper = mount(NodeConfigurationPanel, {
       props: {
@@ -184,21 +181,9 @@ describe("NodeConfigurationPanel", () => {
     });
     await flushPromises();
 
-    const username = wrapper.get<HTMLInputElement>(
-      'input[aria-label="初始用户名"]',
-    );
-    const password = wrapper.get<HTMLInputElement>(
-      'input[aria-label="初始密码"]',
-    );
-    expect(username.element.value).toBe("ubuntu");
-    expect(password.element.value).toBe("secret");
-    expect(username.attributes("readonly")).toBeDefined();
-    expect(password.attributes("readonly")).toBeDefined();
-
-    await wrapper.get('button[aria-label="复制用户名"]').trigger("click");
-    await flushPromises();
-    expect(writeText).toHaveBeenCalledWith("ubuntu");
-    expect(wrapper.text()).toContain("用户名已复制");
+    expect(wrapper.text()).toContain("已配置托管登录信息");
+    expect(wrapper.find('input[aria-label="初始用户名"]').exists()).toBe(false);
+    expect(wrapper.find('input[aria-label="初始密码"]').exists()).toBe(false);
   });
 
   it("does not expose low-frequency admission limits", () => {

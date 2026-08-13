@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-required=(qemu-system-x86_64 docker ip bridge tc nft tcpdump xorriso ss jq nsenter)
+required=(qemu-system-x86_64 docker ip bridge tc nft tcpdump xorriso ss jq nsenter openssl)
 for command_name in "${required[@]}"; do
   command -v "$command_name" >/dev/null || { echo "missing required command: $command_name" >&2; exit 1; }
 done
@@ -58,6 +58,14 @@ case "${1:-install}" in
       install -m0644 "$work/template-readiness.json" /etc/netlab/template-readiness.json
     else
       make install
+    fi
+    install -d -m0700 /etc/netlab
+    if [[ ! -e /etc/netlab/credential-master.key ]]; then
+      key_file=$(mktemp /etc/netlab/.credential-master.XXXXXX)
+      openssl rand -base64 32 >"$key_file"
+      chmod 0600 "$key_file"
+      mv -n "$key_file" /etc/netlab/credential-master.key
+      rm -f "$key_file"
     fi
     systemctl daemon-reload
     systemctl enable netlab

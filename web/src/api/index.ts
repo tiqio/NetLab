@@ -62,6 +62,20 @@ export interface RuijieConfigRequest {
   save?: boolean;
 }
 
+export interface NodeCredentialMetadata {
+  node_id: string;
+  laboratory_id: string;
+  kind: string;
+  configured: boolean;
+  staged: boolean;
+  state: string;
+  revision: number;
+  created_at?: string;
+  last_rotated_at?: string;
+  last_verified_at?: string;
+  last_error_code?: string;
+}
+
 async function decode<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const problem = (await response.json().catch(() => ({
@@ -176,9 +190,33 @@ export const generatedApi = {
     }),
   getNode: (nodeId: string) => request<Node>(`/nodes/${nodeId}`),
   getNodeBootstrapCredentials: (nodeId: string) =>
-    request<{ username: string; password: string; source: string }>(
+    request<{ configured: boolean; source: string }>(
       `/nodes/${nodeId}/bootstrap-credentials`,
     ),
+  getNodeCredentials: (nodeId: string) =>
+    request<NodeCredentialMetadata>(`/nodes/${nodeId}/credentials`),
+  setFortiGateCredential: (
+    nodeId: string,
+    body: {
+      username: string;
+      current_password: string;
+      new_password?: string;
+    },
+  ) =>
+    request<NodeCredentialMetadata>(
+      `/nodes/${nodeId}/credentials/console-admin`,
+      "PUT",
+      { body },
+    ),
+  deleteFortiGateCredential: (nodeId: string) =>
+    request<void>(`/nodes/${nodeId}/credentials/console-admin`, "DELETE"),
+  verifyFortiGateCredential: (nodeId: string) =>
+    request<TaskEnvelope>(
+      `/nodes/${nodeId}/credentials/console-admin/verify`,
+      "POST",
+    ),
+  bootstrapFortiGate: (nodeId: string) =>
+    request<TaskEnvelope>(`/nodes/${nodeId}/bootstrap/fortigate`, "POST"),
   configureRuijie: (nodeId: string, body: RuijieConfigRequest) =>
     request<{ commands: string[]; console_mode: "telnet"; verified: boolean }>(
       `/nodes/${nodeId}/ruijie/configure`,

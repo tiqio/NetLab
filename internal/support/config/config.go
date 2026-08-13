@@ -36,6 +36,10 @@ type Config struct {
 	Resources struct {
 		MaxRunningQEMU int `yaml:"max_running_qemu"`
 	} `yaml:"resources"`
+	Credentials struct {
+		DatabasePath  string `yaml:"database_path"`
+		MasterKeyPath string `yaml:"master_key_path"`
+	} `yaml:"credentials"`
 	Captures struct {
 		Concurrent     int           `yaml:"concurrent"`
 		Duration       time.Duration `yaml:"-"`
@@ -62,6 +66,8 @@ func Defaults() Config {
 	c.StartupConcurrency.QEMU = 2
 	c.StartupConcurrency.Other = 4
 	c.Resources.MaxRunningQEMU = 0
+	c.Credentials.DatabasePath = "/var/lib/netlab/secrets/credentials.db"
+	c.Credentials.MasterKeyPath = "/etc/netlab/credential-master.key"
 	c.Captures.Concurrent = 16
 	c.Captures.Duration = 15 * time.Minute
 	c.Captures.MaxBytes = 256 << 20
@@ -141,6 +147,9 @@ func (c Config) Validate() error {
 	}
 	if c.Resources.MaxRunningQEMU < 0 {
 		return errors.New("maximum running QEMU nodes must be zero or positive")
+	}
+	if c.Credentials.DatabasePath == "" || c.Credentials.MasterKeyPath == "" {
+		return errors.New("credential database and master key paths required")
 	}
 	if c.Captures.Concurrent < 1 || c.Captures.MaxBytes < 1 || c.Captures.GlobalMaxBytes < c.Captures.MaxBytes {
 		return errors.New("invalid capture limits")
