@@ -99,3 +99,22 @@ R25 passed authority, readiness, release identity, database integrity and ten se
 - A temporary generated credential was written through the target API, confirmed absent from both SQLite files, task and audit responses, and the service journal, then deleted. The failed verification task contained only `node:<id>:console_admin` and returned the expected `console_unreachable` error because the authorized FortiGate node remained stopped.
 - The embedded UI chunk contains the FortiGate credential inspector. The legacy bootstrap-credential endpoint no longer returns username or password fields.
 - Final target state: `netlab.service` active, `/readyz` healthy, release identity and binary digest matched R31, `PRAGMA integrity_check` returned `ok`, schema migration version remained `16`, the FortiGate node remained stopped, and the credential vault contained zero rows after cleanup.
+
+## Interface-Only Link Label Candidate
+
+| Field | Value |
+|-------|-------|
+| Candidate | `topology-labels-20260813T0646Z-r1` |
+| Source commit | `5995cdb1d143a278df99377998afe5f015a76014` |
+| Artifact digest | `sha256:041c85c2dca28fe6924824349d48a091be614086c459769b180716ebfacc18d8` |
+| Contract digest | `sha256:71d5721ac41dd2d55ccdd7934d4ab0a77c7c77ecd602df43f24af89e1699668a` |
+| Built at | `2026-08-13T06:47:49Z` |
+| Installed at | `2026-08-13T06:51:25Z` |
+| Migration | no database migration |
+| Rollback | `/var/lib/netlab/rollback/topology-labels-20260813T0646Z-r1-predeploy` |
+
+- Visible link labels now use only endpoint interface or port names, such as `eth0 ↔ ens0`; resource names remain in the accessibility label and endpoint details.
+- Focused Vitest coverage passed `10/10`, and the production frontend plus embedded Go binary built successfully.
+- The deployed topology asset contains the interface-only formatter, while its accessibility formatter retains `resourceName:portName` for both endpoints.
+- A read-only Chromium target smoke test loaded the integrated laboratory without console or page errors.
+- After authoritative restart, `/readyz` returned `{"status":"ok"}` and the integrated laboratory retained 11 running nodes, 10 active network objects, 21 placements and revision 22.
