@@ -165,7 +165,28 @@ func (a *Adapter) Inspect(_ context.Context, node domain.Node) (ports.ActualNode
 	if err = process.Signal(syscall.Signal(0)); err != nil {
 		return ports.ActualNode{State: domain.ObservedStopped}, nil
 	}
+	if !qemuProcessOwnsNode(manifest.PID, node.ID, a.Binary) {
+		return ports.ActualNode{State: domain.ObservedStopped}, nil
+	}
 	return ports.ActualNode{State: domain.ObservedRunning, Owner: map[string]string{"pid": strconv.Itoa(manifest.PID), "qmp": manifest.QMP}}, nil
+}
+
+func qemuProcessOwnsNode(pid int, nodeID domain.ID, binary string) bool {
+	body, err := os.ReadFile(filepath.Join("/proc", strconv.Itoa(pid), "cmdline"))
+	if err != nil {
+		return false
+	}
+	arguments := strings.Split(strings.TrimRight(string(body), "\x00"), "\x00")
+	if len(arguments) == 0 || filepath.Base(arguments[0]) != filepath.Base(binary) {
+		return false
+	}
+	marker := "guest=netlab:" + string(nodeID)
+	for _, argument := range arguments[1:] {
+		if argument == marker {
+			return true
+		}
+	}
+	return false
 }
 func (a *Adapter) Provision(ctx context.Context, node domain.Node) error {
 	baseImagePath, ok := node.Config["image_path"].(string)

@@ -2,12 +2,14 @@ package qemu
 
 import (
 	"context"
-	"github.com/netlab/netlab/internal/domain"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/netlab/netlab/internal/domain"
 )
 
 func TestBuildArgsAndOwnership(t *testing.T) {
@@ -105,6 +107,28 @@ func TestStartQMPTimeoutKillsProcessAndRemovesTransientState(t *testing.T) {
 		t.Fatalf("err=%v", err)
 	}
 	assertNoTransientQEMUState(t, adapter.RuntimeDir(node.ID))
+}
+
+func TestInspectRejectsReusedPIDFromUnrelatedProcess(t *testing.T) {
+	adapter := &Adapter{Root: t.TempDir()}
+	node := domain.Node{ID: "node"}
+	if err := os.MkdirAll(adapter.RuntimeDir(node.ID), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	body, err := json.Marshal(LaunchManifest{NodeID: node.ID, PID: os.Getpid(), QMP: filepath.Join(adapter.RuntimeDir(node.ID), "qmp.sock")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = os.WriteFile(filepath.Join(adapter.RuntimeDir(node.ID), "launch.json"), body, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	actual, err := adapter.Inspect(context.Background(), node)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if actual.State != domain.ObservedStopped {
+		t.Fatalf("reused PID reported state=%s owner=%v", actual.State, actual.Owner)
+	}
 }
 
 func provisionedTestNode(t *testing.T, adapter *Adapter) domain.Node {
