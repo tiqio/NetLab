@@ -123,6 +123,12 @@ func (r *DataPlaneReconciler) Reconcile(ctx context.Context) (err error) {
 		}
 		for _, attachment := range attachments {
 			if iface, ok := interfaces[attachment.InterfaceID]; ok {
+				node, nodeExists := nodes[iface.NodeID]
+				if nodeExists && node.ObservedState != domain.ObservedRunning {
+					_ = r.store.SetNetworkAttachmentState(ctx, attachment.ID, "pending", nil)
+					_ = r.store.SetInterfaceOperationalState(ctx, attachment.InterfaceID, "down")
+					continue
+				}
 				object, exists := objects[attachment.NetworkObjectID]
 				if !exists {
 					problem := structuredProblem(nil, domain.Problem{Code: "attachment_target_missing", Message: "network object is unavailable", ResourceType: "network_attachment", ResourceID: attachment.ID, Phase: "attachment_reconcile", Cleanup: "attachment remains detached", OperatorHint: "restore the target network object or delete the attachment"})

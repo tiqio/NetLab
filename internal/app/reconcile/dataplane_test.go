@@ -161,6 +161,32 @@ func TestDataPlaneDoesNotReconfigureHealthyDependentObjects(t *testing.T) {
 	}
 }
 
+func TestDataPlaneLeavesStoppedNodeAttachmentsPending(t *testing.T) {
+	store := &dataPlaneStoreFake{
+		lab:             domain.Laboratory{ID: "lab", LifecycleState: "active"},
+		interfaceStates: map[domain.ID]string{},
+		attachments:     []domain.NetworkAttachment{{ID: "attachment", InterfaceID: "if-1", NetworkObjectID: "l2", PortName: "access0", ObservedState: "active"}},
+		snapshot: domain.TopologySnapshot{
+			Nodes:          []domain.Node{{ID: "node", DesiredState: domain.DesiredStopped, ObservedState: domain.ObservedStopped}},
+			Interfaces:     []domain.Interface{{ID: "if-1", NodeID: "node", OperationalState: "up"}},
+			NetworkObjects: []domain.NetworkObject{{ID: "l2", Kind: domain.NetworkSwitchL2, ObservedState: "active"}},
+		},
+	}
+	runtime := &dataPlaneRuntimeFake{}
+	if err := NewDataPlaneReconciler(store, runtime).Reconcile(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if store.attachmentState != "pending" || store.attachmentError != nil {
+		t.Fatalf("attachment state=%s problem=%+v", store.attachmentState, store.attachmentError)
+	}
+	if store.interfaceStates["if-1"] != "down" {
+		t.Fatalf("interface state=%q", store.interfaceStates["if-1"])
+	}
+	if runtime.attachmentDeleted {
+		t.Fatal("stopped node attachment runtime was deleted")
+	}
+}
+
 func TestDataPlaneReconfiguresOnlyPendingEndpointOnHealthyLink(t *testing.T) {
 	store := &dataPlaneStoreFake{
 		lab:             domain.Laboratory{ID: "lab", LifecycleState: "active"},

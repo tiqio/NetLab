@@ -67,7 +67,7 @@ case "$PHASE" in
     [[ $ALLOW_REBOOT == 1 ]] || { echo "SKIP: set NETLAB_ACCEPTANCE_ALLOW_REBOOT=1 for operator-controlled host restart" >&2; exit 77; }
     candidate=$(api /capabilities | jq -r '.release.candidate_id // empty')
     [[ -n $candidate ]] || { echo "candidate identity unavailable" >&2; exit 1; }
-    topology=$(api "/labs/$LAB_ID" | jq '{revision:.laboratory.revision,nodes:[.nodes[]|{id,desired_state,observed_state}],links:[.links[]|{id,observed_state}],attachments:[.network_attachments[]|{id,observed_state}],object_links:[.network_object_links[]|{id,observed_state}]}')
+    topology=$(api "/labs/$LAB_ID" | jq '{revision:.laboratory.revision,nodes:[.nodes[]|{id,desired_state,observed_state}]|sort_by(.id),links:[.links[]|{id,observed_state}]|sort_by(.id),attachments:[.network_attachments[]|{id,observed_state}]|sort_by(.id),object_links:[.network_object_links[]|{id,observed_state}]|sort_by(.id)}')
     paths=$(path_snapshot)
     install -d -m0700 "$(dirname "$MARKER")"
     jq -n --arg candidate "$candidate" --arg lab_id "$LAB_ID" --arg ubuntu_node_id "$UBUNTU_NODE_ID" --argjson topology "$topology" --argjson paths "$paths" '{schema_version:"1.0",candidate_id:$candidate,laboratory_id:$lab_id,ubuntu_node_id:$ubuntu_node_id,prepared_at:(now|todate),before:{topology:$topology,paths:$paths},phase:"prepared"}' >"$MARKER"
@@ -81,8 +81,9 @@ case "$PHASE" in
     [[ $candidate == "$expected" ]] || { echo "candidate changed across restart" >&2; exit 1; }
     recovery=$(api '/tasks?limit=200' | jq -c 'map(select(.kind=="system.recovery")) | max_by(.created_at)')
     [[ $(jq -r '.state // empty' <<<"$recovery") == succeeded ]] || { echo "$recovery" >&2; exit 1; }
-    topology=$(api "/labs/$LAB_ID" | jq '{revision:.laboratory.revision,nodes:[.nodes[]|{id,desired_state,observed_state}],links:[.links[]|{id,observed_state}],attachments:[.network_attachments[]|{id,observed_state}],object_links:[.network_object_links[]|{id,observed_state}]}')
-    jq -e 'all(.nodes[]; .desired_state==.observed_state) and all(.links[]; .observed_state=="connected") and all(.attachments[]; .observed_state=="active") and all(.object_links[]; .observed_state=="connected")' <<<"$topology" >/dev/null
+    topology=$(api "/labs/$LAB_ID" | jq '{revision:.laboratory.revision,nodes:[.nodes[]|{id,desired_state,observed_state}]|sort_by(.id),links:[.links[]|{id,observed_state}]|sort_by(.id),attachments:[.network_attachments[]|{id,observed_state}]|sort_by(.id),object_links:[.network_object_links[]|{id,observed_state}]|sort_by(.id)}')
+    before_topology=$(jq -c '.before.topology' "$MARKER")
+    [[ $(jq -c . <<<"$topology") == "$before_topology" ]] || { jq -n --argjson before "$before_topology" --argjson after "$topology" '{before:$before,after:$after}' >&2; exit 1; }
     paths=$(path_snapshot)
     jq --argjson topology "$topology" --argjson paths "$paths" --argjson recovery "$recovery" '.phase="verified" | .verified_at=(now|todate) | .after={topology:$topology,paths:$paths,recovery_task:$recovery}' "$MARKER" >"$MARKER.tmp"
     mv "$MARKER.tmp" "$MARKER"
