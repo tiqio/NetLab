@@ -44,10 +44,11 @@ vi.mock("@/components/charts/EChart.vue", () => ({
     },
     template: `<div>
       <button data-chart @click="$emit('chartClick',{data:{id:'node-1',resourceType:'node'},event:{event:{offsetX:10,offsetY:10}}})">chart</button>
+      <button data-node-click @click="$emit('nodeDragStart',{data:{id:'node-1',resourceType:'node'},event:{offsetX:10,offsetY:10}});$emit('nodeDrag',{data:{id:'node-1'},event:{offsetX:10,offsetY:10},graphPoint:{x:0,y:0}});$emit('chartClick',{data:{id:'node-1',resourceType:'node'},event:{event:{offsetX:10,offsetY:10}}})">node click</button>
       <button data-connector @click="$emit('chartClick',{data:{id:'connector:node-1',resourceType:'connector',ownerId:'node-1'}})">connector</button>
       <button data-roam @click="$emit('graphRoam',{zoom:2,centerX:5,centerY:4})">roam</button>
       <button data-wheel @click="$emit('graphRoam',{zoom:2.2,centerX:-5,centerY:2})">wheel</button>
-      <button data-drag @click="$emit('nodeDragStart',{data:{id:'node-1',resourceType:'node'},event:{offsetX:10,offsetY:10}});$emit('nodeDrag',{data:{id:'node-1'},event:{offsetX:30,offsetY:20},graphPoint:{x:12,y:34}})">drag</button>
+      <button data-drag @click="$emit('nodeDragStart',{data:{id:'node-1',resourceType:'node'},event:{offsetX:10,offsetY:10}});$emit('nodeDragMove',{data:{id:'node-1'},event:{offsetX:30,offsetY:20},graphPoint:{x:12,y:34}});$emit('nodeDrag',{data:{id:'node-1'},event:{offsetX:30,offsetY:20},graphPoint:{x:12,y:34}})">drag</button>
       <button data-drag-move @click="$emit('nodeDragStart',{data:{id:'node-1',resourceType:'node'},event:{offsetX:10,offsetY:10}});$emit('nodeDragMove',{data:{id:'node-1'},event:{offsetX:30,offsetY:20},graphPoint:{x:12,y:34}})">drag move</button>
       <button data-object-link-context @click="$emit('chartContext',{data:{id:'object-link-1',resourceType:'network_object_link'},event:{event:{clientX:45,clientY:55,preventDefault(){}}}})">context</button>
     </div>`,
@@ -79,6 +80,19 @@ describe("TopologyCanvas", () => {
       "node-1",
       "node",
     ]);
+  });
+  it("does not emit a duplicate selection before an ordinary chart click", async () => {
+    const wrapper = mount(TopologyCanvas, {
+      props: {
+        nodes: [nodeFactory()],
+        interfaces: [],
+        links: [],
+        networkObjects: [],
+        preferences: defaultWorkspacePreferences("lab"),
+      },
+    });
+    await wrapper.get("[data-node-click]").trigger("click");
+    expect(wrapper.emitted("select")).toHaveLength(1);
   });
   it("normalizes roam and drag completion", async () => {
     const wrapper = mount(TopologyCanvas, {
