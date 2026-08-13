@@ -138,3 +138,20 @@ R25 passed authority, readiness, release identity, database integrity and ten se
 - The first online SQLite backup attempt became stuck in uninterruptible target-disk I/O while the 2.7 GiB database was actively written. The service was stopped to end writes, then restored with the previous candidate before deployment; it returned active with all running nodes recovered. Because this UI candidate has no migration or direct data mutation, the incomplete backup was removed and the verified rollback package intentionally contains the prior binary, configuration, template readiness, unit, release identity, health state, and resource summary rather than a database replacement. `database-rollback-scope.txt` records that rollback leaves the authoritative database in place.
 - Deployment preserved the only integrated laboratory at revision `34`: 11 of 11 nodes remained `running`, 10 of 10 network objects remained `active`, all 21 placements remained present, and all 25 persisted connections remained present. SQLite `PRAGMA integrity_check` returned `ok`; `/readyz` and `/healthz` returned `ok`; no error-priority service journal entries appeared after installation.
 - A target Chromium session verified that Fit Selection starts disabled, becomes enabled after keyboard selection, executes successfully, and remains enabled after a real blank-canvas mouse box selection that selected two resources. The deployed button text is `整理并适应`, and the browser reported no page or console errors.
+
+### Selection Highlight Correction — r3
+
+| Field | Value |
+|-------|-------|
+| Candidate | `topology-organize-20260813T075645Z-r3` |
+| Source commit | `cc0d9cd3c62e67174db3d0d0d20dc571a0b55ee6` |
+| Artifact digest | `sha256:1933a0cb44bd93515f7957f71812e895ad05a19d015cf2d71809928eeabe6149` |
+| Contract digest | `sha256:71d5721ac41dd2d55ccdd7934d4ab0a77c7c77ecd602df43f24af89e1699668a` |
+| Built at | `2026-08-13T07:56:45Z` |
+| Migration | no database migration; schema migration version remains `16` |
+| Rollback | `/var/lib/netlab/rollback/topology-organize-20260813T075645Z-r3-predeploy` |
+
+- R3 adds persistent double-ring selection halos, a bottom-right `已选 N 项` indicator and a stronger box-selection rectangle. Multi-selection no longer opens every selected resource's port overlay, reducing visual noise while preserving single-resource port access.
+- Focused topology validation passed 32 tests and the production frontend plus embedded Go build. The target artifact, configuration identity and rollback hashes matched the recorded candidate.
+- Real Chromium mouse box selection selected 11 resources, rendered visible halos for the selected resources currently inside the viewport, displayed `已选 11 项`, and produced no page or console errors.
+- After deployment, the integrated laboratory retained 11 running nodes, 10 active network objects, 21 placements and 25 connections. Database integrity remained `ok`, and no error-priority service journal entries appeared after the R3 restart.
