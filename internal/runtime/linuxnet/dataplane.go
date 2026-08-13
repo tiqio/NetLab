@@ -298,17 +298,7 @@ func (d *DataPlane) configureSwitchL2Port(ctx context.Context, namespace, portNa
 		if port.Name != portName {
 			continue
 		}
-		if port.PVID > 0 {
-			if err := d.executor.Run(ctx, "bridge", "-n", namespace, "vlan", "add", "dev", portName, "vid", fmt.Sprint(port.PVID), "pvid", "untagged"); err != nil {
-				return err
-			}
-		}
-		for _, vlan := range port.Tagged {
-			if err := d.executor.Run(ctx, "bridge", "-n", namespace, "vlan", "add", "dev", portName, "vid", fmt.Sprint(vlan)); err != nil {
-				return err
-			}
-		}
-		break
+		return configureSwitchL2Port(ctx, d.executor, d.ip, "bridge", namespace, port, config.VLANFiltering, false)
 	}
 	return nil
 }
@@ -349,6 +339,9 @@ func (d *DataPlane) AttachNamespace(ctx context.Context, attachment domain.Netwo
 		hostState, _ := d.executor.Output(ctx, d.ip, "-d", "link", "show", host)
 		interfaceState, _ := d.executor.Output(ctx, d.ip, "-d", "link", "show", HostInterfaceName(iface.ID))
 		if strings.Contains(string(hostState), "LOWER_UP") && strings.Contains(string(hostState), "master "+bridge) && strings.Contains(string(interfaceState), "master "+bridge) {
+			if object.Kind == domain.NetworkSwitchL2 {
+				return d.configureAttachmentSwitchL2Port(ctx, namespace, portName, attachment, object)
+			}
 			return nil
 		}
 	}
@@ -389,24 +382,28 @@ func (d *DataPlane) AttachNamespace(ctx context.Context, attachment domain.Netwo
 		}
 	}
 	if object.Kind == domain.NetworkSwitchL2 {
-		if err := d.executor.Run(ctx, d.ip, "-n", namespace, "link", "set", portName, "master", "br0"); err != nil {
+		if err := d.configureAttachmentSwitchL2Port(ctx, namespace, portName, attachment, object); err != nil {
 			return err
-		}
-		if pvid := attachmentVLAN(attachment.Config, "pvid"); pvid > 0 {
-			if err := d.executor.Run(ctx, "bridge", "-n", namespace, "vlan", "add", "dev", portName, "vid", fmt.Sprint(pvid), "pvid", "untagged"); err != nil {
-				return err
-			}
-		}
-		for _, vlan := range attachmentVLANs(attachment.Config["tagged"]) {
-			if err := d.executor.Run(ctx, "bridge", "-n", namespace, "vlan", "add", "dev", portName, "vid", fmt.Sprint(vlan)); err != nil {
-				return err
-			}
 		}
 	}
 	if err := d.executor.Run(ctx, d.ip, "-n", namespace, "link", "set", portName, "up"); err != nil {
 		return err
 	}
 	return d.configureNamespacePort(ctx, namespace, portName, object)
+}
+
+func (d *DataPlane) configureAttachmentSwitchL2Port(ctx context.Context, namespace, portName string, attachment domain.NetworkAttachment, object domain.NetworkObject) error {
+	var config domain.SwitchL2Config
+	if err := decodeConfig(object.Config, &config); err != nil {
+		return err
+	}
+	port := domain.VLANPort{Name: portName, PVID: attachmentVLAN(attachment.Config, "pvid"), Tagged: attachmentVLANs(attachment.Config["tagged"])}
+	validated, err := domain.NormalizeSwitchL2Config(domain.SwitchL2Config{VLANFiltering: true, Ports: []domain.VLANPort{port}})
+	if err != nil {
+		return err
+	}
+	vlanFiltering := config.VLANFiltering || port.PVID > 0 || len(port.Tagged) > 0
+	return configureSwitchL2Port(ctx, d.executor, d.ip, "bridge", namespace, validated.Ports[0], vlanFiltering, false)
 }
 
 func (d *DataPlane) DeleteNetworkObjectLink(ctx context.Context, link domain.NetworkObjectLink, objectA, objectB domain.NetworkObject) error {

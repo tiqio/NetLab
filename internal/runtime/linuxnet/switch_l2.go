@@ -88,40 +88,44 @@ func (r *SwitchL2Runtime) Configure(ctx context.Context, object domain.NetworkOb
 }
 
 func (r *SwitchL2Runtime) configurePort(ctx context.Context, namespace string, port domain.VLANPort, vlanFiltering bool) error {
+	return configureSwitchL2Port(ctx, r.executor, r.ip, r.bridge, namespace, port, vlanFiltering, true)
+}
+
+func configureSwitchL2Port(ctx context.Context, executor CommandExecutor, ip, bridge, namespace string, port domain.VLANPort, vlanFiltering, missingOK bool) error {
 	if !hostObjectName.MatchString(port.Name) {
 		return fmt.Errorf("invalid L2 port name")
 	}
-	state, err := r.executor.Output(ctx, r.ip, "-n", namespace, "-d", "link", "show", port.Name)
-	if err != nil {
+	state, err := executor.Output(ctx, ip, "-n", namespace, "-d", "link", "show", port.Name)
+	if err != nil && missingOK {
 		return nil
 	}
 	if !strings.Contains(string(state), "master br0") {
-		if err = r.executor.Run(ctx, r.ip, "-n", namespace, "link", "set", port.Name, "master", "br0"); err != nil {
+		if err = executor.Run(ctx, ip, "-n", namespace, "link", "set", port.Name, "master", "br0"); err != nil {
 			return err
 		}
 	}
 	if !linkIsUp(state) {
-		if err = r.executor.Run(ctx, r.ip, "-n", namespace, "link", "set", port.Name, "up"); err != nil {
+		if err = executor.Run(ctx, ip, "-n", namespace, "link", "set", port.Name, "up"); err != nil {
 			return err
 		}
 	}
 	if !vlanFiltering {
 		return nil
 	}
-	observed, observeErr := r.observePort(ctx, namespace, port.Name)
+	observed, observeErr := observeSwitchL2Port(ctx, executor, bridge, namespace, port.Name)
 	if observeErr == nil && vlanMembershipMatches(port, observed) {
 		return nil
 	}
-	if err = r.executor.Run(ctx, r.bridge, "-n", namespace, "vlan", "del", "dev", port.Name, "vid", "1-4094"); err != nil && !missingVLANMembership(err) {
+	if err = executor.Run(ctx, bridge, "-n", namespace, "vlan", "del", "dev", port.Name, "vid", "1-4094"); err != nil && !missingVLANMembership(err) {
 		return err
 	}
 	if port.PVID > 0 {
-		if err = r.executor.Run(ctx, r.bridge, "-n", namespace, "vlan", "add", "dev", port.Name, "vid", fmt.Sprint(port.PVID), "pvid", "untagged"); err != nil {
+		if err = executor.Run(ctx, bridge, "-n", namespace, "vlan", "add", "dev", port.Name, "vid", fmt.Sprint(port.PVID), "pvid", "untagged"); err != nil {
 			return err
 		}
 	}
 	for _, vlan := range port.Tagged {
-		if err = r.executor.Run(ctx, r.bridge, "-n", namespace, "vlan", "add", "dev", port.Name, "vid", fmt.Sprint(vlan)); err != nil {
+		if err = executor.Run(ctx, bridge, "-n", namespace, "vlan", "add", "dev", port.Name, "vid", fmt.Sprint(vlan)); err != nil {
 			return err
 		}
 	}
@@ -137,7 +141,11 @@ func missingVLANMembership(err error) bool {
 }
 
 func (r *SwitchL2Runtime) observePort(ctx context.Context, namespace, portName string) (SwitchL2PortObservation, error) {
-	body, err := r.executor.Output(ctx, r.bridge, "-j", "-n", namespace, "vlan", "show", "dev", portName)
+	return observeSwitchL2Port(ctx, r.executor, r.bridge, namespace, portName)
+}
+
+func observeSwitchL2Port(ctx context.Context, executor CommandExecutor, bridge, namespace, portName string) (SwitchL2PortObservation, error) {
+	body, err := executor.Output(ctx, bridge, "-j", "-n", namespace, "vlan", "show", "dev", portName)
 	if err != nil {
 		return SwitchL2PortObservation{Name: portName}, err
 	}
