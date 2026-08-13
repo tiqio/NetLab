@@ -188,6 +188,8 @@ describe("TopologyCanvas", () => {
     expect(hit.attributes("aria-label")).toContain(
       "Ubuntu:eth0 ↔ 服务区交换机:busybox",
     );
+    await hit.trigger("pointerdown", { button: 0, pointerId: 9 });
+    await hit.trigger("pointerup", { button: 0, pointerId: 9 });
     await hit.trigger("click");
     expect(wrapper.emitted("select")?.at(-1)).toEqual([
       "attachment-1",

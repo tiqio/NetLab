@@ -1617,6 +1617,11 @@ function surfacePointerId(event: PointerEvent) {
 }
 function handleSurfacePointerDown(event: PointerEvent) {
   const pointerId = surfacePointerId(event);
+  if (
+    event.target instanceof Element &&
+    event.target.closest("[data-connection-hit-id]")
+  )
+    return;
   if (props.panEnabled && event.button === 0) {
     panGesture.value = {
       pointerId,
