@@ -9,31 +9,31 @@
 
 ## R21 Initial US5 Candidate
 
-| Field | Value |
-|-------|-------|
-| Candidate | `network-path-011-20260812T072942Z-us5-r21` |
-| Source commit | `d05bdfea564264eba77419a16aa0e21fcc507853` |
-| Artifact digest | `sha256:6ed930d9a652024f5b2669839f8eb033a129d4e76a96293a642790035fd04927` |
-| Contract digest | `sha256:a61b993c5a9a96443705cb912115eb8ee357824d3c4e39273e30524ae59a5901` |
-| Built at | `2026-08-12T07:29:42Z` |
-| Migration | `0016_traffic_workloads.sql`, schema version 16 |
-| Rollback | `/var/lib/netlab/rollback/network-path-011-20260812T072942Z-us5-r21-predeploy` |
+| Field           | Value                                                                          |
+| --------------- | ------------------------------------------------------------------------------ |
+| Candidate       | `network-path-011-20260812T072942Z-us5-r21`                                    |
+| Source commit   | `d05bdfea564264eba77419a16aa0e21fcc507853`                                     |
+| Artifact digest | `sha256:6ed930d9a652024f5b2669839f8eb033a129d4e76a96293a642790035fd04927`      |
+| Contract digest | `sha256:a61b993c5a9a96443705cb912115eb8ee357824d3c4e39273e30524ae59a5901`      |
+| Built at        | `2026-08-12T07:29:42Z`                                                         |
+| Migration       | `0016_traffic_workloads.sql`, schema version 16                                |
+| Rollback        | `/var/lib/netlab/rollback/network-path-011-20260812T072942Z-us5-r21-predeploy` |
 
 - R21 passed the backend, recovery, data-plane and ten-minute workload gates.
 - Target Chromium then exposed a millisecond-level ordering race: a real capture observation could precede the corresponding workload success timestamp by a few milliseconds, causing the topology overlay to reject an otherwise valid highlight.
 
 ## R22 Authoritative Candidate
 
-| Field | Value |
-|-------|-------|
-| Candidate | `network-path-011-20260812T075902Z-us5-r22` |
-| Source commit | `f30ad2e2d54817971f24d34c78fdb2b06821df39` |
-| Artifact digest | `sha256:f5a8d61b6dc2b3b01c7802eee625def601866a6353c61acdd2d426ee87d55281` |
-| Contract digest | `sha256:a61b993c5a9a96443705cb912115eb8ee357824d3c4e39273e30524ae59a5901` |
-| Built at | `2026-08-12T07:59:02Z` |
-| Installed at | `2026-08-12T08:06:28Z` |
-| Migration | `0016_traffic_workloads.sql`, schema version 16 |
-| Rollback | `/var/lib/netlab/rollback/network-path-011-20260812T075902Z-us5-r22-predeploy` |
+| Field           | Value                                                                          |
+| --------------- | ------------------------------------------------------------------------------ |
+| Candidate       | `network-path-011-20260812T075902Z-us5-r22`                                    |
+| Source commit   | `f30ad2e2d54817971f24d34c78fdb2b06821df39`                                     |
+| Artifact digest | `sha256:f5a8d61b6dc2b3b01c7802eee625def601866a6353c61acdd2d426ee87d55281`      |
+| Contract digest | `sha256:a61b993c5a9a96443705cb912115eb8ee357824d3c4e39273e30524ae59a5901`      |
+| Built at        | `2026-08-12T07:59:02Z`                                                         |
+| Installed at    | `2026-08-12T08:06:28Z`                                                         |
+| Migration       | `0016_traffic_workloads.sql`, schema version 16                                |
+| Rollback        | `/var/lib/netlab/rollback/network-path-011-20260812T075902Z-us5-r22-predeploy` |
 
 - Commit `f30ad2e` adds a bounded correlation tolerance of at least two seconds, or the workload timeout when larger, without synthesizing Traffic Filter counters.
 - The target binary SHA-256 is `f5a8d61b6dc2b3b01c7802eee625def601866a6353c61acdd2d426ee87d55281`.
@@ -49,31 +49,31 @@
 
 ## R25 Convergence Candidate
 
-| Field | Value |
-|-------|-------|
-| Candidate | `network-path-011-20260812T093618Z-convergence-r25` |
-| Source commit | `0d5016ca5972ab5860c4a7cbe9b3c83b4ed1530a` |
-| Artifact digest | `sha256:dbb286ce4ec2d22e1eab25adde46c02bafaf8189685b29d26eeca9aeb6cd8842` |
-| Contract digest | `sha256:a61b993c5a9a96443705cb912115eb8ee357824d3c4e39273e30524ae59a5901` |
-| Built at | `2026-08-12T09:36:18Z` |
-| Migration | no new migration; SQLite user version `0` |
-| Rollback | `/var/lib/netlab/rollback/network-path-011-20260812T093618Z-convergence-r25-predeploy` |
+| Field           | Value                                                                                  |
+| --------------- | -------------------------------------------------------------------------------------- |
+| Candidate       | `network-path-011-20260812T093618Z-convergence-r25`                                    |
+| Source commit   | `0d5016ca5972ab5860c4a7cbe9b3c83b4ed1530a`                                             |
+| Artifact digest | `sha256:dbb286ce4ec2d22e1eab25adde46c02bafaf8189685b29d26eeca9aeb6cd8842`              |
+| Contract digest | `sha256:a61b993c5a9a96443705cb912115eb8ee357824d3c4e39273e30524ae59a5901`              |
+| Built at        | `2026-08-12T09:36:18Z`                                                                 |
+| Migration       | no new migration; SQLite user version `0`                                              |
+| Rollback        | `/var/lib/netlab/rollback/network-path-011-20260812T093618Z-convergence-r25-predeploy` |
 
 R25 passed authority, readiness, release identity, database integrity and ten service-restart recovery checks. Phase 9 residual findings are recorded in `validation/convergence.md`.
 
 ## R30 QEMU and Data-Plane Recovery Candidate
 
-| Field | Value |
-|-------|-------|
-| Candidate | `network-path-011-20260813T025824Z-qemu-recovery-r30` |
-| Binary source commit | `d5cb0dbc70c7b47668c224c9041a86f8e043afdb` |
-| Acceptance source commit | `e6706a704186b6ecfd5fdf4e218bbeb3d84ec84f` |
-| Artifact digest | `sha256:b49b58e45799c80b937e522538074a4cf414afa0277c79d463d73c3e98c9cadc` |
-| Contract digest | `sha256:71d5721ac41dd2d55ccdd7934d4ab0a77c7c77ecd602df43f24af89e1699668a` |
-| Acceptance script digest | `sha256:164e0217905b2544ab8b4a24408c2c2a92bcb0fb9eeaae850700d27c77f6eb96` |
-| Built at | `2026-08-13T02:58:24Z` |
-| Migration | no new migration; SQLite user version `0` |
-| Rollback | `/var/lib/netlab/rollback/network-path-011-20260813T025824Z-qemu-recovery-r30-predeploy` |
+| Field                    | Value                                                                                    |
+| ------------------------ | ---------------------------------------------------------------------------------------- |
+| Candidate                | `network-path-011-20260813T025824Z-qemu-recovery-r30`                                    |
+| Binary source commit     | `d5cb0dbc70c7b47668c224c9041a86f8e043afdb`                                               |
+| Acceptance source commit | `e6706a704186b6ecfd5fdf4e218bbeb3d84ec84f`                                               |
+| Artifact digest          | `sha256:b49b58e45799c80b937e522538074a4cf414afa0277c79d463d73c3e98c9cadc`                |
+| Contract digest          | `sha256:71d5721ac41dd2d55ccdd7934d4ab0a77c7c77ecd602df43f24af89e1699668a`                |
+| Acceptance script digest | `sha256:164e0217905b2544ab8b4a24408c2c2a92bcb0fb9eeaae850700d27c77f6eb96`                |
+| Built at                 | `2026-08-13T02:58:24Z`                                                                   |
+| Migration                | no new migration; SQLite user version `0`                                                |
+| Rollback                 | `/var/lib/netlab/rollback/network-path-011-20260813T025824Z-qemu-recovery-r30-predeploy` |
 
 - R30 was installed through `deploy/scripts/install.sh` with `NETLAB_DEPLOYMENT_ROLE=authoritative`; no target source file or database row was edited directly.
 - The rollback directory contains the prior binary, configuration, template readiness, release identity, authoritative lab snapshot and a previously verified no-migration online database backup. Its `SHA256SUMS` verification passed before deployment.
@@ -83,16 +83,16 @@ R25 passed authority, readiness, release identity, database integrity and ten se
 
 ## R31 FortiGate Credential Candidate
 
-| Field | Value |
-|-------|-------|
-| Candidate | `network-path-011-20260813T035016Z-fortigate-credentials-r31` |
-| Source commit | `83693581de6d77f7a92819dd2237253623423c15` |
-| Artifact digest | `sha256:6680f0c194f89199d3287b7fc64c1741beba61c2a8fa0c4c0d0b35930fe5dd6d` |
-| Contract digest | `sha256:8d22f88384ad333d1d16452e85be3537fb6f6011947181116487024c0e8e03d9` |
-| Built at | `2026-08-13T03:50:16Z` |
-| Installed at | `2026-08-13T03:55:41Z` |
-| Migration | no main-database migration; schema migration version remains `16` |
-| Rollback | `/var/lib/netlab/rollback/network-path-011-20260813T035016Z-fortigate-credentials-r31-predeploy` |
+| Field           | Value                                                                                            |
+| --------------- | ------------------------------------------------------------------------------------------------ |
+| Candidate       | `network-path-011-20260813T035016Z-fortigate-credentials-r31`                                    |
+| Source commit   | `83693581de6d77f7a92819dd2237253623423c15`                                                       |
+| Artifact digest | `sha256:6680f0c194f89199d3287b7fc64c1741beba61c2a8fa0c4c0d0b35930fe5dd6d`                        |
+| Contract digest | `sha256:8d22f88384ad333d1d16452e85be3537fb6f6011947181116487024c0e8e03d9`                        |
+| Built at        | `2026-08-13T03:50:16Z`                                                                           |
+| Installed at    | `2026-08-13T03:55:41Z`                                                                           |
+| Migration       | no main-database migration; schema migration version remains `16`                                |
+| Rollback        | `/var/lib/netlab/rollback/network-path-011-20260813T035016Z-fortigate-credentials-r31-predeploy` |
 
 - R31 adds a node-scoped AES-256-GCM credential vault for FortiGate console credentials, with root-only master-key and vault paths, active/staged password rotation, management-scope-restricted APIs and an inspector workflow that never reads stored plaintext back into the browser.
 - The deployment installer generated `/etc/netlab/credential-master.key` only because it did not already exist. The key is `0600`, `/var/lib/netlab/secrets` is `0700`, and `credentials.db` is `0600`; future installs do not overwrite the key.
@@ -102,19 +102,39 @@ R25 passed authority, readiness, release identity, database integrity and ten se
 
 ## Interface-Only Link Label Candidate
 
-| Field | Value |
-|-------|-------|
-| Candidate | `topology-labels-20260813T0646Z-r1` |
-| Source commit | `5995cdb1d143a278df99377998afe5f015a76014` |
+| Field           | Value                                                                     |
+| --------------- | ------------------------------------------------------------------------- |
+| Candidate       | `topology-labels-20260813T0646Z-r1`                                       |
+| Source commit   | `5995cdb1d143a278df99377998afe5f015a76014`                                |
 | Artifact digest | `sha256:041c85c2dca28fe6924824349d48a091be614086c459769b180716ebfacc18d8` |
 | Contract digest | `sha256:71d5721ac41dd2d55ccdd7934d4ab0a77c7c77ecd602df43f24af89e1699668a` |
-| Built at | `2026-08-13T06:47:49Z` |
-| Installed at | `2026-08-13T06:51:25Z` |
-| Migration | no database migration |
-| Rollback | `/var/lib/netlab/rollback/topology-labels-20260813T0646Z-r1-predeploy` |
+| Built at        | `2026-08-13T06:47:49Z`                                                    |
+| Installed at    | `2026-08-13T06:51:25Z`                                                    |
+| Migration       | no database migration                                                     |
+| Rollback        | `/var/lib/netlab/rollback/topology-labels-20260813T0646Z-r1-predeploy`    |
 
 - Visible link labels now use only endpoint interface or port names, such as `eth0 ↔ ens0`; resource names remain in the accessibility label and endpoint details.
 - Focused Vitest coverage passed `10/10`, and the production frontend plus embedded Go binary built successfully.
 - The deployed topology asset contains the interface-only formatter, while its accessibility formatter retains `resourceName:portName` for both endpoints.
 - A read-only Chromium target smoke test loaded the integrated laboratory without console or page errors.
 - After authoritative restart, `/readyz` returned `{"status":"ok"}` and the integrated laboratory retained 11 running nodes, 10 active network objects, 21 placements and revision 22.
+
+## Topology Organize and Selection Candidate
+
+| Field           | Value                                                                      |
+| --------------- | -------------------------------------------------------------------------- |
+| Candidate       | `topology-organize-20260813T072731Z-r2`                                    |
+| Source commit   | `4025c790148d9da27ffdb8057b0ee6ae9004ee95`                                 |
+| Artifact digest | `sha256:17a271944b2803934b4e1bbf7ce71993d00cf50849ee30bb648b75af0a07c3f5`  |
+| Contract digest | `sha256:71d5721ac41dd2d55ccdd7934d4ab0a77c7c77ecd602df43f24af89e1699668a`  |
+| Built at        | `2026-08-13T07:27:31Z`                                                     |
+| Installed at    | `2026-08-13T07:42:36Z`                                                     |
+| Migration       | no database migration; schema migration version remains `16`               |
+| Rollback        | `/var/lib/netlab/rollback/topology-organize-20260813T072731Z-r2-predeploy` |
+
+- The candidate upgrades the former Fit All control to an explicit layered organize-and-fit mutation. NAT objects are placed highest, L3 and L2 objects occupy intermediate layers, and PC/QEMU/Docker endpoints occupy the lowest layer. Connectivity-weighted sweeps reduce adjacent-layer crossings before placements are persisted in batches.
+- Selection interaction now enables Fit Selection after a resource click or drag. Dragging an unselected resource selects it first, blank-canvas dragging performs box selection without a modifier, Shift adds to selection, and Ctrl remains reserved for temporary canvas panning.
+- Local validation passed 31 focused topology tests, the production Vue build, embedded Go build, `git diff --check`, and the two-test desktop Playwright topology-navigation journey. The source commit was pushed to `origin/main` before deployment.
+- The first online SQLite backup attempt became stuck in uninterruptible target-disk I/O while the 2.7 GiB database was actively written. The service was stopped to end writes, then restored with the previous candidate before deployment; it returned active with all running nodes recovered. Because this UI candidate has no migration or direct data mutation, the incomplete backup was removed and the verified rollback package intentionally contains the prior binary, configuration, template readiness, unit, release identity, health state, and resource summary rather than a database replacement. `database-rollback-scope.txt` records that rollback leaves the authoritative database in place.
+- Deployment preserved the only integrated laboratory at revision `34`: 11 of 11 nodes remained `running`, 10 of 10 network objects remained `active`, all 21 placements remained present, and all 25 persisted connections remained present. SQLite `PRAGMA integrity_check` returned `ok`; `/readyz` and `/healthz` returned `ok`; no error-priority service journal entries appeared after installation.
+- A target Chromium session verified that Fit Selection starts disabled, becomes enabled after keyboard selection, executes successfully, and remains enabled after a real blank-canvas mouse box selection that selected two resources. The deployed button text is `整理并适应`, and the browser reported no page or console errors.
