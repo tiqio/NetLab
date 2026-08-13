@@ -397,7 +397,20 @@ func (d *DataPlane) configureAttachmentSwitchL2Port(ctx context.Context, namespa
 	if err := decodeConfig(object.Config, &config); err != nil {
 		return err
 	}
-	port := domain.VLANPort{Name: portName, PVID: attachmentVLAN(attachment.Config, "pvid"), Tagged: attachmentVLANs(attachment.Config["tagged"])}
+	port := domain.VLANPort{Name: portName}
+	for _, configuredPort := range config.Ports {
+		if configuredPort.Name == portName {
+			port.PVID = configuredPort.PVID
+			port.Tagged = append([]int(nil), configuredPort.Tagged...)
+			break
+		}
+	}
+	if _, exists := attachment.Config["pvid"]; exists {
+		port.PVID = attachmentVLAN(attachment.Config, "pvid")
+	}
+	if tagged, exists := attachment.Config["tagged"]; exists {
+		port.Tagged = attachmentVLANs(tagged)
+	}
 	validated, err := domain.NormalizeSwitchL2Config(domain.SwitchL2Config{VLANFiltering: true, Ports: []domain.VLANPort{port}})
 	if err != nil {
 		return err

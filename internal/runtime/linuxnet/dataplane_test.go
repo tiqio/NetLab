@@ -212,6 +212,35 @@ func TestNamespaceAttachmentRepairsL2VLANDriftWhenHostPathIsHealthy(t *testing.T
 	}
 }
 
+func TestNamespaceAttachmentInheritsL2PortVLANWhenAttachmentConfigIsEmpty(t *testing.T) {
+	attachment := domain.NetworkAttachment{ID: "attach", InterfaceID: "if-a", PortName: "lan0"}
+	object := domain.NetworkObject{ID: "switch", Kind: domain.NetworkSwitchL2, Config: map[string]any{
+		"vlan_filtering": true,
+		"ports":          []any{map[string]any{"name": "lan0", "pvid": 20, "tagged": []any{30}}},
+	}}
+	namespace := SwitchL2NamespaceName(object.ID)
+	host := ownership.Name("nah", attachment.ID, 15)
+	bridge := ownership.Name("nla", attachment.ID, 15)
+	executor := &dataPlaneExecutor{outputs: map[string]string{
+		"ip link show " + host:                              "exists",
+		"ip -n " + namespace + " link show lan0":            "exists",
+		"ip -d link show " + host:                           "1: " + host + ": <BROADCAST,MULTICAST,UP,LOWER_UP> master " + bridge,
+		"ip -d link show " + HostInterfaceName("if-a"):      "2: " + HostInterfaceName("if-a") + ": <BROADCAST,MULTICAST,UP,LOWER_UP> master " + bridge,
+		"ip -n " + namespace + " -d link show lan0":         "3: lan0: <BROADCAST,MULTICAST,UP,LOWER_UP> master br0",
+		"bridge -j -n " + namespace + " vlan show dev lan0": `[{"ifname":"lan0","vlans":[{"vlan":1,"flags":["PVID","Egress Untagged"]}]}]`,
+	}}
+	runtime, _ := NewDataPlane(executor)
+	if err := runtime.AttachNamespace(context.Background(), attachment, domain.Interface{ID: "if-a"}, object); err != nil {
+		t.Fatal(err)
+	}
+	commands := strings.Join(executor.commands, "\n")
+	for _, expected := range []string{"vid 20 pvid untagged", "vid 30"} {
+		if !strings.Contains(commands, expected) {
+			t.Fatalf("missing inherited VLAN repair %q in %s", expected, commands)
+		}
+	}
+}
+
 func TestNamespaceAttachmentCleanupOwnsTransitBridge(t *testing.T) {
 	executor := &dataPlaneExecutor{}
 	runtime, _ := NewDataPlane(executor)

@@ -50,12 +50,14 @@ probe() {
 }
 
 path_snapshot() {
-  local results=() family destination
+  local results=() family destination result
   for destination in 172.16.0.1 10.20.20.1 10.20.20.10 10.30.30.1 10.30.30.10; do
-    results+=("$(probe ipv4 "$destination")")
+    result=$(probe ipv4 "$destination") || return 1
+    results+=("$result")
   done
   for destination in fd16::1 fd20::1 fd20::10 fd30::1 fd30::10; do
-    results+=("$(probe ipv6 "$destination")")
+    result=$(probe ipv6 "$destination") || return 1
+    results+=("$result")
   done
   printf '%s\n' "${results[@]}" | jq -s .
 }

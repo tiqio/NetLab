@@ -188,6 +188,8 @@ func TestNetworkPathHostRestartScriptUsesArgvSafeGuestExec(t *testing.T) {
 		`argv:["ping"`,
 		`jq -er '.task.id | select(length>0)'`,
 		"guest-exec remained unavailable or unstable",
+		"result=$(probe",
+		"return 1",
 		"candidate changed across restart",
 	} {
 		if !strings.Contains(text, required) {
