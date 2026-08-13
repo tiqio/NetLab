@@ -12,7 +12,7 @@ export function connectionDisplayName(
   source: ConnectionEndpointPresentation,
   target: ConnectionEndpointPresentation,
 ) {
-  return `${source.resourceName}:${source.portName} ↔ ${target.resourceName}:${target.portName}`;
+  return `${source.portName} ↔ ${target.portName}`;
 }
 
 export function trafficObservationLinkId(observation: TrafficObservation) {
@@ -33,21 +33,18 @@ export function trafficObservationMatchesLink(
 export function linkEndpointName(
   interfaceId: string,
   interfaces: NodeInterface[],
-  nodes: Node[],
+  _nodes: Node[],
 ) {
   const interfaceValue = interfaces.find((item) => item.id === interfaceId);
   if (!interfaceValue) return interfaceId;
-  const node = nodes.find((item) => item.id === interfaceValue.node_id);
-  return `${node?.name || interfaceValue.node_id}:${interfaceValue.name}`;
+  return interfaceValue.name;
 }
 
 export function networkObjectLinkDisplayName(
   link: NetworkObjectLink,
-  objects: NetworkObject[],
+  _objects: NetworkObject[],
 ) {
-  const objectA = objects.find((item) => item.id === link.object_a_id);
-  const objectB = objects.find((item) => item.id === link.object_b_id);
-  return `${objectA?.name || link.object_a_id}:${link.port_a_name} ↔ ${objectB?.name || link.object_b_id}:${link.port_b_name}`;
+  return `${link.port_a_name} ↔ ${link.port_b_name}`;
 }
 
 export function parallelNetworkObjectLinkCurveness(

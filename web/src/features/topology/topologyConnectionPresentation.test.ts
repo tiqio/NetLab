@@ -46,10 +46,13 @@ describe("buildConnectionPresentations", () => {
       result.every((item) => item.statusVisual.state === "connected"),
     ).toBe(true);
     expect(result.map((item) => item.label)).toEqual([
-      "BusyBox:eth0 ↔ Ubuntu:ens0",
-      "BusyBox:eth1 ↔ 共享网桥:port1",
-      "共享网桥:eth0 ↔ 接入交换机:eth0",
+      "eth0 ↔ ens0",
+      "eth1 ↔ port1",
+      "eth0 ↔ eth0",
     ]);
+    expect(result[0].accessibilityLabel).toBe(
+      "BusyBox:eth0 ↔ Ubuntu:ens0 · 已连接",
+    );
   });
 
   it.each([

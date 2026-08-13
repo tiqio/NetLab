@@ -10,7 +10,7 @@ import {
 } from "./linkPresentation";
 
 describe("link presentation", () => {
-  it("uses node and interface names instead of endpoint IDs", () => {
+  it("uses only interface names instead of node names or endpoint IDs", () => {
     const nodes = [
       nodeFactory({ id: "node-a", name: "BusyBox1" }),
       nodeFactory({ id: "node-b", name: "BusyBox2" }),
@@ -25,7 +25,7 @@ describe("link presentation", () => {
         interfaces,
         nodes,
       ),
-    ).toBe("BusyBox1:eth0 ↔ BusyBox2:eth1");
+    ).toBe("eth0 ↔ eth1");
   });
 
   it("assigns opposite curves to parallel links", () => {
@@ -102,7 +102,7 @@ describe("link presentation", () => {
       },
     ];
     expect(networkObjectLinkDisplayName(links[0], objects)).toBe(
-      "Switch A:swp1 ↔ Switch B:swp1",
+      "swp1 ↔ swp1",
     );
     expect(parallelNetworkObjectLinkCurveness(links[0], links)).not.toBe(
       parallelNetworkObjectLinkCurveness(links[1], links),
