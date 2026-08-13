@@ -62,13 +62,26 @@ path_snapshot() {
   printf '%s\n' "${results[@]}" | jq -s .
 }
 
+wait_path_snapshot() {
+  local attempt result
+  for attempt in $(seq 1 5); do
+    if result=$(path_snapshot); then
+      printf '%s\n' "$result"
+      return
+    fi
+    echo "dual-stack path snapshot attempt $attempt/5 was not ready" >&2
+    sleep 10
+  done
+  return 1
+}
+
 case "$PHASE" in
   prepare)
     [[ $ALLOW_REBOOT == 1 ]] || { echo "SKIP: set NETLAB_ACCEPTANCE_ALLOW_REBOOT=1 for operator-controlled host restart" >&2; exit 77; }
     candidate=$(api /capabilities | jq -r '.release.candidate_id // empty')
     [[ -n $candidate ]] || { echo "candidate identity unavailable" >&2; exit 1; }
     topology=$(api "/labs/$LAB_ID" | jq '{revision:.laboratory.revision,nodes:[.nodes[]|{id,desired_state,observed_state}]|sort_by(.id),links:[.links[]|{id,observed_state}]|sort_by(.id),attachments:[.network_attachments[]|{id,observed_state}]|sort_by(.id),object_links:[.network_object_links[]|{id,observed_state}]|sort_by(.id)}')
-    paths=$(path_snapshot)
+    paths=$(wait_path_snapshot)
     install -d -m0700 "$(dirname "$MARKER")"
     jq -n --arg candidate "$candidate" --arg lab_id "$LAB_ID" --arg ubuntu_node_id "$UBUNTU_NODE_ID" --argjson topology "$topology" --argjson paths "$paths" '{schema_version:"1.0",candidate_id:$candidate,laboratory_id:$lab_id,ubuntu_node_id:$ubuntu_node_id,prepared_at:(now|todate),before:{topology:$topology,paths:$paths},phase:"prepared"}' >"$MARKER"
     chmod 0600 "$MARKER"
@@ -84,7 +97,7 @@ case "$PHASE" in
     topology=$(api "/labs/$LAB_ID" | jq '{revision:.laboratory.revision,nodes:[.nodes[]|{id,desired_state,observed_state}]|sort_by(.id),links:[.links[]|{id,observed_state}]|sort_by(.id),attachments:[.network_attachments[]|{id,observed_state}]|sort_by(.id),object_links:[.network_object_links[]|{id,observed_state}]|sort_by(.id)}')
     before_topology=$(jq -c '.before.topology' "$MARKER")
     [[ $(jq -c . <<<"$topology") == "$before_topology" ]] || { jq -n --argjson before "$before_topology" --argjson after "$topology" '{before:$before,after:$after}' >&2; exit 1; }
-    paths=$(path_snapshot)
+    paths=$(wait_path_snapshot)
     jq --argjson topology "$topology" --argjson paths "$paths" --argjson recovery "$recovery" '.phase="verified" | .verified_at=(now|todate) | .after={topology:$topology,paths:$paths,recovery_task:$recovery}' "$MARKER" >"$MARKER.tmp"
     mv "$MARKER.tmp" "$MARKER"
     echo "PASS: host restart preserved Ubuntu/VyOS dual-stack paths for candidate $candidate"

@@ -190,6 +190,8 @@ func TestNetworkPathHostRestartScriptUsesArgvSafeGuestExec(t *testing.T) {
 		"guest-exec remained unavailable or unstable",
 		"result=$(probe",
 		"return 1",
+		"wait_path_snapshot",
+		"dual-stack path snapshot attempt",
 		"candidate changed across restart",
 	} {
 		if !strings.Contains(text, required) {
