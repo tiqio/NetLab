@@ -25,14 +25,14 @@ interface OrganizedResource {
   previousX: number;
 }
 
-const LAYER_Y = [-420, -120, 180, 500];
+const LAYER_Y = [-420, -120, 180, 500, 820];
 const HORIZONTAL_SPACING = 260;
 const TERMINAL_EXTRA_SPACING = 60;
 const SWEEP_COUNT = 8;
 
 function resourceLayer(resourceType: "node" | "network_object", kind: string) {
   if (resourceType === "node" || kind === "pc") return 3;
-  if (kind === "nat_bridge") return 0;
+  if (kind === "nat_bridge") return 4;
   if (kind === "switch_l3") return 1;
   return 2;
 }
@@ -87,7 +87,7 @@ export function organizeTopology(input: TopologyOrganizationInput) {
   for (const link of input.networkObjectLinks)
     connect(link.object_a_id, link.object_b_id);
 
-  const layers = Array.from({ length: 4 }, (_, layer) =>
+  const layers = Array.from({ length: LAYER_Y.length }, (_, layer) =>
     resources
       .filter((value) => value.layer === layer)
       .sort(
@@ -137,7 +137,7 @@ export function organizeTopology(input: TopologyOrganizationInput) {
     }
   }
 
-  const widestUpperLayer = Math.max(
+  const widestNetworkLayer = Math.max(
     0,
     ...layers
       .slice(0, 3)
@@ -150,7 +150,7 @@ export function organizeTopology(input: TopologyOrganizationInput) {
     if (layerIndex === 3 && layer.length > 1) {
       spacing = Math.max(
         HORIZONTAL_SPACING + TERMINAL_EXTRA_SPACING,
-        (widestUpperLayer + HORIZONTAL_SPACING * 2) / (layer.length - 1),
+        (widestNetworkLayer + HORIZONTAL_SPACING * 2) / (layer.length - 1),
       );
     }
     const positions = centeredPositions(layer.length, spacing);

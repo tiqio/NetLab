@@ -21,7 +21,7 @@ function object(id: string, kind: NetworkObject["kind"]): NetworkObject {
 }
 
 describe("organizeTopology", () => {
-  it("places NAT highest and runtime or PC endpoints lowest", () => {
+  it("places NAT below runtime or PC endpoints", () => {
     const result = organizeTopology({
       nodes: [nodeFactory({ id: "qemu", kind: "qemu" })],
       interfaces: [],
@@ -36,10 +36,10 @@ describe("organizeTopology", () => {
       networkObjectLinks: [],
       current: {},
     });
-    expect(result.nat.y).toBeLessThan(result.router.y);
     expect(result.router.y).toBeLessThan(result.switch.y);
     expect(result.switch.y).toBeLessThan(result.pc.y);
     expect(result.qemu.y).toBe(result.pc.y);
+    expect(result.pc.y).toBeLessThan(result.nat.y);
   });
 
   it("uses connectivity ordering to avoid crossings between adjacent layers", () => {
