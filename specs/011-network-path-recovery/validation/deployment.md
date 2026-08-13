@@ -189,3 +189,21 @@ R25 passed authority, readiness, release identity, database integrity and ten se
 - Focused topology validation passed 32 tests, including a non-zero chart pixel-offset case. The production frontend and embedded Go build also passed.
 - Target Chromium reset the viewport, selected a visible resource at canvas pixel approximately (1054.8, 429.5), cleared selection, and drew a 130-pixel box centered on that visible resource. The resulting selected-resource halo matched the same resource ID, with no page or console errors.
 - The integrated laboratory remains healthy with 11 running nodes, 10 active network objects, 21 placements and 25 connections. Database integrity remained ok.
+
+### Attachment Label and Selection Correction — r8
+
+| Field           | Value                                                                    |
+| --------------- | ------------------------------------------------------------------------ |
+| Candidate       | topology-organize-20260813T083157Z-r8                                    |
+| Source commit   | d462a33a9d82e51e14e096460b6d50edd2852abe                                 |
+| Artifact digest | sha256:c0d8e3cd933e529d0caa9eadda3e0a85d66ba0f8f16939193812006929b81555  |
+| Contract digest | sha256:71d5721ac41dd2d55ccdd7934d4ab0a77c7c77ecd602df43f24af89e1699668a  |
+| Built at        | 2026-08-13T08:31:57Z                                                     |
+| Migration       | no database migration; schema migration version remains 16               |
+| Rollback        | /var/lib/netlab/rollback/topology-organize-20260813T083157Z-r8-predeploy |
+
+- The BusyBox connection is a network attachment from BusyBox业务客户端 interface eth0 to 服务区交换机 object port busybox. R8 renders attachment labels as eth0 ↔ 端口 busybox so the second token is not mistaken for the remote node interface name; the full accessible identity remains BusyBox业务客户端:eth0 ↔ 服务区交换机:busybox.
+- Every normalized connection now has an 18-pixel transparent selectable path, trimmed away from endpoint node bodies so resource clicks remain available. Connection targets take priority over blank-canvas box selection, and keyboard Enter/Space also select the connection.
+- Focused connection, canvas and interaction coverage passed 36 tests. Additional chart stability coverage passed after graph-coordinate reads were made tolerant of transient ECharts pipeline rebuilds, and the production frontend plus embedded Go build passed.
+- Target Chromium clicked the real midpoint of attachment 019ff9d3ed51-cb1baa6c1cebea640c17. The line entered selected state, displayed 已选 1 项, opened the 网络附件 inspector with 删除附件 available, and emitted no page or console errors.
+- The integrated laboratory remains healthy with 11 running nodes, 10 active network objects, 21 placements and 25 connections. Database integrity remained ok and no error-priority service journal entries appeared after deployment.
