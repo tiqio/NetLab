@@ -35,6 +35,7 @@ import LightweightSwitchConfigurationPanel from "@/features/nodes/LightweightSwi
 import ResourceCharts from "@/features/analytics/ResourceCharts.vue";
 import ConfirmationDialog from "@/components/common/ConfirmationDialog.vue";
 import { linkDisplayName, linkEndpointName } from "./linkPresentation";
+import { networkAttachmentPortLabel } from "./networkAttachmentPresentation";
 
 const props = withDefaults(
   defineProps<{
@@ -685,7 +686,7 @@ async function deleteObjectLink() {
             <ResourceIdentity
               :id="attachment.id"
               type="网络附件"
-              :name="`${attachmentNode?.name || '节点'}:${attachmentInterface?.name || attachment.interface_id} ↔ ${attachmentObject?.name || '轻量网络'}:${attachment.port_name || '端口'}`"
+              :name="`${attachmentNode?.name || '节点'}:${attachmentInterface?.name || attachment.interface_id} ↔ ${attachmentObject?.name || '轻量网络'}:${networkAttachmentPortLabel(attachment.port_name)}`"
             /><StatusBadge :state="attachment.observed_state" />
           </div>
           <dl>
@@ -696,9 +697,9 @@ async function deleteObjectLink() {
               }}
             </dd>
             <dt>网络端口</dt>
-            <dd>
+            <dd :title="attachment.port_name || undefined">
               {{ attachmentObject?.name || attachment.network_object_id }}:{{
-                attachment.port_name || "端口"
+                networkAttachmentPortLabel(attachment.port_name)
               }}
             </dd>
             <dt>监听接口</dt>

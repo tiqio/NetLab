@@ -83,12 +83,17 @@ describe("TopologyInspector", () => {
           id: "attachment-1",
           network_object_id: "switch-a",
           interface_id: "if-a",
-          port_name: "eth0",
+          port_name: "access-d17fc8c3",
           revision: 5,
           observed_state: "connected",
         },
       },
     });
+    expect(wrapper.text()).toContain("Switch A:接入口");
+    expect(wrapper.text()).not.toContain("access-d17fc8c3");
+    expect(wrapper.get('dd[title="access-d17fc8c3"]').text()).toContain(
+      "Switch A:接入口",
+    );
     const buttons = wrapper.findAll("button");
     await buttons
       .find((button) => button.text().includes("抓包"))!

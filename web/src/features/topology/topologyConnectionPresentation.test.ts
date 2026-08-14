@@ -55,6 +55,23 @@ describe("buildConnectionPresentations", () => {
     );
   });
 
+  it("hides generated bridge access identifiers from connection labels", () => {
+    const result = buildConnectionPresentations({
+      nodes: [topologyNode("node-a", "BusyBox")],
+      interfaces: [topologyInterface("if-a", "node-a", "eth0")],
+      networkObjects: [topologyNetworkObject("bridge", "共享网桥", "bridge")],
+      links: [],
+      networkAttachments: [
+        topologyAttachment("attachment", "bridge", "if-a", "access-d17fc8c3"),
+      ],
+      networkObjectLinks: [],
+    });
+
+    expect(result[0].label).toBe("eth0 ↔ 接入口");
+    expect(result[0].target.portName).toBe("接入口");
+    expect(result[0].target.portId).toBe("bridge/access-d17fc8c3");
+  });
+
   it.each([
     ["queued", "pending", "状态转换中"],
     ["pending", "pending", "状态转换中"],

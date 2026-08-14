@@ -15,6 +15,7 @@ import { assignParallelRoutes } from "./topologyParallelRoutes";
 import { connectionSemanticMarkers } from "./topologyConnectionSemantics";
 import { connectionVisualSemantic } from "./topologyVisualSemantics";
 import { connectionDisplayName } from "./linkPresentation";
+import { networkAttachmentPortLabel } from "./networkAttachmentPresentation";
 
 export interface ConnectionPresentationInput {
   nodes: Node[];
@@ -69,7 +70,7 @@ function present(
   const statusVisual = connectionStatusVisual(actualState);
   const label =
     persistedKind === "network_attachment"
-      ? `${source.portName} ↔ 端口 ${target.portName}`
+      ? `${source.portName} ↔ ${target.portName === "接入口" ? target.portName : `端口 ${target.portName}`}`
       : connectionDisplayName(source, target);
   const accessibilityLabel = `${source.resourceName}:${source.portName} ↔ ${target.resourceName}:${target.portName} · ${statusVisual.label}`;
   return {
@@ -165,7 +166,7 @@ export function buildConnectionPresentations(
           object.kind,
           object.name,
           `${object.id}/${attachment.port_name || "port"}`,
-          attachment.port_name || "接入口",
+          networkAttachmentPortLabel(attachment.port_name),
         ),
         "connected",
         attachment.observed_state,
