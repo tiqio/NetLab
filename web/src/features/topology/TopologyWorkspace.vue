@@ -884,7 +884,7 @@ async function organizeAndFitResources() {
   }
 }
 
-function resetViewport() {
+function fitGlobalViewport() {
   fitResources();
 }
 const resourceIds = computed(() => [
@@ -1986,11 +1986,11 @@ onBeforeUnmount(() => {
           <Button
             size="sm"
             variant="ghost"
-            title="重置拓扑视图"
+            title="适应全部拓扑资源"
             data-testid="reset-view"
-            @click="resetViewport"
+            @click="fitGlobalViewport"
           >
-            <RotateCcw :size="13" /> 重置
+            <RotateCcw :size="13" /> 适应全局
           </Button>
           <Button
             size="sm"
