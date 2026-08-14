@@ -63,6 +63,7 @@ const props = withDefaults(
     preferences: WorkspacePreferences;
     sharedPlacements?: TopologyPlacement[];
     selectedIds?: string[];
+    boxSelectionActive?: boolean;
     focusedResourceId?: string;
     keyboardAnnouncement?: string;
     editingLinkId?: string;
@@ -79,6 +80,7 @@ const props = withDefaults(
   {
     networkAttachments: () => [],
     networkObjectLinks: () => [],
+    boxSelectionActive: false,
     traffic: () => [],
     trafficActive: false,
     trafficColor: "var(--topology-traffic)",
@@ -978,13 +980,17 @@ const option = computed(() => ({
               : "bidirectional";
           const selectedConnection = selected.value.has(connection.id);
           const selectedAdjacent =
-            selected.value.has(connection.source.resourceId) ||
-            selected.value.has(connection.target.resourceId);
+            props.boxSelectionActive &&
+            selected.value.size > 1 &&
+            (selected.value.has(connection.source.resourceId) ||
+              selected.value.has(connection.target.resourceId));
           const legendHighlighted = legendHighlightedConnectionIds.value.has(
             connection.id,
           );
           const dragAdjacent =
+            props.boxSelectionActive &&
             draggingResource.value &&
+            draggingResourceIds.value.length > 1 &&
             (draggingResourceIds.value.includes(connection.source.resourceId) ||
               draggingResourceIds.value.includes(connection.target.resourceId));
           const nodeLink =
@@ -1217,10 +1223,14 @@ function refreshOverlays() {
   adjacentConnectionOverlays.value = connectionGeometry.flatMap(
     ({ connection, trimmed, curveness }) => {
       const selectedAdjacent =
-        selected.value.has(connection.source.resourceId) ||
-        selected.value.has(connection.target.resourceId);
+        props.boxSelectionActive &&
+        selected.value.size > 1 &&
+        (selected.value.has(connection.source.resourceId) ||
+          selected.value.has(connection.target.resourceId));
       const dragAdjacent =
+        props.boxSelectionActive &&
         draggingResource.value &&
+        draggingResourceIds.value.length > 1 &&
         (draggingIds.has(connection.source.resourceId) ||
           draggingIds.has(connection.target.resourceId));
       if (!selectedAdjacent && !dragAdjacent) return [];

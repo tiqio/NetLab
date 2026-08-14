@@ -133,6 +133,7 @@ const {
   persist: persistWorkspacePreferences,
 } = useWorkspacePreferences(activeId);
 const selectedIds = ref<string[]>([]);
+const boxSelectionActive = ref(false);
 const selectedType = ref<
   | "node"
   | "link"
@@ -506,6 +507,7 @@ function nodeInterfaces(nodeId: string) {
   );
 }
 function openInterfaceCapture(value: NodeInterface) {
+  boxSelectionActive.value = false;
   selectedInterfaceId.value = value.id;
   selectedIds.value = selectOne(value.node_id);
   selectedType.value = "node";
@@ -719,6 +721,7 @@ watch(
   () => keyboardResources.value.map((item) => item.id),
   (ids) => {
     selectedIds.value = cleanSelection(selectedIds.value, new Set(ids));
+    if (selectedIds.value.length < 2) boxSelectionActive.value = false;
     if (!selectedIds.value.length) selectedType.value = undefined;
     if (focusedResourceId.value && !ids.includes(focusedResourceId.value))
       focusedResourceId.value = "";
@@ -889,6 +892,7 @@ async function refresh() {
 }
 
 async function switchLaboratory(id: string) {
+  boxSelectionActive.value = false;
   selectedIds.value = [];
   await store.open(id);
   await store.loadLabs();
@@ -911,6 +915,7 @@ async function openLaboratory(id: string) {
 async function laboratoryDeleteAccepted(id: string) {
   const activeId = store.active?.laboratory.id;
   selectedIds.value = [];
+  boxSelectionActive.value = false;
   store.hideLaboratory(id);
   if (activeId && activeId !== id) {
     await store.loadTasks();
@@ -989,6 +994,7 @@ function setCreateOpen(value: boolean) {
     return;
   }
   setPanel("inspector", snapshot.inspector);
+  boxSelectionActive.value = false;
   selectedIds.value = snapshot.selectedIds;
   selectedType.value = snapshot.selectedType;
   focusedResourceId.value = snapshot.focusedResourceId;
@@ -1014,6 +1020,7 @@ async function selectResource(
     await chooseTargetNode(id);
     return;
   }
+  boxSelectionActive.value = false;
   selectedIds.value = additive
     ? toggleSelected(selectedIds.value, id)
     : toggleSingleSelected(selectedIds.value, id);
@@ -1052,6 +1059,7 @@ async function selectResource(
 }
 
 function clearSelection() {
+  boxSelectionActive.value = false;
   selectedIds.value = [];
   selectedType.value = undefined;
   selectedInterfaceId.value = "";
@@ -1268,6 +1276,7 @@ function selectBox(
       bottom: item.y + 32,
     }));
   selectedIds.value = boxSelect(rectangle, bounds, selectedIds.value, additive);
+  boxSelectionActive.value = selectedIds.value.length > 1;
   const last = keyboardResources.value.find(
     (item) => item.id === selectedIds.value.at(-1),
   );
@@ -1719,6 +1728,7 @@ async function topologyKeyboard(event: KeyboardEvent) {
   if (action.type === "none") return;
   event.preventDefault();
   if (action.type === "focus_resource") {
+    boxSelectionActive.value = false;
     focusedResourceId.value = action.resourceId;
     keyboardAnnouncement.value = action.announcement;
     if (action.extend) {
@@ -1735,6 +1745,7 @@ async function topologyKeyboard(event: KeyboardEvent) {
     selectedType.value = action.resourceType;
   }
   if (action.type === "toggle_resource") {
+    boxSelectionActive.value = false;
     selectedIds.value = toggleSelected(selectedIds.value, action.resourceId);
   }
   if (action.type === "focus_port")
@@ -1793,6 +1804,7 @@ async function topologyKeyboard(event: KeyboardEvent) {
     keyboardAnnouncement.value = action.announcement;
   }
   if (action.type === "select_all") {
+    boxSelectionActive.value = false;
     selectedIds.value = action.resourceIds;
     selectionAnchor.value = action.resourceIds[0] || "";
     focusedResourceId.value = action.resourceIds[0] || "";
@@ -1892,6 +1904,7 @@ onBeforeUnmount(() => {
           :preferences="preferences"
           :shared-placements="store.active.placements"
           :selected-ids="selectedIds"
+          :box-selection-active="boxSelectionActive"
           :focused-resource-id="focusedResourceId"
           :keyboard-announcement="keyboardAnnouncement"
           :editing-link-id="editingRouteLinkId"

@@ -144,6 +144,7 @@ describe("TopologyCanvas", () => {
         networkObjects: [],
         preferences: defaultWorkspacePreferences("lab"),
         selectedIds: ["node-1", "node-2"],
+        boxSelectionActive: true,
       },
     });
     await nextTick();
@@ -153,6 +154,37 @@ describe("TopologyCanvas", () => {
     expect(
       wrapper.find('[data-drag-adjacent-connection-id="link-1"]').exists(),
     ).toBe(true);
+  });
+  it("does not emphasize adjacent links for a single-node drag", async () => {
+    const wrapper = mount(TopologyCanvas, {
+      props: {
+        nodes: [nodeFactory(), nodeFactory({ id: "node-2", name: "Peer" })],
+        interfaces: [
+          interfaceFactory({ id: "if-1", node_id: "node-1", name: "eth0" }),
+          interfaceFactory({ id: "if-2", node_id: "node-2", name: "ge0" }),
+        ],
+        links: [
+          {
+            id: "link-1",
+            laboratory_id: "lab-1",
+            endpoint_a_id: "if-1",
+            endpoint_b_id: "if-2",
+            desired_state: "connected",
+            observed_state: "active",
+            revision: 1,
+          },
+        ],
+        networkObjects: [],
+        preferences: defaultWorkspacePreferences("lab"),
+        selectedIds: ["node-1"],
+        boxSelectionActive: true,
+      },
+    });
+    await wrapper.get("[data-drag-move]").trigger("click");
+    await nextTick();
+    expect(
+      wrapper.find('[data-drag-adjacent-connection-id="link-1"]').exists(),
+    ).toBe(false);
   });
   it("keeps every connection kind adjacent to selected resources highlighted", async () => {
     const bridge = networkObjectFactory({
@@ -208,6 +240,7 @@ describe("TopologyCanvas", () => {
         ],
         preferences: defaultWorkspacePreferences("lab"),
         selectedIds: ["node-1", bridge.id],
+        boxSelectionActive: true,
       },
     });
     await nextTick();
@@ -229,6 +262,49 @@ describe("TopologyCanvas", () => {
         wrapper.find(`[data-selected-adjacent-connection-id="${id}"]`).exists(),
       ).toBe(true);
     }
+  });
+  it("does not emphasize adjacency for non-box multi-selection", async () => {
+    const wrapper = mount(TopologyCanvas, {
+      props: {
+        nodes: [nodeFactory(), nodeFactory({ id: "node-2", name: "Peer" })],
+        interfaces: [
+          interfaceFactory({ id: "if-1", node_id: "node-1", name: "eth0" }),
+          interfaceFactory({ id: "if-2", node_id: "node-2", name: "ge0" }),
+        ],
+        links: [
+          {
+            id: "link-1",
+            laboratory_id: "lab-1",
+            endpoint_a_id: "if-1",
+            endpoint_b_id: "if-2",
+            desired_state: "connected",
+            observed_state: "active",
+            revision: 1,
+          },
+        ],
+        networkObjects: [],
+        preferences: defaultWorkspacePreferences("lab"),
+        selectedIds: ["node-1", "node-2"],
+      },
+    });
+    await nextTick();
+    const option = captured as {
+      series: Array<{
+        links: Array<{
+          id: string;
+          lineStyle: { color: string; width: number };
+        }>;
+      }>;
+    };
+    const connection = option.series[0].links.find(
+      (item) => item.id === "link-1",
+    );
+    expect(connection?.lineStyle.color).not.toBe(
+      "var(--topology-connection-focus)",
+    );
+    expect(
+      wrapper.find('[data-selected-adjacent-connection-id="link-1"]').exists(),
+    ).toBe(false);
   });
   it("places each interface label beside its matching endpoint", async () => {
     const wrapper = mount(TopologyCanvas, {
