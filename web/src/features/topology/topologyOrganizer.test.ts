@@ -109,14 +109,14 @@ describe("organizeTopology", () => {
       networkAttachments: [],
       networkObjectLinks: [],
       current: {},
-      viewport: { width: 1312, height: 776, padding: 48 },
+      viewport: { width: 1312, height: 776, padding: 80 },
     });
 
     const xs = Object.values(result).map(({ x }) => x);
     const ys = Object.values(result).map(({ y }) => y);
     const layoutWidth = Math.max(...xs) - Math.min(...xs);
     const layoutHeight = Math.max(...ys) - Math.min(...ys);
-    const availableAspect = (1312 - 96) / (776 - 96);
+    const availableAspect = (1312 - 160) / (776 - 160);
     expect(layoutWidth / layoutHeight).toBeCloseTo(availableAspect, 2);
 
     const terminalXs = [

@@ -133,6 +133,7 @@ const {
   persist: persistWorkspacePreferences,
 } = useWorkspacePreferences(activeId);
 const selectedIds = ref<string[]>([]);
+const TOPOLOGY_FIT_PADDING = 80;
 const boxSelectionActive = ref(false);
 const selectedType = ref<
   | "node"
@@ -806,14 +807,15 @@ function fitResources(ids?: string[]) {
     .filter(([id]) => !selected || selected.has(id))
     .map(([, point]) => point);
   const size = canvasSize();
-  setViewport(fitViewport(points, size.width, size.height));
+  setViewport(
+    fitViewport(points, size.width, size.height, TOPOLOGY_FIT_PADDING),
+  );
 }
 
 async function organizeAndFitResources() {
   if (!store.active || organizingTopology.value) return;
   const laboratoryId = store.active.laboratory.id;
   const size = canvasSize();
-  const organizePadding = 48;
   const organized = organizeTopology({
     nodes: store.active.nodes,
     interfaces: store.active.interfaces,
@@ -822,7 +824,7 @@ async function organizeAndFitResources() {
     networkAttachments: store.active.network_attachments || [],
     networkObjectLinks: store.active.network_object_links || [],
     current: coordinates.value,
-    viewport: { ...size, padding: organizePadding },
+    viewport: { ...size, padding: TOPOLOGY_FIT_PADDING },
   });
   const revisions = new Map(
     store.active.placements.map((placement) => [
@@ -866,7 +868,7 @@ async function organizeAndFitResources() {
         Object.values(organized),
         size.width,
         size.height,
-        organizePadding,
+        TOPOLOGY_FIT_PADDING,
       ),
     );
     canvasStatus.value = `已按网络层级均匀铺满画布，并整理 ${placements.length} 个资源。`;
