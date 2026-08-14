@@ -317,3 +317,21 @@ R25 passed authority, readiness, release identity, database integrity and ten se
 - Focused canvas, workspace and interaction-controller coverage passed 49 tests. The production frontend build, embedded Go build, frontend artifact hygiene, changed-file Prettier checks and `git diff --check` also passed.
 - The target candidate, binary digest and frontend artifact matched r16. The service is active and enabled, `/readyz` and `/healthz` are healthy, the error-priority service journal is empty, database integrity is `ok`, migration version remains `16`, and the rollback package checksum passes.
 - The comprehensive laboratory remained intact with 11 running nodes, 10 active network objects, 21 placements and 25 connections.
+
+### Single Blank-Click Selection Clear — r17
+
+| Field           | Value                                                                       |
+| --------------- | --------------------------------------------------------------------------- |
+| Candidate       | `topology-organize-20260814T021506Z-r17`                                    |
+| Source commit   | `1777305461f644d7becb03b77e48465189f29e2f`                                  |
+| Artifact digest | `sha256:ceaea2983937704f126194c07522402b75795a354552e4ade8e1300bc8bd9079`   |
+| Contract digest | `sha256:71d5721ac41dd2d55ccdd7934d4ab0a77c7c77ecd602df43f24af89e1699668a`   |
+| Built at        | `2026-08-14T02:15:06Z`                                                      |
+| Installed at    | `2026-08-14T02:16:15Z`                                                      |
+| Migration       | no database migration; schema migration version remains `16`                |
+| Rollback        | `/var/lib/netlab/rollback/topology-organize-20260814T021506Z-r17-predeploy` |
+
+- R17 treats a blank-canvas press and release below the box-selection threshold as an immediate background click. It removes the former double-click-only fallback while preserving drag-to-box-select behavior.
+- Focused canvas, workspace and interaction-controller coverage passed 50 tests. The production frontend build, embedded Go build, frontend artifact hygiene, changed-file Prettier checks and `git diff --check` passed.
+- Target Chromium selected one resource through keyboard navigation, then physically clicked one blank point in the topology canvas. The visible selection count changed from one to zero after that single click, with no console or page errors.
+- The target candidate and artifact digest matched r17. The service remained healthy, database integrity was `ok`, migration version remained `16`, the rollback checksum passed, and the comprehensive laboratory retained 11 running nodes, 10 active network objects, 21 placements and 25 connections.
