@@ -262,3 +262,21 @@ R25 passed authority, readiness, release identity, database integrity and ten se
 - Focused selection, workspace, canvas and chart coverage passed 52 tests, including a physical node-click event sequence containing drag start, drag end and chart click. The production frontend, embedded Go build, changed-file Prettier checks and `git diff --check` passed.
 - Target Chromium found a selectable pixel on the visible campus switch node. The first click selected the object and highlighted five adjacent connections; the next single click cleared the selection and all five adjacency highlights. No page or console errors occurred.
 - The target remains healthy with 11 running nodes, 10 active network objects, 21 placements and 25 connections. `/readyz`, `/healthz`, database integrity, migration version 16, error-priority service journal checks and rollback package checksum verification passed.
+
+### Box-Selection-Only Adjacency Effects — r14
+
+| Field           | Value                                                                       |
+| --------------- | --------------------------------------------------------------------------- |
+| Candidate       | `topology-organize-20260814T014314Z-r14`                                    |
+| Source commit   | `73c8d8744f68a64aaf8d1f7fc4c416f2491a03e1`                                  |
+| Artifact digest | `sha256:6c0b748a5b8a92da69edba99fbb489cd15d69707c84879eb92254ea346902cd0`   |
+| Contract digest | `sha256:71d5721ac41dd2d55ccdd7934d4ab0a77c7c77ecd602df43f24af89e1699668a`   |
+| Built at        | `2026-08-14T01:43:14Z`                                                      |
+| Migration       | no database migration; schema migration version remains `16`                |
+| Rollback        | `/var/lib/netlab/rollback/topology-organize-20260814T014314Z-r14-predeploy` |
+
+- R14 restricts adjacent-connection emphasis to selections created by a box gesture containing at least two resources. Ordinary clicks, Shift-click selection, keyboard selection and select-all no longer enable the adjacency effect.
+- Drag adjacency emphasis additionally requires the active drag group to contain at least two resources from the retained box selection. Dragging one node therefore keeps its connected links at their normal status, traffic or capture styling.
+- Focused canvas, workspace, selection and chart coverage passed 54 tests. Regression cases verify that non-box multi-selection does not highlight adjacency, a one-node drag does not create a drag glow, and box-selected groups still highlight every normalized connection kind.
+- Target Chromium selected one visible campus switch by clicking and observed zero selected-adjacency overlays. Dragging that single node temporarily away and back produced zero drag-adjacency overlays. A blank-canvas box gesture then selected two resources and highlighted eight adjacent connections, with no page or console errors.
+- The target remains healthy with 11 running nodes, 10 active network objects, 21 placements and 25 connections. `/readyz`, `/healthz`, database integrity, migration version 16, error-priority service journal checks and rollback package checksum verification passed.
