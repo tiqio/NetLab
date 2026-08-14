@@ -344,6 +344,33 @@ describe("TopologyCanvas", () => {
       Number(target.attributes("x")),
     );
   });
+  it("clears selection with one blank-canvas click", async () => {
+    const wrapper = mount(TopologyCanvas, {
+      props: {
+        nodes: [nodeFactory()],
+        interfaces: [],
+        links: [],
+        networkObjects: [],
+        preferences: defaultWorkspacePreferences("lab"),
+        selectedIds: ["node-1"],
+      },
+    });
+    const surface = wrapper.get(".topology-surface");
+    await surface.trigger("pointerdown", {
+      button: 0,
+      pointerId: 6,
+      clientX: 20,
+      clientY: 20,
+    });
+    await surface.trigger("pointerup", {
+      button: 0,
+      pointerId: 6,
+      clientX: 20,
+      clientY: 20,
+    });
+    expect(wrapper.emitted("background")).toHaveLength(1);
+    expect(wrapper.emitted("boxSelect")).toBeUndefined();
+  });
   it("box-selects by dragging blank canvas without a modifier", async () => {
     const wrapper = mount(TopologyCanvas, {
       props: {

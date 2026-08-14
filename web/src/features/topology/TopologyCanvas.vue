@@ -1910,7 +1910,7 @@ function handleSurfacePointerUp(event: PointerEvent) {
       { left: start.x, top: start.y, right: end.x, bottom: end.y },
       Boolean(event.shiftKey),
     );
-  }
+  } else emit("background");
   selectionRectangle.value = undefined;
   boxPointerId.value = undefined;
   const surface = event.currentTarget as HTMLElement;
@@ -2036,7 +2036,6 @@ defineExpose({
     tabindex="0"
     aria-label="拓扑画布键盘操作区。拖动空白区域框选资源，按住 Shift 可追加选择，按住 Ctrl 可临时平移；使用方向键浏览资源，按 Enter 打开操作，按 Escape 清除选择。"
     @keydown="handleKeyboard"
-    @dblclick="$emit('background')"
     @pointerdown.capture="handleSurfacePointerDown"
     @pointermove.capture="handleSurfacePointerMove"
     @pointerup.capture="handleSurfacePointerUp"
