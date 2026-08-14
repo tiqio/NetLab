@@ -353,3 +353,21 @@ R25 passed authority, readiness, release identity, database integrity and ten se
 - The changed presentation and Inspector cases passed focused tests, and all 29 canvas tests passed. The production frontend build, embedded Go build, frontend artifact hygiene, changed-file Prettier checks and `git diff --check` passed. A broader Inspector test run continued to report an unrelated existing friendly-link-endpoint assertion in code untouched by this change.
 - Target Chromium found eight `接入口` labels in the comprehensive topology accessibility summary and zero generated access identifiers, with no page or console errors.
 - The target candidate and artifact digest matched r18. The service remained healthy, database integrity was `ok`, migration version remained `16`, the rollback checksum passed, and the comprehensive laboratory retained 11 running nodes, 10 active network objects, 21 placements and 25 connections.
+
+### Unified Fit Padding — r19
+
+| Field           | Value                                                                       |
+| --------------- | --------------------------------------------------------------------------- |
+| Candidate       | `topology-organize-20260814T024017Z-r19`                                    |
+| Source commit   | `2880a61811f6a43c696a654d908354579f319256`                                  |
+| Artifact digest | `sha256:3a26ff5eda5b7e94e189933ea59bdff6b851ea8c923f6e0f1007e17dcc10a051`   |
+| Contract digest | `sha256:71d5721ac41dd2d55ccdd7934d4ab0a77c7c77ecd602df43f24af89e1699668a`   |
+| Built at        | `2026-08-14T02:40:17Z`                                                      |
+| Installed at    | `2026-08-14T02:42:13Z`                                                      |
+| Migration       | no database migration; schema migration version remains `16`                |
+| Rollback        | `/var/lib/netlab/rollback/topology-organize-20260814T024017Z-r19-predeploy` |
+
+- R19 defines one `80px` fit-padding value for organize-and-fit, fit-selection and reset-view calculations. The organizer receives the same usable viewport dimensions that the final viewport fit uses.
+- Focused organizer, geometry and workspace coverage passed 30 tests. The production frontend build, embedded Go build, frontend artifact hygiene, changed-file Prettier checks and `git diff --check` passed.
+- Target Chromium clicked `整理并适应` and then `重置`. Both operations produced the exact zoom value `0.20907840440165062`, with a measured difference of zero and no page or console errors.
+- The target candidate and artifact digest matched r19. The service remained healthy, database integrity was `ok`, migration version remained `16`, the rollback checksum passed, and the comprehensive laboratory retained 11 running nodes, 10 active network objects, 21 placements and 25 connections.
