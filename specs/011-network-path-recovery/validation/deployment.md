@@ -299,3 +299,21 @@ R25 passed authority, readiness, release identity, database integrity and ten se
 - The deployment used the repository installer with an identified prebuilt binary. The uploaded archive, every staged deployment file and the predeployment rollback package passed SHA-256 verification before installation.
 - Target verification confirmed the r15 candidate and artifact digest through `/api/v1/capabilities`, served the new organized-layout frontend marker, and found no error-priority service journal entries. The service is active and enabled, `/readyz` and `/healthz` are healthy, database integrity is `ok`, and migration version remains `16`.
 - The existing comprehensive laboratory remained intact with 11 running nodes, 10 active network objects, 21 placements and 25 total connections across direct links, network attachments and network-object links.
+
+### Drag Without Persistent Selection — r16
+
+| Field           | Value                                                                       |
+| --------------- | --------------------------------------------------------------------------- |
+| Candidate       | `topology-organize-20260814T020858Z-r16`                                    |
+| Source commit   | `0a27168a0ac628796cbf1cf7de2ca5e757e736f3`                                  |
+| Artifact digest | `sha256:cac1203cc66ae2201fcbebc9c219ac2190c88c1c58edc5d426f724bf91e82921`   |
+| Contract digest | `sha256:71d5721ac41dd2d55ccdd7934d4ab0a77c7c77ecd602df43f24af89e1699668a`   |
+| Built at        | `2026-08-14T02:08:58Z`                                                      |
+| Installed at    | `2026-08-14T02:10:11Z`                                                      |
+| Migration       | no database migration; schema migration version remains `16`                |
+| Rollback        | `/var/lib/netlab/rollback/topology-organize-20260814T020858Z-r16-predeploy` |
+
+- R16 separates a real node drag from selection. Dragging an unselected resource now moves it without persisting a selection after release, while a press-and-release without crossing the drag threshold continues to behave as a single click.
+- Focused canvas, workspace and interaction-controller coverage passed 49 tests. The production frontend build, embedded Go build, frontend artifact hygiene, changed-file Prettier checks and `git diff --check` also passed.
+- The target candidate, binary digest and frontend artifact matched r16. The service is active and enabled, `/readyz` and `/healthz` are healthy, the error-priority service journal is empty, database integrity is `ok`, migration version remains `16`, and the rollback package checksum passes.
+- The comprehensive laboratory remained intact with 11 running nodes, 10 active network objects, 21 placements and 25 connections.
