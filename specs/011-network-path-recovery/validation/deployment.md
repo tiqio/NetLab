@@ -335,3 +335,21 @@ R25 passed authority, readiness, release identity, database integrity and ten se
 - Focused canvas, workspace and interaction-controller coverage passed 50 tests. The production frontend build, embedded Go build, frontend artifact hygiene, changed-file Prettier checks and `git diff --check` passed.
 - Target Chromium selected one resource through keyboard navigation, then physically clicked one blank point in the topology canvas. The visible selection count changed from one to zero after that single click, with no console or page errors.
 - The target candidate and artifact digest matched r17. The service remained healthy, database integrity was `ok`, migration version remained `16`, the rollback checksum passed, and the comprehensive laboratory retained 11 running nodes, 10 active network objects, 21 placements and 25 connections.
+
+### Short Logical Access Labels — r18
+
+| Field           | Value                                                                       |
+| --------------- | --------------------------------------------------------------------------- |
+| Candidate       | `topology-organize-20260814T022738Z-r18`                                    |
+| Source commit   | `339f75ae9e476a138263faa3d17f05669ad60c21`                                  |
+| Artifact digest | `sha256:7aeb6152a297aee62d3db6bcffa46577a9f62900e00dbe3e1da43fe600d0fd75`   |
+| Contract digest | `sha256:71d5721ac41dd2d55ccdd7934d4ab0a77c7c77ecd602df43f24af89e1699668a`   |
+| Built at        | `2026-08-14T02:27:38Z`                                                      |
+| Installed at    | `2026-08-14T02:28:46Z`                                                      |
+| Migration       | no database migration; schema migration version remains `16`                |
+| Rollback        | `/var/lib/netlab/rollback/topology-organize-20260814T022738Z-r18-predeploy` |
+
+- R18 keeps generated `access-xxxxxxxx` values as stable internal attachment identifiers but presents them as the concise logical label `接入口` on topology links, accessibility descriptions and the Inspector. Explicit operator-defined port names remain unchanged, and the Inspector retains the raw identifier as hover metadata.
+- The changed presentation and Inspector cases passed focused tests, and all 29 canvas tests passed. The production frontend build, embedded Go build, frontend artifact hygiene, changed-file Prettier checks and `git diff --check` passed. A broader Inspector test run continued to report an unrelated existing friendly-link-endpoint assertion in code untouched by this change.
+- Target Chromium found eight `接入口` labels in the comprehensive topology accessibility summary and zero generated access identifiers, with no page or console errors.
+- The target candidate and artifact digest matched r18. The service remained healthy, database integrity was `ok`, migration version remained `16`, the rollback checksum passed, and the comprehensive laboratory retained 11 running nodes, 10 active network objects, 21 placements and 25 connections.
