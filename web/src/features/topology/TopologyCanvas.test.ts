@@ -94,7 +94,7 @@ describe("TopologyCanvas", () => {
     await wrapper.get("[data-node-click]").trigger("click");
     expect(wrapper.emitted("select")).toHaveLength(1);
   });
-  it("normalizes roam and drag completion", async () => {
+  it("moves a dragged node without selecting it", async () => {
     const wrapper = mount(TopologyCanvas, {
       props: {
         nodes: [nodeFactory()],
@@ -111,7 +111,7 @@ describe("TopologyCanvas", () => {
       zoom: 2,
     });
     await wrapper.get("[data-drag]").trigger("click");
-    expect(wrapper.emitted("select")?.[0]).toEqual(["node-1", "node", false]);
+    expect(wrapper.emitted("select")).toBeUndefined();
     expect(wrapper.emitted("move")?.[0]).toEqual(["node-1", 12, 34]);
     await wrapper.get("[data-wheel]").trigger("click");
     const wheelViewport = wrapper.emitted("viewport")?.[1]?.[0] as {

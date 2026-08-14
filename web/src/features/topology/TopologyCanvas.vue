@@ -212,10 +212,6 @@ const adjacentConnectionOverlays = ref<
 >([]);
 const draggingResource = ref(false);
 const draggingResourceIds = ref<string[]>([]);
-const pendingDragSelection = ref<{
-  id: string;
-  resourceType: "node" | "network_object";
-}>();
 const suppressedChartClickId = ref("");
 const selectionRectangle = ref<{
   left: number;
@@ -1704,9 +1700,6 @@ function handleDragStart(event: unknown) {
     event?: { offsetX?: number; offsetY?: number };
   };
   if (!value.data?.id || !value.data.resourceType) return;
-  pendingDragSelection.value = props.selectedIds?.includes(value.data.id)
-    ? undefined
-    : { id: value.data.id, resourceType: value.data.resourceType };
   const resourceIds = new Set([
     ...props.nodes.map((item) => item.id),
     ...props.networkObjects.map((item) => item.id),
@@ -1731,15 +1724,6 @@ function handleDragStart(event: unknown) {
 }
 function handleDragMove(event: unknown) {
   const value = event as { event?: { offsetX?: number; offsetY?: number } };
-  if (pendingDragSelection.value) {
-    emit(
-      "select",
-      pendingDragSelection.value.id,
-      pendingDragSelection.value.resourceType,
-      false,
-    );
-    pendingDragSelection.value = undefined;
-  }
   interaction.pointerMove(pointerSample(value.event));
   scheduleOverlayRefresh();
 }
@@ -1780,7 +1764,6 @@ function handleDrag(event: unknown) {
   }
   draggingResource.value = false;
   draggingResourceIds.value = [];
-  pendingDragSelection.value = undefined;
   scheduleOverlayRefresh();
 }
 function pointerSample(event?: {
