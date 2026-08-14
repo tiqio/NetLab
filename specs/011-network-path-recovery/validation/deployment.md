@@ -371,3 +371,21 @@ R25 passed authority, readiness, release identity, database integrity and ten se
 - Focused organizer, geometry and workspace coverage passed 30 tests. The production frontend build, embedded Go build, frontend artifact hygiene, changed-file Prettier checks and `git diff --check` passed.
 - Target Chromium clicked `整理并适应` and then `重置`. Both operations produced the exact zoom value `0.20907840440165062`, with a measured difference of zero and no page or console errors.
 - The target candidate and artifact digest matched r19. The service remained healthy, database integrity was `ok`, migration version remained `16`, the rollback checksum passed, and the comprehensive laboratory retained 11 running nodes, 10 active network objects, 21 placements and 25 connections.
+
+### Global Fit Control Naming — r20
+
+| Field           | Value                                                                       |
+| --------------- | --------------------------------------------------------------------------- |
+| Candidate       | `topology-organize-20260814T024852Z-r20`                                    |
+| Source commit   | `0f8a6a85b3d49a021085b0f9515622adc87be626`                                  |
+| Artifact digest | `sha256:eb99ed5b736dab0cbbe078baf7897966512e826bbb70ab29ca1174006a81b0dc`   |
+| Contract digest | `sha256:71d5721ac41dd2d55ccdd7934d4ab0a77c7c77ecd602df43f24af89e1699668a`   |
+| Built at        | `2026-08-14T02:48:52Z`                                                      |
+| Installed at    | `2026-08-14T02:50:06Z`                                                      |
+| Migration       | no database migration; schema migration version remains `16`                |
+| Rollback        | `/var/lib/netlab/rollback/topology-organize-20260814T024852Z-r20-predeploy` |
+
+- R20 renames the former `重置` control to `适应全局` and updates its tooltip to `适应全部拓扑资源`. The control continues to preserve node coordinates and only recompute the global viewport fit.
+- Focused organizer, geometry and workspace coverage passed 30 tests. The production frontend build, embedded Go build, frontend artifact hygiene, changed-file Prettier checks and `git diff --check` passed.
+- Target Chromium confirmed the exact visible label and tooltip, activated the control successfully, and observed no page or console errors.
+- The target candidate and artifact digest matched r20. The service remained healthy, database integrity was `ok`, migration version remained `16`, the rollback checksum passed, and the comprehensive laboratory retained 11 running nodes, 10 active network objects, 21 placements and 25 connections.
