@@ -87,6 +87,67 @@ describe("organizeTopology", () => {
     );
   });
 
+  it("fills a wide viewport with evenly distributed layers and nodes", () => {
+    const result = organizeTopology({
+      nodes: [
+        nodeFactory({ id: "client-a", kind: "docker" }),
+        nodeFactory({ id: "client-b", kind: "qemu" }),
+        nodeFactory({ id: "client-c", kind: "docker" }),
+        nodeFactory({ id: "client-d", kind: "qemu" }),
+        nodeFactory({ id: "client-e", kind: "docker" }),
+      ],
+      interfaces: [],
+      networkObjects: [
+        object("router-a", "switch_l3"),
+        object("router-b", "switch_l3"),
+        object("switch-a", "switch_l2"),
+        object("switch-b", "switch_l2"),
+        object("switch-c", "switch_l2"),
+        object("nat", "nat_bridge"),
+      ],
+      links: [],
+      networkAttachments: [],
+      networkObjectLinks: [],
+      current: {},
+      viewport: { width: 1312, height: 776, padding: 48 },
+    });
+
+    const xs = Object.values(result).map(({ x }) => x);
+    const ys = Object.values(result).map(({ y }) => y);
+    const layoutWidth = Math.max(...xs) - Math.min(...xs);
+    const layoutHeight = Math.max(...ys) - Math.min(...ys);
+    const availableAspect = (1312 - 96) / (776 - 96);
+    expect(layoutWidth / layoutHeight).toBeCloseTo(availableAspect, 2);
+
+    const terminalXs = [
+      result["client-a"].x,
+      result["client-b"].x,
+      result["client-c"].x,
+      result["client-d"].x,
+      result["client-e"].x,
+    ].sort((left, right) => left - right);
+    const terminalGaps = terminalXs
+      .slice(1)
+      .map((value, index) => value - terminalXs[index]);
+    expect(
+      Math.max(...terminalGaps) - Math.min(...terminalGaps),
+    ).toBeLessThanOrEqual(1);
+
+    const layerYs = [
+      result["router-a"].y,
+      result["switch-a"].y,
+      result["client-a"].y,
+      result.nat.y,
+    ];
+    const layerGaps = layerYs
+      .slice(1)
+      .map((value, index) => value - layerYs[index]);
+    expect(Math.max(...layerGaps) - Math.min(...layerGaps)).toBeLessThanOrEqual(
+      1,
+    );
+    expect(result.nat.y).toBe(Math.max(...ys));
+  });
+
   it("is deterministic and gives every resource a unique coordinate", () => {
     const input = {
       nodes: [

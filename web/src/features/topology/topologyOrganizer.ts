@@ -16,6 +16,7 @@ export interface TopologyOrganizationInput {
   networkAttachments: NetworkAttachment[];
   networkObjectLinks: NetworkObjectLink[];
   current: Record<string, Point>;
+  viewport?: { width: number; height: number; padding?: number };
 }
 
 interface OrganizedResource {
@@ -25,9 +26,11 @@ interface OrganizedResource {
   previousX: number;
 }
 
-const LAYER_Y = [-420, -120, 180, 500, 820];
-const HORIZONTAL_SPACING = 260;
-const TERMINAL_EXTRA_SPACING = 60;
+const FALLBACK_ASPECT_RATIO = 16 / 9;
+const MIN_HORIZONTAL_SPACING = 220;
+const MIN_VERTICAL_SPACING = 280;
+const MIN_LAYOUT_WIDTH = 900;
+const MIN_LAYER_SPAN_RATIO = 0.32;
 const SWEEP_COUNT = 8;
 
 function resourceLayer(resourceType: "node" | "network_object", kind: string) {
@@ -44,6 +47,15 @@ function centeredPositions(count: number, spacing: number) {
 
 function normalizedIndex(index: number, count: number) {
   return count < 2 ? 0 : index / (count - 1);
+}
+
+function viewportAspect(input: TopologyOrganizationInput) {
+  const padding = Math.max(0, input.viewport?.padding ?? 48);
+  const width = Math.max(1, (input.viewport?.width || 0) - padding * 2);
+  const height = Math.max(1, (input.viewport?.height || 0) - padding * 2);
+  if (!input.viewport?.width || !input.viewport.height)
+    return FALLBACK_ASPECT_RATIO;
+  return Math.max(0.6, Math.min(3.2, width / height));
 }
 
 export function organizeTopology(input: TopologyOrganizationInput) {
@@ -87,7 +99,7 @@ export function organizeTopology(input: TopologyOrganizationInput) {
   for (const link of input.networkObjectLinks)
     connect(link.object_a_id, link.object_b_id);
 
-  const layers = Array.from({ length: LAYER_Y.length }, (_, layer) =>
+  const layers = Array.from({ length: 5 }, (_, layer) =>
     resources
       .filter((value) => value.layer === layer)
       .sort(
@@ -137,27 +149,49 @@ export function organizeTopology(input: TopologyOrganizationInput) {
     }
   }
 
-  const widestNetworkLayer = Math.max(
-    0,
-    ...layers
-      .slice(0, 3)
-      .map((layer) => Math.max(0, (layer.length - 1) * HORIZONTAL_SPACING)),
+  const activeLayers = layers
+    .map((layer) => ({ layer }))
+    .filter(({ layer }) => layer.length);
+  const widestLayerSize = Math.max(
+    1,
+    ...activeLayers.map(({ layer }) => layer.length),
+  );
+  const aspect = viewportAspect(input);
+  let layoutWidth = Math.max(
+    MIN_LAYOUT_WIDTH,
+    (widestLayerSize - 1) * MIN_HORIZONTAL_SPACING,
+  );
+  let layoutHeight = layoutWidth / aspect;
+  const minimumHeight = Math.max(
+    MIN_VERTICAL_SPACING,
+    (activeLayers.length - 1) * MIN_VERTICAL_SPACING,
+  );
+  if (layoutHeight < minimumHeight) {
+    layoutHeight = minimumHeight;
+    layoutWidth = layoutHeight * aspect;
+  }
+  const layerY = centeredPositions(
+    activeLayers.length,
+    layoutHeight / Math.max(1, activeLayers.length - 1),
   );
   const result: Record<string, Point> = {};
-  for (const [layerIndex, layer] of layers.entries()) {
-    if (!layer.length) continue;
-    let spacing = HORIZONTAL_SPACING;
-    if (layerIndex === 3 && layer.length > 1) {
-      spacing = Math.max(
-        HORIZONTAL_SPACING + TERMINAL_EXTRA_SPACING,
-        (widestNetworkLayer + HORIZONTAL_SPACING * 2) / (layer.length - 1),
-      );
-    }
-    const positions = centeredPositions(layer.length, spacing);
+  for (const [activeIndex, { layer }] of activeLayers.entries()) {
+    const density =
+      widestLayerSize < 2
+        ? 0
+        : Math.sqrt((layer.length - 1) / (widestLayerSize - 1));
+    const layerSpan =
+      layer.length < 2
+        ? 0
+        : layoutWidth * Math.max(MIN_LAYER_SPAN_RATIO, density);
+    const positions = centeredPositions(
+      layer.length,
+      layerSpan / Math.max(1, layer.length - 1),
+    );
     layer.forEach((resource, index) => {
       result[resource.id] = {
         x: Math.round(positions[index]),
-        y: LAYER_Y[layerIndex],
+        y: Math.round(layerY[activeIndex]),
       };
     });
   }

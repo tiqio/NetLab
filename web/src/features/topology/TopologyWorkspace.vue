@@ -812,6 +812,8 @@ function fitResources(ids?: string[]) {
 async function organizeAndFitResources() {
   if (!store.active || organizingTopology.value) return;
   const laboratoryId = store.active.laboratory.id;
+  const size = canvasSize();
+  const organizePadding = 48;
   const organized = organizeTopology({
     nodes: store.active.nodes,
     interfaces: store.active.interfaces,
@@ -820,6 +822,7 @@ async function organizeAndFitResources() {
     networkAttachments: store.active.network_attachments || [],
     networkObjectLinks: store.active.network_object_links || [],
     current: coordinates.value,
+    viewport: { ...size, padding: organizePadding },
   });
   const revisions = new Map(
     store.active.placements.map((placement) => [
@@ -858,9 +861,15 @@ async function organizeAndFitResources() {
         else store.active.placements.push(placement);
       }
     }
-    const size = canvasSize();
-    setViewport(fitViewport(Object.values(organized), size.width, size.height));
-    canvasStatus.value = `已按网络层级整理 ${placements.length} 个资源，并尽量减少链路交叉。`;
+    setViewport(
+      fitViewport(
+        Object.values(organized),
+        size.width,
+        size.height,
+        organizePadding,
+      ),
+    );
+    canvasStatus.value = `已按网络层级均匀铺满画布，并整理 ${placements.length} 个资源。`;
   } catch (error) {
     if (store.active?.laboratory.id === laboratoryId)
       await store.open(laboratoryId);
