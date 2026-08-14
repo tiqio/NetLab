@@ -280,3 +280,22 @@ R25 passed authority, readiness, release identity, database integrity and ten se
 - Focused canvas, workspace, selection and chart coverage passed 54 tests. Regression cases verify that non-box multi-selection does not highlight adjacency, a one-node drag does not create a drag glow, and box-selected groups still highlight every normalized connection kind.
 - Target Chromium selected one visible campus switch by clicking and observed zero selected-adjacency overlays. Dragging that single node temporarily away and back produced zero drag-adjacency overlays. A blank-canvas box gesture then selected two resources and highlighted eight adjacent connections, with no page or console errors.
 - The target remains healthy with 11 running nodes, 10 active network objects, 21 placements and 25 connections. `/readyz`, `/healthz`, database integrity, migration version 16, error-priority service journal checks and rollback package checksum verification passed.
+
+### Canvas-Filling Organized Layout — r15
+
+| Field           | Value                                                                       |
+| --------------- | --------------------------------------------------------------------------- |
+| Candidate       | `topology-organize-20260814T015852Z-r15`                                    |
+| Source commit   | `7a13bdd293a559f1101cb37b5cf234669a62e02a`                                  |
+| Artifact digest | `sha256:5b845297969b713452dc019e0009818bceec6806aaaa71187b6e52638ef0af6d`   |
+| Contract digest | `sha256:71d5721ac41dd2d55ccdd7934d4ab0a77c7c77ecd602df43f24af89e1699668a`   |
+| Built at        | `2026-08-14T01:58:52Z`                                                      |
+| Installed at    | `2026-08-14T02:01:19Z`                                                      |
+| Migration       | no database migration; schema migration version remains `16`                |
+| Rollback        | `/var/lib/netlab/rollback/topology-organize-20260814T015852Z-r15-predeploy` |
+
+- R15 derives the organized topology dimensions from the usable canvas aspect ratio instead of fixed coordinates. Active layers now use uniform vertical spacing, the widest populated layer fills the horizontal span, and smaller populated layers receive proportional spans while NAT remains the bottom layer.
+- Local validation passed 30 focused organizer, geometry and workspace tests, the production frontend build, the embedded Go build, frontend artifact hygiene, changed-file Prettier checks and `git diff --check`.
+- The deployment used the repository installer with an identified prebuilt binary. The uploaded archive, every staged deployment file and the predeployment rollback package passed SHA-256 verification before installation.
+- Target verification confirmed the r15 candidate and artifact digest through `/api/v1/capabilities`, served the new organized-layout frontend marker, and found no error-priority service journal entries. The service is active and enabled, `/readyz` and `/healthz` are healthy, database integrity is `ok`, and migration version remains `16`.
+- The existing comprehensive laboratory remained intact with 11 running nodes, 10 active network objects, 21 placements and 25 total connections across direct links, network attachments and network-object links.
